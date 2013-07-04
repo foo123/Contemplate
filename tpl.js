@@ -115,7 +115,7 @@
             $loopifs++;
             var $m = $for_expr.match(/^\s*\$([a-z0-9_]+?)\s* as \s*\$([a-z0-9_]+?)\s*=>\s*\$([a-z0-9_]+)\s*$/i),
                 $o="$"+$m[1], $k="$"+$m[2], $v="$"+$m[3];
-            return "'; if (Object.keys("+ $o +").length) { for (var "+ $k +" in "+ $o +") { if (Tpl.hasOwn("+ $o +", "+ $k +")) { var "+$v+"="+$o+"["+$k+"]; ";
+            return "'; if ("+ $o +" && Object.keys("+ $o +").length) { for (var "+ $k +" in "+ $o +") { if (Tpl.hasOwn("+ $o +", "+ $k +")) { var "+$v+"="+$o+"["+$k+"]; ";
         },
         
         // endfor

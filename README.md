@@ -52,10 +52,10 @@ Use the test.php file to test the basic functionality
 
 #Screenshots
 
-[![Template markup](/screenshots/template_markup.png)]
+![Template markup](/screenshots/template_markup.png)
 
-[![Template data](/screenshots/template_data.png)]
+![Template data](/screenshots/template_data.png)
 
-[![Template output](/screenshots/template_output.png)]
+![Template output](/screenshots/template_output.png)
 
 

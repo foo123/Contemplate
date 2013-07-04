@@ -6,6 +6,12 @@ Simple, light-weight and fast templating engine for both PHP and javascript
 This is a proof-of-concept right now, yet fully working and extensible.
 The inspiration came from an old post by John Resig (http://ejohn.org/blog/javascript-micro-templating/)
 
+##Notes:
+After creating the repository i became aware of a web framework with similar name here: http://www.arlomedia.com/software/contemplate/assembled/introduction.html
+
+*This repository and project are completely unrelated to that framework.*
+
+
 #Rationale:
 
 There are many templating engines out there, which are very elegant, fast, multipurpose (eg. mustache, twig, handlebars, jade, doT, and so on..)

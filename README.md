@@ -59,7 +59,7 @@ however it is easy to add caching to the file system for a compiled template.
 Use the test.php file to test the basic functionality
 
 
-#Screenshots
+##Screenshots
 
 Sample Template markup
 ![Template markup](/screenshots/template_markup.png)

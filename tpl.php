@@ -24,19 +24,31 @@ class Tpl
     
     protected static $controlConstructs=array(
         'if', 'elseif', 'else', 'endif', 
-        'for', 'endfor'
+        'for', 'elsefor', 'endfor'
     );
-    protected static $controlConstructsRX='';
     
     protected static $funcs=array( 'l', 's', 'n', 'f', 'htmlselect', 'htmltable' );
-    protected static $funcsRX='';
+    
+    protected static $regExps=array(
+        'functions'=>'',
+        'controlConstructs'=>'',
+        'forExpr'=>'',
+        'quotes'=>'',
+        'specials'=>'',
+        'replacements'=>''
+    );
     
     public static function init($escaper=null)
     {
         self::$escaper=$escaper;
         
-        self::$controlConstructsRX='/\t\s*\%(' . implode('|', self::$controlConstructs) . ')\s*\((.*)\)/';
-        if (!empty(self::$funcs))  self::$funcsRX='/\%(' . implode('|', self::$funcs) . ')/';
+        self::$regExps['controlConstructs']='/\t\s*\%(' . implode('|', self::$controlConstructs) . ')\b\s*\((.*)\)/';
+        self::$regExps['forExpr']='/^\s*\$([a-z0-9_]+?)\s* as \s*\$([a-z0-9_]+?)\s*=>\s*\$([a-z0-9_]+)\s*$/i';
+        self::$regExps['quotes']="/'/";
+        self::$regExps['specials']="/[\r\t\n]/";
+        self::$regExps['replacements']="/\t\s*(.*?)\s*%>/";
+        if (!empty(self::$funcs))  
+            self::$regExps['functions']='/\%(' . implode('|', self::$funcs) . ')\b/';
     }
     
     //
@@ -68,7 +80,7 @@ class Tpl
                 self::$cache[$id]=create_function('$__o__', $func);
             }
             $fn=self::$cache[$id];
-            
+            //return self::log($func);
             // Provide some basic currying to the user
             if ($data)
                 return $fn( $data );
@@ -98,14 +110,22 @@ class Tpl
     // else
     public static function t_else() 
     {
-        if (self::$loopifs>0 && 0==self::$ifs)
+        /*if (self::$loopifs>0 && 0==self::$ifs)
         {
             self::$loopifs--;
             // else attached to  for loop
             return "'; } } else { ";
-        }
+        }*/
         // regular else
         return "'; } else { ";
+    }
+    
+    // elsefor
+    public static function t_elsefor() 
+    {
+        // else attached to  for loop
+        self::$loopifs--;
+        return "'; } } else { ";
     }
     
     // endif
@@ -120,7 +140,7 @@ class Tpl
     {
         self::$loops++;
         self::$loopifs++;
-        preg_match('/^\s*\$([a-z0-9_]+?)\s* as \s*\$([a-z0-9_]+?)\s*=>\s*\$([a-z0-9_]+)\s*$/i', $for_expr, $m);
+        preg_match(self::$regExps['forExpr'], $for_expr, $m);
         $o="\$${m[1]}"; $k="\$${m[2]}"; $v="\$${m[3]}";
         return "'; if (!empty($o)) { foreach ($o as $k=>$v) { ";
     }
@@ -357,6 +377,9 @@ class Tpl
                 case 'for':
                     return /*"\t" .*/ self::t_for($m[2]);
                     break;
+                case 'elsefor':
+                    return /*"\t" .*/ self::t_elsefor($m[2]);
+                    break;
                 case 'endfor':
                     return /*"\t" .*/ self::t_endfor($m[2]);
                     break;
@@ -368,22 +391,21 @@ class Tpl
     protected static function parseControlConstructs($s) 
     {
         $s = implode("\n", explode("%>", $s));
-        $s =  preg_replace_callback(self::$controlConstructsRX, array(__CLASS__, 'doControlConstruct'), $s);
+        $s =  preg_replace_callback(self::$regExps['controlConstructs'], array(__CLASS__, 'doControlConstruct'), $s);
         $s = implode("%>", explode("\n", $s));
         return $s;
     }
     
     protected static function parse($s) 
     {
-        $s = preg_replace("/[\r\t\n]/", " ", $s);
+        $s = preg_replace(self::$regExps['quotes'], "\\'", $s);
+        $s = preg_replace(self::$regExps['specials'], " ", $s);
         $s = implode("\t", explode("<%", $s));
         $s = self::parseControlConstructs($s);
-        if (!empty(self::$funcs))  $s = preg_replace(self::$funcsRX, 'Tpl::${1}', $s);
-        $s = preg_replace("/((^|%>)[^\t]*)'/", "$1\r", $s);
-        $s = preg_replace("/\t\s*(.*?)\s*%>/", "' . ( $1 ) . '", $s);
+        if (!empty(self::$funcs))  $s = preg_replace(self::$regExps['functions'], 'Tpl::${1}', $s);
+        $s = preg_replace(self::$regExps['replacements'], "' . ( $1 ) . '", $s);
         $s = implode("'; ", explode("\t", $s));
         $s = implode(" \$__p__ .= '", explode("%>", $s));
-        $s = implode("'", explode("\r", $s));
         return $s;
     }
     

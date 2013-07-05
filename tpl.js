@@ -19,10 +19,18 @@
     
         $controlConstructs=[
             'if', 'elseif', 'else', 'endif', 
-            'for', 'endfor'
-        ], $controlConstructsRX=null,
+            'for', 'elsefor', 'endfor'
+        ],
         
-        $funcs=[ 'l', 's', 'n', 'f'/*, 'htmlselect', 'htmltable'*/ ], $funcsRX=null
+        $funcs=[ 'l', 's', 'n', 'f'/*, 'htmlselect', 'htmltable'*/ ],
+        $regExps={
+            'functions':null,
+            'controlConstructs':null,
+            'forExpr':null,
+            'quotes':null,
+            'specials':null,
+            'replacements':null
+        }
         ;
 
     /*
@@ -35,8 +43,14 @@
             if (escaper)
                 $escaper=escaper;
             
-            $controlConstructsRX=new RegExp('\\t\\s*\%('+$controlConstructs.join('|')+')\\s*\\((.*)\\)', 'g');
-            if ($funcs.length)  $funcsRX=new RegExp('\%('+$funcs.join('|')+')', 'g');
+            // pre-compute the needed regular expressions
+            $regExps['controlConstructs']=new RegExp('\\t\\s*\%('+$controlConstructs.join('|')+')\\b\\s*\\((.*)\\)', 'g');
+            $regExps['forExpr']=new RegExp('^\\s*\\$([a-z0-9_]+?)\\s* as \\s*\\$([a-z0-9_]+?)\\s*=>\\s*\\$([a-z0-9_]+)\\s*$', 'i');
+            $regExps['quotes']=new RegExp('\'', 'g');
+            $regExps['specials']=new RegExp('[\\r\\t\\n]', 'g');
+            $regExps['replacements']=new RegExp('\\t\\s*(.*?)\\s*%>', 'g');
+            if ($funcs.length)  
+                $regExps['functions']=new RegExp('\%('+$funcs.join('|')+')\\b', 'g');
         },
         
         //
@@ -93,14 +107,21 @@
         
         // else
         t_else : function() {
-            if ($loopifs>0 && 0==$ifs)
+            /*if ($loopifs>0 && 0==$ifs)
             {
                 $loopifs--;
                 // else attached to  for loop
                 return "'; } } } else { ";
-            }
+            }*/
             // regular else
             return "'; } else { ";
+        },
+        
+        // elsefor
+        t_elsefor : function() {
+            // else attached to  for loop
+            $loopifs--;
+            return "'; } } } else { ";
         },
         
         // endif
@@ -113,7 +134,7 @@
         t_for : function($for_expr) {
             $loops++;
             $loopifs++;
-            var $m = $for_expr.match(/^\s*\$([a-z0-9_]+?)\s* as \s*\$([a-z0-9_]+?)\s*=>\s*\$([a-z0-9_]+)\s*$/i),
+            var $m = $for_expr.match($regExps['forExpr']),
                 $o="$"+$m[1], $k="$"+$m[2], $v="$"+$m[3];
             return "'; if ("+ $o +" && Object.keys("+ $o +").length) { for (var "+ $k +" in "+ $o +") { if (Tpl.hasOwn("+ $o +", "+ $k +")) { var "+$v+"="+$o+"["+$k+"]; ";
         },
@@ -188,6 +209,9 @@
                     case 'for':
                         return /*"\t" .*/ Tpl.t_for($m[2]);
                         break;
+                    case 'elsefor':
+                        return /*"\t" .*/ Tpl.t_elsefor($m[2]);
+                        break;
                     case 'endfor':
                         return /*"\t" .*/ Tpl.t_endfor($m[2]);
                         break;
@@ -198,7 +222,7 @@
         
         parseControlConstructs : function($s) {
             $s = $s.split("%>").join("\n");
-            $s =  $s.replace($controlConstructsRX, function($m, $m1, $m2){ return Tpl.doControlConstruct([$m, $m1, $m2]); });
+            $s =  $s.replace($regExps['controlConstructs'], function($m, $m1, $m2){ return Tpl.doControlConstruct([$m, $m1, $m2]); });
             $s = $s.split("\n").join("%>");
             return $s;
         },
@@ -208,29 +232,27 @@
             {
                 return Tpl.parseControlConstructs(
                         $s
-                        .replace(/[\r\t\n]/g, " ")
+                        .replace($regExps['quotes'], "\\'")
+                        .replace($regExps['specials'], " ")
                         .split("<%").join("\t")
                     )
-                    .replace($funcsRX, "Tpl.$1")
-                    .replace(/((^|%>)[^\t]*)'/g, "$1\r")
-                    .replace(/\t\s*(.*?)\s*%>/g, "' + ( $1 ) + '")
+                    .replace($regExps['functions'], "Tpl.$1")
+                    .replace($regExps['replacements'], "' + ( $1 ) + '")
                     .split("\t").join("'; ")
                     .split("%>").join(" $__p__ += '")
-                    .split("\r").join("'")
                     ;
             }
             else
             {
                 return Tpl.parseControlConstructs(
                         $s
-                        .replace(/[\r\t\n]/g, " ")
+                        .replace($regExps['quotes'], "\\'")
+                        .replace($regExps['specials'], " ")
                         .split("<%").join("\t")
                     )
-                    .replace(/((^|%>)[^\t]*)'/g, "$1\r")
-                    .replace(/\t\s*(.*?)\s*%>/g, "' + ( $1 ) + '")
+                    .replace($regExps['replacements'], "' + ( $1 ) + '")
                     .split("\t").join("'; ")
                     .split("%>").join(" $__p__ += '")
-                    .split("\r").join("'")
                     ;
             }
         },

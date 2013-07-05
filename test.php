@@ -1,15 +1,15 @@
 <?php
 include dirname(__FILE__).'/tpl.php';
 ob_start();?>
-    <% %for($users as $i=>$usergroup) %>
-        <% %for($usergroup as $j=>$user) %>
-        <div id="<% $user["id"] %>" class="<% %if (0 == ($j % 2)) %>even<% %else() %>odd<% %endif() %>">
-            <a href="/<% $user["name"] %>"><% $user["name"] %><% $user["text"] %> <% %n($i) + %n($j) %></a>: <strong><% $user["text"] %></strong>
-        </div>
-        <% %else() %>
-        <div class="none">No Users</div>
-        <% %endfor() %>
+<% %for($users as $i=>$usergroup) %>
+    <% %for($usergroup as $j=>$user) %>
+    <div id='<% $user["id"] %>' class="<% %if (0 == ($j % 2)) %>even<% %else() %>odd<% %endif() %>">
+        <a href="/<% $user["name"] %>"><% $user["name"] %><% $user["text"] %> <% %n($i) + %n($j) %></a>: <strong><% $user["text"] %></strong>
+    </div>
+    <% %elsefor() %>
+    <div class="none">No Users</div>
     <% %endfor() %>
+<% %endfor() %>
 <?php
 $tpl=ob_get_clean();
 $data=array(

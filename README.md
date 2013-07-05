@@ -57,6 +57,8 @@ syntax, yet wotk the same in Javascript.
 
 * Loops can have optional else() statement when no data, or data is empty (see test.php)
 
+* Notes: __Literal double quotes__ should better be used inside templates
+
 
 Right now the templates are only cached dynamically for the duration of the page request,
 however it is easy to add caching to the file system for a compiled template.

@@ -1,5 +1,5 @@
 <?php
-include dirname(__FILE__).'/tpl.php';
+include dirname(__FILE__).'/src/tpl.php';
 ob_start();?>
 <% %for($users as $i=>$usergroup) %>
     <% %for($usergroup as $j=>$user) %>
@@ -48,7 +48,7 @@ $data=array(
     
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-        <script src="tpl.js"></script>
+        <script src="src/tpl.js"></script>
 
         <script type="text/html" id="demo_tmpl">
         <?php echo $tpl; ?>

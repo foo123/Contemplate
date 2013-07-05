@@ -3,6 +3,8 @@ Contemplate
 
 Simple, light-weight and fast templating engine for both PHP, client-side Javascript and Node.js
 
+![Contemplate](/screenshots/contemplate.jpg)
+
 This is a proof-of-concept right now, yet fully working and extensible.
 The inspiration came from an old post by John Resig (http://ejohn.org/blog/javascript-micro-templating/)
 

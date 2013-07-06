@@ -18,7 +18,7 @@ After creating the repository i became aware of a web framework with similar nam
 
 There are many templating engines out there, which are very elegant, fast, multipurpose (eg. mustache, twig, handlebars, jade, doT, and so on..)
 
-Most of the sophistictated engines use a custom parser to build the engine. 
+Most of the sophisticated engines use a custom parser to build the engine. 
 
 This is highly versatile:
 
@@ -78,13 +78,13 @@ Use the test.php file to test the basic functionality
 ###Screenshots
 
 Sample Template markup
-[![Template markup](/screenshots/template_markup.png)](/raw/master/screenshots/template_markup.png)
+[![Template markup](/screenshots/template_markup.png)](https://github.com/foo123/Contemplate/raw/master/screenshots/template_markup.png)
 
 Data to be used for the template
-[![Template data](/screenshots/template_data.png)](/raw/master/screenshots/template_data.png)
+[![Template data](/screenshots/template_data.png)](https://github.com/foo123/Contemplate/raw/master/screenshots/template_data.png)
 
 PHP and Javascript rendering of the template on same page (see test.php)
-[![Template output](/screenshots/template_output.png)](/raw/master/screenshots/template_output.png)
+[![Template output](/screenshots/template_output.png)](https://github.com/foo123/Contemplate/raw/master/screenshots/template_output.png)
 
 
 *Contributor* Nikos M.  

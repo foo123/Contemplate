@@ -5,8 +5,8 @@ Simple, light-weight and fast templating engine for both PHP, client-side Javasc
 
 ![Contemplate](/screenshots/contemplate.jpg)
 
-This is a proof-of-concept right now, yet fully working and extensible.
-The inspiration came from an old post by John Resig (http://ejohn.org/blog/javascript-micro-templating/)
+This is a __proof-of-concept__ right now, yet fully working and extensible.
+The inspiration came from an old post by _John Resig_ (http://ejohn.org/blog/javascript-micro-templating/)
 
 ###Notes:
 After creating the repository i became aware of a web framework with similar name here: http://www.arlomedia.com/software/contemplate/assembled/introduction.html
@@ -22,7 +22,8 @@ Most of the sophisticated engines use a custom parser to build the engine.
 
 This is highly versatile:
 
-1. but can have performance issues sometimes 
+1. but can have performance issues sometimes
+
 2. and / or requires to learn a (completely) new syntax for building a template.
 
 These drawbacks can be compensated if one uses PHP itself as templating engine. PHP already IS a templating language and a very fast at it.
@@ -37,27 +38,27 @@ The drawbacks of this approach are:
 
 *Contemplate* seeks to find the best balance between these requirements.
 
-The solution is inspired by John Resig's post ([see above](http://ejohn.org/blog/javascript-micro-templating/)) and the fact that PHP and Javascript share a common language subset.
+The solution is inspired by _John Resig's post_ ([see above](http://ejohn.org/blog/javascript-micro-templating/)) and the fact that PHP and Javascript share a __common language subset__.
 
 ###Features:
 
 * *Contemplate* does a minimum parsing (and caching) in order to create dynamic templates (which can be used in both PHP and Javascript)
 and trying to contain the needed functionality inside the common language subset.
 
-* Most of the time this can be accomplished, the rest functionality is built with custom functions which mostly resemble the PHP
+* Most of the time this can be accomplished, the rest functionality is built with __custom functions__ which mostly resemble the PHP
 syntax, yet wotk the same in Javascript.
 
-* Simple and light-weight (just 2 classes, one for php and one for javascript, no other dependencies)
+* Simple and light-weight (__just 2 classes__, one for php and one for javascript, no other dependencies)
 
 * Fast, can cache templates both in PHP and Javascript dynamically (filesystem caching of compiled templates can be added easily)
 
-* Syntax very close to PHP (there was an effort to keep the engine syntax as close to PHP syntax as possible, to avoid learning another language syntax)
+* Syntax very close to PHP (there was an effort to keep the engine syntax as __close to PHP syntax__ as possible, to avoid learning another language syntax)
 
 * Easily extensible, configurable
 
-* Localization, Data escaping can be built-in and configurable easily
+* Localization, Data escaping can be built-in and configurable easily (localization functions are already built-in)
 
-* Loops can have optional else() statement when no data, or data is empty (see test.php)
+* Loops can have optional _elsefor()_ statement when no data, or data is empty (see test.php)
 
 * Notes: __Literal double quotes__ should better be used inside templates
 

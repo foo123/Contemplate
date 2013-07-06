@@ -6,6 +6,7 @@ class Tpl
     /*
     *  Simple light-weight php templating engine (part of javascript templating engine)
     *  @author: Nikos M.  http://nikos-web-development.netai.net/
+    *  https://github.com/foo123/Contemplate
     *
     *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
     *  http://ejohn.org/blog/javascript-micro-templating/
@@ -14,9 +15,11 @@ class Tpl
     
     private static $escaper=null;
     
+    private static $__locale__=array();
     private static $__templates__=array();
     private static $cache=array();
     private static $tpls=array();
+    private static $partials=array();
     
     protected static $loops=0;
     protected static $ifs=0;
@@ -24,10 +27,11 @@ class Tpl
     
     protected static $controlConstructs=array(
         'if', 'elseif', 'else', 'endif', 
-        'for', 'elsefor', 'endfor'
+        'for', 'elsefor', 'endfor',
+        'include'
     );
     
-    protected static $funcs=array( 'l', 's', 'n', 'f', 'htmlselect', 'htmltable' );
+    protected static $funcs=array( 'l', 's', 'n', 'f', 'concat'/*, 'htmlselect', 'htmltable'*/ );
     
     protected static $regExps=array(
         'functions'=>'',
@@ -57,7 +61,11 @@ class Tpl
     public static function load($id, $tpl, $force=false)
     {
         if (!isset(self::$tpls[$id]) || $force)
+        {
             self::$tpls[$id]=$tpl;
+            return true;
+        }
+        return false;
     }
     
     public static function tmpl($id, $data=null)
@@ -74,7 +82,7 @@ class Tpl
                     "extract(Tpl::o2a((array)\$__o__)); "
                     ."\$__p__ = ''; "
                     // Convert the template into pure PHP
-                    ."\$__p__ .= '" .  self::parse($tpl) .  "'; "
+                    ."\$__p__ .= '" .  self::parse($tpl)/*self::parse(self::$tpls["tpl1"])*/ .  "'; "
                     ."return \$__p__;"
                     ;
                 self::$cache[$id]=create_function('$__o__', $func);
@@ -88,6 +96,11 @@ class Tpl
                 return $fn;
         }
         return null;
+    }
+    
+    public static function setLocaleStrings($l)
+    {
+        self::$__locale__=$l;
     }
     
     //
@@ -157,27 +170,53 @@ class Tpl
         return "'; } ";
     }
     
+    // include
+    public static function t_include($id/*, $data*/)
+    {
+        //return self::log($id);
+        if (isset(self::$tpls[$id]))
+        {
+            // cache it
+            if (!isset(self::$partials[$id]))
+                self::$partials[$id]=" " . self::parse(self::$tpls[$id]) . "'; ";
+            return self::$partials[$id];
+        }
+        return '';
+    }
+    
     //
     // Basic template functions
     //
+    
+    // echo
     public static function e($e)
     {
         return ($e);
     }
     
+    // to String
     public static function s($e)
     {
         return strval($e);
     }
     
+    // to Integer
     public static function n($e)
     {
         return intval($e);
     }
     
+    // to Float
     public static function f($e)
     {
         return floatval($e);
+    }
+    
+    // Concatenate strings/vars
+    public static function concat()
+    {
+        $args=func_get_args();
+        return implode('', $args);
     }
     
     //
@@ -185,7 +224,8 @@ class Tpl
     //
     public static function locale($e)
     {
-        // bypass for now
+        if (isset(self::$__locale__[$e]))
+            return self::$__locale__[$e];
         return ($e);
     }
     
@@ -383,6 +423,9 @@ class Tpl
                 case 'endfor':
                     return /*"\t" .*/ self::t_endfor($m[2]);
                     break;
+                case 'include':
+                    return /*"\t" .*/ self::t_include($m[2]);
+                    break;
             }
         }
         return $m[0];
@@ -398,9 +441,9 @@ class Tpl
     
     protected static function parse($s) 
     {
-        $s = preg_replace(self::$regExps['quotes'], "\\'", $s);
         $s = preg_replace(self::$regExps['specials'], " ", $s);
         $s = implode("\t", explode("<%", $s));
+        $s = preg_replace(self::$regExps['quotes'], "\\'", $s);
         $s = self::parseControlConstructs($s);
         if (!empty(self::$funcs))  $s = preg_replace(self::$regExps['functions'], 'Tpl::${1}', $s);
         $s = preg_replace(self::$regExps['replacements'], "' . ( $1 ) . '", $s);

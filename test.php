@@ -1,6 +1,25 @@
 <?php
 include dirname(__FILE__).'/src/tpl.php';
 ob_start();?>
+    <% %for($usergroup as $j=>$user) %>
+    <div id='<% $user["id"] %>' class="<% %if (0 == ($j % 2)) %>even<% %else() %>odd<% %endif() %>">
+        <a href="/<% $user["name"] %>"><% $user["name"] %><% $user["text"] %> <% %n($i) + %n($j) %></a>: <strong><% $user["text"] %></strong>
+    </div>
+    <% %elsefor() %>
+    <div class="none">No Users</div>
+    <% %endfor() %>
+<?php
+$tpl1=ob_get_clean();
+ob_start();?>
+<% %for($users as $i=>$usergroup) %>
+    <% %include(tpl1) %>
+<% %endfor() %>
+<?php
+
+/**
+    Alternative template only with loops:
+    =====================================
+    
 <% %for($users as $i=>$usergroup) %>
     <% %for($usergroup as $j=>$user) %>
     <div id='<% $user["id"] %>' class="<% %if (0 == ($j % 2)) %>even<% %else() %>odd<% %endif() %>">
@@ -10,7 +29,9 @@ ob_start();?>
     <div class="none">No Users</div>
     <% %endfor() %>
 <% %endfor() %>
-<?php
+
+**/
+
 $tpl=ob_get_clean();
 $data=array(
     'users'=>array(
@@ -50,6 +71,9 @@ $data=array(
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <script src="src/tpl.js"></script>
 
+        <script type="text/html" id="tpl1">
+        <?php echo $tpl1; ?>
+        </script>
         <script type="text/html" id="demo_tmpl">
         <?php echo $tpl; ?>
         </script>
@@ -60,6 +84,7 @@ $data=array(
         PHP:
         <div id="results_php">
             <?php 
+                Tpl::load("tpl1", $tpl1);
                 Tpl::load("demo_tmpl", $tpl);
                 echo Tpl::tmpl("demo_tmpl", $data); 
                 //Tpl::test($tpl);
@@ -71,8 +96,8 @@ $data=array(
         JS:
         <div id="results_js">
         </div>
-        <pre id="pre"></pre>
         <script>
+            Tpl.load("tpl1", document.getElementById("tpl1").innerHTML);
             Tpl.load("demo_tmpl", document.getElementById("demo_tmpl").innerHTML);
             var results = document.getElementById("results_js");
             results.innerHTML = Tpl.tmpl("demo_tmpl", <?php echo json_encode($data); ?>);

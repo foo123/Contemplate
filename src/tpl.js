@@ -1,8 +1,11 @@
 (function(window, escaper) {
     
+    if (window.Tpl)  return;
+    
     /*
     *  Simple light-weight javascript templating engine (part of php templating engine)
     *  @author: Nikos M.  http://nikos-web-development.netai.net/
+    *  https://github.com/foo123/Contemplate
     *
     *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
     *  http://ejohn.org/blog/javascript-micro-templating/
@@ -10,19 +13,21 @@
     */
     
     // private vars
-    var Tpl = window.Tpl || {},
+    var Tpl, self,
         $escaper=null,
     
-        $cache={}, $tpls={},
+        $__locale__={},
+        $cache={}, $tpls={}, $partials={},
     
         $loops=0, $ifs=0, $loopifs=0,
     
         $controlConstructs=[
             'if', 'elseif', 'else', 'endif', 
-            'for', 'elsefor', 'endfor'
+            'for', 'elsefor', 'endfor',
+            'include'
         ],
         
-        $funcs=[ 'l', 's', 'n', 'f'/*, 'htmlselect', 'htmltable'*/ ],
+        $funcs=[ 'l', 's', 'n', 'f', 'concat'/*, 'htmlselect', 'htmltable'*/ ],
         $regExps={
             'functions':null,
             'controlConstructs':null,
@@ -37,7 +42,7 @@
     *  Template Engine
     *
     */
-    var Tpl={
+    Tpl=self={
 
         init : function(escaper) {
             if (escaper)
@@ -58,7 +63,11 @@
         //
         load : function($id, $tpl, $force) {
             if (!$tpls[$id] || $force)
+            {
                 $tpls[$id]=$tpl;
+                return true;
+            }
+            return false;
         },
         
         tmpl : function($id, $data) {
@@ -75,7 +84,7 @@
                         // Introduce the data as local variables using with(){}
                        // Convert the template into pure JavaScript
                         "var $__p__ = ''; " +
-                        "with($__o__) { $__p__ += '" + Tpl.parse($tpl) + "'; } " +
+                        "with($__o__) { $__p__ += '" + self.parse($tpl) + "'; } " +
                         "return $__p__;"
                         ;
                     //Tpl.log($func);
@@ -88,6 +97,10 @@
                 return $data ? $fn( $data ) : $fn;
             }
             return null;
+        },
+        
+        setLocaleStrings : function($l) {
+            $__locale__ = $l;
         },
         
         //
@@ -150,35 +163,59 @@
             return "'; } ";
         },
         
+        // include
+        t_include : function($id/*, $data*/) {
+            //return Tpl.log($id);
+            if ($tpls[$id])
+            {
+                // cache it
+                if (!$partials[$id])
+                    $partials[$id]=" " + self.parse($tpls[$id]) + "'; ";
+                return $partials[$id];
+            }
+            return '';
+        },
+        
         //
         // Basic template functions
         //
+        
+        // echo
         e : function($e) {
             return ($e);
         },
         
+        // to String
         s : function($e) {
             return (String)($e);
         },
         
+        // to Integer
         n : function($e) {
             return parseInt($e, 10);
         },
         
+        // to Float
         f : function($e) {
             return parseFloat($e, 10);
+        },
+        
+        // Concatenate strings/vars
+        concat : function() {
+            return Array.prototype.slice.call(arguments).join('');
         },
         
         //
         //  Localization functions
         //
         locale : function($e) {
-            // bypass for now
+            if ($__locale__[$e])
+                return $__locale__[$e];
             return ($e);
         },
         
         l : function($e) {
-            return Tpl.locale($e);
+            return self.locale($e);
         },
         
         //
@@ -195,25 +232,28 @@
                 switch($m[1])
                 {
                     case 'if':
-                        return /*"\t" .*/ Tpl.t_if($m[2]);
+                        return /*"\t" .*/ self.t_if($m[2]);
                         break;
                     case 'elseif':
-                        return /*"\t" .*/ Tpl.t_elseif($m[2]);
+                        return /*"\t" .*/ self.t_elseif($m[2]);
                         break;
                     case 'else':
-                        return /*"\t" .*/ Tpl.t_else($m[2]);
+                        return /*"\t" .*/ self.t_else($m[2]);
                         break;
                     case 'endif':
-                        return /*"\t" .*/ Tpl.t_endif($m[2]);
+                        return /*"\t" .*/ self.t_endif($m[2]);
                         break;
                     case 'for':
-                        return /*"\t" .*/ Tpl.t_for($m[2]);
+                        return /*"\t" .*/ self.t_for($m[2]);
                         break;
                     case 'elsefor':
-                        return /*"\t" .*/ Tpl.t_elsefor($m[2]);
+                        return /*"\t" .*/ self.t_elsefor($m[2]);
                         break;
                     case 'endfor':
-                        return /*"\t" .*/ Tpl.t_endfor($m[2]);
+                        return /*"\t" .*/ self.t_endfor($m[2]);
+                        break;
+                    case 'include':
+                        return /*"\t" .*/ self.t_include($m[2]);
                         break;
                 }
             }
@@ -222,7 +262,7 @@
         
         parseControlConstructs : function($s) {
             $s = $s.split("%>").join("\n");
-            $s =  $s.replace($regExps['controlConstructs'], function($m, $m1, $m2){ return Tpl.doControlConstruct([$m, $m1, $m2]); });
+            $s =  $s.replace($regExps['controlConstructs'], function($m, $m1, $m2){ return self.doControlConstruct([$m, $m1, $m2]); });
             $s = $s.split("\n").join("%>");
             return $s;
         },
@@ -230,11 +270,11 @@
         parse : function($s) {
             if ($funcs.length)
             {
-                return Tpl.parseControlConstructs(
+                return self.parseControlConstructs(
                         $s
-                        .replace($regExps['quotes'], "\\'")
                         .replace($regExps['specials'], " ")
                         .split("<%").join("\t")
+                        .replace($regExps['quotes'], "\\'")
                     )
                     .replace($regExps['functions'], "Tpl.$1")
                     .replace($regExps['replacements'], "' + ( $1 ) + '")
@@ -244,11 +284,11 @@
             }
             else
             {
-                return Tpl.parseControlConstructs(
+                return self.parseControlConstructs(
                         $s
-                        .replace($regExps['quotes'], "\\'")
                         .replace($regExps['specials'], " ")
                         .split("<%").join("\t")
+                        .replace($regExps['quotes'], "\\'")
                     )
                     .replace($regExps['replacements'], "' + ( $1 ) + '")
                     .split("\t").join("'; ")
@@ -271,10 +311,10 @@
         }
     };
     
-    // init the engine
-    Tpl.init(/*escaper*/);
-    
     // export it
-    window.Tpl=Tpl;
+    window.Tpl=self;
+    
+    // init the engine
+    window.Tpl.init(/*escaper*/);
     
 })(window);

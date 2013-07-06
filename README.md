@@ -78,13 +78,13 @@ Use the test.php file to test the basic functionality
 ###Screenshots
 
 Sample Template markup
-![Template markup](/screenshots/template_markup.png)
+[![Template markup](/screenshots/template_markup.png)](/raw/master/screenshots/template_markup.png)
 
 Data to be used for the template
-![Template data](/screenshots/template_data.png)
+[![Template data](/screenshots/template_data.png)](/raw/master/screenshots/template_data.png)
 
 PHP and Javascript rendering of the template on same page (see test.php)
-![Template output](/screenshots/template_output.png)
+[![Template output](/screenshots/template_output.png)](/raw/master/screenshots/template_output.png)
 
 
 *Contributor* Nikos M.  

@@ -1,7 +1,7 @@
 Contemplate
 ===========
 
-Simple, light-weight and fast templating engine for both PHP, client-side Javascript and Node.js
+__Simple, light-weight and fast templating engine for both PHP, client-side Javascript and Node.js__
 
 ![Contemplate](/screenshots/contemplate.jpg)
 
@@ -14,9 +14,9 @@ After creating the repository i became aware of a web framework with similar nam
 *This repository and project are completely unrelated to that framework.*
 
 
-##Rationale
+###Rationale
 
-There are many templating engines out there, which are very elegant, fast, multipurpose (eg. mustache, twig, handlebars, jade, doT, and so on..)
+There are many templating engines out there, which are very elegant, fast, multipurpose (eg. _mustache_  _twig_  _handlebars_  _jade_  _doT_ and so on..)
 
 Most of the sophisticated engines use a custom parser to build the engine. 
 
@@ -26,7 +26,7 @@ This is highly versatile:
 
 2. and / or requires to learn a (completely) new syntax for building a template.
 
-These drawbacks can be compensated if one uses PHP itself as templating engine. PHP already IS a templating language and a very fast at it.
+These drawbacks can be compensated if one uses PHP itself as templating engine. PHP already __IS__ a templating language and a very fast at it.
 
 This can create very simple, intuitive and fast templates.
 
@@ -48,15 +48,15 @@ and trying to contain the needed functionality inside the common language subset
 * Most of the time this can be accomplished, the rest functionality is built with __custom functions__ which mostly resemble the PHP
 syntax, yet wotk the same in Javascript.
 
-* Simple and light-weight (__just 2 classes__, one for php and one for javascript, no other dependencies)
+* Simple and light-weight ( __just 2 classes__ , one for php and one for javascript, no other dependencies)
 
-* Fast, can cache templates both in PHP and Javascript dynamically (filesystem caching of compiled templates can be added easily)
+* __Fast__ , can cache templates both in PHP and Javascript dynamically (filesystem caching of compiled templates can be added easily)
 
 * Syntax very close to PHP (there was an effort to keep the engine syntax as __close to PHP syntax__ as possible, to avoid learning another language syntax)
 
-* Easily extensible, configurable
+* Easily __extensible__ , configurable
 
-* Localization, Data escaping can be built-in and configurable easily (localization functions are already built-in)
+* __Localization__ , __Data escaping__ can be built-in and configurable easily (localization functions are already built-in)
 
 * Loops can have optional _elsefor()_ statement when no data, or data is empty (see test.php)
 
@@ -73,7 +73,7 @@ however it is easy to add caching to the file system for a compiled template.
 
 ###Tests
 
-Use the test.php file to test the basic functionality
+Use the _test.php_ file to test the basic functionality
 
 
 ###Screenshots

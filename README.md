@@ -50,7 +50,7 @@ syntax, yet wotk the same in Javascript.
 
 * Simple and light-weight ( __just 2 classes__ , one for php and one for javascript, no other dependencies)
 
-* __Fast__ , can cache templates both in PHP and Javascript dynamically (filesystem caching of compiled templates can be added easily)
+* __Fast__ , can cache templates both in PHP and Javascript dynamically (filesystem caching has 2 modes, NOUPDATE and AUTOUPDATE which re-creates the cached template if original template has changed, useful for debugging)
 
 * Syntax very close to PHP (there was an effort to keep the engine syntax as __close to PHP syntax__ as possible, to avoid learning another language syntax)
 
@@ -63,9 +63,6 @@ syntax, yet wotk the same in Javascript.
 * Notes: __Literal double quotes__ should better be used inside templates
 
 
-Right now the templates are only cached dynamically for the duration of the page request,
-however it is easy to add caching to the file system for a compiled template.
-
 ###Dependencies
 
 * PHP version supported is 5.2+ and all major browsers.
@@ -74,6 +71,15 @@ however it is easy to add caching to the file system for a compiled template.
 ###Tests
 
 Use the _test.php_ file to test the basic functionality
+
+
+###ChangeLog
+
+__0.2__
+* add filesystem caching, refactor, optimize
+
+__0.1__
+* initial release
 
 
 ###Screenshots

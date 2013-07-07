@@ -46,11 +46,11 @@ The solution is inspired by _John Resig's post_ ([see above](http://ejohn.org/bl
 and trying to contain the needed functionality inside the common language subset.
 
 * Most of the time this can be accomplished, the rest functionality is built with __custom functions__ which mostly resemble the PHP
-syntax, yet wotk the same in Javascript.
+syntax, yet work the same in Javascript.
 
 * Simple and light-weight ( __just 2 classes__ , one for php and one for javascript, no other dependencies)
 
-* __Fast__ , can cache templates both in PHP and Javascript dynamically (filesystem caching has 2 modes, NOUPDATE and AUTOUPDATE which re-creates the cached template if original template has changed, useful for debugging)
+* __Fast__ , can cache templates both in PHP and Javascript dynamically (filesystem caching has 3 modes, __NONE__ which does not use file caching, __NOUPDATE__ which caches the templates only once and __AUTOUPDATE__ which re-creates the cached template if original template has changed, useful for debugging)
 
 * Syntax very close to PHP (there was an effort to keep the engine syntax as __close to PHP syntax__ as possible, to avoid learning another language syntax)
 
@@ -59,6 +59,8 @@ syntax, yet wotk the same in Javascript.
 * __Localization__ , __Data escaping__ can be built-in and configurable easily (localization functions are already built-in)
 
 * Loops can have optional _elsefor()_ statement when no data, or data is empty (see test.php)
+
+* Templates can *include* other templates (similar to PHP __include__ directive), right now these includes wil be compiled into the the template that called them
 
 * Notes: __Literal double quotes__ should better be used inside templates
 

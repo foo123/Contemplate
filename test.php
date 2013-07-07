@@ -1,38 +1,31 @@
 <?php
-include dirname(__FILE__).'/src/tpl.php';
-ob_start();?>
-    <% %for($usergroup as $j=>$user) %>
-    <div id='<% $user["id"] %>' class="<% %if (0 == ($j % 2)) %>even<% %else() %>odd<% %endif() %>">
-        <a href="/<% $user["name"] %>"><% $user["name"] %><% $user["text"] %> <% %n($i) + %n($j) %></a>: <strong><% $user["text"] %></strong>
-    </div>
-    <% %elsefor() %>
-    <div class="none">No Users</div>
-    <% %endfor() %>
-<?php
-$tpl1=ob_get_clean();
-ob_start();?>
-<% %for($users as $i=>$usergroup) %>
-    <% %include(tpl1) %>
-<% %endfor() %>
-<?php
 
-/**
-    Alternative template only with loops:
-    =====================================
-    
-<% %for($users as $i=>$usergroup) %>
-    <% %for($usergroup as $j=>$user) %>
-    <div id='<% $user["id"] %>' class="<% %if (0 == ($j % 2)) %>even<% %else() %>odd<% %endif() %>">
-        <a href="/<% $user["name"] %>"><% $user["name"] %><% $user["text"] %> <% %n($i) + %n($j) %></a>: <strong><% $user["text"] %></strong>
-    </div>
-    <% %elsefor() %>
-    <div class="none">No Users</div>
-    <% %endfor() %>
-<% %endfor() %>
+/*
+*  Simple light-weight templating engine
+*  @author: Nikos M.  http://nikos-web-development.netai.net/
+*
+*  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
+*  http://ejohn.org/blog/javascript-micro-templating/
+*
+*/
 
-**/
+define('ABSPATH', dirname(__FILE__));
 
-$tpl=ob_get_clean();
+// include the Contemplate Class
+include ABSPATH.'/src/Contemplate.php';
+
+// set the cache directory (make sure to exist)
+Contemplate::setCacheDir(ABSPATH.'/_tplcache');
+// dynamically update the cached template if original template has changed
+Contemplate::setCacheMode(Contemplate::CACHE_TO_DISK_AUTOUPDATE);
+// add the templates paths
+Contemplate::add(array(
+    'main'=>ABSPATH.'/_tpls/main.tpl.html',
+    'demo'=>ABSPATH.'/_tpls/demo.tpl.html',
+    'sub'=>ABSPATH.'/_tpls/sub.tpl.html',
+));
+
+// the data to be used by the templates
 $data=array(
     'users'=>array(
         array( 
@@ -52,57 +45,16 @@ $data=array(
         ),
     )
 );
-?>
-<!DOCTYPE html>
-<html>
 
-    <!-- PROOf Of CONCEPT
-    /*
-    *  Simple light-weight javascript templating engine (part of php templating engine)
-    *  @author: Nikos M.  http://nikos-web-development.netai.net/
-    *
-    *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
-    *  http://ejohn.org/blog/javascript-micro-templating/
-    *
-    */
-    -->
-    
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-        <script src="src/tpl.js"></script>
+$main_template_data=array(
+    'templates'=>array(
+        'demo'=>Contemplate::getTemplateContents('demo'),
+        'sub'=>Contemplate::getTemplateContents('sub'),
+    ),
+    'data_js'=>json_encode($data),
+    'render_php'=>Contemplate::tpl('demo', $data)
+);
 
-        <script type="text/html" id="tpl1">
-        <?php echo $tpl1; ?>
-        </script>
-        <script type="text/html" id="demo_tmpl">
-        <?php echo $tpl; ?>
-        </script>
-    </head>
+echo Contemplate::tpl('main', $main_template_data);
 
-    <body>
-        
-        PHP:
-        <div id="results_php">
-            <?php 
-                Tpl::load("tpl1", $tpl1);
-                Tpl::load("demo_tmpl", $tpl);
-                echo Tpl::tmpl("demo_tmpl", $data); 
-                //Tpl::test($tpl);
-            ?>
-        </div>
-        
-        <hr />
-        
-        JS:
-        <div id="results_js">
-        </div>
-        <script>
-            Tpl.load("tpl1", document.getElementById("tpl1").innerHTML);
-            Tpl.load("demo_tmpl", document.getElementById("demo_tmpl").innerHTML);
-            var results = document.getElementById("results_js");
-            results.innerHTML = Tpl.tmpl("demo_tmpl", <?php echo json_encode($data); ?>);
-        </script>
-    
-    </body>
-
-</html>
+exit;

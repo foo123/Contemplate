@@ -1,7 +1,7 @@
 <?php
-if (!class_exists('Tpl'))
+if (!class_exists('Contemplate'))
 {
-class Tpl
+class Contemplate
 {
     /*
     *  Simple light-weight php templating engine (part of javascript templating engine)
@@ -13,13 +13,18 @@ class Tpl
     *
     */
     
+    const CACHE_TO_DISK_NONE = 0;
+    const CACHE_TO_DISK_AUTOUPDATE = 2;
+    const CACHE_TO_DISK_NOUPDATE = 4;
+    
     private static $escaper=null;
     
-    private static $__locale__=array();
-    private static $__templates__=array();
-    private static $cache=array();
-    private static $tpls=array();
-    private static $partials=array();
+    private static $__cacheDir='./';
+    private static $__cacheMode=0;
+    private static $__cache=array();
+    private static $__templates=array();
+    private static $__partials=array();
+    private static $__locale=array();
     
     protected static $loops=0;
     protected static $ifs=0;
@@ -30,9 +35,7 @@ class Tpl
         'for', 'elsefor', 'endfor',
         'include'
     );
-    
     protected static $funcs=array( 'l', 's', 'n', 'f', 'concat'/*, 'htmlselect', 'htmltable'*/ );
-    
     protected static $regExps=array(
         'functions'=>'',
         'controlConstructs'=>'',
@@ -42,6 +45,40 @@ class Tpl
         'replacements'=>''
     );
     
+    // instance dynamic render function (when no caching is used)
+    private $renderFunction=null;
+    private $id=null;
+    
+    
+    //
+    //  Instance template methods
+    //
+    public function __construct($id=null, $renderFunc=null)
+    {
+        if ($id)
+        {
+            $this->id=$id;
+            $this->renderFunction=$renderFunc;
+        }
+    }
+    
+    public function setId($id=null)
+    {
+        if ($id) $this->id=$id;
+        return $this;
+    }
+	
+	public function render($data) 
+    {
+        /* dynamic function */
+        if ($this->renderFunction)
+        {
+            $renderFunction=$this->renderFunction;
+            return $renderFunction( $data );
+        }
+        return '';
+	}
+    
     public static function init($escaper=null)
     {
         self::$escaper=$escaper;
@@ -49,7 +86,7 @@ class Tpl
         self::$regExps['controlConstructs']='/\t\s*\%(' . implode('|', self::$controlConstructs) . ')\b\s*\((.*)\)/';
         self::$regExps['forExpr']='/^\s*\$([a-z0-9_]+?)\s* as \s*\$([a-z0-9_]+?)\s*=>\s*\$([a-z0-9_]+)\s*$/i';
         self::$regExps['quotes']="/'/";
-        self::$regExps['specials']="/[\r\t\n]/";
+        self::$regExps['specials']="/[\r\t]/";//"/[\r\t\n]/";
         self::$regExps['replacements']="/\t\s*(.*?)\s*%>/";
         if (!empty(self::$funcs))  
             self::$regExps['functions']='/\%(' . implode('|', self::$funcs) . ')\b/';
@@ -58,49 +95,41 @@ class Tpl
     //
     // Main methods
     //
-    public static function load($id, $tpl, $force=false)
+    public static function setLocaleStrings($l)
     {
-        if (!isset(self::$tpls[$id]) || $force)
-        {
-            self::$tpls[$id]=$tpl;
-            return true;
-        }
-        return false;
+        self::$__locale=self::merge(self::$__locale, $l);
     }
     
-    public static function tmpl($id, $data=null)
+    public static function setCacheDir($dir)
+    {
+        self::$__cacheDir=rtrim($dir,'/').'/';
+    }
+    
+    public static function setCacheMode($mode)
+    {
+        self::$__cacheMode=$mode;
+    }
+    
+    // add templates manually
+    public static function add($tpls=array())
+    {
+        self::$__templates=self::merge(self::$__templates, $tpls);
+    }
+    
+    public static function tpl($id, $data=null)
     {
         // Figure out if we're getting a template, or if we need to
         // load the template - and be sure to cache the result.
-        if (isset(self::$tpls[$id]))
-        {
-            $tpl=self::$tpls[$id];
-            if (!isset(self::$cache[$id]))
-            {
-                $func=
-                    // Introduce the data as local variables using extract()
-                    "extract(Tpl::o2a((array)\$__o__)); "
-                    ."\$__p__ = ''; "
-                    // Convert the template into pure PHP
-                    ."\$__p__ .= '" .  self::parse($tpl)/*self::parse(self::$tpls["tpl1"])*/ .  "'; "
-                    ."return \$__p__;"
-                    ;
-                self::$cache[$id]=create_function('$__o__', $func);
-            }
-            $fn=self::$cache[$id];
-            //return self::log($func);
-            // Provide some basic currying to the user
-            if ($data)
-                return $fn( $data );
-            else
-                return $fn;
-        }
-        return null;
-    }
-    
-    public static function setLocaleStrings($l)
-    {
-        self::$__locale__=$l;
+        if (!isset(self::$__cache[$id]))
+            self::$__cache[$id]=self::getCachedTemplate($id);
+        
+        $tpl=self::$__cache[$id];
+        
+        // Provide some basic currying to the user
+        if ($data)
+            return $tpl->render( $data );
+        else
+            return $tpl;
     }
     
     //
@@ -123,12 +152,6 @@ class Tpl
     // else
     public static function t_else() 
     {
-        /*if (self::$loopifs>0 && 0==self::$ifs)
-        {
-            self::$loopifs--;
-            // else attached to  for loop
-            return "'; } } else { ";
-        }*/
         // regular else
         return "'; } else { ";
     }
@@ -173,15 +196,10 @@ class Tpl
     // include
     public static function t_include($id/*, $data*/)
     {
-        //return self::log($id);
-        if (isset(self::$tpls[$id]))
-        {
-            // cache it
-            if (!isset(self::$partials[$id]))
-                self::$partials[$id]=" " . self::parse(self::$tpls[$id]) . "'; ";
-            return self::$partials[$id];
-        }
-        return '';
+        // cache it
+        if (!isset(self::$__partials[$id]))
+            self::$__partials[$id]=" " . self::parse(self::getTemplateContents($id)) . "'; ";
+        return self::$__partials[$id];
     }
     
     //
@@ -224,9 +242,9 @@ class Tpl
     //
     public static function locale($e)
     {
-        if (isset(self::$__locale__[$e]))
-            return self::$__locale__[$e];
-        return ($e);
+        if (isset(self::$__locale[$e]))
+            return self::$__locale[$e];
+        return $e;
     }
     
     public static function l($e)
@@ -433,23 +451,147 @@ class Tpl
     
     protected static function parseControlConstructs($s) 
     {
-        $s = implode("\n", explode("%>", $s));
-        $s =  preg_replace_callback(self::$regExps['controlConstructs'], array(__CLASS__, 'doControlConstruct'), $s);
-        $s = implode("%>", explode("\n", $s));
+        $s = str_replace("%>", "\n", $s); /*implode("\n", explode("%>", $s));*/
+        $s = preg_replace_callback(self::$regExps['controlConstructs'], array(__CLASS__, 'doControlConstruct'), $s);
+        $s = str_replace("\n", "%>", $s); /*implode("%>", explode("\n", $s));*/
         return $s;
     }
     
     protected static function parse($s) 
     {
         $s = preg_replace(self::$regExps['specials'], " ", $s);
-        $s = implode("\t", explode("<%", $s));
+        $s = str_replace("<%", "\t", $s); /*implode("\t", explode("<%", $s));*/
         $s = preg_replace(self::$regExps['quotes'], "\\'", $s);
+        // preserve lines
+        $s = str_replace("\n", "' . PHP_EOL . '", $s); /*implode("' . PHP_EOL . '", explode("\n", $s));*/
         $s = self::parseControlConstructs($s);
-        if (!empty(self::$funcs))  $s = preg_replace(self::$regExps['functions'], 'Tpl::${1}', $s);
+        if (!empty(self::$funcs))  $s = preg_replace(self::$regExps['functions'], 'Contemplate::${1}', $s);
         $s = preg_replace(self::$regExps['replacements'], "' . ( $1 ) . '", $s);
-        $s = implode("'; ", explode("\t", $s));
-        $s = implode(" \$__p__ .= '", explode("%>", $s));
+        $s = str_replace("\t", "'; ", $s); /*implode("'; ", explode("\t", $s));*/
+        $s = str_replace("%>", " \$__p__ .= '", $s); /*implode(" \$__p__ .= '", explode("%>", $s));*/
+        
         return $s;
+    }
+    
+    public static function getTemplateContents($id)
+    {
+        if (isset(self::$__templates[$id]) && is_file(self::$__templates[$id]))
+        {
+            return file_get_contents(self::$__templates[$id]);
+        }
+        return '';
+    }
+    
+    protected static function getCachedTemplateName($id)
+    {
+        return self::$__cacheDir . str_replace(array('-', ' '), '_', $id) . '.tpl.php';
+    }
+    
+    protected static function getCachedTemplateClass($id)
+    {
+        return 'Contemplate_' . str_replace(array('-', ' '), '_', $id) . '_Cached';
+    }
+    
+    protected static function createTemplateRenderFunction($id)
+    {
+        $func=
+            // Introduce the data as local variables using extract()
+            "extract(Contemplate::o2a((array)\$__o__)); "
+            ."\$__p__ = ''; "
+            // Convert the template into pure PHP
+            ."\$__p__ .= '" .  self::parse(self::getTemplateContents($id)) .  "'; "
+            ."return \$__p__;"
+            ;
+        //echo self::log($func);
+        $fn = create_function('$__o__', $func);
+        return $fn;
+    }
+    
+    protected static function createCachedTemplate($id, $filename, $classname)
+    {
+        $class=
+            // Introduce the data as local variables using extract()
+            '<?php ' .PHP_EOL
+            ."/* Contemplate cached template '$id' */ " . PHP_EOL
+            ."if (!class_exists('" . $classname . "')) { "
+            ."final class " . $classname . " extends Contemplate { "
+            ."public function __construct(\$id=null) { \$this->id=\$id; } "
+            ."public function render(\$__o__) { "
+            ."extract(Contemplate::o2a((array)\$__o__)); "
+            ."\$__p__ = ''; "
+            // Convert the template into pure PHP
+            ."\$__p__ .= '" .  self::parse(self::getTemplateContents($id)) .  "'; "
+            ."return \$__p__;"
+            ."} } }"
+            ;
+        return self::setCachedTemplate($filename, $class);
+    }
+    
+    protected static function getCachedTemplate($id)
+    {
+        switch(self::$__cacheMode)
+        {
+            case self::CACHE_TO_DISK_NOUPDATE:
+                $cachedTplFile=self::getCachedTemplateName($id);
+                $cachedTplClass=self::getCachedTemplateClass($id);
+                if (!is_file($cachedTplFile))
+                {
+                    self::createCachedTemplate($id, $cachedTplFile, $cachedTplClass);
+                }
+                if (is_file($cachedTplFile))
+                {
+                    include($cachedTplFile);
+                    $tpl = new $cachedTplClass();
+                    $tpl->setId($id);
+                    return $tpl;
+                }
+                return null;
+                break;
+            
+            case self::CACHE_TO_DISK_AUTOUPDATE:
+                $cachedTplFile=self::getCachedTemplateName($id);
+                $cachedTplClass=self::getCachedTemplateClass($id);
+                if (!is_file($cachedTplFile) || (filemtime($cachedTplFile) <= filemtime(self::$__templates[$id])))
+                {
+                    // if tpl not exist or is out-of-sync re-create it
+                    self::createCachedTemplate($id, $cachedTplFile, $cachedTplClass);
+                }
+                if (is_file($cachedTplFile))
+                {
+                    include($cachedTplFile);
+                    $tpl = new $cachedTplClass();
+                    $tpl->setId($id);
+                    return $tpl;
+                }
+                return null;
+                break;
+            
+            case self::CACHE_TO_DISK_NONE:
+            default:
+                // dynamic in-memory caching during page-request
+                return new Contemplate($id, self::createTemplateRenderFunction($id));
+                break;
+        }
+        return null;
+    }
+    
+    protected static function setCachedTemplate($filename, $tplContents)
+    {
+        return file_put_contents($filename, $tplContents);
+    }
+    
+    public static function o2a($d)
+    {
+        if (is_object($d))  $d=array_merge(array(), (array)$d);
+        if (is_array($d))
+        {
+            foreach ($d as $k=>$v)
+            {
+                if (is_object($v) || is_array($v))
+                    $d[$k]=self::o2a($v);
+            }
+        }
+        return $d;
     }
     
     /*public static function tpl($template, array $args=array())
@@ -474,7 +616,7 @@ class Tpl
         return ob_get_clean();
     }*/
     
-    public static function merge()
+    protected static function merge()
     {
         if (func_num_args() < 1) return;
         
@@ -517,41 +659,14 @@ class Tpl
         return $merged;
     }
     
-    // add templates manually
-    public static function add($tpls=array())
-    {
-        self::$__templates__=self::merge(self::$__templates__, $tpls);
-    }
-    
-    public static function o2a($d)
-    {
-        if (is_object($d))  $d=array_merge(array(), (array)$d);
-        if (is_array($d))
-        {
-            foreach ($d as $k=>$v)
-            {
-                if (is_object($v) || is_array($v))
-                    $d[$k]=self::o2a($v);
-            }
-        }
-        return $d;
-    }
-    
     public static function log($m)
     {
         return '<pre>' . print_r($m, true) . '</pre>';
     }
-    
-    /*public static function test($s) 
-    {
-        /*preg_match('/^([a-z0-9_]+?)\s* as \s*([a-z0-9_]+?)\s*=>\s*([a-z0-9_]+)$/i', $s, $m);
-        echo self::log(array($s, $m));* /
-        echo self::log(self::parse ($s));
-    }*/
 }
 
 // init the engine
 //require dirname(__FILE__) .'/Escaper.php';
-Tpl::init(/*new Escaper('utf-8')*/);
+Contemplate::init(/*new Escaper('utf-8')*/);
 
 }

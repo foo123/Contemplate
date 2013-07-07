@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+
+
+    <!-- PROOf Of CONCEPT
+    /*
+    *  Simple light-weight javascript templating engine (part of php templating engine)
+    *  @author: Nikos M.  http://nikos-web-development.netai.net/
+    *
+    *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
+    *  http://ejohn.org/blog/javascript-micro-templating/
+    *
+    */
+    -->
+    
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <script src="./src/Contemplate.js"></script>
+        <script type="text/html" id="demo_tpl">
+         <% $templates["demo"] %>
+        </script>
+        <script type="text/html" id="sub_tpl">
+         <% $templates["sub"] %>
+        </script>
+    </head>
+
+    <body>
+        
+        PHP:
+        <div id="results_php"><% $render_php %></div>
+        
+        <hr />
+        
+        JS:
+        <div id="results_js"></div>
+        <script>
+            /* add the templates (from the inline script tags) */
+            Contemplate.add({
+                "demo" : "demo_tpl",
+                "sub" : "sub_tpl"
+            });
+            var results = document.getElementById("results_js");
+            results.innerHTML = Contemplate.tpl('demo', <% $data_js %>);
+        </script>
+    
+    </body>
+
+</html>

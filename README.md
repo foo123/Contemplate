@@ -66,7 +66,7 @@ syntax, yet wotk the same in Javascript.
 ###Dependencies
 
 * PHP version supported is 5.2+ and all major browsers.
-* Only 2 classes are used (Conetmplate.php, Contemplate.js), no other dependencies
+* Only 2 classes are used (Contemplate.php, Contemplate.js), no other dependencies
 
 ###Tests
 

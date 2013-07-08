@@ -5,7 +5,7 @@ __Simple, light-weight and fast templating engine for both PHP, client-side Java
 
 ![Contemplate](/screenshots/contemplate.jpg)
 
-This is a __proof-of-concept__ right now, yet fully working and extensible.
+This started as a a __proof-of-concept__ , yet is fully working and extensible.
 The inspiration came from an old post by _John Resig_ (http://ejohn.org/blog/javascript-micro-templating/)
 
 ###Notes:
@@ -50,7 +50,7 @@ syntax, yet work the same in Javascript.
 
 * Simple and light-weight ( __just 2 classes__ , one for php and one for javascript, no other dependencies)
 
-* __Fast__ , can cache templates both in PHP and Javascript dynamically (filesystem caching has 3 modes, __NONE__ which does not use file caching, __NOUPDATE__ which caches the templates only once and __AUTOUPDATE__ which re-creates the cached template if original template has changed, useful for debugging)
+* __Fast__ , can cache templates both in PHP and Javascript dynamically (filesystem caching has 3 modes, __NONE__ which uses only in-memory caching, __NOUPDATE__ which caches the templates only once and __AUTOUPDATE__ which re-creates the cached template if original template has changed, useful for debugging)
 
 * Syntax very close to PHP (there was an effort to keep the engine syntax as __close to PHP syntax__ as possible, to avoid learning another language syntax)
 

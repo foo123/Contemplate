@@ -34,6 +34,8 @@
         JS:
         <div id="results_js"></div>
         <script>
+            /* set the template separators */
+            Contemplate.setTemplateSeparators("<% $sepleft %>", "<% $sepright %>");
             /* add the templates (from the inline script tags) */
             Contemplate.add({
                 "demo" : "demo_tpl",

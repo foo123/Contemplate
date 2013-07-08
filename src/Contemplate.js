@@ -20,13 +20,14 @@
         
         $__cache={}, $__templates={}, $__partials={},
         $__locale={},
-    
+        $__leftTplSep="<%", $__rightTplSep="%>",
+        
         $loops=0, $ifs=0, $loopifs=0,
     
         $controlConstructs=[
             'if', 'elseif', 'else', 'endif', 
             'for', 'elsefor', 'endfor',
-            'include'
+            'embed', 'include'
         ],
         $funcs=[ 'l', 's', 'n', 'f', 'concat'/*, 'htmlselect', 'htmltable'*/ ],
         $regExps={
@@ -86,7 +87,7 @@
             $regExps['forExpr']=new RegExp('^\\s*\\$([a-z0-9_]+?)\\s* as \\s*\\$([a-z0-9_]+?)\\s*=>\\s*\\$([a-z0-9_]+)\\s*$', 'i');
             $regExps['quotes']=new RegExp('\'', 'g');
             $regExps['specials']=new RegExp('[\\r\\t]', 'g'); //new RegExp('[\\r\\t\\n]', 'g');
-            $regExps['replacements']=new RegExp('\\t\\s*(.*?)\\s*%>', 'g');
+            $regExps['replacements']=new RegExp('\\t\\s*(.*?)\\s*'+$__rightTplSep, 'g');
             if ($funcs.length)  
                 $regExps['functions']=new RegExp('\%('+$funcs.join('|')+')\\b', 'g');
         },
@@ -96,6 +97,18 @@
         //
         setLocaleStrings : function($l) {
             $__locale = self.merge($__locale, $l);
+        },
+        
+        setTemplateSeparators : function($left, $right)
+        {
+            if ($left)
+                $__leftTplSep=$left;
+            if ($right)
+                $__rightTplSep=$right;
+            
+            if ($right)
+                // recompute it
+                $regExps['replacements']=new RegExp('\\t\\s*(.*?)\\s*'+$__rightTplSep, 'g');
         },
         
         setCacheDir : function($dir) {
@@ -184,8 +197,13 @@
             return "'; } ";
         },
         
-        // include
+        // include, same as embed right now
         t_include : function($id/*, $data*/) {
+            return t_embed($id);
+        },
+        
+        // embed
+        t_embed : function($id/*, $data*/) {
             // cache it
             if (!$__partials[$id])
                 $__partials[$id]=" " + self.parse(self.getTemplateContents($id)) + "'; ";
@@ -268,8 +286,9 @@
                     case 'endfor':
                         return /*"\t" .*/ self.t_endfor($m[2]);
                         break;
+                    case 'embed':
                     case 'include':
-                        return /*"\t" .*/ self.t_include($m[2]);
+                        return /*"\t" .*/ self.t_embed($m[2]);
                         break;
                 }
             }
@@ -277,9 +296,9 @@
         },
         
         parseControlConstructs : function($s) {
-            $s = $s.split("%>").join("\n");
+            $s = $s.split($__rightTplSep).join("\n");
             $s =  $s.replace($regExps['controlConstructs'], function($m, $m1, $m2){ return self.doControlConstruct([$m, $m1, $m2]); });
-            $s = $s.split("\n").join("%>");
+            $s = $s.split("\n").join($__rightTplSep);
             return $s;
         },
         
@@ -289,7 +308,7 @@
                 return self.parseControlConstructs(
                         $s
                         .replace($regExps['specials'], " ")
-                        .split("<%").join("\t")
+                        .split($__leftTplSep).join("\t")
                         .replace($regExps['quotes'], "\\'")
                          // preserve lines
                         .split("\n").join("' + \"\\n\" + '")
@@ -297,7 +316,7 @@
                     .replace($regExps['functions'], "Contemplate.$1")
                     .replace($regExps['replacements'], "' + ( $1 ) + '")
                     .split("\t").join("'; ")
-                    .split("%>").join(" $__p__ += '")
+                    .split($__rightTplSep).join(" $__p__ += '")
                     ;
             }
             else
@@ -305,14 +324,14 @@
                 return self.parseControlConstructs(
                         $s
                         .replace($regExps['specials'], " ")
-                        .split("<%").join("\t")
+                        .split($__leftTplSep).join("\t")
                         .replace($regExps['quotes'], "\\'")
                          // preserve lines
                         .split("\n").join("' + \"\\n\" + '")
                     )
                     .replace($regExps['replacements'], "' + ( $1 ) + '")
                     .split("\t").join("'; ")
-                    .split("%>").join(" $__p__ += '")
+                    .split($__rightTplSep).join(" $__p__ += '")
                     ;
             }
         },

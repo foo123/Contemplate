@@ -14,6 +14,10 @@ define('ABSPATH', dirname(__FILE__));
 // include the Contemplate Class
 include ABSPATH.'/src/Contemplate.php';
 
+$sepleft="<%";
+$sepright="%>";
+// set the template separators
+Contemplate::setTemplateSeparators($sepleft, $sepright);
 // set the cache directory (make sure to exist)
 Contemplate::setCacheDir(ABSPATH.'/_tplcache');
 // dynamically update the cached template if original template has changed
@@ -51,6 +55,8 @@ $main_template_data=array(
         'demo'=>Contemplate::getTemplateContents('demo'),
         'sub'=>Contemplate::getTemplateContents('sub'),
     ),
+    'sepleft'=>$sepleft,
+    'sepright'=>$sepright,
     'data_js'=>json_encode($data),
     'render_php'=>Contemplate::tpl('demo', $data)
 );

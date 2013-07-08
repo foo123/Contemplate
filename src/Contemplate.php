@@ -25,6 +25,8 @@ class Contemplate
     private static $__templates=array();
     private static $__partials=array();
     private static $__locale=array();
+    private static $__leftTplSep="<%";
+    private static $__rightTplSep="%>";
     
     protected static $loops=0;
     protected static $ifs=0;
@@ -33,7 +35,7 @@ class Contemplate
     protected static $controlConstructs=array(
         'if', 'elseif', 'else', 'endif', 
         'for', 'elsefor', 'endfor',
-        'include'
+        'embed', 'include'
     );
     protected static $funcs=array( 'l', 's', 'n', 'f', 'concat'/*, 'htmlselect', 'htmltable'*/ );
     protected static $regExps=array(
@@ -87,7 +89,7 @@ class Contemplate
         self::$regExps['forExpr']='/^\s*\$([a-z0-9_]+?)\s* as \s*\$([a-z0-9_]+?)\s*=>\s*\$([a-z0-9_]+)\s*$/i';
         self::$regExps['quotes']="/'/";
         self::$regExps['specials']="/[\r\t]/";//"/[\r\t\n]/";
-        self::$regExps['replacements']="/\t\s*(.*?)\s*%>/";
+        self::$regExps['replacements']="/\t\s*(.*?)\s*".self::$__rightTplSep."/";
         if (!empty(self::$funcs))  
             self::$regExps['functions']='/\%(' . implode('|', self::$funcs) . ')\b/';
     }
@@ -98,6 +100,18 @@ class Contemplate
     public static function setLocaleStrings($l)
     {
         self::$__locale=self::merge(self::$__locale, $l);
+    }
+    
+    public static function setTemplateSeparators($left=false, $right=false)
+    {
+        if ($left)
+            self::$__leftTplSep=$left;
+        if ($right)
+            self::$__rightTplSep=$right;
+            
+        if ($right)
+            // recompute it
+            self::$regExps['replacements']="/\t\s*(.*?)\s*".self::$__rightTplSep."/";
     }
     
     public static function setCacheDir($dir)
@@ -193,8 +207,14 @@ class Contemplate
         return "'; } ";
     }
     
-    // include
+    // include, same as embed right now
     public static function t_include($id/*, $data*/)
+    {
+        return self::t_embed($id);
+    }
+    
+    // embed
+    public static function t_embed($id/*, $data*/)
     {
         // cache it
         if (!isset(self::$__partials[$id]))
@@ -441,8 +461,9 @@ class Contemplate
                 case 'endfor':
                     return /*"\t" .*/ self::t_endfor($m[2]);
                     break;
+                case 'embed':
                 case 'include':
-                    return /*"\t" .*/ self::t_include($m[2]);
+                    return /*"\t" .*/ self::t_embed($m[2]);
                     break;
             }
         }
@@ -451,16 +472,16 @@ class Contemplate
     
     protected static function parseControlConstructs($s) 
     {
-        $s = str_replace("%>", "\n", $s); /*implode("\n", explode("%>", $s));*/
+        $s = str_replace(self::$__rightTplSep, "\n", $s); /*implode("\n", explode(self::$__rightTplSep, $s));*/
         $s = preg_replace_callback(self::$regExps['controlConstructs'], array(__CLASS__, 'doControlConstruct'), $s);
-        $s = str_replace("\n", "%>", $s); /*implode("%>", explode("\n", $s));*/
+        $s = str_replace("\n", self::$__rightTplSep, $s); /*implode(self::$__rightTplSep, explode("\n", $s));*/
         return $s;
     }
     
     protected static function parse($s) 
     {
         $s = preg_replace(self::$regExps['specials'], " ", $s);
-        $s = str_replace("<%", "\t", $s); /*implode("\t", explode("<%", $s));*/
+        $s = str_replace(self::$__leftTplSep, "\t", $s); /*implode("\t", explode(self::$__leftTplSep, $s));*/
         $s = preg_replace(self::$regExps['quotes'], "\\'", $s);
         // preserve lines
         $s = str_replace("\n", "' . PHP_EOL . '", $s); /*implode("' . PHP_EOL . '", explode("\n", $s));*/
@@ -468,7 +489,7 @@ class Contemplate
         if (!empty(self::$funcs))  $s = preg_replace(self::$regExps['functions'], 'Contemplate::${1}', $s);
         $s = preg_replace(self::$regExps['replacements'], "' . ( $1 ) . '", $s);
         $s = str_replace("\t", "'; ", $s); /*implode("'; ", explode("\t", $s));*/
-        $s = str_replace("%>", " \$__p__ .= '", $s); /*implode(" \$__p__ .= '", explode("%>", $s));*/
+        $s = str_replace(self::$__rightTplSep, " \$__p__ .= '", $s); /*implode(" \$__p__ .= '", explode(self::$__rightTplSep, $s));*/
         
         return $s;
     }

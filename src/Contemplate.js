@@ -355,6 +355,8 @@
         },
         
         createTemplateRenderFunction : function($id) {
+            self.reset();
+        
             var $func=
                 // use php-style variables using '$' in front of var name
                 "for (var __n__ in $__o__) { if (Contemplate.hasOwn($__o__, __n__)) { $__o__['$'+__n__]=$__o__[__n__]; delete $__o__[__n__];} } "
@@ -368,6 +370,8 @@
         },
         
         createCachedTemplate : function($id, $filename, $classname) {
+            self.reset();
+        
             var $class=
                 "(function(window) { " + "\n"
                 +"/* Contemplate cached template '"+$id+"' */ " + "\n"
@@ -438,6 +442,13 @@
         setCachedTemplate : function($id, $tplContents) {
             // todo
             return false;/*file_put_contents(self.getCachedTemplateName($id), $tplContents);*/
+        },
+        
+        reset : function() {
+            // reset parse counters
+            $loops=0;
+            $ifs=0;
+            $loopifs=0;
         },
         
         merge : function() {

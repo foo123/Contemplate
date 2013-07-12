@@ -526,6 +526,8 @@ class Contemplate
     
     protected static function createTemplateRenderFunction($id)
     {
+        self::reset();
+        
         $func=
             // Introduce the data as local variables using extract()
             "extract(".self::$__class."::o2a((array)\$__o__)); "
@@ -541,6 +543,8 @@ class Contemplate
     
     protected static function createCachedTemplate($id, $filename, $classname)
     {
+        self::reset();
+        
         $class=
             // Introduce the data as local variables using extract()
             '<?php ' .PHP_EOL
@@ -615,6 +619,14 @@ class Contemplate
     protected static function setCachedTemplate($filename, $tplContents)
     {
         return file_put_contents($filename, $tplContents);
+    }
+    
+    protected static function reset()
+    {
+        // reset parse counters
+        self::$loops=0;
+        self::$ifs=0;
+        self::$loopifs=0;
     }
     
     public static function o2a($d)

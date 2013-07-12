@@ -188,12 +188,13 @@
         
         // endfor
         t_endfor : function() {
-            $loops--;
-            if ($loopifs>0)
+            if ($loopifs==$loops)
             {
+                $loops--;
                 $loopifs--;
-                return "'; } } } ";
+                return "'; } } ";
             }
+            $loops--;
             return "'; } ";
         },
         

@@ -1,3 +1,4 @@
+<div>
 <% %for($usergroup as $j=>$user) %>
 <div id='<% $user["id"] %>' class="<% %if (0 == ($j % 2)) %>even<% %else() %>odd<% %endif() %>">
     <a href="/<% $user["name"] %>"><% $user["name"] %><% $user["text"] %> <% %n($i) + %n($j) %></a>: <strong><% $user["text"] %></strong>
@@ -5,4 +6,4 @@
 <% %elsefor() %>
 <div class="none">No Users</div>
 <% %endfor() %>
-
+</div>

@@ -198,12 +198,13 @@ class Contemplate
     // endfor
     public static function t_endfor() 
     {
-        self::$loops--;
-        if (self::$loopifs>0)
+        if (self::$loopifs==self::$loops)
         {
+            self::$loops--;
             self::$loopifs--;
             return "'; } } ";
         }
+        self::$loops--;
         return "'; } ";
     }
     
@@ -490,6 +491,8 @@ class Contemplate
         $s = preg_replace(self::$regExps['replacements'], "' . ( $1 ) . '", $s);
         $s = str_replace("\t", "'; ", $s); /*implode("'; ", explode("\t", $s));*/
         $s = str_replace(self::$__rightTplSep, " \$__p__ .= '", $s); /*implode(" \$__p__ .= '", explode(self::$__rightTplSep, $s));*/
+        // remove unnecessary concats
+        //$s = str_replace(array("'' .", ". ''"),  "", $s); /*implode("' . PHP_EOL . '", explode("\n", $s));*/
         
         return $s;
     }

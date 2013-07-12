@@ -32,7 +32,7 @@ class Contemplate
     protected static $ifs=0;
     protected static $loopifs=0;
     
-    protected static $__class='Contemplate';
+    protected static $__class='';
     
     protected static $controlConstructs=array(
         'if', 'elseif', 'else', 'endif', 
@@ -92,6 +92,8 @@ class Contemplate
     public static function init($escaper=null)
     {
         self::$escaper=$escaper;
+        
+        self::$__class='Contemplate'; // __CLASS__;
         
         self::$regExps['controlConstructs']='/\t\s*\%(' . implode('|', self::$controlConstructs) . ')\b\s*\((.*)\)/';
         self::$regExps['forExpr']='/^\s*\$([a-z0-9_]+?)\s* as \s*\$([a-z0-9_]+?)\s*=>\s*\$([a-z0-9_]+)\s*$/i';

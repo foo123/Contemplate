@@ -32,6 +32,8 @@ class Contemplate
     protected static $ifs=0;
     protected static $loopifs=0;
     
+    protected static $__class='Contemplate';
+    
     protected static $controlConstructs=array(
         'if', 'elseif', 'else', 'endif', 
         'for', 'elsefor', 'endfor',
@@ -70,7 +72,13 @@ class Contemplate
         return $this;
     }
 	
-	public function render($data) 
+    public function setRenderFunction($renderFunc=null)
+    {
+        if ($renderFunc)  $this->renderFunction=$renderFunc;
+        return $this;
+    }
+	
+    public function render($data) 
     {
         /* dynamic function */
         if ($this->renderFunction)
@@ -487,7 +495,7 @@ class Contemplate
         // preserve lines
         $s = str_replace("\n", "' . PHP_EOL . '", $s); /*implode("' . PHP_EOL . '", explode("\n", $s));*/
         $s = self::parseControlConstructs($s);
-        if (!empty(self::$funcs))  $s = preg_replace(self::$regExps['functions'], 'Contemplate::${1}', $s);
+        if (!empty(self::$funcs))  $s = preg_replace(self::$regExps['functions'], self::$__class.'::${1}', $s);
         $s = preg_replace(self::$regExps['replacements'], "' . ( $1 ) . '", $s);
         $s = str_replace("\t", "'; ", $s); /*implode("'; ", explode("\t", $s));*/
         $s = str_replace(self::$__rightTplSep, " \$__p__ .= '", $s); /*implode(" \$__p__ .= '", explode(self::$__rightTplSep, $s));*/
@@ -520,7 +528,7 @@ class Contemplate
     {
         $func=
             // Introduce the data as local variables using extract()
-            "extract(Contemplate::o2a((array)\$__o__)); "
+            "extract(".self::$__class."::o2a((array)\$__o__)); "
             ."\$__p__ = ''; "
             // Convert the template into pure PHP
             ."\$__p__ .= '" .  self::parse(self::getTemplateContents($id)) .  "'; "
@@ -536,12 +544,12 @@ class Contemplate
         $class=
             // Introduce the data as local variables using extract()
             '<?php ' .PHP_EOL
-            ."/* Contemplate cached template '$id' */ " . PHP_EOL
+            ."/* ".self::$__class." cached template '$id' */ " . PHP_EOL
             ."if (!class_exists('" . $classname . "')) { "
-            ."final class " . $classname . " extends Contemplate { "
+            ."final class " . $classname . " extends ".self::$__class." { "
             ."public function __construct(\$id=null) { \$this->id=\$id; } "
             ."public function render(\$__o__) { "
-            ."extract(Contemplate::o2a((array)\$__o__)); "
+            ."extract(".self::$__class."::o2a((array)\$__o__)); "
             ."\$__p__ = ''; "
             // Convert the template into pure PHP
             ."\$__p__ .= '" .  self::parse(self::getTemplateContents($id)) .  "'; "
@@ -593,7 +601,12 @@ class Contemplate
             case self::CACHE_TO_DISK_NONE:
             default:
                 // dynamic in-memory caching during page-request
-                return new Contemplate($id, self::createTemplateRenderFunction($id));
+                //return new Contemplate($id, self::createTemplateRenderFunction($id));
+                $thisclass=self::$__class;
+                $tpl = new $thisclass();
+                $tpl->setId($id);
+                $tpl->setRenderFunction(self::createTemplateRenderFunction($id));
+                return $tpl;
                 break;
         }
         return null;

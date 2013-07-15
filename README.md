@@ -56,7 +56,7 @@ syntax, yet work the same in Javascript.
 
 * Easily __extensible__ , configurable
 
-* __Localization__ , __Data escaping__ can be built-in and configurable easily (localization functions are already built-in)
+* __Localization__ , built-in and configurable easily ( __Data escaping__ , __Date formatting__ going to be added also)
 
 * Loops can have optional _elsefor()_ statement when no data, or data is empty (see test.php)
 

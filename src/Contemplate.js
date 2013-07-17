@@ -395,6 +395,8 @@
             
             switch($__cacheMode)
             {
+                // todo
+                /*
                 case self.CACHE_TO_DISK_NOUPDATE:
                     var $cachedTplFile=self.getCachedTemplateName($id);
                     var $cachedTplClass=self.getCachedTemplateClass($id);
@@ -429,7 +431,7 @@
                     }
                     return null;
                     break;
-                
+                */
                 case self.CACHE_TO_DISK_NONE:
                 default:
                     // dynamic in-memory caching during page-request

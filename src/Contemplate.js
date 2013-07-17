@@ -155,7 +155,7 @@
             
         // elseif
         t_elseif : function($cond) {
-            return "'; } elseif ("+$cond+") { ";
+            return "'; } else if ("+$cond+") { ";
         },
         
         // else

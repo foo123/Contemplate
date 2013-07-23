@@ -102,6 +102,7 @@ __0.3__
 
 __0.2__
 * add *include* directive
+* make template separators configurable
 * add filesystem caching, refactor, optimize
 
 __0.1__

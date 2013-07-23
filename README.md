@@ -76,7 +76,10 @@ On the contrary __template__ directive will call and parse a subtemplate on its 
 When the templates are already cached, the relative performance of these directives is similar. __include__ tends to be slightly faster since it generates only a single template, while __template__ will generate all needed templates. However if a subtemplate has been changed and is embedded in another template using __include__ , the calling template will __NOT__ be refreshed. While if __template__ is used, the calling template __WILL__ be refreshed (since the subtemplate is called as a subroutine and not copied literally inside the calling template)
 
 The syntax for __include__ is this:  %include(sutemplate_id)
-The syntax for __template__ is this: %template(sutemplate_id, {"var1"=>$value1, "var2"=>$value2, ..}) where the {"var1"=>$value1, "var2"=>$value2, ..} are the data to be passed to the called template (this is exactly how the Contemplate::tpl($id, $data), or Contemplate.tpl(id, data) are called)
+
+The syntax for __template__ is this: %template(sutemplate_id, {"var1"=>$value1, "var2"=>$value2, ..}) 
+
+where the {"var1"=>$value1, "var2"=>$value2, ..} are the data to be passed to the called template (this is exactly how the Contemplate::tpl($id, $data), or Contemplate.tpl(id, data) are called)
 
 ###Dependencies
 

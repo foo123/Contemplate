@@ -89,14 +89,16 @@ Use the _test.php_ file to test the basic functionality
 
 __0.3__
 * add *template* directive
-* add template functions to manipuklate dates and localized dates
+* add template functions to manipulate dates and localized dates
 * add some javascript methods from [phpjs](https://github.com/kvz/phpjs) project
 * make the Contemplate.js class compatible with both browser, node.js and requirejs configurations
 
 __0.2__
+* add *include* directive
 * add filesystem caching, refactor, optimize
 
 __0.1__
+* add localization options and template functions
 * initial release
 
 

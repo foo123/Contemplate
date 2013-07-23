@@ -56,14 +56,24 @@ syntax, yet work the same in Javascript.
 
 * Easily __extensible__ , configurable
 
-* __Localization__ , built-in and configurable easily ( __Data escaping__ , __Date formatting__ going to be added also)
+* __Localization__ , __Date formatting__ built-in and configurable easily ( __Data escaping__  going to be added also)
+
+* Date manipulation similar to PHP format (ie __date__ function). An extended, localized version of php's date function __ldate__ is also implemented in the framework
 
 * Loops can have optional _elsefor()_ statement when no data, or data is empty (see test.php)
 
 * Templates can *include* other templates (similar to PHP __include__ directive), right now these includes wil be compiled into the the template that called them
 
+* Templates can *call another template* using __template__ directive, these templates are called as templates subroutines and parsed by themselves
+
 * Notes: __Literal double quotes__ should better be used inside templates
 
+###Differences between 'include' and 'template' directives
+The main difference is that __include__ will actually copy the subtemplate contents inside the caling template (thus only one final template is generated). This is similar to PHP's _include_ directive.
+
+On the contrary __template__ directive will call aan parse a  subtemplate on its own (so the data need to be passed also). In this case each subtemplate will be compiled on its own and exist in the cache.
+
+When the templates are already cached, the relative performance of these directives is similar. __include__ tends to be slightly faster since it generates only a single template, while __template__ will generate all needed templates. However if a subtemplate has been changed and is embedded in another template using __include__ , the calling template will __NOT__ be refreshed. While if __template__ is used, the callign template __WILL__ be refreshed (since the subtemplate is called as a subroutine and not copied literally inside the calling template)
 
 ###Dependencies
 
@@ -76,6 +86,12 @@ Use the _test.php_ file to test the basic functionality
 
 
 ###ChangeLog
+
+__0.3__
+* add *template* directive
+* add template functions to manipuklate dates and localized dates
+* add some javascript methods from [phpjs](https://github.com/kvz/phpjs) project
+* make the Contemplate.js class compatible with both browser, node.js and requirejs configurations
 
 __0.2__
 * add filesystem caching, refactor, optimize

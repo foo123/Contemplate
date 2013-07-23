@@ -7,6 +7,7 @@ class Contemplate
     *  Simple light-weight php templating engine (part of javascript templating engine)
     *  @author: Nikos M.  http://nikos-web-development.netai.net/
     *  https://github.com/foo123/Contemplate
+    *  version 0.3
     *
     *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
     *  http://ejohn.org/blog/javascript-micro-templating/
@@ -37,9 +38,9 @@ class Contemplate
     protected static $controlConstructs=array(
         'if', 'elseif', 'else', 'endif', 
         'for', 'elsefor', 'endfor',
-        'embed', 'include'
+        /*'embed',*/ 'include', 'template'
     );
-    protected static $funcs=array( 'l', 's', 'n', 'f', 'concat'/*, 'htmlselect', 'htmltable'*/ );
+    protected static $funcs=array( 'l', 's', 'n', 'f', 'concat', 'trim', 'sprintf', 'now', 'date', 'ldate'/*, 'htmlselect', 'htmltable'*/ );
     protected static $regExps=array(
         'functions'=>'',
         'controlConstructs'=>'',
@@ -218,19 +219,27 @@ class Contemplate
         return "'; } ";
     }
     
-    // include, same as embed right now
-    public static function t_include($id/*, $data*/)
+    // embed, same as include right now
+    /*public static function t_embed($id)
     {
-        return self::t_embed($id);
-    }
+        return self::t_include($id);
+    }*/
     
-    // embed
-    public static function t_embed($id/*, $data*/)
+    // include
+    public static function t_include($id)
     {
         // cache it
         if (!isset(self::$__partials[$id]))
             self::$__partials[$id]=" " . self::parse(self::getTemplateContents($id)) . "'; ";
         return self::$__partials[$id];
+    }
+    
+    public static function t_template($args)
+    {
+        $args=explode(',', $args);
+        $id=trim(array_shift($args));
+        $obj='array' . str_replace(array('{', '}'), array('(', ')'), implode(',', $args));
+        return '\'. '.self::$__class.'::tpl("'.$id.'", '.$obj.'); ';
     }
     
     //
@@ -268,14 +277,48 @@ class Contemplate
         return implode('', $args);
     }
     
+    // Trim strings in templates
+    public static function trim()
+    {
+        $args=func_get_args();
+        return trim($args[0], $args[1]);
+    }
+    
+    // Sprintf in templates
+    public static function sprintf()
+    {
+        $args=func_get_args();
+        $format=array_shift($args);
+        return vsprintf($format, $args);
+    }
+    
     //
     //  Localization functions
     //
+    
+    // current time in seconds
+    public static function now()
+    {
+        return time();
+    }
+    
+    // formatted date
+    public static function date($format, $time=false)
+    {
+        if (!$time) $time=time();
+        return date($format, $time);
+    }
+    
+    // localized formatted date
+    public static function ldate($format, $time=false)
+    {
+        if (!$time) $time=time();
+        return self::localized_date(self::$__locale, $format, $time);
+    }
+    
     public static function locale($e)
     {
-        if (isset(self::$__locale[$e]))
-            return self::$__locale[$e];
-        return $e;
+        return (isset(self::$__locale[$e])) ? self::$__locale[$e] : $e;
     }
     
     public static function l($e)
@@ -452,29 +495,32 @@ class Contemplate
             switch($m[1])
             {
                 case 'if':
-                    return /*"\t" .*/ self::t_if($m[2]);
+                    return self::t_if($m[2]);
                     break;
                 case 'elseif':
-                    return /*"\t" .*/ self::t_elseif($m[2]);
+                    return self::t_elseif($m[2]);
                     break;
                 case 'else':
-                    return /*"\t" .*/ self::t_else($m[2]);
+                    return self::t_else($m[2]);
                     break;
                 case 'endif':
-                    return /*"\t" .*/ self::t_endif($m[2]);
+                    return self::t_endif($m[2]);
                     break;
                 case 'for':
-                    return /*"\t" .*/ self::t_for($m[2]);
+                    return self::t_for($m[2]);
                     break;
                 case 'elsefor':
-                    return /*"\t" .*/ self::t_elsefor($m[2]);
+                    return self::t_elsefor($m[2]);
                     break;
                 case 'endfor':
-                    return /*"\t" .*/ self::t_endfor($m[2]);
+                    return self::t_endfor($m[2]);
+                    break;
+                case 'template':
+                    return self::t_template($m[2]);
                     break;
                 case 'embed':
                 case 'include':
-                    return /*"\t" .*/ self::t_embed($m[2]);
+                    return self::t_include($m[2]);
                     break;
             }
         }
@@ -643,6 +689,35 @@ class Contemplate
             }
         }
         return $d;
+    }
+    
+    protected static function localized_date($locale, $format, $timestamp) 
+    {
+        $txt_words = array("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sun", "Mon", "Tues", "Wednes", "Thurs", "Fri", "Satur", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec");
+        $am_pm=array('AM', 'PM', 'am', 'PM');
+        
+        $date=date($format, $timestamp);
+        
+        // localize days/months
+        $replace=array();
+        foreach ($txt_words as $word)
+        {
+            if (isset($locale[$word]))
+                $replace[$word]=$locale[$word];
+        }
+        if (!empty($replace))  $date=str_replace(array_keys($replace), array_values($replace), $date);
+            
+        // localize am/pm
+        $replace=array();
+        foreach ($am_pm as $word)
+        {
+            if (isset($locale[$word]))
+                $replace[$word]=$locale[$word];
+        }
+        if (!empty($replace))  $date=str_replace(array_keys($replace), array_values($replace), $date);
+            
+        // return localized date
+        return $date;
     }
     
     /*public static function tpl($template, array $args=array())

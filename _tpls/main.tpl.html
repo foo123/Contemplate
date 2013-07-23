@@ -41,6 +41,11 @@
                 "demo" : "demo_tpl",
                 "sub" : "sub_tpl"
             });
+            /* localize some strings */
+            Contemplate.setLocaleStrings({
+                "Jul" : "Ιουλ",
+                "Sep" : "Σεπτ"
+            });
             var results = document.getElementById("results_js");
             results.innerHTML = Contemplate.tpl('demo', <% $data_js %>);
         </script>

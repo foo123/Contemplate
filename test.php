@@ -28,6 +28,12 @@ Contemplate::add(array(
     'demo'=>ABSPATH.'/_tpls/demo.tpl.html',
     'sub'=>ABSPATH.'/_tpls/sub.tpl.html',
 ));
+/* localize some strings */
+/* make sure this file is encoded in UTF-8 */
+Contemplate::setLocaleStrings(array(
+    "Jul" => "Ιουλ",
+    "Sep" => "Σεπτ"
+));
 
 // the data to be used by the templates
 $data=array(

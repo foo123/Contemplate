@@ -69,11 +69,11 @@ syntax, yet work the same in Javascript.
 * Notes: __Literal double quotes__ should better be used inside templates
 
 ###Differences between 'include' and 'template' directives
-The main difference is that __include__ will actually copy the subtemplate contents inside the caling template (thus only one final template is generated). This is similar to PHP's _include_ directive.
+The main difference is that __include__ will actually copy the subtemplate contents inside the calling template (thus only one final template is generated). This is similar to PHP's _include_ directive.
 
-On the contrary __template__ directive will call aan parse a  subtemplate on its own (so the data need to be passed also). In this case each subtemplate will be compiled on its own and exist in the cache.
+On the contrary __template__ directive will call and parse a subtemplate on its own (so the data need to be passed also). In this case each subtemplate will be compiled on its own and exist in the cache.
 
-When the templates are already cached, the relative performance of these directives is similar. __include__ tends to be slightly faster since it generates only a single template, while __template__ will generate all needed templates. However if a subtemplate has been changed and is embedded in another template using __include__ , the calling template will __NOT__ be refreshed. While if __template__ is used, the callign template __WILL__ be refreshed (since the subtemplate is called as a subroutine and not copied literally inside the calling template)
+When the templates are already cached, the relative performance of these directives is similar. __include__ tends to be slightly faster since it generates only a single template, while __template__ will generate all needed templates. However if a subtemplate has been changed and is embedded in another template using __include__ , the calling template will __NOT__ be refreshed. While if __template__ is used, the calling template __WILL__ be refreshed (since the subtemplate is called as a subroutine and not copied literally inside the calling template)
 
 ###Dependencies
 

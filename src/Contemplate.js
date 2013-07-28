@@ -10,7 +10,7 @@
     *  Simple light-weight javascript templating engine (part of php templating engine)
     *  @author: Nikos M.  http://nikos-web-development.netai.net/
     *  https://github.com/foo123/Contemplate
-    *  version 0.3
+    *  version 0.3.1
     *
     *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
     *  http://ejohn.org/blog/javascript-micro-templating/
@@ -21,6 +21,172 @@
     *   PHP functions adapted from phpjs project
     *   https://github.com/kvz/phpjs
     */
+function is_array (mixed_var) {
+  // http://kevin.vanzonneveld.net
+  // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+  // +   improved by: Legaev Andrey
+  // +   bugfixed by: Cord
+  // +   bugfixed by: Manish
+  // +   improved by: Onno Marsman
+  // +   improved by: Brett Zamir (http://brett-zamir.me)
+  // +   bugfixed by: Brett Zamir (http://brett-zamir.me)
+  // +   improved by: Nathan Sepulveda
+  // +   improved by: Brett Zamir (http://brett-zamir.me)
+  // %        note 1: In php.js, javascript objects are like php associative arrays, thus JavaScript objects will also
+  // %        note 1: return true in this function (except for objects which inherit properties, being thus used as objects),
+  // %        note 1: unless you do ini_set('phpjs.objectsAsArrays', 0), in which case only genuine JavaScript arrays
+  // %        note 1: will return true
+  // *     example 1: is_array(['Kevin', 'van', 'Zonneveld']);
+  // *     returns 1: true
+  // *     example 2: is_array('Kevin van Zonneveld');
+  // *     returns 2: false
+  // *     example 3: is_array({0: 'Kevin', 1: 'van', 2: 'Zonneveld'});
+  // *     returns 3: true
+  // *     example 4: is_array(function tmp_a(){this.name = 'Kevin'});
+  // *     returns 4: false
+  var ini,
+    _getFuncName = function (fn) {
+      var name = (/\W*function\s+([\w\$]+)\s*\(/).exec(fn);
+      if (!name) {
+        return '(Anonymous)';
+      }
+      return name[1];
+    },
+    _isArray = function (mixed_var) {
+      // return Object.prototype.toString.call(mixed_var) === '[object Array]';
+      // The above works, but let's do the even more stringent approach: (since Object.prototype.toString could be overridden)
+      // Null, Not an object, no length property so couldn't be an Array (or String)
+      if (!mixed_var || typeof mixed_var !== 'object' || typeof mixed_var.length !== 'number') {
+        return false;
+      }
+      var len = mixed_var.length;
+      mixed_var[mixed_var.length] = 'bogus';
+      // The only way I can think of to get around this (or where there would be trouble) would be to have an object defined
+      // with a custom "length" getter which changed behavior on each call (or a setter to mess up the following below) or a custom
+      // setter for numeric properties, but even that would need to listen for specific indexes; but there should be no false negatives
+      // and such a false positive would need to rely on later JavaScript innovations like __defineSetter__
+      if (len !== mixed_var.length) { // We know it's an array since length auto-changed with the addition of a
+      // numeric property at its length end, so safely get rid of our bogus element
+        mixed_var.length -= 1;
+        return true;
+      }
+      // Get rid of the property we added onto a non-array object; only possible
+      // side-effect is if the user adds back the property later, it will iterate
+      // this property in the older order placement in IE (an order which should not
+      // be depended on anyways)
+      delete mixed_var[mixed_var.length];
+      return false;
+    };
+
+  if (!mixed_var || typeof mixed_var !== 'object') {
+    return false;
+  }
+
+  // BEGIN REDUNDANT
+  this.php_js = this.php_js || {};
+  this.php_js.ini = this.php_js.ini || {};
+  // END REDUNDANT
+
+  ini = this.php_js.ini['phpjs.objectsAsArrays'];
+
+  return _isArray(mixed_var) ||
+    // Allow returning true unless user has called
+    // ini_set('phpjs.objectsAsArrays', 0) to disallow objects as arrays
+    ((!ini || ( // if it's not set to 0 and it's not 'off', check for objects as arrays
+    (parseInt(ini.local_value, 10) !== 0 && (!ini.local_value.toLowerCase || ini.local_value.toLowerCase() !== 'off')))
+    ) && (
+    Object.prototype.toString.call(mixed_var) === '[object Object]' && _getFuncName(mixed_var.constructor) === 'Object' // Most likely a literal and intended as assoc. array
+    ));
+}
+
+function array_flip (trans) {
+  // http://kevin.vanzonneveld.net
+  // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+  // +      improved by: Pier Paolo Ramon (http://www.mastersoup.com/)
+  // +      improved by: Brett Zamir (http://brett-zamir.me)
+  // *     example 1: array_flip( {a: 1, b: 1, c: 2} );
+  // *     returns 1: {1: 'b', 2: 'c'}
+  // *     example 2: ini_set('phpjs.return_phpjs_arrays', 'on');
+  // *     example 2: array_flip(array({a: 0}, {b: 1}, {c: 2}))[1];
+  // *     returns 2: 'b'
+
+  var key, tmp_ar = {};
+
+  if (trans && typeof trans=== 'object' && trans.change_key_case) { // Duck-type check for our own array()-created PHPJS_Array
+    return trans.flip();
+  }
+
+  for (key in trans) {
+    if (!trans.hasOwnProperty(key)) {continue;}
+    tmp_ar[trans[key]] = key;
+  }
+
+  return tmp_ar;
+}
+
+function array_keys (input, search_value, argStrict) {
+  // http://kevin.vanzonneveld.net
+  // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+  // +      input by: Brett Zamir (http://brett-zamir.me)
+  // +   bugfixed by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+  // +   improved by: jd
+  // +   improved by: Brett Zamir (http://brett-zamir.me)
+  // +   input by: P
+  // +   bugfixed by: Brett Zamir (http://brett-zamir.me)
+  // *     example 1: array_keys( {firstname: 'Kevin', surname: 'van Zonneveld'} );
+  // *     returns 1: {0: 'firstname', 1: 'surname'}
+
+  var search = typeof search_value !== 'undefined',
+    tmp_arr = [],
+    strict = !!argStrict,
+    include = true,
+    key = '';
+
+  if (input && typeof input === 'object' && input.change_key_case) { // Duck-type check for our own array()-created PHPJS_Array
+    return input.keys(search_value, argStrict);
+  }
+
+  for (key in input) {
+    if (input.hasOwnProperty(key)) {
+      include = true;
+      if (search) {
+        if (strict && input[key] !== search_value) {
+          include = false;
+        }
+        else if (input[key] != search_value) {
+          include = false;
+        }
+      }
+
+      if (include) {
+        tmp_arr[tmp_arr.length] = key;
+      }
+    }
+  }
+
+  return tmp_arr;
+}
+
+function array_values (input) {
+  // http://kevin.vanzonneveld.net
+  // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+  // +      improved by: Brett Zamir (http://brett-zamir.me)
+  // *     example 1: array_values( {firstname: 'Kevin', surname: 'van Zonneveld'} );
+  // *     returns 1: {0: 'Kevin', 1: 'van Zonneveld'}
+  var tmp_arr = [],
+    key = '';
+
+  if (input && typeof input === 'object' && input.change_key_case) { // Duck-type check for our own array()-created PHPJS_Array
+    return input.values();
+  }
+
+  for (key in input) {
+    tmp_arr[tmp_arr.length] = input[key];
+  }
+
+  return tmp_arr;
+}
+
 function sprintf () {
   // http://kevin.vanzonneveld.net
   // +   original by: Ash Searle (http://hexmen.com/blog/)
@@ -796,7 +962,7 @@ function localized_date (locale, format, timestamp) {
             'for', 'elsefor', 'endfor',
             /*'embed',*/ 'include', 'template'
         ],
-        $funcs=[ 'l', 's', 'n', 'f', 'concat', 'trim', 'sprintf', 'now', 'date', 'ldate'/*, 'htmlselect', 'htmltable'*/ ],
+        $funcs=[ 'q', 'dq', 'l', 's', 'n', 'f', 'concat', 'trim', 'sprintf', 'now', 'date', 'ldate', 'htmlselect', 'htmltable' ],
         $regExps={
             'functions':null,
             'controlConstructs':null,
@@ -994,6 +1160,16 @@ function localized_date (locale, format, timestamp) {
             return ($e);
         },
         
+        // quote
+        q : function($e) {
+            return "'"+$e+"'";
+        },
+        
+        // double quote
+        dq : function($e) {
+            return '"'+$e+'"';
+        },
+        
         // to String
         s : function($e) {
             return (String)($e);
@@ -1051,7 +1227,185 @@ function localized_date (locale, format, timestamp) {
         //
         //  HTMl elements
         //
-        /* ..to be added.. */
+        
+        // html table
+        htmltable : function($data, $options) {
+            $options = $options || {};
+            var $o='', $tk='', $header='', $footer='', $k, $rows=[], $i, $j, $l, $vals, $col, $colvals, $class_odd, $class_even, $odd=false;
+            
+            $o="<table";
+            
+            if ($options['id'])
+            $o+=" id='"+$options['id']+"'";
+            if ($options['class'])
+            $o+=" class='"+$options['class']+"'";
+            if ($options['style'])
+            $o+=" style='"+$options['style']+"'";
+            if ($options['data'])
+            {
+                for ($k in $options['data'])
+                {
+                    if (self.hasOwn($options['data'], $k))
+                        $o+=" data-"+$k+"='"+$options['data'][$k]+"'";
+                }
+            }
+            $o+=">";
+                
+            $tk='';
+            if (
+                $options['header'] || 
+                $options['footer']
+            )
+                $tk="<td>"+array_keys($data).join('</td><td>')+"</td>";
+                
+            $header='';
+            if ($options['header'])
+                $header="<thead><tr>"+$tk+"</tr></thead>";
+                
+            $footer='';
+            if ($options['footer'])
+                $footer="<tfoot><tr>"+$tk+"</tr></tfoot>";
+            
+            $o+=$header;
+            
+            // get data rows
+            $rows=[];
+            $vals=array_values($data);
+            for ($i in $vals)
+            {
+                if (self.hasOwn($vals, $i))
+                {
+                    $col=$vals[$i];
+                    if (!is_array($col))  $col=[$col];
+                    $colvals=array_values($col);
+                    for ($j=0, $l=$colvals.length; $j<$l; $j++)
+                    {
+                        if (!$rows[$j]) $rows[$j]=new Array($l);
+                        $rows[$j][$i]=$colvals[$j];
+                    }
+                }
+            }
+            
+            if ($options['odd'])
+                $class_odd=$options['odd'];
+            else
+                $class_odd='odd';
+            if ($options['even'])
+                $class_even=$options['even'];
+            else
+                $class_even='even';
+                
+            // render rows
+            $odd=false;
+            for ($i=0, $l=$rows.length; $i<$l; $i++)
+            {
+                if ($odd)
+                    $o+="<tr class='"+$class_odd+"'><td>"+$rows[$i].join('</td><td>')+"</td></tr>";
+                else
+                    $o+="<tr class='"+$class_even+"'><td>"+$rows[$i].join('</td><td>')+"</td></tr>";
+                
+                $odd=!$odd;
+            }
+            $rows=null;
+            delete $rows;
+            
+            $o+=$footer;
+            
+            $o+="</table>";
+            
+            return $o;
+        },
+        
+        // html select
+        htmlselect : function($data, $options) {
+            $options = $options || {};
+            var $o='', $k, $k2, $v, $v2;
+            
+            $o="<select";
+            
+            if ($options['multiple'])
+            $o+=" multiple";
+            if ($options['disabled'])
+            $o+=" disabled='disabled'";
+            if ($options['name'])
+            $o+=" name='"+$options['name']+"'";
+            if ($options['id'])
+            $o+=" id='"+$options['id']+"'";
+            if ($options['class'])
+            $o+=" class='"+$options['class']+"'";
+            if ($options['style'])
+            $o+=" style='"+$options['style']+"'";
+            if ($options['data'])
+            {
+                for ($k in $options['data'])
+                {
+                    if (self.hasOwn($options['data'], $k))
+                        $o+=" data-"+$k+"='"+$options['data'][$k]+"'";
+                }
+            }
+            $o+=">";
+            
+            if ($options['selected'])
+            {
+                if (!is_array($options['selected'])) $options['selected']=[$options['selected']];
+                $options['selected']=array_flip($options['selected']);
+            }
+            else
+                $options['selected']={};
+                
+            if ($options['optgroups'])
+            {
+                if (!is_array($options['optgroups'])) $options['optgroups']=[$options['optgroups']];
+                $options['optgroups']=array_flip($options['optgroups']);
+            }
+        
+            self.log($options['selected']);
+            
+            for ($k in $data)
+            {
+                if (self.hasOwn($data, $k))
+                {
+                    $v=$data[$k];
+                    if ($options['optgroups'] && $options['optgroups'][$k])
+                    {
+                        $o+="<optgroup label='"+$k+"'>";
+                        for  ($k2 in $v)
+                        {
+                            if (self.hasOwn($v, $k2))
+                            {
+                                $v2=$v[$k2];
+                                if ($options['use_key'])
+                                    $v2=$k2;
+                                else if ($options['use_value'])
+                                    $k2=$v2;
+                                    
+                                if (/*$options['selected'][$k2]*/ self.hasOwn($options['selected'], $k2))
+                                    $o+="<option value='"+$k2+"' selected='selected'>"+$v2+"</option>";
+                                else
+                                    $o+="<option value='"+$k2+"'>"+$v2+"</option>";
+                            }
+                        }
+                        $o+="</optgroup>";
+                    }
+                    else
+                    {
+                        if ($options['use_key'])
+                            $v=$k;
+                        else if ($options['use_value'])
+                            $k=$v;
+                            
+                        if ($options['selected'][$k])
+                            $o+="<option value='"+$k+"' selected='selected'>"+$v+"</option>";
+                        else
+                            $o+="<option value='"+$k+"'>"+$v+"</option>";
+                    }
+                }
+            }
+            
+            $o+="</select>";
+            
+            return $o;
+        },
         
         //
         // utility methods

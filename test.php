@@ -53,6 +53,23 @@ $data=array(
             array('name'=>'u8', 'text'=>'text8', 'id'=>'id8'),
             array('name'=>'u9', 'text'=>'text9', 'id'=>'id9'),
         ),
+    ),
+    'table_data'=>array(
+        'column1'=>array(1,2,3),
+        'column2'=>array(4,5,6),
+        'column3'=>array(7,8,9),
+    ),
+    'table_options'=>array('header'=>true),
+    'select_data'=>array(
+        'group1'=>array(1=>'label 1',2=>'label 2',3=>'label 3'),
+        'group2'=>array(4=>'label 4',5=>'label 5',6=>'label 6'),
+        'group3'=>array(7=>'label 7',8=>'label 8',9=>'label 9'),
+    ),
+    'select_options'=>array(
+        'optgroups'=>array('group1', 'group2', 'group3'),
+        'selected'=>3,
+        'multiple'=>false,
+        'style'=>'width:200px;'
     )
 );
 

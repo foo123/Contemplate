@@ -94,6 +94,11 @@ Use the _test.php_ file to test the basic functionality
 
 ###ChangeLog
 
+__0.3.1__
+* add *q* *dq* functions (quote, double quote)
+* add *htmltable* *htmlselect* functions (render a html table with options, render a html select with options)
+* minor fixes, edits
+
 __0.3__
 * add *template* directive
 * add template functions to manipulate dates and localized dates

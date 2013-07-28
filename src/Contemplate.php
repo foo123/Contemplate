@@ -7,7 +7,7 @@ class Contemplate
     *  Simple light-weight php templating engine (part of javascript templating engine)
     *  @author: Nikos M.  http://nikos-web-development.netai.net/
     *  https://github.com/foo123/Contemplate
-    *  version 0.3
+    *  version 0.3.1
     *
     *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
     *  http://ejohn.org/blog/javascript-micro-templating/
@@ -40,7 +40,7 @@ class Contemplate
         'for', 'elsefor', 'endfor',
         /*'embed',*/ 'include', 'template'
     );
-    protected static $funcs=array( 'l', 's', 'n', 'f', 'concat', 'trim', 'sprintf', 'now', 'date', 'ldate'/*, 'htmlselect', 'htmltable'*/ );
+    protected static $funcs=array( 'q', 'dq', 'l', 's', 'n', 'f', 'concat', 'trim', 'sprintf', 'now', 'date', 'ldate', 'htmlselect', 'htmltable' );
     protected static $regExps=array(
         'functions'=>'',
         'controlConstructs'=>'',
@@ -238,7 +238,7 @@ class Contemplate
     {
         $args=explode(',', $args);
         $id=trim(array_shift($args));
-        $obj='array' . str_replace(array('{', '}'), array('(', ')'), implode(',', $args));
+        $obj=str_replace(array('{', '}'), array('array(', ')'), implode(',', $args));
         return '\'. '.self::$__class.'::tpl("'.$id.'", '.$obj.'); ';
     }
     
@@ -250,6 +250,18 @@ class Contemplate
     public static function e($e)
     {
         return ($e);
+    }
+    
+    // quote
+    public static function q($e)
+    {
+        return "'".$e."'";
+    }
+    
+    // double quote
+    public static function dq($e)
+    {
+        return '"'.$e.'"';
     }
     
     // to String
@@ -330,7 +342,7 @@ class Contemplate
     //  HTMl elements
     //
     
-    // table
+    // html table
     public static function htmltable($data, $options=array())
     {
         $data=(array)$data;
@@ -405,12 +417,10 @@ class Contemplate
         
         $o.="</table>";
         
-        if ($echo)  echo $o;
-        
         return $o;
     }
     
-    // select
+    // html select
     public static function htmlselect($data, $options=array())
     {
         $data=(array)$data;
@@ -457,7 +467,7 @@ class Contemplate
                     elseif (isset($options['use_value']))
                         $k2=$v2;
                         
-                    if (isset($options['selected'][$k2]))
+                    if (/*isset($options['selected'][$k2])*/ array_key_exists($k2, $options['selected']))
                         $o.="<option value='{$k2}' selected='selected'>{$v2}</option>";
                     else
                         $o.="<option value='{$k2}'>{$v2}</option>";
@@ -479,8 +489,6 @@ class Contemplate
         }
         
         $o.="</select>";
-        
-        if ($echo)  echo $o;
         
         return $o;
     }

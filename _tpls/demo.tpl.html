@@ -8,3 +8,8 @@
     <% %template(sub, {"i"=>$i, "usergroup"=>$usergroup}) %>
 <% %endfor() %>
 
+<strong>A table</strong><br />
+<% %htmltable($table_data, $table_options) %>
+
+<strong>A select box</strong><br />
+<% %htmlselect($select_data, $select_options) %>

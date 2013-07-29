@@ -1,7 +1,7 @@
 <!-- print a localized date php-style -->
 <% %now() %>
 <br /><br />
-<% %ldate("M", %now()) %>
+<% %ldate("M, d", %now()) %>
 <br /><br />
 
 <% %for($users as $i=>$usergroup) %>
@@ -9,7 +9,18 @@
 <% %endfor() %>
 
 <strong>A table</strong><br />
-<% %htmltable($table_data, $table_options) %>
+<% %htmltable($table_data, $table_options) %><br />
+
+<strong>A table with alternative format</strong><br />
+<% %htmltable($table_data, {"header"=>true}) %><br />
 
 <strong>A select box</strong><br />
-<% %htmlselect($select_data, $select_options) %>
+<% %htmlselect($select_data, $select_options) %><br />
+
+<strong>A select box with alternative format</strong><br />
+<% %htmlselect($select_data, {
+        "optgroups"=>["group1", "group2", "group3"],
+        "selected"=>3,
+        "multiple"=>false,
+        "style"=>"width:200px;"
+    }) %><br />

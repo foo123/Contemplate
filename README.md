@@ -94,6 +94,11 @@ Use the _test.php_ file to test the basic functionality
 
 ###ChangeLog
 
+__0.3.2__
+* make *htmltable* *htmlselect* constructs instead of functions (so literal data cane be used also)
+* add *%ltrim* , *%rtrim* functions
+* minor fixes, edits
+
 __0.3.1__
 * add *q* *dq* functions (quote, double quote)
 * add *htmltable* *htmlselect* functions (render a html table with options, render a html select with options)

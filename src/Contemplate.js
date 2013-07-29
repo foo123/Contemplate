@@ -10,7 +10,7 @@
     *  Simple light-weight javascript templating engine (part of php templating engine)
     *  @author: Nikos M.  http://nikos-web-development.netai.net/
     *  https://github.com/foo123/Contemplate
-    *  version 0.3.1
+    *  version 0.3.2
     *
     *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
     *  http://ejohn.org/blog/javascript-micro-templating/
@@ -961,8 +961,9 @@ function localized_date (locale, format, timestamp) {
             'if', 'elseif', 'else', 'endif', 
             'for', 'elsefor', 'endfor',
             /*'embed',*/ 'include', 'template'
+            ,'htmlselect', 'htmltable'
         ],
-        $funcs=[ 'q', 'dq', 'l', 's', 'n', 'f', 'concat', 'trim', 'sprintf', 'now', 'date', 'ldate', 'htmlselect', 'htmltable' ],
+        $funcs=[ 'q', 'dq', 'l', 's', 'n', 'f', 'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'now', 'date', 'ldate' ],
         $regExps={
             'functions':null,
             'controlConstructs':null,
@@ -1034,10 +1035,8 @@ function localized_date (locale, format, timestamp) {
         
         setTemplateSeparators : function($left, $right)
         {
-            if ($left)
-                $__leftTplSep=$left;
-            if ($right)
-                $__rightTplSep=$right;
+            if ($left)  $__leftTplSep=$left;
+            if ($right) $__rightTplSep=$right;
             
             if ($right)
                 // recompute it
@@ -1069,10 +1068,8 @@ function localized_date (locale, format, timestamp) {
             var $tpl=$__cache[$id];
             
             // Provide some basic currying to the user
-            if ($data)
-                return $tpl.render( $data );
-            else
-                return $tpl;
+            if ($data)   return $tpl.render( $data );
+            else  return $tpl;
         },
         
         
@@ -1147,8 +1144,19 @@ function localized_date (locale, format, timestamp) {
         t_template : function($args) {
             $args=$args.split(',');
             var $id=trim($args.shift());
-            var $obj=$args.join(',').split('=>').join(':');
+            var $obj=$args.join(',').split("' + \"\\n\" + '").join('').split('=>').join(':');
             return '\'+ Contemplate.tpl("'+$id+'", '+$obj+'); ';
+        },
+        
+        t_table : function($args) {
+            var $obj=$args.split("' + \"\\n\" + '").join('').split('=>').join(':');
+            return '\'+ Contemplate.htmltable('+$obj+'); ';
+        },
+        
+        t_select : function($args)
+        {
+            var $obj=$args.split("' + \"\\n\" + '").join('').split('=>').join(':');
+            return '\'+ Contemplate.htmlselect('+$obj+'); ';
         },
         
         //
@@ -1156,9 +1164,9 @@ function localized_date (locale, format, timestamp) {
         //
         
         // echo
-        e : function($e) {
+        /*e : function($e) {
             return ($e);
-        },
+        },*/
         
         // quote
         q : function($e) {
@@ -1192,6 +1200,8 @@ function localized_date (locale, format, timestamp) {
         
         // Trim strings in templates
         trim : trim,
+        ltrim : ltrim,
+        rtrim : rtrim,
         // Sprintf in templates
         sprintf : sprintf,
         
@@ -1415,34 +1425,18 @@ function localized_date (locale, format, timestamp) {
             {
                 switch($m[1])
                 {
-                    case 'if':
-                        return self.t_if($m[2]);
-                        break;
-                    case 'elseif':
-                        return self.t_elseif($m[2]);
-                        break;
-                    case 'else':
-                        return self.t_else($m[2]);
-                        break;
-                    case 'endif':
-                        return self.t_endif($m[2]);
-                        break;
-                    case 'for':
-                        return self.t_for($m[2]);
-                        break;
-                    case 'elsefor':
-                        return self.t_elsefor($m[2]);
-                        break;
-                    case 'endfor':
-                        return self.t_endfor($m[2]);
-                        break;
-                    case 'template':
-                        return self.t_template($m[2]);
-                        break;
+                    case 'if': return self.t_if($m[2]);  break;
+                    case 'elseif':  return self.t_elseif($m[2]);  break;
+                    case 'else': return self.t_else($m[2]);  break;
+                    case 'endif': return self.t_endif($m[2]); break;
+                    case 'for': return self.t_for($m[2]); break;
+                    case 'elsefor': return self.t_elsefor($m[2]); break;
+                    case 'endfor':  return self.t_endfor($m[2]);  break;
+                    case 'template': return self.t_template($m[2]);  break;
                     case 'embed':
-                    case 'include':
-                        return self.t_include($m[2]);
-                        break;
+                    case 'include':  return self.t_include($m[2]);  break;
+                    case 'htmltable': return self.t_table($m[2]);  break;
+                    case 'htmlselect': return self.t_select($m[2]);  break;
                 }
             }
             return $m[0];

@@ -7,7 +7,7 @@ class Contemplate
     *  Simple light-weight php templating engine (part of javascript templating engine)
     *  @author: Nikos M.  http://nikos-web-development.netai.net/
     *  https://github.com/foo123/Contemplate
-    *  version 0.3.1
+    *  version 0.3.2
     *
     *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
     *  http://ejohn.org/blog/javascript-micro-templating/
@@ -39,8 +39,9 @@ class Contemplate
         'if', 'elseif', 'else', 'endif', 
         'for', 'elsefor', 'endfor',
         /*'embed',*/ 'include', 'template'
+        ,'htmlselect', 'htmltable'
     );
-    protected static $funcs=array( 'q', 'dq', 'l', 's', 'n', 'f', 'concat', 'trim', 'sprintf', 'now', 'date', 'ldate', 'htmlselect', 'htmltable' );
+    protected static $funcs=array( 'q', 'dq', 'l', 's', 'n', 'f', 'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'now', 'date', 'ldate' );
     protected static $regExps=array(
         'functions'=>'',
         'controlConstructs'=>'',
@@ -115,10 +116,8 @@ class Contemplate
     
     public static function setTemplateSeparators($left=false, $right=false)
     {
-        if ($left)
-            self::$__leftTplSep=$left;
-        if ($right)
-            self::$__rightTplSep=$right;
+        if ($left) self::$__leftTplSep=$left;
+        if ($right) self::$__rightTplSep=$right;
             
         if ($right)
             // recompute it
@@ -151,10 +150,8 @@ class Contemplate
         $tpl=self::$__cache[$id];
         
         // Provide some basic currying to the user
-        if ($data)
-            return $tpl->render( $data );
-        else
-            return $tpl;
+        if ($data)  return $tpl->render( $data );
+        else  return $tpl;
     }
     
     //
@@ -238,8 +235,20 @@ class Contemplate
     {
         $args=explode(',', $args);
         $id=trim(array_shift($args));
-        $obj=str_replace(array('{', '}'), array('array(', ')'), implode(',', $args));
+        $obj=str_replace(array("' . PHP_EOL . '", '{', '}', '[', ']'), array('', 'array(', ')','array(', ')'), implode(',', $args));
         return '\'. '.self::$__class.'::tpl("'.$id.'", '.$obj.'); ';
+    }
+    
+    public static function t_table($args)
+    {
+        $obj=str_replace(array("' . PHP_EOL . '", '{', '}', '[', ']'), array('', 'array(', ')','array(', ')'), $args);
+        return '\'. '.self::$__class.'::htmltable('.$obj.'); ';
+    }
+    
+    public static function t_select($args)
+    {
+        $obj=str_replace(array("' . PHP_EOL . '", '{', '}', '[', ']'), array('', 'array(', ')','array(', ')'), $args);
+        return '\'. '.self::$__class.'::htmlselect('.$obj.'); ';
     }
     
     //
@@ -247,10 +256,10 @@ class Contemplate
     //
     
     // echo
-    public static function e($e)
+    /*public static function e($e)
     {
         return ($e);
-    }
+    }*/
     
     // quote
     public static function q($e)
@@ -293,7 +302,22 @@ class Contemplate
     public static function trim()
     {
         $args=func_get_args();
-        return trim($args[0], $args[1]);
+        if (isset($args[1])) return trim($args[0], $args[1]);
+        else return trim($args[0]);
+    }
+    
+    public static function ltrim()
+    {
+        $args=func_get_args();  
+        if (isset($args[1])) return ltrim($args[0], $args[1]);
+        else return ltrim($args[0]);
+    }
+    
+    public static function rtrim()
+    {
+        $args=func_get_args();  
+        if (isset($args[1])) return rtrim($args[0], $args[1]);
+        else return rtrim($args[0]);
     }
     
     // Sprintf in templates
@@ -502,34 +526,18 @@ class Contemplate
         {
             switch($m[1])
             {
-                case 'if':
-                    return self::t_if($m[2]);
-                    break;
-                case 'elseif':
-                    return self::t_elseif($m[2]);
-                    break;
-                case 'else':
-                    return self::t_else($m[2]);
-                    break;
-                case 'endif':
-                    return self::t_endif($m[2]);
-                    break;
-                case 'for':
-                    return self::t_for($m[2]);
-                    break;
-                case 'elsefor':
-                    return self::t_elsefor($m[2]);
-                    break;
-                case 'endfor':
-                    return self::t_endfor($m[2]);
-                    break;
-                case 'template':
-                    return self::t_template($m[2]);
-                    break;
+                case 'if': return self::t_if($m[2]);  break;
+                case 'elseif': return self::t_elseif($m[2]); break;
+                case 'else': return self::t_else($m[2]);  break;
+                case 'endif': return self::t_endif($m[2]);  break;
+                case 'for': return self::t_for($m[2]);  break;
+                case 'elsefor': return self::t_elsefor($m[2]); break;
+                case 'endfor': return self::t_endfor($m[2]); break;
+                case 'template': return self::t_template($m[2]); break;
                 case 'embed':
-                case 'include':
-                    return self::t_include($m[2]);
-                    break;
+                case 'include': return self::t_include($m[2]); break;
+                case 'htmltable': return self::t_table($m[2]); break;
+                case 'htmlselect': return self::t_select($m[2]); break;
             }
         }
         return $m[0];

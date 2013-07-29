@@ -95,23 +95,23 @@ Use the _test.php_ file to test the basic functionality
 ###ChangeLog
 
 __0.3.2__
-* make *htmltable* *htmlselect* constructs instead of functions (so literal data cane be used also)
+* make *%htmltable* *%htmlselect* constructs instead of functions (so literal data can be used also)
 * add *%ltrim* , *%rtrim* functions
 * minor fixes, edits
 
 __0.3.1__
-* add *q* *dq* functions (quote, double quote)
-* add *htmltable* *htmlselect* functions (render a html table with options, render a html select with options)
+* add *%q* *%dq* functions (quote, double quote)
+* add *%htmltable* *%htmlselect* functions (render a html table with options, render a html select with options)
 * minor fixes, edits
 
 __0.3__
-* add *template* directive
+* add *%template* directive
 * add template functions to manipulate dates and localized dates
 * add some javascript methods from [phpjs](https://github.com/kvz/phpjs) project, (trim, sprintf, time, date), these are available as template functions (eg %sprintf, %trim, etc..)
 * make the Contemplate.js class compatible with both browser, node.js and requirejs configurations
 
 __0.2__
-* add *include* directive
+* add *%include* directive
 * make template separators configurable (defaults are '<%' and '%>')
 * add filesystem caching, refactor, optimize
 

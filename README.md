@@ -24,7 +24,7 @@ After creating the repository i became aware of a web framework with similar nam
 
 ###Rationale
 
-There are many templating engines out there, which are very elegant, fast, multipurpose (eg. _mustache_  _twig_  _handlebars_  _jade_  _doT_ and so on..)
+There are many templating engines out there, which are very elegant, fast, multipurpose (eg. _smarty_ _mustache_  _twig_  _handlebars_  _jade_  _doT_ and so on..)
 
 Most of the sophisticated engines use a custom parser to build the engine. 
 

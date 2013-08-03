@@ -13,6 +13,14 @@ After creating the repository i became aware of a web framework with similar nam
 
 *This repository and project are completely unrelated to that framework.*
 
+###Contents
+
+* [Rationale](#rationale)
+* [Features](#features)
+* [Examples/Screenshots](#screenshots)
+* [Dependencies](#dependencies)
+* [Tests](#tests)
+* [Changelog](#changelog)
 
 ###Rationale
 
@@ -39,6 +47,8 @@ The drawbacks of this approach are:
 *Contemplate* seeks to find the best balance between these requirements.
 
 The solution is inspired by _John Resig's post_ ([see above](http://ejohn.org/blog/javascript-micro-templating/)) and the fact that PHP and Javascript share a __common language subset__.
+
+
 
 ###Features:
 
@@ -82,14 +92,28 @@ The syntax for __template__ is this: %template(subtemplate_id, {"var1"=>$value1,
 where the {"var1"=>$value1, "var2"=>$value2, ..} are the data to be passed to the called template 
 this is exactly how the Contemplate::tpl($id, $data) (PHP), or Contemplate.tpl(id, data) (Javascript) are called
 
+###Screenshots
+
+Sample Template markup
+[![Template markup](/screenshots/template_markup.png)](https://github.com/foo123/Contemplate/raw/master/screenshots/template_markup.png)
+
+Data to be used for the template
+[![Template data](/screenshots/template_data.png)](https://github.com/foo123/Contemplate/raw/master/screenshots/template_data.png)
+
+PHP and Javascript rendering of the template on same page (see test.php)
+[![Template output](/screenshots/template_output.png)](https://github.com/foo123/Contemplate/raw/master/screenshots/template_output.png)
+
+
 ###Dependencies
 
 * PHP version supported is 5.2+ and all major browsers.
 * Only 2 classes are used (Contemplate.php, Contemplate.js), no other dependencies
 
+
 ###Tests
 
 Use the _test.php_ file to test the basic functionality
+
 
 
 ###ChangeLog
@@ -119,17 +143,6 @@ __0.1__
 * add localization options and template functions
 * initial release
 
-
-###Screenshots
-
-Sample Template markup
-[![Template markup](/screenshots/template_markup.png)](https://github.com/foo123/Contemplate/raw/master/screenshots/template_markup.png)
-
-Data to be used for the template
-[![Template data](/screenshots/template_data.png)](https://github.com/foo123/Contemplate/raw/master/screenshots/template_data.png)
-
-PHP and Javascript rendering of the template on same page (see test.php)
-[![Template output](/screenshots/template_output.png)](https://github.com/foo123/Contemplate/raw/master/screenshots/template_output.png)
 
 
 *Contributor* Nikos M.  

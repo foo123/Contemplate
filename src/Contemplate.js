@@ -1,16 +1,16 @@
-(function(escaper) {
+(function(root, escaper) {
     
     // export using window object on browser, or export object on node,require
-    var root = this, window=root, self;
+    var window=root, self;
     
     // adapted for browser, node and/or requirejs configurations
-    if (typeof exports == 'undefined' && root.Contemplate) return;
+    //if (('undefined' == typeof (exports) || (!module || !module.exports)) && (root.Contemplate)) return;
    
    /*
     *  Simple light-weight javascript templating engine (part of php templating engine)
     *  @author: Nikos M.  http://nikos-web-development.netai.net/
     *  https://github.com/foo123/Contemplate
-    *  version 0.3.2
+    *  version 0.3.3
     *
     *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
     *  http://ejohn.org/blog/javascript-micro-templating/
@@ -21,6 +21,45 @@
     *   PHP functions adapted from phpjs project
     *   https://github.com/kvz/phpjs
     */
+function count (mixed_var, mode) {
+  // http://kevin.vanzonneveld.net
+  // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+  // +      input by: Waldo Malqui Silva
+  // +   bugfixed by: Soren Hansen
+  // +      input by: merabi
+  // +   improved by: Brett Zamir (http://brett-zamir.me)
+  // +   bugfixed by: Olivier Louvignes (http://mg-crea.com/)
+  // *     example 1: count([[0,0],[0,-4]], 'COUNT_RECURSIVE');
+  // *     returns 1: 6
+  // *     example 2: count({'one' : [1,2,3,4,5]}, 'COUNT_RECURSIVE');
+  // *     returns 2: 6
+  var key, cnt = 0;
+
+  if (mixed_var === null || typeof mixed_var === 'undefined') {
+    return 0;
+  } else if (mixed_var.constructor !== Array && mixed_var.constructor !== Object) {
+    return 1;
+  }
+
+  if (mode === 'COUNT_RECURSIVE') {
+    mode = 1;
+  }
+  if (mode != 1) {
+    mode = 0;
+  }
+
+  for (key in mixed_var) {
+    if (mixed_var.hasOwnProperty(key)) {
+      cnt++;
+      if (mode == 1 && mixed_var[key] && (mixed_var[key].constructor === Array || mixed_var[key].constructor === Object)) {
+        cnt += this.count(mixed_var[key], 1);
+      }
+    }
+  }
+
+  return cnt;
+}
+
 function is_array (mixed_var) {
   // http://kevin.vanzonneveld.net
   // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
@@ -949,7 +988,7 @@ function localized_date (locale, format, timestamp) {
     var 
         $escaper=null,
         
-        $__cacheMode=0,
+        $__cacheMode=0, $_thisPath=null,
         
         $__cache={}, $__templates={}, $__partials={},
         $__locale={},
@@ -963,7 +1002,7 @@ function localized_date (locale, format, timestamp) {
             /*'embed',*/ 'include', 'template'
             ,'htmlselect', 'htmltable'
         ],
-        $funcs=[ 'q', 'dq', 'l', 's', 'n', 'f', 'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'now', 'date', 'ldate' ],
+        $funcs=[ 'count', 'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'now', 'date', 'ldate', 'q', 'dq', 'l', 's', 'n', 'f' ],
         $regExps={
             'functions':null,
             'controlConstructs':null,
@@ -1007,6 +1046,10 @@ function localized_date (locale, format, timestamp) {
     
     self={
 
+        IS_NODEJS : false,
+        NFS : null,
+        ENC : 'utf8',
+        
         // constants
         CACHE_TO_DISK_NONE : 0,
         CACHE_TO_DISK_AUTOUPDATE : 2,
@@ -1043,13 +1086,28 @@ function localized_date (locale, format, timestamp) {
                 $regExps['replacements']=new RegExp('\\t\\s*(.*?)\\s*'+$__rightTplSep, 'g');
         },
         
+        // whether working in Node.js or not
+        isNodeJs : function($bool, $fs) {
+            self.IS_NODEJS=$bool;
+            if ($bool)
+            {
+                // filesystem I/O object of Nodejs
+                self.NFS = $fs || require('fs');
+                $_thisPath = __filename;
+            }
+            else
+            {
+                self.NFS = null;
+                $_thisPath = null;
+            }
+        },
+        
         setCacheDir : function($dir) {
-            $__cacheDir=$dir;
+            $__cacheDir=rtrim($dir, '/')+'/';
         },
         
         setCacheMode : function($mode) {
-            // TODO
-            $__cacheMode=/*$mode;*/ self.CACHE_TO_DISK_NONE;
+            $__cacheMode= (self.IS_NODEJS) ? $mode : self.CACHE_TO_DISK_NONE;
         },
         
         // add templates manually
@@ -1060,15 +1118,12 @@ function localized_date (locale, format, timestamp) {
         tpl : function($id, $data) {
             // Figure out if we're getting a template, or if we need to
             // load the template - and be sure to cache the result.
-            if (!$__cache[$id])
-            {
-                $__cache[$id]=self.getCachedTemplate($id);
-            }
+            if (!$__cache[$id])  $__cache[$id]=self.getCachedTemplate($id);
             
             var $tpl=$__cache[$id];
             
             // Provide some basic currying to the user
-            if ($data)   return $tpl.render( $data );
+            if ($data)  return $tpl.render( $data );
             else  return $tpl;
         },
         
@@ -1167,6 +1222,9 @@ function localized_date (locale, format, timestamp) {
         /*e : function($e) {
             return ($e);
         },*/
+        
+        // count items in array
+        count : count,
         
         // quote
         q : function($e) {
@@ -1494,47 +1552,87 @@ function localized_date (locale, format, timestamp) {
         getTemplateContents : function($id) {
             if ($__templates[$id])
             {
-                var scriptEl=window.document.getElementById($__templates[$id]);
-                return scriptEl.innerHTML;
+                if (self.IS_NODEJS && self.NFS)
+                {
+                    return self.NFS.readFileSync($__templates[$id], self.ENC);
+                }
+                else
+                {
+                    var scriptEl=window.document.getElementById($__templates[$id]);
+                    return scriptEl.innerHTML;
+                }
             }
             return '';
         },
         
         createTemplateRenderFunction : function($id) {
             self.reset();
-        
-            var $func=
-                // use php-style variables using '$' in front of var name
-                "for (var __n__ in $__o__) { if (Contemplate.hasOwn($__o__, __n__)) { $__o__['$'+__n__]=$__o__[__n__]; delete $__o__[__n__];} } "
-                // Introduce the data as local variables using with(){}
-               // Convert the template into pure JavaScript
-                +"var $__p__ = ''; "
-                +"with($__o__) { $__p__ += '" + self.parse(self.getTemplateContents($id)) + "'; } "
-                +"return $__p__;"
-                ;
+            if (self.IS_NODEJS)
+            {
+                var $func=
+                    // use php-style variables using '$' in front of var name
+                    "for (var __n__ in $__o__) { if (Contemplate.hasOwn($__o__, __n__)) { $__o__['$'+__n__]=$__o__[__n__]; delete $__o__[__n__];} } "
+                    // Introduce the data as local variables using with(){}
+                   // Convert the template into pure JavaScript
+                    +"var $__p__ = ''; "
+                    +"with($__o__) { $__p__ += '" + self.parse(self.getTemplateContents($id)) + "'; } "
+                    +"return $__p__;"
+                    ;
+            }
+            else
+            {
+                var $func=
+                    // use php-style variables using '$' in front of var name
+                    "for (var __n__ in $__o__) { if (Contemplate.hasOwn($__o__, __n__)) { $__o__['$'+__n__]=$__o__[__n__]; delete $__o__[__n__];} } "
+                    // Introduce the data as local variables using with(){}
+                   // Convert the template into pure JavaScript
+                    +"var $__p__ = ''; "
+                    +"with($__o__) { $__p__ += '" + self.parse(self.getTemplateContents($id)) + "'; } "
+                    +"return $__p__;"
+                    ;
+            }
             return new Function("$__o__", $func);
         },
         
         createCachedTemplate : function($id, $filename, $classname) {
             self.reset();
         
-            var $class=
-                "(function() { " + "\n"
-                +"/* Contemplate cached template '"+$id+"' */ " + "\n"
-                +"var root=this; "
-                +"if (!root['" + $classname + "']) { "
-                +"function " + $classname + "($id) { this.id=$id; }; "
-                +$classname + ".prototype.setId=function($id) { if ($id) {this.id=$id;} return this; }; "
-                +$classname + ".prototype.render=function($__o__) { "
-                // use php-style variables using '$' in front of var name
-                +"for (var __n__ in $__o__) { if (Contemplate.hasOwn($__o__, __n__)) { $__o__['$'+__n__]=$__o__[__n__]; delete $__o__[__n__];} } "
-                // Introduce the data as local variables using with(){}
-               // Convert the template into pure JavaScript
-                +"var $__p__ = ''; "
-                +"with($__o__) { $__p__ += '" + self.parse(self.getTemplateContents($id)) + "'; } "
-                +"return $__p__; "
-                +"}; if (typeof exports !== 'undefined') {exports = "+$classname+";} else {root['" + $classname + "']="+$classname+";} } }).call(this);"
-                ;
+            if (self.IS_NODEJS)
+            {
+                var $class=
+                    "(function(root) { " + "\n"
+                    +"/* Contemplate cached template '"+$id+"' */ " + "\n"
+                    +"function " + $classname + "($id) { this.id=$id; }; "
+                    +$classname + ".prototype.setId=function($id) { if ($id) {this.id=$id;} return this; }; "
+                    +$classname + ".prototype.render=function($__o__) { "
+                    // use php-style variables using '$' in front of var name
+                    +"for (var __n__ in $__o__) { if (Contemplate.hasOwn($__o__, __n__)) { $__o__['$'+__n__]=$__o__[__n__]; delete $__o__[__n__];} } "
+                    // Introduce the data as local variables using with(){}
+                   // Convert the template into pure JavaScript
+                    +"var $__p__ = ''; "
+                    +"with($__o__) { $__p__ += '" + self.parse(self.getTemplateContents($id)) + "'; } "
+                    +"return $__p__; "
+                    +"}; if ('undefined' != typeof (module) && module.exports) {module.exports="+$classname+";} else if (typeof (exports) != 'undefined') {exports="+$classname+";}  else {root." + $classname + "="+$classname+";} })(this);"
+                    ;
+            }
+            else
+            {
+                var $class=
+                    "(function(root) { " + "\n"
+                    +"/* Contemplate cached template '"+$id+"' */ " + "\n"
+                    +"function " + $classname + "($id) { this.id=$id; }; "
+                    +$classname + ".prototype.setId=function($id) { if ($id) {this.id=$id;} return this; }; "
+                    +$classname + ".prototype.render=function($__o__) { "
+                    // use php-style variables using '$' in front of var name
+                    +"for (var __n__ in $__o__) { if (Contemplate.hasOwn($__o__, __n__)) { $__o__['$'+__n__]=$__o__[__n__]; delete $__o__[__n__];} } "
+                    // Introduce the data as local variables using with(){}
+                   // Convert the template into pure JavaScript
+                    +"var $__p__ = ''; "
+                    +"with($__o__) { $__p__ += '" + self.parse(self.getTemplateContents($id)) + "'; } "
+                    +"return $__p__; "
+                    +"}; if ('undefined' != typeof (module) && module.exports) {module.exports="+$classname+";} else if (typeof (exports) != 'undefined') {exports="+$classname+";}  else {root." + $classname + "="+$classname+";} })(this);"
+                    ;
+            }
             return self.setCachedTemplate($filename, $class);
         },
         
@@ -1542,19 +1640,17 @@ function localized_date (locale, format, timestamp) {
             
             switch($__cacheMode)
             {
-                // todo
-                /*
                 case self.CACHE_TO_DISK_NOUPDATE:
                     var $cachedTplFile=self.getCachedTemplateName($id);
                     var $cachedTplClass=self.getCachedTemplateClass($id);
-                    if (!is_file($cachedTplFile))
+                    if (!self.NFS.existsSync($cachedTplFile))
                     {
                         self.createCachedTemplate($id, $cachedTplFile, $cachedTplClass);
                     }
-                    if (is_file($cachedTplFile))
+                    if (self.NFS.existsSync($cachedTplFile))
                     {
-                        include($cachedTplFile);
-                        $tpl = new $cachedTplClass();
+                        var $tplclass = require($cachedTplFile);
+                        $tpl = new $tplclass(); //$cachedTplClass();
                         $tpl.setId($id);
                         return $tpl;
                     }
@@ -1564,21 +1660,31 @@ function localized_date (locale, format, timestamp) {
                 case self.CACHE_TO_DISK_AUTOUPDATE:
                     var $cachedTplFile=self.getCachedTemplateName($id);
                     var $cachedTplClass=self.getCachedTemplateClass($id);
-                    if (!is_file($cachedTplFile) || (filemtime($cachedTplFile) <= filemtime($__templates[$id])))
+                    if (!self.NFS.existsSync($cachedTplFile))
                     {
                         // if tpl not exist or is out-of-sync re-create it
                         self.createCachedTemplate($id, $cachedTplFile, $cachedTplClass);
                     }
-                    if (is_file($cachedTplFile))
+                    else
                     {
-                        include($cachedTplFile);
-                        $tpl = new $cachedTplClass();
+                        var stat=self.NFS.statSync($cachedTplFile);
+                        var stat2=self.NFS.statSync($__templates[$id]);
+                        if (stat.mtime.getTime() <= stat2.mtime.getTime())
+                        {
+                            // if tpl not exist or is out-of-sync re-create it
+                            self.createCachedTemplate($id, $cachedTplFile, $cachedTplClass);
+                        }
+                    }
+                    if (self.NFS.existsSync($cachedTplFile))
+                    {
+                        var $tplclass = require($cachedTplFile);
+                        console.log($tplclass);
+                        $tpl = new $tplclass(); //$cachedTplClass();
                         $tpl.setId($id);
                         return $tpl;
                     }
                     return null;
                     break;
-                */
                 case self.CACHE_TO_DISK_NONE:
                 default:
                     // dynamic in-memory caching during page-request
@@ -1588,9 +1694,8 @@ function localized_date (locale, format, timestamp) {
             return null;
         },
         
-        setCachedTemplate : function($id, $tplContents) {
-            // todo
-            return false;/*file_put_contents(self.getCachedTemplateName($id), $tplContents);*/
+        setCachedTemplate : function($filename, $tplContents) {
+            return self.NFS.writeFileSync($filename, $tplContents, self.ENC);
         },
         
         reset : function() {
@@ -1641,9 +1746,10 @@ function localized_date (locale, format, timestamp) {
     self.init(/*escaper*/);
     
     // export it
-    if (typeof exports !== 'undefined')
-        exports = self;
-    else
-        root.Contemplate = self;
+    if ('undefined' != typeof (module) && module.exports)    module.exports = self;
+    else if ('undefined' != typeof (exports))    exports = self;
+    else  root.Contemplate = self;
+    // add it to global namespace to be available for sub-templates, same as browser
+    if ('undefined' != typeof (global)) global.Contemplate = self;
     
-}).call(this);
+})(this);

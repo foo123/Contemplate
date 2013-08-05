@@ -52,17 +52,19 @@ The solution is inspired by _John Resig's post_ ([see above](http://ejohn.org/bl
 
 ###Features:
 
-* *Contemplate* does a minimum parsing (and caching) in order to create dynamic templates (which can be used in both PHP and Javascript)
+* *Contemplate* does a *minimum parsing* (and caching) in order to create dynamic templates (which can be used in both PHP and Javascript)
 and trying to contain the needed functionality inside the common language subset.
 
 * Most of the time this can be accomplished, the rest functionality is built with __custom functions__ which mostly resemble the PHP
 syntax, yet work the same in Javascript.
 
+* Works the __same__ with _PHP_ , _client-side Javascript_ and _server-side Nodejs_
+
 * Simple and light-weight ( __just 2 classes__ , one for php and one for javascript, no other dependencies)
 
 * __Fast__ , can cache templates both in PHP and Javascript dynamically (filesystem caching has 3 modes, __NONE__ which uses only in-memory caching, __NOUPDATE__ which caches the templates only once and __AUTOUPDATE__ which re-creates the cached template if original template has changed, useful for debugging)
 
-* Syntax very close to PHP (there was an effort to keep the engine syntax as __close to PHP syntax__ as possible, to avoid learning another language syntax)
+* Syntax __very close to PHP__ (there was an effort to keep the engine syntax as close to PHP syntax as possible, to avoid learning another language syntax)
 
 * Easily __extensible__ , configurable
 
@@ -72,7 +74,7 @@ syntax, yet work the same in Javascript.
 
 * Loops can have optional _elsefor()_ statement when no data, or data is empty (see test.php)
 
-* Templates can *include* other templates (similar to PHP __include__ directive), right now these includes wil be compiled into the the template that called them
+* Templates can *include* other templates (similar to PHP __include__ directive), these includes wil be compiled into the the template that called them
 
 * Templates can *call another template* using __template__ directive, these templates are called as templates subroutines and parsed by themselves
 
@@ -106,17 +108,21 @@ PHP and Javascript rendering of the template on same page (see test.php)
 
 ###Dependencies
 
-* PHP version supported is 5.2+ and all major browsers.
+* PHP version supported is 5.2+ , Node.js version supported is 0.8+, all major browsers.
 * Only 2 classes are used (Contemplate.php, Contemplate.js), no other dependencies
 
 
 ###Tests
 
-Use the _test.php_ file to test the basic functionality
+Use the _test.php_ (or _test.js_ for nodejs) file to test the basic functionality
 
 
 
 ###ChangeLog
+
+__0.3.3__
+* make Contemplate.js work with Nodejs , add nodejs server example (test.js)
+* add *%count* function (number of items in an array/object)
 
 __0.3.2__
 * make *%htmltable* *%htmlselect* constructs instead of functions (so literal data can be used also)

@@ -7,7 +7,7 @@ class Contemplate
     *  Simple light-weight php templating engine (part of javascript templating engine)
     *  @author: Nikos M.  http://nikos-web-development.netai.net/
     *  https://github.com/foo123/Contemplate
-    *  version 0.3.2
+    *  version 0.3.3
     *
     *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
     *  http://ejohn.org/blog/javascript-micro-templating/
@@ -41,7 +41,7 @@ class Contemplate
         /*'embed',*/ 'include', 'template'
         ,'htmlselect', 'htmltable'
     );
-    protected static $funcs=array( 'q', 'dq', 'l', 's', 'n', 'f', 'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'now', 'date', 'ldate' );
+    protected static $funcs=array( 'count', 'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'now', 'date', 'ldate', 'q', 'dq', 'l', 's', 'n', 'f' );
     protected static $regExps=array(
         'functions'=>'',
         'controlConstructs'=>'',
@@ -144,8 +144,7 @@ class Contemplate
     {
         // Figure out if we're getting a template, or if we need to
         // load the template - and be sure to cache the result.
-        if (!isset(self::$__cache[$id]))
-            self::$__cache[$id]=self::getCachedTemplate($id);
+        if (!isset(self::$__cache[$id]))   self::$__cache[$id]=self::getCachedTemplate($id);
         
         $tpl=self::$__cache[$id];
         
@@ -260,6 +259,12 @@ class Contemplate
     {
         return ($e);
     }*/
+    
+    // count items in array
+    public static function count($a)
+    {
+        return count($a);
+    }
     
     // quote
     public static function q($e)

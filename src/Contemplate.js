@@ -1678,7 +1678,6 @@ function localized_date (locale, format, timestamp) {
                     if (self.NFS.existsSync($cachedTplFile))
                     {
                         var $tplclass = require($cachedTplFile);
-                        console.log($tplclass);
                         $tpl = new $tplclass(); //$cachedTplClass();
                         $tpl.setId($id);
                         return $tpl;
@@ -1737,8 +1736,7 @@ function localized_date (locale, format, timestamp) {
         },
         
         log : function($m) {
-            if (window.console && window.console.log)
-                console.log($m);
+            if ('undefined'!=typeof(console) && window.console.log)   console.log($m);
         }
     };
     

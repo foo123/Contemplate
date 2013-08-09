@@ -796,6 +796,7 @@ function localized_date($locale, $format, $timestamp)
         $__cache={}, $__templates={}, $__partials={},
         $__locale={},
         $__leftTplSep="<%", $__rightTplSep="%>",
+        $__preserveLines="' + \"\\n\" + '",
         
         $loops=0, $ifs=0, $loopifs=0,
     
@@ -886,6 +887,13 @@ function localized_date($locale, $format, $timestamp)
             if ($right)
                 // recompute it
                 $regExps['replacements']=new RegExp('\\t\\s*(.*?)\\s*'+$__rightTplSep, 'g');
+        },
+        
+        setPreserveLines : function($bool)
+        {
+            if ('undefined'==typeof($bool)) $bool=true;
+            if ($bool)  $__preserveLines="' + \"\\n\" + '";
+            else $__preserveLines="";
         },
         
         // whether working in Node.js or not
@@ -999,18 +1007,18 @@ function localized_date($locale, $format, $timestamp)
         t_template : function($args) {
             $args=$args.split(',');
             var $id=trim($args.shift());
-            var $obj=$args.join(',').split("' + \"\\n\" + '").join('').split('=>').join(':');
+            var $obj=$args.join(',').split($__preserveLines).join('').split('=>').join(':');
             return '\'+ Contemplate.tpl("'+$id+'", '+$obj+'); ';
         },
         
         t_table : function($args) {
-            var $obj=$args.split("' + \"\\n\" + '").join('').split('=>').join(':');
+            var $obj=$args.split($__preserveLines).join('').split('=>').join(':');
             return '\'+ Contemplate.htmltable('+$obj+'); ';
         },
         
         t_select : function($args)
         {
-            var $obj=$args.split("' + \"\\n\" + '").join('').split('=>').join(':');
+            var $obj=$args.split($__preserveLines).join('').split('=>').join(':');
             return '\'+ Contemplate.htmlselect('+$obj+'); ';
         },
         
@@ -1315,8 +1323,7 @@ function localized_date($locale, $format, $timestamp)
                         .replace($regExps['specials'], " ")
                         .split($__leftTplSep).join("\t")
                         .replace($regExps['quotes'], "\\'")
-                         // preserve lines
-                        .split("\n").join("' + \"\\n\" + '")
+                        .split("\n").join($__preserveLines) // preserve lines
                    )
                     .replace($regExps['functions'], "Contemplate.$1")
                     .replace($regExps['replacements'], "' + ( $1 ) + '")
@@ -1331,8 +1338,7 @@ function localized_date($locale, $format, $timestamp)
                         .replace($regExps['specials'], " ")
                         .split($__leftTplSep).join("\t")
                         .replace($regExps['quotes'], "\\'")
-                         // preserve lines
-                        .split("\n").join("' + \"\\n\" + '")
+                        .split("\n").join($__preserveLines) // preserve lines
                     )
                     .replace($regExps['replacements'], "' + ( $1 ) + '")
                     .split("\t").join("'; ")
@@ -1352,15 +1358,8 @@ function localized_date($locale, $format, $timestamp)
         getTemplateContents : function($id) {
             if ($__templates[$id])
             {
-                if (self.IS_NODEJS && self.NFS)
-                {
-                    return self.NFS.readFileSync($__templates[$id], self.ENC);
-                }
-                else
-                {
-                    var scriptEl=window.document.getElementById($__templates[$id]);
-                    return scriptEl.innerHTML;
-                }
+                if (self.IS_NODEJS && self.NFS) { return self.NFS.readFileSync($__templates[$id], self.ENC); }
+                else { var scriptEl=window.document.getElementById($__templates[$id]);  return scriptEl.innerHTML; }
             }
             return '';
         },

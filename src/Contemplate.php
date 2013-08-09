@@ -28,6 +28,7 @@ class Contemplate
     private static $__locale=array();
     private static $__leftTplSep="<%";
     private static $__rightTplSep="%>";
+    private static $__preserveLines="' . PHP_EOL . '";
     
     protected static $loops=0;
     protected static $ifs=0;
@@ -122,6 +123,12 @@ class Contemplate
         if ($right)
             // recompute it
             self::$regExps['replacements']="/\t\s*(.*?)\s*".self::$__rightTplSep."/";
+    }
+    
+    public static function setPreserveLines($bool=true)
+    {
+        if ($bool)  self::$__preserveLines="' . PHP_EOL . '";
+        else self::$__preserveLines="";
     }
     
     public static function setCacheDir($dir)
@@ -234,19 +241,19 @@ class Contemplate
     {
         $args=explode(',', $args);
         $id=trim(array_shift($args));
-        $obj=str_replace(array("' . PHP_EOL . '", '{', '}', '[', ']'), array('', 'array(', ')','array(', ')'), implode(',', $args));
+        $obj=str_replace(array(self::$__preserveLines, '{', '}', '[', ']'), array('', 'array(', ')','array(', ')'), implode(',', $args));
         return '\'. '.self::$__class.'::tpl("'.$id.'", '.$obj.'); ';
     }
     
     public static function t_table($args)
     {
-        $obj=str_replace(array("' . PHP_EOL . '", '{', '}', '[', ']'), array('', 'array(', ')','array(', ')'), $args);
+        $obj=str_replace(array(self::$__preserveLines, '{', '}', '[', ']'), array('', 'array(', ')','array(', ')'), $args);
         return '\'. '.self::$__class.'::htmltable('.$obj.'); ';
     }
     
     public static function t_select($args)
     {
-        $obj=str_replace(array("' . PHP_EOL . '", '{', '}', '[', ']'), array('', 'array(', ')','array(', ')'), $args);
+        $obj=str_replace(array(self::$__preserveLines, '{', '}', '[', ']'), array('', 'array(', ')','array(', ')'), $args);
         return '\'. '.self::$__class.'::htmlselect('.$obj.'); ';
     }
     
@@ -550,36 +557,29 @@ class Contemplate
     
     protected static function parseControlConstructs($s) 
     {
-        $s = str_replace(self::$__rightTplSep, "\n", $s); /*implode("\n", explode(self::$__rightTplSep, $s));*/
+        $s = str_replace(self::$__rightTplSep, "\n", $s);
         $s = preg_replace_callback(self::$regExps['controlConstructs'], array(__CLASS__, 'doControlConstruct'), $s);
-        $s = str_replace("\n", self::$__rightTplSep, $s); /*implode(self::$__rightTplSep, explode("\n", $s));*/
+        $s = str_replace("\n", self::$__rightTplSep, $s);
         return $s;
     }
     
     protected static function parse($s) 
     {
         $s = preg_replace(self::$regExps['specials'], " ", $s);
-        $s = str_replace(self::$__leftTplSep, "\t", $s); /*implode("\t", explode(self::$__leftTplSep, $s));*/
+        $s = str_replace(self::$__leftTplSep, "\t", $s);
         $s = preg_replace(self::$regExps['quotes'], "\\'", $s);
-        // preserve lines
-        $s = str_replace("\n", "' . PHP_EOL . '", $s); /*implode("' . PHP_EOL . '", explode("\n", $s));*/
+        $s = str_replace("\n", self::$__preserveLines, $s); // preserve lines
         $s = self::parseControlConstructs($s);
         if (!empty(self::$funcs))  $s = preg_replace(self::$regExps['functions'], self::$__class.'::${1}', $s);
         $s = preg_replace(self::$regExps['replacements'], "' . ( $1 ) . '", $s);
-        $s = str_replace("\t", "'; ", $s); /*implode("'; ", explode("\t", $s));*/
-        $s = str_replace(self::$__rightTplSep, " \$__p__ .= '", $s); /*implode(" \$__p__ .= '", explode(self::$__rightTplSep, $s));*/
-        // remove unnecessary concats
-        //$s = str_replace(array("'' .", ". ''"),  "", $s); /*implode("' . PHP_EOL . '", explode("\n", $s));*/
-        
+        $s = str_replace("\t", "'; ", $s);
+        $s = str_replace(self::$__rightTplSep, " \$__p__ .= '", $s);
         return $s;
     }
     
     public static function getTemplateContents($id)
     {
-        if (isset(self::$__templates[$id]) && is_file(self::$__templates[$id]))
-        {
-            return file_get_contents(self::$__templates[$id]);
-        }
+        if (isset(self::$__templates[$id]) && is_file(self::$__templates[$id]))   return file_get_contents(self::$__templates[$id]);
         return '';
     }
     
@@ -596,7 +596,6 @@ class Contemplate
     protected static function createTemplateRenderFunction($id)
     {
         self::reset();
-        
         $func=
             // Introduce the data as local variables using extract()
             "extract(".self::$__class."::o2a((array)\$__o__)); "
@@ -613,7 +612,6 @@ class Contemplate
     protected static function createCachedTemplate($id, $filename, $classname)
     {
         self::reset();
-        
         $class=
             // Introduce the data as local variables using extract()
             '<?php ' .PHP_EOL
@@ -741,28 +739,6 @@ class Contemplate
         return $date;
     }
     
-    /*public static function tpl($template, array $args=array())
-    {
-        if ( isset(self::$__templates__[$template]) )
-            $template_path = self::$__templates__[$template];
-        else return '';
-        
-        if (!$template_path || !is_file($template_path))
-        {
-            printf('File "%s" doesn\'t exist!', $template_path);
-            return '';
-        }
-        return self::getTpl($template_path, $args);
-    }
-    
-    private static function getTpl($______templatepath________, array $______args______=array())
-    {
-        if (!empty($______args______)) extract($______args______);
-        ob_start();
-            include($______templatepath________);
-        return ob_get_clean();
-    }*/
-    
     protected static function merge()
     {
         if (func_num_args() < 1) return;
@@ -806,10 +782,29 @@ class Contemplate
         return $merged;
     }
     
-    public static function log($m)
+    /*public static function tpl($template, array $args=array())
     {
-        return '<pre>' . print_r($m, true) . '</pre>';
+        if ( isset(self::$__templates__[$template]) )
+            $template_path = self::$__templates__[$template];
+        else return '';
+        
+        if (!$template_path || !is_file($template_path))
+        {
+            printf('File "%s" doesn\'t exist!', $template_path);
+            return '';
+        }
+        return self::getTpl($template_path, $args);
     }
+    
+    private static function getTpl($______templatepath________, array $______args______=array())
+    {
+        if (!empty($______args______)) extract($______args______);
+        ob_start();
+            include($______templatepath________);
+        return ob_get_clean();
+    }*/
+    
+    public static function log($m) {  return '<pre>' . print_r($m, true) . '</pre>'; }
 }
 
 // init the engine

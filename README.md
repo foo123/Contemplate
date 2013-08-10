@@ -13,6 +13,12 @@ After creating the repository i became aware of a web framework with similar nam
 
 *This repository and project are completely unrelated to that framework.*
 
+There is an older and quite different template engine for node.js named also "contemplate" [here](https://npmjs.org/package/contemplate) and [here](https://github.com/enricomarino/contemplate)
+
+*This repository and project are completely unrelated to this engine.*
+
+(it seems the word *contemplate* is nice for a template engine :) )
+
 ###Contents
 
 * [Rationale](#rationale)

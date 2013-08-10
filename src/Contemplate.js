@@ -10,7 +10,7 @@
     *  Simple light-weight javascript templating engine (part of php templating engine)
     *  @author: Nikos M.  http://nikos-web-development.netai.net/
     *  https://github.com/foo123/Contemplate
-    *  version 0.3.3
+    *  version 0.4
     *
     *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
     *  http://ejohn.org/blog/javascript-micro-templating/
@@ -786,6 +786,38 @@ function localized_date($locale, $format, $timestamp)
     // return localized date
     return $date;
 }
+
+function ajaxRequest(type, url, params, callback) 
+{
+	var xmlhttp;
+	if (window.XMLHttpRequest) // code for IE7+, Firefox, Chrome, Opera, Safari
+		xmlhttp = new XMLHttpRequest();
+	else // code for IE6, IE5
+		xmlhttp = new ActiveXObject("Microsoft.XMLHTTP"); // or ActiveXObject("Msxml2.XMLHTTP"); ??
+	
+    xmlhttp.onreadystatechange = function() {
+		if (callback && xmlhttp.readyState == 4) callback(xmlhttp.status, xmlhttp.responseText, xmlhttp);
+	};
+    
+	xmlhttp.open(type, url, true);
+	xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+	xmlhttp.send(params);
+}
+
+function ajaxLoad(type, url, params) 
+{
+	var xmlhttp;
+	if (window.XMLHttpRequest) // code for IE7+, Firefox, Chrome, Opera, Safari
+		xmlhttp = new XMLHttpRequest();
+	else // code for IE6, IE5
+		xmlhttp = new ActiveXObject("Microsoft.XMLHTTP"); // or ActiveXObject("Msxml2.XMLHTTP"); ??
+	
+    xmlhttp.open(type, url, false);  // 'false' makes the request synchronous
+    xmlhttp.send(params);
+
+    if (xmlhttp.status === 200)    return xmlhttp.responseText;
+    return '';
+}
     
     // private vars
     var 
@@ -842,8 +874,7 @@ function localized_date($locale, $format, $timestamp)
         };
         
         this.render=function($data) {
-            if ($renderFunction)
-                return $renderFunction($data);
+            if ($renderFunction)  return $renderFunction($data);
             return '';
         };
     };
@@ -896,7 +927,7 @@ function localized_date($locale, $format, $timestamp)
             else $__preserveLines="";
         },
         
-        // whether working in Node.js or not
+        // whether working inside Node.js or not
         isNodeJs : function($bool, $fs) {
             self.IS_NODEJS=$bool;
             if ($bool)
@@ -1358,8 +1389,12 @@ function localized_date($locale, $format, $timestamp)
         getTemplateContents : function($id) {
             if ($__templates[$id])
             {
+                // nodejs
                 if (self.IS_NODEJS && self.NFS) { return self.NFS.readFileSync($__templates[$id], self.ENC); }
-                else { var scriptEl=window.document.getElementById($__templates[$id]);  return scriptEl.innerHTML; }
+                // client-side js and url given as template location
+                else if (-1!==$__templates[$id].indexOf('/')) { return ajaxLoad('GET', $__templates[$id]); }
+                // client-side js and DOM script-element given as template holder
+                else { return window.document.getElementById($__templates[$id]).innerHTML; }
             }
             return '';
         },

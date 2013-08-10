@@ -75,7 +75,6 @@ $data=array(
 
 $main_template_data=array(
     'templates'=>array(
-        'demo'=>Contemplate::getTemplateContents('demo'),
         'sub'=>Contemplate::getTemplateContents('sub'),
     ),
     'sepleft'=>$sepleft,

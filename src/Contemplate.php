@@ -7,7 +7,7 @@ class Contemplate
     *  Simple light-weight php templating engine (part of javascript templating engine)
     *  @author: Nikos M.  http://nikos-web-development.netai.net/
     *  https://github.com/foo123/Contemplate
-    *  version 0.3.3
+    *  version 0.4
     *
     *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
     *  http://ejohn.org/blog/javascript-micro-templating/
@@ -28,7 +28,7 @@ class Contemplate
     private static $__locale=array();
     private static $__leftTplSep="<%";
     private static $__rightTplSep="%>";
-    private static $__preserveLines="' . PHP_EOL . '";
+    private static $__preserveLines="' . \"\\n\" . '";
     
     protected static $loops=0;
     protected static $ifs=0;
@@ -127,7 +127,7 @@ class Contemplate
     
     public static function setPreserveLines($bool=true)
     {
-        if ($bool)  self::$__preserveLines="' . PHP_EOL . '";
+        if ($bool)  self::$__preserveLines="' . \"\\n\" . '";
         else self::$__preserveLines="";
     }
     

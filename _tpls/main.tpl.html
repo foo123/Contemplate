@@ -16,9 +16,6 @@
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <script src="./src/Contemplate.js"></script>
-        <script type="text/html" id="demo_tpl">
-         <% $templates["demo"] %>
-        </script>
         <script type="text/html" id="sub_tpl">
          <% $templates["sub"] %>
         </script>
@@ -38,9 +35,10 @@
             Contemplate.setTemplateSeparators("<% $sepleft %>", "<% $sepright %>");
             /* add the templates (from the inline script tags) */
             Contemplate.add({
-                "demo" : "demo_tpl",
-                "sub" : "sub_tpl"
+                "demo" : "./_tpls/demo.tpl.html", // load the template from this url
+                "sub" : "sub_tpl" // load the template from inside this DOM element
             });
+            
             /* localize some strings */
             Contemplate.setLocaleStrings({
                 "Jul" : "Ιουλ",

@@ -796,7 +796,7 @@ function ajaxRequest(type, url, params, callback)
 		xmlhttp = new ActiveXObject("Microsoft.XMLHTTP"); // or ActiveXObject("Msxml2.XMLHTTP"); ??
 	
     xmlhttp.onreadystatechange = function() {
-		if (callback && xmlhttp.readyState == 4) callback(xmlhttp.status, xmlhttp.responseText, xmlhttp);
+		if (callback && xmlhttp.readyState == 4) callback(xmlhttp.responseText, xmlhttp.status, xmlhttp);
 	};
     
 	xmlhttp.open(type, url, true);
@@ -823,20 +823,18 @@ function ajaxLoad(type, url, params)
     var 
         $escaper=null,
         
-        $__cacheMode=0,
-        
-        $__cache={}, $__templates={}, $__partials={},
-        $__locale={},
-        $__leftTplSep="<%", $__rightTplSep="%>",
-        $__preserveLines="' + \"\\n\" + '",
-        
-        $loops=0, $ifs=0, $loopifs=0,
+        $__cacheMode=0, $__cache={}, 
+        $__locale={}, $__leftTplSep="<%", $__rightTplSep="%>", $__preserveLines="' + \"\\n\" + '",
+        $__templates={}, $__partials={},
+        $__stack=[],
+        $loops=0, $ifs=0, $loopifs=0, $blockcnt=0, $blocks=[],
     
         $controlConstructs=[
             'if', 'elseif', 'else', 'endif', 
             'for', 'elsefor', 'endfor',
-            /*'embed',*/ 'include', 'template'
-            ,'htmlselect', 'htmltable'
+            /*'embed',*/ 'include', 'template',
+            'extends', 'block', 'endblock',
+            'htmlselect', 'htmltable'
         ],
         $funcs=[ 'count', 'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'now', 'date', 'ldate', 'q', 'dq', 'l', 's', 'n', 'f' ],
         $regExps={
@@ -859,8 +857,10 @@ function ajaxLoad(type, url, params)
     //
     var ContemplateInstance=function($id, $renderFunc) 
     {
-        var $renderFunction=null;
         this.id=null;
+        this.data=null;
+        // private vars
+        var $renderFunction=null, $parent=null, $blocks=null;
         
         if ($id)
         {
@@ -868,14 +868,40 @@ function ajaxLoad(type, url, params)
             $renderFunction=$renderFunc;
         }
         
+        // public methods
         this.setId=function($id) {
             if ($id) this.id=$id;
             return this;
         };
         
-        this.render=function($data) {
-            if ($renderFunction)  return $renderFunction($data);
-            return '';
+        this.setParent=function(parent) {
+            $parent=parent;
+            return this;
+        };
+        
+        this.setRenderFunction=function($renderfunc) {
+            $renderFunction=$renderfunc;
+            return this;
+        };
+        
+        this.setBlocks=function(blocks) {
+            if (!$blocks) $blocks={};
+            $blocks=Contemplate.merge($blocks, blocks);
+            return this;
+        };
+        
+        this.renderBlock=function(block) {
+            if ($blocks[block]) return $blocks[block].call(this);
+            else if ($parent) return $parent.renderBlock.call(this, block);
+            return '1123';
+        };
+        
+        this.render=function(data) {
+            var out='';
+            if ($parent) {out=$parent.render.call(this, $data);}
+            else if ($renderFunction)  {this.data=Contemplate.clonePHP(data); out=$renderFunction.call(this);}
+            this.data=null;
+            return out;
         };
     };
     
@@ -1007,7 +1033,7 @@ function ajaxLoad(type, url, params)
             $loopifs++;
             var $m = $for_expr.match($regExps['forExpr']),
                 $o="$"+$m[1], $k="$"+$m[2], $v="$"+$m[3];
-            return "'; if ("+ $o +" && Object.keys("+ $o +").length) { for (var "+ $k +" in "+ $o +") { if (Contemplate.hasOwn("+ $o +", "+ $k +")) { var "+$v+"="+$o+"["+$k+"]; ";
+            return "'; if ("+ $o +" && Object.keys("+ $o +").length) { for (var "+ $k +" in "+ $o +") { if (Contemplate.hasOwn("+ $o +", "+ $k +")) { var "+$v+"="+$o+"["+$k+"]; this.data['"+$k+"']="+$k+"; this.data['"+$v+"']="+$v+"; ";
         },
         
         // endfor
@@ -1031,7 +1057,11 @@ function ajaxLoad(type, url, params)
         t_include : function($id) {
             // cache it
             if (!$__partials[$id])
+            {
+                self.pushState();
                 $__partials[$id]=" " + self.parse(self.getTemplateContents($id)) + "'; ";
+                self.popState();
+            }
             return $__partials[$id];
         },
         
@@ -1047,10 +1077,26 @@ function ajaxLoad(type, url, params)
             return '\'+ Contemplate.htmltable('+$obj+'); ';
         },
         
-        t_select : function($args)
-        {
+        t_select : function($args) {
             var $obj=$args.split($__preserveLines).join('').split('=>').join(':');
             return '\'+ Contemplate.htmlselect('+$obj+'); ';
+        },
+        
+        t_extends : function($tpl) {
+        },
+        
+        t_block : function($block) {
+            $blocks[$blockcnt++]=$block;
+            return "'+  __{{"+$block+"}}__";
+        },
+        
+        t_endblock : function() {
+            if ($blockcnt)
+            {
+                //return '\'+ this.renderBlock("'+$blocks[--$blockcnt]+'"); ';
+                return "__{{/"+$blocks[--$blockcnt]+"}}__";
+            }
+            return '';
         },
         
         //
@@ -1219,7 +1265,6 @@ function ajaxLoad(type, url, params)
             $o+=$footer;
             
             $o+="</table>";
-            
             return $o;
         },
         
@@ -1266,8 +1311,6 @@ function ajaxLoad(type, url, params)
                 $options['optgroups']=array_flip($options['optgroups']);
             }
         
-            self.log($options['selected']);
-            
             for ($k in $data)
             {
                 if (self.hasOwn($data, $k))
@@ -1310,7 +1353,6 @@ function ajaxLoad(type, url, params)
             }
             
             $o+="</select>";
-            
             return $o;
         },
         
@@ -1329,6 +1371,8 @@ function ajaxLoad(type, url, params)
                     case 'for': return self.t_for($m[2]); break;
                     case 'elsefor': return self.t_elsefor($m[2]); break;
                     case 'endfor':  return self.t_endfor($m[2]);  break;
+                    case 'block':  return self.t_block($m[2]);  break;
+                    case 'endblock':  return self.t_endblock($m[2]);  break;
                     case 'template': return self.t_template($m[2]);  break;
                     case 'embed':
                     case 'include':  return self.t_include($m[2]);  break;
@@ -1339,51 +1383,51 @@ function ajaxLoad(type, url, params)
             return $m[0];
         },
         
+        doBlocks : function($s) {
+            var bl=$blocks.length, block, t0,t1, blocks={};
+            while (bl--)
+            {
+                block=$blocks.pop();
+                t0=$s.split("__{{"+block+"}}__");
+                t1=t0[1].split("__{{/"+block+"}}__");
+                blocks[block]="var $__p__ = ''; with(this.data){" + t1[0] + "';} return $__p__;";
+                $s=t0[0] + " this.renderBlock('"+block+"'); " + t1[1];
+            }
+            return [$s, blocks];
+        },
+        
         parseControlConstructs : function($s) {
-            $s = $s.split($__rightTplSep).join("\n");
-            $s =  $s.replace($regExps['controlConstructs'], function($m, $m1, $m2){ return self.doControlConstruct([$m, $m1, $m2]); });
-            $s = $s.split("\n").join($__rightTplSep);
-            return $s;
+            return $s
+                .split($__rightTplSep).join("\n")
+                .replace($regExps['controlConstructs'], function($m, $m1, $m2){ return self.doControlConstruct([$m, $m1, $m2]); })
+                .split("\n").join($__rightTplSep);
         },
         
         parse : function($s) {
-            if ($funcs.length)
-            {
-                return self.parseControlConstructs(
-                        $s
-                        .replace($regExps['specials'], " ")
-                        .split($__leftTplSep).join("\t")
-                        .replace($regExps['quotes'], "\\'")
-                        .split("\n").join($__preserveLines) // preserve lines
-                   )
-                    .replace($regExps['functions'], "Contemplate.$1")
-                    .replace($regExps['replacements'], "' + ( $1 ) + '")
-                    .split("\t").join("'; ")
-                    .split($__rightTplSep).join(" $__p__ += '")
-                    ;
-            }
-            else
-            {
-                return self.parseControlConstructs(
-                        $s
-                        .replace($regExps['specials'], " ")
-                        .split($__leftTplSep).join("\t")
-                        .replace($regExps['quotes'], "\\'")
-                        .split("\n").join($__preserveLines) // preserve lines
-                    )
-                    .replace($regExps['replacements'], "' + ( $1 ) + '")
-                    .split("\t").join("'; ")
-                    .split($__rightTplSep).join(" $__p__ += '")
-                    ;
-            }
+            $s=self.parseControlConstructs(
+                    $s
+                    .replace($regExps['specials'], " ")
+                    .split($__leftTplSep).join("\t")
+                    .replace($regExps['quotes'], "\\'")
+                    .split("\n").join($__preserveLines) // preserve lines
+               );
+                
+            if ($funcs.length) $s=$s.replace($regExps['functions'], "Contemplate.$1");
+            
+            return self.doBlocks(
+                    $s.replace($regExps['replacements'], "' + ( $1 ) + '")
+                        .split("\t").join("'; ")
+                        .split($__rightTplSep).join(" $__p__ += '")
+                )
+                ;
         },
         
         getCachedTemplateName : function($id) {
-            return $__cacheDir + $id.replace(/[ -]/,'_') + '.tpl.js';
+            return $__cacheDir + $id.replace(/[ -]/g,'_') + '.tpl.js';
         },
         
         getCachedTemplateClass : function($id) {
-            return 'Contemplate_' + $id.replace(/[ -]/,'_') + '_Cached';
+            return 'Contemplate_' + $id.replace(/[ -]/g,'_') + '_Cached';
         },
         
         getTemplateContents : function($id) {
@@ -1400,35 +1444,41 @@ function ajaxLoad(type, url, params)
         },
         
         createTemplateRenderFunction : function($id) {
-            self.reset();
+            self.resetState();
+            var blocks=self.parse(self.getTemplateContents($id)), funcs={}, b;
+            // main function
             var $func=
-                // use php-style variables using '$' in front of var name
-                "for (var __n__ in $__o__) { if (Contemplate.hasOwn($__o__, __n__)) { $__o__['$'+__n__]=$__o__[__n__]; delete $__o__[__n__];} } "
                 // Introduce the data as local variables using with(){}
                // Convert the template into pure JavaScript
-                +"var $__p__ = ''; "
-                +"with($__o__) { $__p__ += '" + self.parse(self.getTemplateContents($id)) + "'; } "
-                +"return $__p__;"
+                "var $__p__ = ''; with(this.data) { $__p__ += '" + blocks[0] + "'; } return $__p__;"
                 ;
-            return new Function("$__o__", $func);
+            // defined blocks
+            for (b in blocks[1]) funcs[b]=new Function("", blocks[1][b]);
+            return [new Function("", $func), funcs];
         },
         
         createCachedTemplate : function($id, $filename, $classname) {
-            self.reset();
+            self.resetState();
+            var blocks=self.parse(self.getTemplateContents($id)), funcs={}, b;
+            // defined blocks
+            var sblocks=[];
+            for (b in blocks[1])  sblocks.push(" '"+b+"' : function() { "+ blocks[1][b]+ "}");
+            sblocks="$blocks={ " + sblocks.join(',') + "}; ";
+            
             var $class=
                 "(function(root) { " + "\n"
                 +"/* Contemplate cached template '"+$id+"' */ " + "\n"
-                +"function " + $classname + "($id) { this.id=$id; }; "
-                +$classname + ".prototype.setId=function($id) { if ($id) {this.id=$id;} return this; }; "
-                +$classname + ".prototype.render=function($__o__) { "
-                // use php-style variables using '$' in front of var name
-                +"for (var __n__ in $__o__) { if (Contemplate.hasOwn($__o__, __n__)) { $__o__['$'+__n__]=$__o__[__n__]; delete $__o__[__n__];} } "
+                +"function " + $classname + "($id) { this.id=$id; this.data=null; var $parent=null, $blocks=null; "
+                +"this.setId=function($id) { if ($id) {this.id=$id;} return this; }; "
+                +"this.setParent=function(parent) { $parent=parent; return this; }; "
+                +"this.renderBlock=function(block) { "+sblocks+" if ($blocks[block]) return $blocks[block].call(this); else if ($parent) return $parent.renderBlock.call(this, block); return ''; }; "
+                +"this.render=function(data) { "
                 // Introduce the data as local variables using with(){}
                // Convert the template into pure JavaScript
-                +"var $__p__ = ''; "
-                +"with($__o__) { $__p__ += '" + self.parse(self.getTemplateContents($id)) + "'; } "
-                +"return $__p__; "
-                +"}; if ('undefined' != typeof (module) && module.exports) {module.exports="+$classname+";} else if (typeof (exports) != 'undefined') {exports="+$classname+";}  else {root." + $classname + "="+$classname+";} })(this);"
+                +"var $__p__ = ''; if ($parent) {$__p__ = $parent.render.call(this, data);} "
+                +"else {this.data = Contemplate.clonePHP(data); with(this.data) { $__p__ += '" + blocks[0] + "'; }} "
+                +"this.data=null; return $__p__; "
+                +"}; }; if ('undefined' != typeof (module) && module.exports) {module.exports="+$classname+";} else if (typeof (exports) != 'undefined') {exports="+$classname+";}  else {root." + $classname + "="+$classname+";} })(this);"
                 ;
             return self.setCachedTemplate($filename, $class);
         },
@@ -1448,7 +1498,7 @@ function ajaxLoad(type, url, params)
                     if (self.NFS.existsSync($cachedTplFile))
                     {
                         var $tplclass = require($cachedTplFile);
-                        $tpl = new $tplclass(); //$cachedTplClass();
+                        var $tpl = new $tplclass(); //$cachedTplClass();
                         $tpl.setId($id);
                         return $tpl;
                     }
@@ -1476,7 +1526,7 @@ function ajaxLoad(type, url, params)
                     if (self.NFS.existsSync($cachedTplFile))
                     {
                         var $tplclass = require($cachedTplFile);
-                        $tpl = new $tplclass(); //$cachedTplClass();
+                        var $tpl = new $tplclass(); //$cachedTplClass();
                         $tpl.setId($id);
                         return $tpl;
                     }
@@ -1485,7 +1535,10 @@ function ajaxLoad(type, url, params)
                 case self.CACHE_TO_DISK_NONE:
                 default:
                     // dynamic in-memory caching during page-request
-                    return new ContemplateInstance($id, self.createTemplateRenderFunction($id));
+                    var funcs=self.createTemplateRenderFunction($id);
+                    var $tpl=new ContemplateInstance($id, funcs[0]);
+                    $tpl.setBlocks(funcs[1]);
+                    return $tpl;
                     break;
             }
             return null;
@@ -1495,11 +1548,32 @@ function ajaxLoad(type, url, params)
             return self.NFS.writeFileSync($filename, $tplContents, self.ENC);
         },
         
-        reset : function() {
-            // reset parse counters
+        pushState : function() {
+            $__stack.push({$loops:$loops, $loopifs:$loopifs, $ifs:$ifs, $blockcnt:$blockcnt, $blocks:$blocks});
+            // reset state
             $loops=0;
             $ifs=0;
             $loopifs=0;
+            $blockcnt=0;
+            $blocks=[];
+        },
+        
+        popState : function() {
+            var state=$__stack.pop();
+            $loops=state.$loops;
+            $ifs=state.$ifs;
+            $loopifs=state.$loopifs;
+            $blockcnt=state.$blockcnt;
+            $blocks=state.$blocks;
+        },
+        
+        resetState : function() {
+            // reset state
+            $loops=0;
+            $ifs=0;
+            $loopifs=0;
+            $blockcnt=0;
+            $blocks=[];
         },
         
         merge : function() {
@@ -1533,8 +1607,16 @@ function ajaxLoad(type, url, params)
             return o /*&& p*/ && Object.prototype.hasOwnProperty.call(o, p);
         },
         
+        clonePHP : function(o) {
+            if (self.isArray(o)) return o.slice();
+            var c=self.merge({}, o), n;
+            // use php-style variables using '$' in front of var name
+            for (n in c) { if (self.hasOwn(c, n)) { c['$'+n]=c[n]; delete c[n];} }
+            return c;
+        },
+        
         log : function($m) {
-            if ('undefined'!=typeof(console) && window.console.log)   console.log($m);
+            if ('undefined'!=typeof(console) && console.log)   console.log($m);
         }
     };
     

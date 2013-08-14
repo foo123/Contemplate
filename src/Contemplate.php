@@ -28,7 +28,7 @@ class Contemplate
     private static $__locale=array();
     private static $__leftTplSep="<%";
     private static $__rightTplSep="%>";
-    private static $__preserveLines="' . \"\\n\" . '";
+    private static $__preserveLines="' . PHP_EOL . '";
     
     protected static $loops=0;
     protected static $ifs=0;
@@ -127,7 +127,7 @@ class Contemplate
     
     public static function setPreserveLines($bool=true)
     {
-        if ($bool)  self::$__preserveLines="' . \"\\n\" . '";
+        if ($bool)  self::$__preserveLines="' . PHP_EOL . '";
         else self::$__preserveLines="";
     }
     

@@ -4,6 +4,11 @@
 <% %ldate("M, d", %now()) %>
 <br /><br />
 
+<% %block(block1) %>
+<strong>A table</strong><br />
+<% %htmltable($table_data, $table_options) %><br />
+<% %endblock() %>
+
 <% %for($users as $i=>$usergroup) %>
     <% %template(sub, {"i"=>$i, "usergroup"=>$usergroup}) %>
 <% %endfor() %>

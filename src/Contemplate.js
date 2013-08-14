@@ -1,11 +1,5 @@
-(function(root, escaper) {
+(function(root) {
     
-    // export using window object on browser, or export object on node,require
-    var window=root, self;
-    
-    // adapted for browser, node and/or requirejs configurations
-    //if (('undefined' == typeof (exports) || (!module || !module.exports)) && (root.Contemplate)) return;
-   
    /*
     *  Simple light-weight javascript templating engine (part of php templating engine)
     *  @author: Nikos M.  http://nikos-web-development.netai.net/
@@ -17,10 +11,286 @@
     *
     */
     
-    /*
-    *   PHP functions adapted from phpjs project
-    *   https://github.com/kvz/phpjs
-    */
+    // export using window object on browser, or export object on node,require
+    var window=root, self;
+    
+    /////////////////////////////////////////////////////////////////////////
+    //
+    //   PHP functions adapted from phpjs project
+    //   https://github.com/kvz/phpjs
+    //
+    ///////////////////////////////////////////////////////////////////////////
+function get_html_translation_table (table, quote_style) {
+  // http://kevin.vanzonneveld.net
+  // +   original by: Philip Peterson
+  // +    revised by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+  // +   bugfixed by: noname
+  // +   bugfixed by: Alex
+  // +   bugfixed by: Marco
+  // +   bugfixed by: madipta
+  // +   improved by: KELAN
+  // +   improved by: Brett Zamir (http://brett-zamir.me)
+  // +   bugfixed by: Brett Zamir (http://brett-zamir.me)
+  // +      input by: Frank Forte
+  // +   bugfixed by: T.Wild
+  // +      input by: Ratheous
+  // %          note: It has been decided that we're not going to add global
+  // %          note: dependencies to php.js, meaning the constants are not
+  // %          note: real constants, but strings instead. Integers are also supported if someone
+  // %          note: chooses to create the constants themselves.
+  // *     example 1: get_html_translation_table('HTML_SPECIALCHARS');
+  // *     returns 1: {'"': '&quot;', '&': '&amp;', '<': '&lt;', '>': '&gt;'}
+  var entities = {},
+    hash_map = {},
+    decimal;
+  var constMappingTable = {},
+    constMappingQuoteStyle = {};
+  var useTable = {},
+    useQuoteStyle = {};
+
+  // Translate arguments
+  constMappingTable[0] = 'HTML_SPECIALCHARS';
+  constMappingTable[1] = 'HTML_ENTITIES';
+  constMappingQuoteStyle[0] = 'ENT_NOQUOTES';
+  constMappingQuoteStyle[2] = 'ENT_COMPAT';
+  constMappingQuoteStyle[3] = 'ENT_QUOTES';
+
+  useTable = !isNaN(table) ? constMappingTable[table] : table ? table.toUpperCase() : 'HTML_SPECIALCHARS';
+  useQuoteStyle = !isNaN(quote_style) ? constMappingQuoteStyle[quote_style] : quote_style ? quote_style.toUpperCase() : 'ENT_COMPAT';
+
+  if (useTable !== 'HTML_SPECIALCHARS' && useTable !== 'HTML_ENTITIES') {
+    throw new Error("Table: " + useTable + ' not supported');
+    // return false;
+  }
+
+  entities['38'] = '&amp;';
+  if (useTable === 'HTML_ENTITIES') {
+    entities['160'] = '&nbsp;';
+    entities['161'] = '&iexcl;';
+    entities['162'] = '&cent;';
+    entities['163'] = '&pound;';
+    entities['164'] = '&curren;';
+    entities['165'] = '&yen;';
+    entities['166'] = '&brvbar;';
+    entities['167'] = '&sect;';
+    entities['168'] = '&uml;';
+    entities['169'] = '&copy;';
+    entities['170'] = '&ordf;';
+    entities['171'] = '&laquo;';
+    entities['172'] = '&not;';
+    entities['173'] = '&shy;';
+    entities['174'] = '&reg;';
+    entities['175'] = '&macr;';
+    entities['176'] = '&deg;';
+    entities['177'] = '&plusmn;';
+    entities['178'] = '&sup2;';
+    entities['179'] = '&sup3;';
+    entities['180'] = '&acute;';
+    entities['181'] = '&micro;';
+    entities['182'] = '&para;';
+    entities['183'] = '&middot;';
+    entities['184'] = '&cedil;';
+    entities['185'] = '&sup1;';
+    entities['186'] = '&ordm;';
+    entities['187'] = '&raquo;';
+    entities['188'] = '&frac14;';
+    entities['189'] = '&frac12;';
+    entities['190'] = '&frac34;';
+    entities['191'] = '&iquest;';
+    entities['192'] = '&Agrave;';
+    entities['193'] = '&Aacute;';
+    entities['194'] = '&Acirc;';
+    entities['195'] = '&Atilde;';
+    entities['196'] = '&Auml;';
+    entities['197'] = '&Aring;';
+    entities['198'] = '&AElig;';
+    entities['199'] = '&Ccedil;';
+    entities['200'] = '&Egrave;';
+    entities['201'] = '&Eacute;';
+    entities['202'] = '&Ecirc;';
+    entities['203'] = '&Euml;';
+    entities['204'] = '&Igrave;';
+    entities['205'] = '&Iacute;';
+    entities['206'] = '&Icirc;';
+    entities['207'] = '&Iuml;';
+    entities['208'] = '&ETH;';
+    entities['209'] = '&Ntilde;';
+    entities['210'] = '&Ograve;';
+    entities['211'] = '&Oacute;';
+    entities['212'] = '&Ocirc;';
+    entities['213'] = '&Otilde;';
+    entities['214'] = '&Ouml;';
+    entities['215'] = '&times;';
+    entities['216'] = '&Oslash;';
+    entities['217'] = '&Ugrave;';
+    entities['218'] = '&Uacute;';
+    entities['219'] = '&Ucirc;';
+    entities['220'] = '&Uuml;';
+    entities['221'] = '&Yacute;';
+    entities['222'] = '&THORN;';
+    entities['223'] = '&szlig;';
+    entities['224'] = '&agrave;';
+    entities['225'] = '&aacute;';
+    entities['226'] = '&acirc;';
+    entities['227'] = '&atilde;';
+    entities['228'] = '&auml;';
+    entities['229'] = '&aring;';
+    entities['230'] = '&aelig;';
+    entities['231'] = '&ccedil;';
+    entities['232'] = '&egrave;';
+    entities['233'] = '&eacute;';
+    entities['234'] = '&ecirc;';
+    entities['235'] = '&euml;';
+    entities['236'] = '&igrave;';
+    entities['237'] = '&iacute;';
+    entities['238'] = '&icirc;';
+    entities['239'] = '&iuml;';
+    entities['240'] = '&eth;';
+    entities['241'] = '&ntilde;';
+    entities['242'] = '&ograve;';
+    entities['243'] = '&oacute;';
+    entities['244'] = '&ocirc;';
+    entities['245'] = '&otilde;';
+    entities['246'] = '&ouml;';
+    entities['247'] = '&divide;';
+    entities['248'] = '&oslash;';
+    entities['249'] = '&ugrave;';
+    entities['250'] = '&uacute;';
+    entities['251'] = '&ucirc;';
+    entities['252'] = '&uuml;';
+    entities['253'] = '&yacute;';
+    entities['254'] = '&thorn;';
+    entities['255'] = '&yuml;';
+  }
+
+  if (useQuoteStyle !== 'ENT_NOQUOTES') {
+    entities['34'] = '&quot;';
+  }
+  if (useQuoteStyle === 'ENT_QUOTES') {
+    entities['39'] = '&#39;';
+  }
+  entities['60'] = '&lt;';
+  entities['62'] = '&gt;';
+
+
+  // ascii decimals to real symbols
+  for (decimal in entities) {
+    if (entities.hasOwnProperty(decimal)) {
+      hash_map[String.fromCharCode(decimal)] = entities[decimal];
+    }
+  }
+
+  return hash_map;
+}
+function htmlentities (string, quote_style, charset, double_encode) {
+  // http://kevin.vanzonneveld.net
+  // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+  // +    revised by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+  // +   improved by: nobbler
+  // +    tweaked by: Jack
+  // +   bugfixed by: Onno Marsman
+  // +    revised by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+  // +    bugfixed by: Brett Zamir (http://brett-zamir.me)
+  // +      input by: Ratheous
+  // +   improved by: Rafal Kukawski (http://blog.kukawski.pl)
+  // +   improved by: Dj (http://phpjs.org/functions/htmlentities:425#comment_134018)
+  // -    depends on: get_html_translation_table
+  // *     example 1: htmlentities('Kevin & van Zonneveld');
+  // *     returns 1: 'Kevin &amp; van Zonneveld'
+  // *     example 2: htmlentities("foo'bar","ENT_QUOTES");
+  // *     returns 2: 'foo&#039;bar'
+  var hash_map = this.get_html_translation_table('HTML_ENTITIES', quote_style),
+    symbol = '';
+  string = string == null ? '' : string + '';
+
+  if (!hash_map) {
+    return false;
+  }
+
+  if (quote_style && quote_style === 'ENT_QUOTES') {
+    hash_map["'"] = '&#039;';
+  }
+
+  if (!!double_encode || double_encode == null) {
+    for (symbol in hash_map) {
+      if (hash_map.hasOwnProperty(symbol)) {
+        string = string.split(symbol).join(hash_map[symbol]);
+      }
+    }
+  } else {
+    string = string.replace(/([\s\S]*?)(&(?:#\d+|#x[\da-f]+|[a-zA-Z][\da-z]*);|$)/g, function (ignore, text, entity) {
+      for (symbol in hash_map) {
+        if (hash_map.hasOwnProperty(symbol)) {
+          text = text.split(symbol).join(hash_map[symbol]);
+        }
+      }
+
+      return text + entity;
+    });
+  }
+
+  return string;
+}
+function urlencode (str) {
+  // http://kevin.vanzonneveld.net
+  // +   original by: Philip Peterson
+  // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+  // +      input by: AJ
+  // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+  // +   improved by: Brett Zamir (http://brett-zamir.me)
+  // +   bugfixed by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+  // +      input by: travc
+  // +      input by: Brett Zamir (http://brett-zamir.me)
+  // +   bugfixed by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+  // +   improved by: Lars Fischer
+  // +      input by: Ratheous
+  // +      reimplemented by: Brett Zamir (http://brett-zamir.me)
+  // +   bugfixed by: Joris
+  // +      reimplemented by: Brett Zamir (http://brett-zamir.me)
+  // %          note 1: This reflects PHP 5.3/6.0+ behavior
+  // %        note 2: Please be aware that this function expects to encode into UTF-8 encoded strings, as found on
+  // %        note 2: pages served as UTF-8
+  // *     example 1: urlencode('Kevin van Zonneveld!');
+  // *     returns 1: 'Kevin+van+Zonneveld%21'
+  // *     example 2: urlencode('http://kevin.vanzonneveld.net/');
+  // *     returns 2: 'http%3A%2F%2Fkevin.vanzonneveld.net%2F'
+  // *     example 3: urlencode('http://www.google.nl/search?q=php.js&ie=utf-8&oe=utf-8&aq=t&rls=com.ubuntu:en-US:unofficial&client=firefox-a');
+  // *     returns 3: 'http%3A%2F%2Fwww.google.nl%2Fsearch%3Fq%3Dphp.js%26ie%3Dutf-8%26oe%3Dutf-8%26aq%3Dt%26rls%3Dcom.ubuntu%3Aen-US%3Aunofficial%26client%3Dfirefox-a'
+  str = (str + '').toString();
+
+  // Tilde should be allowed unescaped in future versions of PHP (as reflected below), but if you want to reflect current
+  // PHP behavior, you would need to add ".replace(/~/g, '%7E');" to the following.
+  return encodeURIComponent(str).replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').
+  replace(/\)/g, '%29').replace(/\*/g, '%2A').replace(/%20/g, '+');
+}
+function rawurlencode (str) {
+  // http://kevin.vanzonneveld.net
+  // +   original by: Brett Zamir (http://brett-zamir.me)
+  // +      input by: travc
+  // +      input by: Brett Zamir (http://brett-zamir.me)
+  // +   bugfixed by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+  // +      input by: Michael Grier
+  // +   bugfixed by: Brett Zamir (http://brett-zamir.me)
+  // +      input by: Ratheous
+  // +      reimplemented by: Brett Zamir (http://brett-zamir.me)
+  // +   bugfixed by: Joris
+  // +      reimplemented by: Brett Zamir (http://brett-zamir.me)
+  // %          note 1: This reflects PHP 5.3/6.0+ behavior
+  // %        note 2: Please be aware that this function expects to encode into UTF-8 encoded strings, as found on
+  // %        note 2: pages served as UTF-8
+  // *     example 1: rawurlencode('Kevin van Zonneveld!');
+  // *     returns 1: 'Kevin%20van%20Zonneveld%21'
+  // *     example 2: rawurlencode('http://kevin.vanzonneveld.net/');
+  // *     returns 2: 'http%3A%2F%2Fkevin.vanzonneveld.net%2F'
+  // *     example 3: rawurlencode('http://www.google.nl/search?q=php.js&ie=utf-8&oe=utf-8&aq=t&rls=com.ubuntu:en-US:unofficial&client=firefox-a');
+  // *     returns 3: 'http%3A%2F%2Fwww.google.nl%2Fsearch%3Fq%3Dphp.js%26ie%3Dutf-8%26oe%3Dutf-8%26aq%3Dt%26rls%3Dcom.ubuntu%3Aen-US%3Aunofficial%26client%3Dfirefox-a'
+  str = (str + '').toString();
+
+  // Tilde should be allowed unescaped in future versions of PHP (as reflected below), but if you want to reflect current
+  // PHP behavior, you would need to add ".replace(/~/g, '%7E');" to the following.
+  return encodeURIComponent(str).replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').
+  replace(/\)/g, '%29').replace(/\*/g, '%2A');
+}
 function count (mixed_var, mode) {
   // http://kevin.vanzonneveld.net
   // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
@@ -59,7 +329,6 @@ function count (mixed_var, mode) {
 
   return cnt;
 }
-
 function is_array (mixed_var) {
   // http://kevin.vanzonneveld.net
   // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
@@ -137,7 +406,6 @@ function is_array (mixed_var) {
     Object.prototype.toString.call(mixed_var) === '[object Object]' && _getFuncName(mixed_var.constructor) === 'Object' // Most likely a literal and intended as assoc. array
     ));
 }
-
 function array_flip (trans) {
   // http://kevin.vanzonneveld.net
   // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
@@ -162,7 +430,6 @@ function array_flip (trans) {
 
   return tmp_ar;
 }
-
 function array_keys (input, search_value, argStrict) {
   // http://kevin.vanzonneveld.net
   // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
@@ -205,7 +472,6 @@ function array_keys (input, search_value, argStrict) {
 
   return tmp_arr;
 }
-
 function array_values (input) {
   // http://kevin.vanzonneveld.net
   // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
@@ -225,7 +491,6 @@ function array_values (input) {
 
   return tmp_arr;
 }
-
 function sprintf () {
   // http://kevin.vanzonneveld.net
   // +   original by: Ash Searle (http://hexmen.com/blog/)
@@ -412,7 +677,6 @@ function sprintf () {
 
   return format.replace(regex, doFormat);
 }
-
 function ltrim (str, charlist) {
   // http://kevin.vanzonneveld.net
   // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
@@ -425,7 +689,6 @@ function ltrim (str, charlist) {
   var re = new RegExp('^[' + charlist + ']+', 'g');
   return (str + '').replace(re, '');
 }
-
 function rtrim (str, charlist) {
   // http://kevin.vanzonneveld.net
   // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
@@ -440,7 +703,6 @@ function rtrim (str, charlist) {
   var re = new RegExp('[' + charlist + ']+$', 'g');
   return (str + '').replace(re, '');
 }
-
 function trim (str, charlist) {
   // http://kevin.vanzonneveld.net
   // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
@@ -489,7 +751,6 @@ function trim (str, charlist) {
 
   return whitespace.indexOf(str.charAt(0)) === -1 ? str : '';
 }
-
 function time () {
   // http://kevin.vanzonneveld.net
   // +   original by: GeekFG (http://geekfg.blogspot.com)
@@ -500,7 +761,6 @@ function time () {
   // *     results 1: timeStamp > 1000000000 && timeStamp < 2000000000
   return Math.floor(new Date().getTime() / 1000);
 }
-
 function date (format, timestamp) {
   // http://kevin.vanzonneveld.net
   // +   original by: Carlos R. L. Rodrigues (http://www.jsfromhell.com)
@@ -787,6 +1047,9 @@ function localized_date($locale, $format, $timestamp)
     return $date;
 }
 
+    //
+    // basic ajax functions
+    //
 function ajaxRequest(type, url, params, callback) 
 {
 	var xmlhttp;
@@ -803,7 +1066,6 @@ function ajaxRequest(type, url, params, callback)
 	xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 	xmlhttp.send(params);
 }
-
 function ajaxLoad(type, url, params) 
 {
 	var xmlhttp;
@@ -819,24 +1081,19 @@ function ajaxLoad(type, url, params)
     return '';
 }
     
+    /////////////////////////////////////////////////////////////////////////////////////
+    //
+    //  Contemplate Engine Main Class
+    //
+    //////////////////////////////////////////////////////////////////////////////////////
+    
     // private vars
     var 
-        $escaper=null,
-        
-        $__cacheMode=0, $__cache={}, 
+        $__cacheMode=0, $__cache={}, $__templates={}, $__partials={},
         $__locale={}, $__leftTplSep="<%", $__rightTplSep="%>", $__preserveLines="' + \"\\n\" + '",
-        $__templates={}, $__partials={},
         $__stack=[],
-        $loops=0, $ifs=0, $loopifs=0, $blockcnt=0, $blocks=[],
+        $loops=0, $ifs=0, $loopifs=0, $blockcnt=0, $blocks=[], $allblocks=[], $__extends=null,
     
-        $controlConstructs=[
-            'if', 'elseif', 'else', 'endif', 
-            'for', 'elsefor', 'endfor',
-            /*'embed',*/ 'include', 'template',
-            'extends', 'block', 'endblock',
-            'htmlselect', 'htmltable'
-        ],
-        $funcs=[ 'count', 'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'now', 'date', 'ldate', 'q', 'dq', 'l', 's', 'n', 'f' ],
         $regExps={
             'functions':null,
             'controlConstructs':null,
@@ -844,7 +1101,15 @@ function ajaxLoad(type, url, params)
             'quotes':null,
             'specials':null,
             'replacements':null
-        }
+        },
+        
+        $controlConstructs=[
+            'if', 'elseif', 'else', 'endif', 
+            'for', 'elsefor', 'endfor',
+            'include', 'template', 'extends', 'block', 'endblock',
+            'htmlselect', 'htmltable'
+        ],
+        $funcs=[ 'html', 'url', 'count', 'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'now', 'date', 'ldate', 'q', 'dq', 'l', 's', 'n', 'f' ]
         ;
     
     /*
@@ -857,49 +1122,33 @@ function ajaxLoad(type, url, params)
     //
     var ContemplateInstance=function($id, $renderFunc) 
     {
-        this.id=null;
-        this.data=null;
+        this.id=null;  this.data=null;
         // private vars
         var $renderFunction=null, $parent=null, $blocks=null;
         
-        if ($id)
-        {
-            this.id=$id;
-            $renderFunction=$renderFunc;
-        }
+        if ($id) { this.id=$id; $renderFunction=$renderFunc; }
         
         // public methods
-        this.setId=function($id) {
-            if ($id) this.id=$id;
-            return this;
+        this.setId=function($id) { if ($id) this.id=$id;  return this; };
+        
+        this.setParent=function(parent) { $parent=parent; return this;  };
+        
+        this.setRenderFunction=function($renderfunc) { $renderFunction=$renderfunc; return this; };
+        
+        this.setBlocks=function(blocks) { if (!$blocks) $blocks={}; $blocks=Contemplate.merge($blocks, blocks); return this; };
+        
+        this.renderBlock=function(block, __instance__) {
+            if (!__instance__) __instance__=this;
+            if ($blocks && $blocks[block]) return $blocks[block](__instance__);
+            else if ($parent) return $parent.renderBlock(block, __instance__);
+            return '';
         };
         
-        this.setParent=function(parent) {
-            $parent=parent;
-            return this;
-        };
-        
-        this.setRenderFunction=function($renderfunc) {
-            $renderFunction=$renderfunc;
-            return this;
-        };
-        
-        this.setBlocks=function(blocks) {
-            if (!$blocks) $blocks={};
-            $blocks=Contemplate.merge($blocks, blocks);
-            return this;
-        };
-        
-        this.renderBlock=function(block) {
-            if ($blocks[block]) return $blocks[block].call(this);
-            else if ($parent) return $parent.renderBlock.call(this, block);
-            return '1123';
-        };
-        
-        this.render=function(data) {
+        this.render=function(data, __instance__) {
             var out='';
-            if ($parent) {out=$parent.render.call(this, $data);}
-            else if ($renderFunction)  {this.data=Contemplate.clonePHP(data); out=$renderFunction.call(this);}
+            if (!__instance__) __instance__=this;
+            if ($parent) {out=$parent.render(data, __instance__);}
+            else if ($renderFunction)  {__instance__.data=Contemplate.clonePHP(data); out=$renderFunction(__instance__);}
             this.data=null;
             return out;
         };
@@ -916,69 +1165,44 @@ function ajaxLoad(type, url, params)
         CACHE_TO_DISK_AUTOUPDATE : 2,
         CACHE_TO_DISK_NOUPDATE : 4,
         
-        init : function(escaper) {
-            if (escaper)  $escaper=escaper;
-            
+        init : function() {
             // pre-compute the needed regular expressions
             $regExps['controlConstructs']=new RegExp('\\t\\s*\%('+$controlConstructs.join('|')+')\\b\\s*\\((.*)\\)', 'g');
             $regExps['forExpr']=new RegExp('^\\s*\\$([a-z0-9_]+?)\\s* as \\s*\\$([a-z0-9_]+?)\\s*=>\\s*\\$([a-z0-9_]+)\\s*$', 'i');
             $regExps['quotes']=new RegExp('\'', 'g');
-            $regExps['specials']=new RegExp('[\\r\\t]', 'g'); //new RegExp('[\\r\\t\\n]', 'g');
+            $regExps['specials']=new RegExp('[\\r\\t]', 'g');
             $regExps['replacements']=new RegExp('\\t\\s*(.*?)\\s*'+$__rightTplSep, 'g');
-            if ($funcs.length)  
-                $regExps['functions']=new RegExp('\%('+$funcs.join('|')+')\\b', 'g');
+            if ($funcs.length) $regExps['functions']=new RegExp('\%('+$funcs.join('|')+')\\b', 'g');
         },
         
         //
         // Main methods
         //
-        setLocaleStrings : function($l) {
-            $__locale = self.merge($__locale, $l);
-        },
+        setLocaleStrings : function($l) { $__locale = self.merge($__locale, $l); },
         
         setTemplateSeparators : function($left, $right)
         {
             if ($left)  $__leftTplSep=$left;
             if ($right) $__rightTplSep=$right;
-            
-            if ($right)
-                // recompute it
-                $regExps['replacements']=new RegExp('\\t\\s*(.*?)\\s*'+$__rightTplSep, 'g');
+            // recompute it
+            if ($right)  $regExps['replacements']=new RegExp('\\t\\s*(.*?)\\s*'+$__rightTplSep, 'g');
         },
         
-        setPreserveLines : function($bool)
-        {
-            if ('undefined'==typeof($bool)) $bool=true;
-            if ($bool)  $__preserveLines="' + \"\\n\" + '";
-            else $__preserveLines="";
-        },
+        setPreserveLines : function(b){ if('undefined'==typeof(b))b=true; if (b) $__preserveLines="' + \"\\n\" + '"; else $__preserveLines=""; },
         
         // whether working inside Node.js or not
         isNodeJs : function($bool, $fs) {
             self.IS_NODEJS=$bool;
-            if ($bool)
-            {
-                // filesystem I/O object of Nodejs
-                self.NFS = $fs || require('fs');
-            }
-            else
-            {
-                self.NFS = null;
-            }
+            if ($bool) { /* filesystem I/O object of Nodejs */ self.NFS = $fs || require('fs'); }
+            else { self.NFS = null; }
         },
         
-        setCacheDir : function($dir) {
-            $__cacheDir=rtrim($dir, '/')+'/';
-        },
+        setCacheDir : function($dir) { $__cacheDir=rtrim($dir, '/')+'/';  },
         
-        setCacheMode : function($mode) {
-            $__cacheMode= (self.IS_NODEJS) ? $mode : self.CACHE_TO_DISK_NONE;
-        },
+        setCacheMode : function($mode) { $__cacheMode= (self.IS_NODEJS) ? $mode : self.CACHE_TO_DISK_NONE; },
         
         // add templates manually
-        add : function($tpls) {
-            $__templates=self.merge($__templates, $tpls);
-        },
+        add : function($tpls) { $__templates=self.merge($__templates, $tpls);  },
     
         tpl : function($id, $data) {
             // Figure out if we're getting a template, or if we need to
@@ -998,149 +1222,83 @@ function ajaxLoad(type, url, params)
         //
     
         // if
-        t_if : function($cond) {
-            $ifs++;
-            return "'; if ("+$cond+") { ";
-        },
-            
+        t_if : function($cond) { $ifs++; return "'; if ("+$cond+") { ";  },
         // elseif
-        t_elseif : function($cond) {
-            return "'; } else if ("+$cond+") { ";
-        },
-        
+        t_elseif : function($cond) { return "'; } else if ("+$cond+") { ";  },
         // else
-        t_else : function() {
-            // regular else
-            return "'; } else { ";
-        },
-        
-        // elsefor
-        t_elsefor : function() {
-            // else attached to  for loop
-            $loopifs--;
-            return "'; } } } else { ";
-        },
-        
+        t_else : function() { return "'; } else { ";  },
         // endif
-        t_endif : function() {
-            $ifs--;
-            return "'; } ";
-        },
-        
+        t_endif : function() { $ifs--; return "'; } ";  },
         // for, foreach
         t_for : function($for_expr) {
-            $loops++;
-            $loopifs++;
-            var $m = $for_expr.match($regExps['forExpr']),
-                $o="$"+$m[1], $k="$"+$m[2], $v="$"+$m[3];
-            return "'; if ("+ $o +" && Object.keys("+ $o +").length) { for (var "+ $k +" in "+ $o +") { if (Contemplate.hasOwn("+ $o +", "+ $k +")) { var "+$v+"="+$o+"["+$k+"]; this.data['"+$k+"']="+$k+"; this.data['"+$v+"']="+$v+"; ";
+            $loops++;  $loopifs++;
+            var $m = $for_expr.match($regExps['forExpr']), $o="$"+$m[1], $k="$"+$m[2], $v="$"+$m[3];
+            return "'; if ("+ $o +" && Object.keys("+ $o +").length) { for (var "+ $k +" in "+ $o +") { if (Contemplate.hasOwn("+ $o +", "+ $k +")) { var "+$v+"="+$o+"["+$k+"]; __instance__.data['"+$k+"']="+$k+"; __instance__.data['"+$v+"']="+$v+"; ";
         },
-        
+        // elsefor
+        t_elsefor : function() { /* else attached to  for loop */ $loopifs--;  return "'; } } } else { "; },
         // endfor
         t_endfor : function() {
-            if ($loopifs==$loops)
-            {
-                $loops--;
-                $loopifs--;
-                return "'; } } } ";
-            }
-            $loops--;
-            return "'; } ";
+            if ($loopifs==$loops) { $loops--; $loopifs--;  return "'; } } } ";  }
+            $loops--; return "'; } ";
         },
-        
-        // embed, same as include right now
-        /*t_embed : function($id) {
-            return self.t_include($id);
-        },*/
-        
-        // include
+        // include file
         t_include : function($id) {
             // cache it
             if (!$__partials[$id])
             {
-                self.pushState();
-                $__partials[$id]=" " + self.parse(self.getTemplateContents($id)) + "'; ";
-                self.popState();
+                //self.pushState();
+                $__partials[$id]=" " + self.parse(self.getTemplateContents($id), false) + "'; ";
+                //self.popState();
             }
             return $__partials[$id];
         },
-        
+        // include template
         t_template : function($args) {
             $args=$args.split(',');
             var $id=trim($args.shift());
             var $obj=$args.join(',').split($__preserveLines).join('').split('=>').join(':');
-            return '\'+ Contemplate.tpl("'+$id+'", '+$obj+'); ';
+            return '\' + Contemplate.tpl("'+$id+'", '+$obj+'); ';
         },
-        
+        // extend another template
+        t_extends : function($tpl) { $__extends=$tpl; return "'; "; },
+        // define (overridable) block
+        t_block : function($block) { $allblocks.push($block); $blockcnt++; $blocks.push($block); return "' +  __{{"+$block+"}}__";  },
+        // end define (overridable) block
+        t_endblock : function() { if ($blockcnt) {$blockcnt--; return "__{{/"+$blocks.pop()+"}}__";}  return '';  },
+        // render html table
         t_table : function($args) {
             var $obj=$args.split($__preserveLines).join('').split('=>').join(':');
-            return '\'+ Contemplate.htmltable('+$obj+'); ';
+            return '\' + Contemplate.htmltable('+$obj+'); ';
         },
-        
+        // render html select
         t_select : function($args) {
             var $obj=$args.split($__preserveLines).join('').split('=>').join(':');
-            return '\'+ Contemplate.htmlselect('+$obj+'); ';
-        },
-        
-        t_extends : function($tpl) {
-        },
-        
-        t_block : function($block) {
-            $blocks[$blockcnt++]=$block;
-            return "'+  __{{"+$block+"}}__";
-        },
-        
-        t_endblock : function() {
-            if ($blockcnt)
-            {
-                //return '\'+ this.renderBlock("'+$blocks[--$blockcnt]+'"); ';
-                return "__{{/"+$blocks[--$blockcnt]+"}}__";
-            }
-            return '';
+            return '\' + Contemplate.htmlselect('+$obj+'); ';
         },
         
         //
         // Basic template functions
         //
         
-        // echo
-        /*e : function($e) {
-            return ($e);
-        },*/
-        
+        // basic html escaping
+        html : function($s) { return htmlentities($s, 'ENT_COMPAT', 'UTF-8'); },
+        // basic url escaping
+        url : function($s) { return urlencode($s); },
         // count items in array
         count : count,
-        
         // quote
-        q : function($e) {
-            return "'"+$e+"'";
-        },
-        
+        q : function($e) { return "'"+$e+"'"; },
         // double quote
-        dq : function($e) {
-            return '"'+$e+'"';
-        },
-        
+        dq : function($e) { return '"'+$e+'"';  },
         // to String
-        s : function($e) {
-            return (String)($e);
-        },
-        
+        s : function($e) { return (String)($e); },
         // to Integer
-        n : function($e) {
-            return parseInt($e, 10);
-        },
-        
+        n : function($e) { return parseInt($e, 10); },
         // to Float
-        f : function($e) {
-            return parseFloat($e, 10);
-        },
-        
+        f : function($e) { return parseFloat($e, 10); },
         // Concatenate strings/vars
-        concat : function() {
-            return Array.prototype.slice.call(arguments).join('');
-        },
-        
+        concat : function() { return Array.prototype.slice.call(arguments).join(''); },
         // Trim strings in templates
         trim : trim,
         ltrim : ltrim,
@@ -1153,32 +1311,16 @@ function ajaxLoad(type, url, params)
         //
         
         // current time in seconds
-        now : function() {
-            return time();
-        },
-        
+        now : function() { return time(); },
         // formatted date
-        date : function($format, $time) {
-            if (!$time) $time=time();
-            return date($format, $time);
-        },
-        
+        date : function($format, $time) { if (!$time) $time=time(); return date($format, $time); },
         // localized formatted date
-        ldate : function($format, $time) {
-            if (!$time) $time=time();
-            return localized_date($__locale, $format, $time);
-        },
-        
-        locale : function($e) {
-            return ($__locale[$e]) ? $__locale[$e] : $e;
-        },
-        
-        l : function($e) {
-            return self.locale($e);
-        },
+        ldate : function($format, $time) { if (!$time) $time=time(); return localized_date($__locale, $format, $time); },
+        locale : function($e) { return ($__locale[$e]) ? $__locale[$e] : $e; },
+        l : function($e) { return self.locale($e); },
         
         //
-        //  HTMl elements
+        //  HTML elements
         //
         
         // html table
@@ -1263,7 +1405,6 @@ function ajaxLoad(type, url, params)
             delete $rows;
             
             $o+=$footer;
-            
             $o+="</table>";
             return $o;
         },
@@ -1351,7 +1492,6 @@ function ajaxLoad(type, url, params)
                     }
                 }
             }
-            
             $o+="</select>";
             return $o;
         },
@@ -1371,10 +1511,10 @@ function ajaxLoad(type, url, params)
                     case 'for': return self.t_for($m[2]); break;
                     case 'elsefor': return self.t_elsefor($m[2]); break;
                     case 'endfor':  return self.t_endfor($m[2]);  break;
+                    case 'extends':  return self.t_extends($m[2]);  break;
                     case 'block':  return self.t_block($m[2]);  break;
                     case 'endblock':  return self.t_endblock($m[2]);  break;
                     case 'template': return self.t_template($m[2]);  break;
-                    case 'embed':
                     case 'include':  return self.t_include($m[2]);  break;
                     case 'htmltable': return self.t_table($m[2]);  break;
                     case 'htmlselect': return self.t_select($m[2]);  break;
@@ -1384,16 +1524,22 @@ function ajaxLoad(type, url, params)
         },
         
         doBlocks : function($s) {
-            var bl=$blocks.length, block, t0,t1, blocks={};
-            while (bl--)
+            var $blocks={}, $bl=$allblocks.length, $block, $code, $delim1, $delim2, $len1, $len2, $pos1, $pos2;
+            while ($bl--)
             {
-                block=$blocks.pop();
-                t0=$s.split("__{{"+block+"}}__");
-                t1=t0[1].split("__{{/"+block+"}}__");
-                blocks[block]="var $__p__ = ''; with(this.data){" + t1[0] + "';} return $__p__;";
-                $s=t0[0] + " this.renderBlock('"+block+"'); " + t1[1];
+                $block=$allblocks.pop();
+                $delim1='__{{'+$block+'}}__'; $delim2='__{{/'+$block+'}}__'; 
+                $len1=$delim1.length; $len2=$len1+1; 
+                $pos1=$s.indexOf($delim1); $pos2=$s.indexOf($delim2)-$pos1+$len2;
+                $code=$s.substr($pos1, $pos2);
+                if ($code!='')
+                {
+                    $s=$s.replace($code, " __instance__.renderBlock('"+$block+"'); ");
+                    $code=$code.substring($len1, $code.length-$len2);
+                    $blocks[$block]="var $__p__ = ''; with(__instance__.data) { " + $code + "'; } return $__p__;";
+                }
             }
-            return [$s, blocks];
+            return [$s, $blocks];
         },
         
         parseControlConstructs : function($s) {
@@ -1403,7 +1549,7 @@ function ajaxLoad(type, url, params)
                 .split("\n").join($__rightTplSep);
         },
         
-        parse : function($s) {
+        parse : function($s, $withblocks) {
             $s=self.parseControlConstructs(
                     $s
                     .replace($regExps['specials'], " ")
@@ -1414,31 +1560,33 @@ function ajaxLoad(type, url, params)
                 
             if ($funcs.length) $s=$s.replace($regExps['functions'], "Contemplate.$1");
             
-            return self.doBlocks(
-                    $s.replace($regExps['replacements'], "' + ( $1 ) + '")
+            if ('undefined'==typeof($withblocks)) $withblocks=true;
+            if ($withblocks)
+                return self.doBlocks(
+                        $s.replace($regExps['replacements'], "' + ( $1 ) + '")
+                            .split("\t").join("'; ")
+                            .split($__rightTplSep).join(" $__p__ += '")
+                    )
+                    ;
+            return $s.replace($regExps['replacements'], "' + ( $1 ) + '")
                         .split("\t").join("'; ")
                         .split($__rightTplSep).join(" $__p__ += '")
-                )
                 ;
         },
         
-        getCachedTemplateName : function($id) {
-            return $__cacheDir + $id.replace(/[ -]/g,'_') + '.tpl.js';
-        },
+        getCachedTemplateName : function($id) { return $__cacheDir + $id.replace(/[ -]/g,'_') + '.tpl.js'; },
         
-        getCachedTemplateClass : function($id) {
-            return 'Contemplate_' + $id.replace(/[ -]/g,'_') + '_Cached';
-        },
+        getCachedTemplateClass : function($id) { return 'Contemplate_' + $id.replace(/[ -]/g,'_') + '_Cached'; },
         
         getTemplateContents : function($id) {
             if ($__templates[$id])
             {
                 // nodejs
                 if (self.IS_NODEJS && self.NFS) { return self.NFS.readFileSync($__templates[$id], self.ENC); }
-                // client-side js and url given as template location
-                else if (-1!==$__templates[$id].indexOf('/')) { return ajaxLoad('GET', $__templates[$id]); }
                 // client-side js and DOM script-element given as template holder
-                else { return window.document.getElementById($__templates[$id]).innerHTML; }
+                else if (0===$__templates[$id].indexOf('#')) { return window.document.getElementById($__templates[$id].substring(1)).innerHTML; }
+                // client-side js and url given as template location
+                else { return ajaxLoad('GET', $__templates[$id]); }
             }
             return '';
         },
@@ -1450,11 +1598,11 @@ function ajaxLoad(type, url, params)
             var $func=
                 // Introduce the data as local variables using with(){}
                // Convert the template into pure JavaScript
-                "var $__p__ = ''; with(this.data) { $__p__ += '" + blocks[0] + "'; } return $__p__;"
+                "var $__p__ = ''; with(__instance__.data) { $__p__ += '" + blocks[0] + "'; } return $__p__;"
                 ;
             // defined blocks
-            for (b in blocks[1]) funcs[b]=new Function("", blocks[1][b]);
-            return [new Function("", $func), funcs];
+            for (b in blocks[1]) funcs[b]=new Function("__instance__", blocks[1][b]);
+            return [new Function("__instance__", $func), funcs];
         },
         
         createCachedTemplate : function($id, $filename, $classname) {
@@ -1462,23 +1610,24 @@ function ajaxLoad(type, url, params)
             var blocks=self.parse(self.getTemplateContents($id)), funcs={}, b;
             // defined blocks
             var sblocks=[];
-            for (b in blocks[1])  sblocks.push(" '"+b+"' : function() { "+ blocks[1][b]+ "}");
+            for (b in blocks[1])  sblocks.push(" '"+b+"' : function(__instance__) { "+ blocks[1][b]+ "}");
             sblocks="$blocks={ " + sblocks.join(',') + "}; ";
-            
+            var parentCode='';
+            if ($__extends) parentCode="this.setParent(Contemplate.tpl('"+$__extends+"'));";
             var $class=
                 "(function(root) { " + "\n"
                 +"/* Contemplate cached template '"+$id+"' */ " + "\n"
                 +"function " + $classname + "($id) { this.id=$id; this.data=null; var $parent=null, $blocks=null; "
                 +"this.setId=function($id) { if ($id) {this.id=$id;} return this; }; "
                 +"this.setParent=function(parent) { $parent=parent; return this; }; "
-                +"this.renderBlock=function(block) { "+sblocks+" if ($blocks[block]) return $blocks[block].call(this); else if ($parent) return $parent.renderBlock.call(this, block); return ''; }; "
-                +"this.render=function(data) { "
+                +"this.renderBlock=function(block, __instance__) { if (!__instance__) __instance__=this; "+sblocks+" if ($blocks && $blocks[block]) return $blocks[block](__instance__); else if ($parent) return $parent.renderBlock(block, __instance__); return ''; }; "
+                +"this.render=function(data, __instance__) { "
                 // Introduce the data as local variables using with(){}
                // Convert the template into pure JavaScript
-                +"var $__p__ = ''; if ($parent) {$__p__ = $parent.render.call(this, data);} "
-                +"else {this.data = Contemplate.clonePHP(data); with(this.data) { $__p__ += '" + blocks[0] + "'; }} "
+                +"if (!__instance__) __instance__=this; var $__p__ = ''; if ($parent) {$__p__ = $parent.render(data, __instance__);} "
+                +"else {__instance__.data = Contemplate.clonePHP(data); with(__instance__.data) { $__p__ += '" + blocks[0] + "'; }} "
                 +"this.data=null; return $__p__; "
-                +"}; }; if ('undefined' != typeof (module) && module.exports) {module.exports="+$classname+";} else if (typeof (exports) != 'undefined') {exports="+$classname+";}  else {root." + $classname + "="+$classname+";} })(this);"
+                +"}; "+parentCode+" }; if ('undefined' != typeof (module) && module.exports) {module.exports="+$classname+";} else if (typeof (exports) != 'undefined') {exports="+$classname+";}  else {root." + $classname + "="+$classname+";} })(this);"
                 ;
             return self.setCachedTemplate($filename, $class);
         },
@@ -1498,8 +1647,7 @@ function ajaxLoad(type, url, params)
                     if (self.NFS.existsSync($cachedTplFile))
                     {
                         var $tplclass = require($cachedTplFile);
-                        var $tpl = new $tplclass(); //$cachedTplClass();
-                        $tpl.setId($id);
+                        var $tpl = new $tplclass().setId($id);
                         return $tpl;
                     }
                     return null;
@@ -1526,8 +1674,7 @@ function ajaxLoad(type, url, params)
                     if (self.NFS.existsSync($cachedTplFile))
                     {
                         var $tplclass = require($cachedTplFile);
-                        var $tpl = new $tplclass(); //$cachedTplClass();
-                        $tpl.setId($id);
+                        var $tpl = new $tplclass().setId($id);
                         return $tpl;
                     }
                     return null;
@@ -1536,44 +1683,33 @@ function ajaxLoad(type, url, params)
                 default:
                     // dynamic in-memory caching during page-request
                     var funcs=self.createTemplateRenderFunction($id);
-                    var $tpl=new ContemplateInstance($id, funcs[0]);
-                    $tpl.setBlocks(funcs[1]);
+                    var $tpl=new ContemplateInstance($id, funcs[0]).setBlocks(funcs[1]);
+                    if ($__extends) $tpl.setParent(self.tpl($__extends));
                     return $tpl;
                     break;
             }
             return null;
         },
         
-        setCachedTemplate : function($filename, $tplContents) {
-            return self.NFS.writeFileSync($filename, $tplContents, self.ENC);
-        },
+        setCachedTemplate : function($filename, $tplContents) { return self.NFS.writeFileSync($filename, $tplContents, self.ENC); },
         
         pushState : function() {
-            $__stack.push({$loops:$loops, $loopifs:$loopifs, $ifs:$ifs, $blockcnt:$blockcnt, $blocks:$blocks});
+            $__stack.push({loops:$loops, loopifs:$loopifs, ifs:$ifs, blockcnt:$blockcnt, blocks:$blocks, allblocks:$allblocks, extends_:$__extends});
             // reset state
-            $loops=0;
-            $ifs=0;
-            $loopifs=0;
-            $blockcnt=0;
-            $blocks=[];
+            $loops=0;  $ifs=0;  $loopifs=0;
+            $blockcnt=0; $blocks=[];  $allblocks=[];  $__extends=null;
         },
         
         popState : function() {
             var state=$__stack.pop();
-            $loops=state.$loops;
-            $ifs=state.$ifs;
-            $loopifs=state.$loopifs;
-            $blockcnt=state.$blockcnt;
-            $blocks=state.$blocks;
+            $loops=state.loops; $ifs=state.ifs;  $loopifs=state.loopifs;
+            $blockcnt=state.blockcnt; $blocks=state.blocks;  $allblocks=state.allblocks;  $__extends=state.extends_;
         },
         
         resetState : function() {
             // reset state
-            $loops=0;
-            $ifs=0;
-            $loopifs=0;
-            $blockcnt=0;
-            $blocks=[];
+            $loops=0; $ifs=0; $loopifs=0;
+            $blockcnt=0; $blocks=[];  $allblocks=[];  $__extends=null;
         },
         
         merge : function() {
@@ -1621,7 +1757,7 @@ function ajaxLoad(type, url, params)
     };
     
     // init the engine
-    self.init(/*escaper*/);
+    self.init();
     
     // export it
     if ('undefined' != typeof (module) && module.exports)    module.exports = self;

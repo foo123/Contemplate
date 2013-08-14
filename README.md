@@ -74,7 +74,7 @@ syntax, yet work the same in Javascript.
 
 * Easily __extensible__ , configurable
 
-* __Localization__ , __Date formatting__ built-in and configurable easily ( __Data escaping__  going to be added also)
+* __Localization__ , __Date formatting__ built-in and configurable easily ( simple __Data escaping__  is also supported)
 
 * Date manipulation similar to PHP format (ie __date__ function). An extended, localized version of php's date function __ldate__ is also implemented in the framework
 
@@ -83,6 +83,8 @@ syntax, yet work the same in Javascript.
 * Templates can *include* other templates (similar to PHP __include__ directive), these includes wil be compiled into the the template that called them
 
 * Templates can *call another template* using __template__ directive, these templates are called as templates subroutines and parsed by themselves
+
+* __Template Inheritance__ , templates can *extend/inherit other templates* using __extends__ directive and *override blocks* using __block__ , __endblock__ directives (see examples)
 
 * Notes: __Literal double quotes__ should better be used inside templates
 
@@ -125,6 +127,12 @@ Use the _test.php_ (or _test.js_ for nodejs) file to test the basic functionalit
 
 
 ###ChangeLog
+
+__0.4__
+* add template inheritance and block definitions
+* allow client-js template engine to load templates via ajax
+* add basic html/url escaping ( *htmlentities* , *urlencode* )
+* minor edits/optimizations
 
 __0.3.3__
 * make Contemplate.js work with Nodejs , add nodejs server example (test.js)

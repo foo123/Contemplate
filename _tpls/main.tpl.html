@@ -23,20 +23,22 @@
 
     <body>
         
-        PHP:
-        <div id="results_php"><% $render_php %></div>
+        In the SERVER:
+        <div id="results_server"><% $render_server %></div>
         
         <hr />
         
-        JS:
-        <div id="results_js"></div>
+        In the CLIENT:
+        <div id="results_client"></div>
         <script>
             /* set the template separators */
             Contemplate.setTemplateSeparators("<% $sepleft %>", "<% $sepright %>");
-            /* add the templates (from the inline script tags) */
+            /* add the templates */
             Contemplate.add({
-                "demo" : "./_tpls/demo.tpl.html", // load the template from this url
-                "sub" : "sub_tpl" // load the template from inside this DOM element
+                'base': "./_tpls/base.tpl.html", // load the template from this url using ajax (slower)
+                'demo': "./_tpls/demo.tpl.html", // load the template from this url using ajax (slower)
+                "sub" : "#sub_tpl", // load the template from this DOM element
+                'date': "./_tpls/date.tpl.html" // load the template from this url using ajax (slower)
             });
             
             /* localize some strings */
@@ -44,8 +46,8 @@
                 "Jul" : "Ιουλ",
                 "Sep" : "Σεπτ"
             });
-            var results = document.getElementById("results_js");
-            results.innerHTML = Contemplate.tpl('demo', <% $data_js %>);
+            var results = document.getElementById("results_client");
+            results.innerHTML = Contemplate.tpl('demo', <% $data_client %>);
         </script>
     
     </body>

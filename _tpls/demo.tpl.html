@@ -1,31 +1,51 @@
-<!-- print a localized date php-style -->
-<% %now() %>
-<br /><br />
-<% %ldate("M, d", %now()) %>
-<br /><br />
+<!-- extends/inherits the base template -->
+<% %extends(base) %>
 
-<% %block(block1) %>
-<strong>A table</strong><br />
-<% %htmltable($table_data, $table_options) %><br />
+
+<% %block(Block2) %>
+
+    <strong>Block2 is overriden by the demo template</strong>
+
+    <br /><br />
+
+    <strong>A table</strong><br />
+    <% %htmltable($table_data, $table_options) %>
+
+    <br /><br />
+    
+    <strong>A select box</strong><br />
+    <% %htmlselect($select_data, $select_options) %>
+
+    <br /><br />
+    
+    <strong>A table with alternative format</strong><br />
+    <% %htmltable($table_data, {"header"=>true}) %>
+
+    <br /><br />
+    
+    <strong>A select box with alternative format</strong><br />
+    <% %htmlselect($select_data, {
+            "optgroups"=>["group1", "group2", "group3"],
+            "selected"=>3,
+            "multiple"=>false,
+            "style"=>"width:200px;"
+        }) %>
+    
+    <br /><br />
+    <!-- include a (sub-)template file -->
+    <% %include(date) %>
+
 <% %endblock() %>
 
-<% %for($users as $i=>$usergroup) %>
-    <% %template(sub, {"i"=>$i, "usergroup"=>$usergroup}) %>
-<% %endfor() %>
+<% %block(Block3) %>
 
-<strong>A table</strong><br />
-<% %htmltable($table_data, $table_options) %><br />
+    <strong>Block3 is overriden by the demo template</strong>
 
-<strong>A table with alternative format</strong><br />
-<% %htmltable($table_data, {"header"=>true}) %><br />
+    <br /><br />
+    
+    <% %for($users as $i=>$usergroup) %>
+        <!-- call a (sub-)template -->
+        <% %template(sub, {"i"=>$i, "usergroup"=>$usergroup}) %>
+    <% %endfor() %>
 
-<strong>A select box</strong><br />
-<% %htmlselect($select_data, $select_options) %><br />
-
-<strong>A select box with alternative format</strong><br />
-<% %htmlselect($select_data, {
-        "optgroups"=>["group1", "group2", "group3"],
-        "selected"=>3,
-        "multiple"=>false,
-        "style"=>"width:200px;"
-    }) %><br />
+<% %endblock() %>

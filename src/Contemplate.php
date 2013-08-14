@@ -1,8 +1,6 @@
 <?php
 if (!class_exists('Contemplate'))
 {
-class Contemplate
-{
     /*
     *  Simple light-weight php templating engine (part of javascript templating engine)
     *  @author: Nikos M.  http://nikos-web-development.netai.net/
@@ -14,35 +12,31 @@ class Contemplate
     *
     */
     
+class Contemplate
+{
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
     const CACHE_TO_DISK_NOUPDATE = 4;
     
-    private static $escaper=null;
+    protected static $__cacheDir='./';
+    protected static $__cacheMode=0;
+    protected static $__cache=array();
+    protected static $__templates=array();
+    protected static $__partials=array();
+    protected static $__locale=array();
+    protected static $__leftTplSep="<%";
+    protected static $__rightTplSep="%>";
+    protected static $__preserveLines="' . PHP_EOL . '";
     
-    private static $__cacheDir='./';
-    private static $__cacheMode=0;
-    private static $__cache=array();
-    private static $__templates=array();
-    private static $__partials=array();
-    private static $__locale=array();
-    private static $__leftTplSep="<%";
-    private static $__rightTplSep="%>";
-    private static $__preserveLines="' . PHP_EOL . '";
-    
+    protected static $__stack=array();
     protected static $loops=0;
     protected static $ifs=0;
     protected static $loopifs=0;
+    protected static $blocks=array();
+    protected static $allblocks=array();
+    protected static $blockcnt=0;
+    protected static $__extends=null;
     
-    protected static $__class='';
-    
-    protected static $controlConstructs=array(
-        'if', 'elseif', 'else', 'endif', 
-        'for', 'elsefor', 'endfor',
-        /*'embed',*/ 'include', 'template'
-        ,'htmlselect', 'htmltable'
-    );
-    protected static $funcs=array( 'count', 'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'now', 'date', 'ldate', 'q', 'dq', 'l', 's', 'n', 'f' );
     protected static $regExps=array(
         'functions'=>'',
         'controlConstructs'=>'',
@@ -52,9 +46,22 @@ class Contemplate
         'replacements'=>''
     );
     
-    // instance dynamic render function (when no caching is used)
-    private $renderFunction=null;
-    private $id=null;
+    protected static $__class='';
+    
+    protected static $controlConstructs=array(
+        'if', 'elseif', 'else', 'endif', 
+        'for', 'elsefor', 'endfor',
+        'include', 'template', 'extends', 'block', 'endblock',
+        'htmlselect', 'htmltable'
+    );
+    protected static $funcs=array( 'html', 'url', 'count', 'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'now', 'date', 'ldate', 'q', 'dq', 'l', 's', 'n', 'f' );
+    
+    // instance properties (when no caching is used)
+    public $id=null;
+    public $data=null;
+    protected $_renderFunction=null;
+    protected $_parent=null;
+    protected $_blocks=null;
     
     
     //
@@ -62,90 +69,74 @@ class Contemplate
     //
     public function __construct($id=null, $renderFunc=null)
     {
-        if ($id)
-        {
-            $this->id=$id;
-            $this->renderFunction=$renderFunc;
-        }
+        $this->id=null; $this->data=null; $this->_renderFunction=null; $this->_parent=null; $this->_blocks=null;
+        if ($id) { $this->id=$id; $this->_renderFunction=$renderFunc; }
     }
     
-    public function setId($id=null)
-    {
-        if ($id) $this->id=$id;
-        return $this;
-    }
+    public function setId($id=null) { if ($id) $this->id=$id; return $this; }
 	
-    public function setRenderFunction($renderFunc=null)
-    {
-        if ($renderFunc)  $this->renderFunction=$renderFunc;
-        return $this;
-    }
+    public function setParent($parent) { $this->_parent=$parent; return $this; }
+    
+    public function setBlocks($blocks) { if (!$this->_blocks) $this->_blocks=array(); $this->_blocks=self::merge($this->_blocks, $blocks); return $this; }
+    
+    public function setRenderFunction($renderFunc=null) { if ($renderFunc) $this->_renderFunction=$renderFunc; return $this; }
 	
-    public function render($data) 
+    public function renderBlock($block, $__instance__=null)
     {
-        /* dynamic function */
-        if ($this->renderFunction)
-        {
-            $renderFunction=$this->renderFunction;
-            return $renderFunction( $data );
-        }
+        if (!$__instance__) $__instance__=$this;
+        if ($this->_blocks && isset($this->_blocks[$block])) {$blockfunc=$this->_blocks[$block]; return $blockfunc( $__instance__ );}
+        elseif ($this->_parent) {return $this->_parent->renderBlock($block, $__instance__);}
         return '';
+    }
+    
+    public function render($data, $__instance__=null) 
+    {
+        $out=''; if (!$__instance__) $__instance__=$this;
+        if ($this->_parent) 
+        { 
+            $out=$this->_parent->render($data, $__instance__); 
+        }
+        elseif ($this->_renderFunction)
+        {
+            /* dynamic function */
+            $__instance__->data=self::o2a($data); $renderFunction=$this->_renderFunction;  $out=$renderFunction( $__instance__ );
+        }
+        $this->data=null;
+        return $out;
 	}
     
-    public static function init($escaper=null)
+    public static function init()
     {
-        self::$escaper=$escaper;
-        
         self::$__class='Contemplate'; // __CLASS__;
-        
         self::$regExps['controlConstructs']='/\t\s*\%(' . implode('|', self::$controlConstructs) . ')\b\s*\((.*)\)/';
         self::$regExps['forExpr']='/^\s*\$([a-z0-9_]+?)\s* as \s*\$([a-z0-9_]+?)\s*=>\s*\$([a-z0-9_]+)\s*$/i';
         self::$regExps['quotes']="/'/";
-        self::$regExps['specials']="/[\r\t]/";//"/[\r\t\n]/";
+        self::$regExps['specials']="/[\r\t]/";
         self::$regExps['replacements']="/\t\s*(.*?)\s*".self::$__rightTplSep."/";
-        if (!empty(self::$funcs))  
-            self::$regExps['functions']='/\%(' . implode('|', self::$funcs) . ')\b/';
+        if (!empty(self::$funcs)) self::$regExps['functions']='/\%(' . implode('|', self::$funcs) . ')\b/';
     }
     
     //
     // Main methods
     //
-    public static function setLocaleStrings($l)
-    {
-        self::$__locale=self::merge(self::$__locale, $l);
-    }
+    public static function setLocaleStrings($l) { self::$__locale=self::merge(self::$__locale, $l); }
     
     public static function setTemplateSeparators($left=false, $right=false)
     {
         if ($left) self::$__leftTplSep=$left;
         if ($right) self::$__rightTplSep=$right;
-            
-        if ($right)
-            // recompute it
-            self::$regExps['replacements']="/\t\s*(.*?)\s*".self::$__rightTplSep."/";
+        // recompute it
+        if ($right) self::$regExps['replacements']="/\t\s*(.*?)\s*".self::$__rightTplSep."/";
     }
     
-    public static function setPreserveLines($bool=true)
-    {
-        if ($bool)  self::$__preserveLines="' . PHP_EOL . '";
-        else self::$__preserveLines="";
-    }
+    public static function setPreserveLines($bool=true) { if ($bool)  self::$__preserveLines="' . PHP_EOL . '";  else self::$__preserveLines=""; }
     
-    public static function setCacheDir($dir)
-    {
-        self::$__cacheDir=rtrim($dir,'/').'/';
-    }
+    public static function setCacheDir($dir) {  self::$__cacheDir=rtrim($dir,'/').'/'; }
     
-    public static function setCacheMode($mode)
-    {
-        self::$__cacheMode=$mode;
-    }
+    public static function setCacheMode($mode) { self::$__cacheMode=$mode; }
     
     // add templates manually
-    public static function add($tpls=array())
-    {
-        self::$__templates=self::merge(self::$__templates, $tpls);
-    }
+    public static function add($tpls=array()) { self::$__templates=self::merge(self::$__templates, $tpls); }
     
     public static function tpl($id, $data=null)
     {
@@ -165,217 +156,111 @@ class Contemplate
     //
     
     // if
-    public static function t_if($cond='false') 
-    {
-        self::$ifs++;
-        return "'; if ($cond) { ";
-    }
-    
+    public static function t_if($cond='false') {  self::$ifs++;  return "'; if ($cond) { "; }
     // elseif    
-    public static function t_elseif($cond='false') 
-    {
-        return "'; } elseif ($cond) { ";
-    }
-    
+    public static function t_elseif($cond='false') { return "'; } elseif ($cond) { "; }
     // else
-    public static function t_else() 
-    {
-        // regular else
-        return "'; } else { ";
-    }
-    
-    // elsefor
-    public static function t_elsefor() 
-    {
-        // else attached to  for loop
-        self::$loopifs--;
-        return "'; } } else { ";
-    }
-    
+    public static function t_else() { return "'; } else { ";  }
     // endif
-    public static function t_endif() 
-    {
-        self::$ifs--;
-        return "'; } ";
-    }
-    
+    public static function t_endif() { self::$ifs--;  return "'; } ";  }
     // for, foreach
     public static function t_for($for_expr) 
     {
-        self::$loops++;
-        self::$loopifs++;
+        self::$loops++;  self::$loopifs++;
         preg_match(self::$regExps['forExpr'], $for_expr, $m);
         $o="\$${m[1]}"; $k="\$${m[2]}"; $v="\$${m[3]}";
-        return "'; if (!empty($o)) { foreach ($o as $k=>$v) { ";
+        return "'; if (!empty($o)) { foreach ($o as $k=>$v) { \$__instance->data['".$m[2]."']=$k; \$__instance->data['".$m[3]."']=$v; ";
     }
-    
+    // elsefor
+    public static function t_elsefor() { /* else attached to  for loop */ self::$loopifs--;  return "'; } } else { "; }
     // endfor
     public static function t_endfor() 
     {
-        if (self::$loopifs==self::$loops)
-        {
-            self::$loops--;
-            self::$loopifs--;
-            return "'; } } ";
-        }
-        self::$loops--;
-        return "'; } ";
+        if (self::$loopifs==self::$loops) { self::$loops--; self::$loopifs--;  return "'; } } ";  }
+        self::$loops--;  return "'; } ";
     }
-    
-    // embed, same as include right now
-    /*public static function t_embed($id)
-    {
-        return self::t_include($id);
-    }*/
-    
-    // include
-    public static function t_include($id)
-    {
-        // cache it
+    // include file
+    public static function t_include($id) 
+    { 
+        /* cache it */ 
         if (!isset(self::$__partials[$id]))
-            self::$__partials[$id]=" " . self::parse(self::getTemplateContents($id)) . "'; ";
+        {
+            //self::pushState();
+            self::$__partials[$id]=" " . self::parse(self::getTemplateContents($id), false) . "'; ";
+            //self::popState();
+        }
         return self::$__partials[$id];
     }
-    
+    // include template
     public static function t_template($args)
     {
-        $args=explode(',', $args);
-        $id=trim(array_shift($args));
+        $args=explode(',', $args); $id=trim(array_shift($args));
         $obj=str_replace(array(self::$__preserveLines, '{', '}', '[', ']'), array('', 'array(', ')','array(', ')'), implode(',', $args));
-        return '\'. '.self::$__class.'::tpl("'.$id.'", '.$obj.'); ';
+        return '\' . '.self::$__class.'::tpl("'.$id.'", '.$obj.'); ';
     }
-    
+    // extend another template
+    public static function t_extends($tpl) { self::$__extends=$tpl; return "'; "; }
+    // define (overridable) block
+    public static function t_block($block) { self::$allblocks[]=$block; self::$blockcnt++; array_push(self::$blocks,$block); return "' .  __{{".$block."}}__ ";  }
+    // end define (overridable) block
+    public static function t_endblock() { if (self::$blockcnt) {self::$blockcnt--; return " __{{/".array_pop(self::$blocks)."}}__ ";}  return '';  }
+    // render html table
     public static function t_table($args)
     {
         $obj=str_replace(array(self::$__preserveLines, '{', '}', '[', ']'), array('', 'array(', ')','array(', ')'), $args);
-        return '\'. '.self::$__class.'::htmltable('.$obj.'); ';
+        return '\' . '.self::$__class.'::htmltable('.$obj.'); ';
     }
-    
+    // render html select
     public static function t_select($args)
     {
         $obj=str_replace(array(self::$__preserveLines, '{', '}', '[', ']'), array('', 'array(', ')','array(', ')'), $args);
-        return '\'. '.self::$__class.'::htmlselect('.$obj.'); ';
+        return '\' . '.self::$__class.'::htmlselect('.$obj.'); ';
     }
     
     //
     // Basic template functions
     //
     
-    // echo
-    /*public static function e($e)
-    {
-        return ($e);
-    }*/
-    
+    // basic html escaping
+    public static function html($s) { return htmlentities($s, ENT_COMPAT, 'UTF-8'); }
+    // basic url escaping
+    public static function url($s) { return urlencode($s); }
     // count items in array
-    public static function count($a)
-    {
-        return count($a);
-    }
-    
+    public static function count($a) { return count($a); }
     // quote
-    public static function q($e)
-    {
-        return "'".$e."'";
-    }
-    
+    public static function q($e) { return "'".$e."'"; }
     // double quote
-    public static function dq($e)
-    {
-        return '"'.$e.'"';
-    }
-    
+    public static function dq($e) { return '"'.$e.'"'; }
     // to String
-    public static function s($e)
-    {
-        return strval($e);
-    }
-    
+    public static function s($e) { return strval($e); }
     // to Integer
-    public static function n($e)
-    {
-        return intval($e);
-    }
-    
+    public static function n($e) { return intval($e); }
     // to Float
-    public static function f($e)
-    {
-        return floatval($e);
-    }
-    
+    public static function f($e) { return floatval($e); }
     // Concatenate strings/vars
-    public static function concat()
-    {
-        $args=func_get_args();
-        return implode('', $args);
-    }
-    
+    public static function concat() { $args=func_get_args(); return implode('', $args); }
     // Trim strings in templates
-    public static function trim()
-    {
-        $args=func_get_args();
-        if (isset($args[1])) return trim($args[0], $args[1]);
-        else return trim($args[0]);
-    }
-    
-    public static function ltrim()
-    {
-        $args=func_get_args();  
-        if (isset($args[1])) return ltrim($args[0], $args[1]);
-        else return ltrim($args[0]);
-    }
-    
-    public static function rtrim()
-    {
-        $args=func_get_args();  
-        if (isset($args[1])) return rtrim($args[0], $args[1]);
-        else return rtrim($args[0]);
-    }
-    
+    public static function trim() { $args=func_get_args(); if (isset($args[1])) return trim($args[0], $args[1]); else return trim($args[0]); }
+    public static function ltrim() { $args=func_get_args();  if (isset($args[1])) return ltrim($args[0], $args[1]); else return ltrim($args[0]); }
+    public static function rtrim() { $args=func_get_args();  if (isset($args[1])) return rtrim($args[0], $args[1]); else return rtrim($args[0]); }
     // Sprintf in templates
-    public static function sprintf()
-    {
-        $args=func_get_args();
-        $format=array_shift($args);
-        return vsprintf($format, $args);
-    }
+    public static function sprintf() { $args=func_get_args(); $format=array_shift($args); return vsprintf($format, $args); }
     
     //
     //  Localization functions
     //
     
     // current time in seconds
-    public static function now()
-    {
-        return time();
-    }
-    
+    public static function now() { return time(); }
     // formatted date
-    public static function date($format, $time=false)
-    {
-        if (!$time) $time=time();
-        return date($format, $time);
-    }
-    
+    public static function date($format, $time=false) { if (!$time) $time=time(); return date($format, $time); }
     // localized formatted date
-    public static function ldate($format, $time=false)
-    {
-        if (!$time) $time=time();
-        return self::localized_date(self::$__locale, $format, $time);
-    }
-    
-    public static function locale($e)
-    {
-        return (isset(self::$__locale[$e])) ? self::$__locale[$e] : $e;
-    }
-    
-    public static function l($e)
-    {
-        return self::locale($e);
-    }
+    public static function ldate($format, $time=false) { if (!$time) $time=time(); return self::localized_date(self::$__locale, $format, $time);  }
+    public static function locale($e) { return (isset(self::$__locale[$e])) ? self::$__locale[$e] : $e; }
+    public static function l($e) { return self::locale($e); }
     
     //
-    //  HTMl elements
+    //  HTML elements
     //
     
     // html table
@@ -450,9 +335,7 @@ class Contemplate
         unset($rows);
         
         $o.=$footer;
-        
         $o.="</table>";
-        
         return $o;
     }
     
@@ -523,9 +406,7 @@ class Contemplate
                     $o.="<option value='{$k}'>{$v}</option>";
             }
         }
-        
         $o.="</select>";
-        
         return $o;
     }
     
@@ -546,13 +427,36 @@ class Contemplate
                 case 'elsefor': return self::t_elsefor($m[2]); break;
                 case 'endfor': return self::t_endfor($m[2]); break;
                 case 'template': return self::t_template($m[2]); break;
-                case 'embed':
+                case 'extends': return self::t_extends($m[2]); break;
+                case 'block': return self::t_block($m[2]); break;
+                case 'endblock': return self::t_endblock($m[2]); break;
                 case 'include': return self::t_include($m[2]); break;
                 case 'htmltable': return self::t_table($m[2]); break;
                 case 'htmlselect': return self::t_select($m[2]); break;
             }
         }
         return $m[0];
+    }
+    
+    protected static function doBlocks($s) 
+    {
+        $blocks=array(); $bl=count(self::$allblocks);
+        while ($bl--)
+        {
+            $block=array_pop(self::$allblocks);
+            $delim1='__{{'.$block.'}}__'; $delim2='__{{/'.$block.'}}__'; 
+            $len1=strlen($delim1); $len2=$len1+1; 
+            $pos1=strpos($s, $delim1); $pos2=strpos($s, $delim2)-$pos1+$len2;
+            $code=substr($s, $pos1, $pos2);
+            if (!empty($code))
+            {
+                $s=str_replace($code, " \$__instance__->renderBlock('".$block."'); ", $s);
+                $code=substr($code, $len1, -$len2);
+                $blocks[$block]="\$__p__ = ''; extract(\$__instance__->data); " .  $code .  "'; return \$__p__;";
+                //self::debug(array($block, $code));
+            }
+        }
+        return array($s, $blocks);
     }
     
     protected static function parseControlConstructs($s) 
@@ -563,7 +467,7 @@ class Contemplate
         return $s;
     }
     
-    protected static function parse($s) 
+    protected static function parse($s, $withblocks=true) 
     {
         $s = preg_replace(self::$regExps['specials'], " ", $s);
         $s = str_replace(self::$__leftTplSep, "\t", $s);
@@ -574,6 +478,7 @@ class Contemplate
         $s = preg_replace(self::$regExps['replacements'], "' . ( $1 ) . '", $s);
         $s = str_replace("\t", "'; ", $s);
         $s = str_replace(self::$__rightTplSep, " \$__p__ .= '", $s);
+        if ($withblocks)  return self::doBlocks($s);
         return $s;
     }
     
@@ -583,49 +488,52 @@ class Contemplate
         return '';
     }
     
-    protected static function getCachedTemplateName($id)
-    {
-        return self::$__cacheDir . str_replace(array('-', ' '), '_', $id) . '.tpl.php';
-    }
+    protected static function getCachedTemplateName($id) { return self::$__cacheDir . str_replace(array('-', ' '), '_', $id) . '.tpl.php'; }
     
-    protected static function getCachedTemplateClass($id)
-    {
-        return 'Contemplate_' . str_replace(array('-', ' '), '_', $id) . '_Cached';
-    }
+    protected static function getCachedTemplateClass($id) { return 'Contemplate_' . str_replace(array('-', ' '), '_', $id) . '_Cached';  }
     
     protected static function createTemplateRenderFunction($id)
     {
-        self::reset();
+        self::resetState();
+        $blocks=self::parse(self::getTemplateContents($id));
         $func=
             // Introduce the data as local variables using extract()
-            "extract(".self::$__class."::o2a((array)\$__o__)); "
-            ."\$__p__ = ''; "
-            // Convert the template into pure PHP
-            ."\$__p__ .= '" .  self::parse(self::getTemplateContents($id)) .  "'; "
-            ."return \$__p__;"
+            "\$__p__ = '';  extract(\$__instance__->data); \$__p__ .= '" .  $blocks[0] .  "'; return \$__p__;"
             ;
-        //echo self::log($func);
-        $fn = create_function('$__o__', $func);
-        return $fn;
+        $fn = create_function('$__instance__', $func);
+        $blockfns=array();  foreach ($blocks[1] as $b=>$bc) {$blockfns[$b] = create_function('$__instance__', $bc);}
+        return array($fn, $blockfns);
     }
     
     protected static function createCachedTemplate($id, $filename, $classname)
     {
-        self::reset();
+        self::resetState();
+        $blocks=self::parse(self::getTemplateContents($id));
+        // defined blocks
+        $sblocks=array();
+        foreach ($blocks[1] as $b=>$bc)  $sblocks[]="private function _blockfn_".$b."(\$__instance__) { " . $bc . "}";
+        $sblocks=implode(' ', $sblocks);
+        $parentCode='';
+        if (self::$__extends) $parentCode="\$this->setParent(".self::$__class."::tpl('".self::$__extends."'));";
         $class=
-            // Introduce the data as local variables using extract()
             '<?php ' .PHP_EOL
             ."/* ".self::$__class." cached template '$id' */ " . PHP_EOL
             ."if (!class_exists('" . $classname . "')) { "
             ."final class " . $classname . " extends ".self::$__class." { "
-            ."public function __construct(\$id=null) { \$this->id=\$id; } "
-            ."public function render(\$__o__) { "
-            ."extract(".self::$__class."::o2a((array)\$__o__)); "
-            ."\$__p__ = ''; "
-            // Convert the template into pure PHP
-            ."\$__p__ .= '" .  self::parse(self::getTemplateContents($id)) .  "'; "
-            ."return \$__p__;"
-            ."} } }"
+            ."public function __construct(\$id=null, \$_r=null) { \$this->id=null; \$this->data=null; \$this->_renderFunction=null; \$this->_parent=null;  \$this->_blocks=null; \$this->id=\$id; ".$parentCode." } "
+            .$sblocks // defined blocks
+            ."public function renderBlock(\$block, \$__instance__=null) { "
+            ."if(!\$__instance__) \$__instance__=\$this; "
+            ."if (method_exists(\$this, '_blockfn_'.\$block)) { return call_user_func(array(\$this, '_blockfn_'.\$block), \$__instance__); } "
+            ."elseif (\$this->_parent) { return \$this->_parent->renderBlock(\$block, \$__instance__); } "
+            ."return ''; } "
+            ."public function render(\$__data__, \$__instance__=null) { "
+            ."\$__p__ = ''; if(!\$__instance__) \$__instance__=\$this; "
+            ."if (\$this->_parent) {\$__p__=\$this->_parent->render(\$__data__, \$__instance__);} "
+            ."else { \$__instance__->data=".self::$__class."::o2a((array)\$__data__); "
+            // Introduce the data as local variables using extract()
+            ."extract(\$__instance__->data); \$__p__ .= '" .  $blocks[0] .  "';} "
+            ."\$this->data=null; return \$__p__;} } }"
             ;
         return self::setCachedTemplate($filename, $class);
     }
@@ -643,10 +551,8 @@ class Contemplate
                 }
                 if (is_file($cachedTplFile))
                 {
-                    include($cachedTplFile);
-                    $tpl = new $cachedTplClass();
-                    $tpl->setId($id);
-                    return $tpl;
+                    include($cachedTplFile);  $tpl = new $cachedTplClass();
+                    $tpl->setId($id); return $tpl;
                 }
                 return null;
                 break;
@@ -661,10 +567,8 @@ class Contemplate
                 }
                 if (is_file($cachedTplFile))
                 {
-                    include($cachedTplFile);
-                    $tpl = new $cachedTplClass();
-                    $tpl->setId($id);
-                    return $tpl;
+                    include($cachedTplFile);  $tpl = new $cachedTplClass();
+                    $tpl->setId($id);  return $tpl;
                 }
                 return null;
                 break;
@@ -673,27 +577,38 @@ class Contemplate
             default:
                 // dynamic in-memory caching during page-request
                 //return new Contemplate($id, self::createTemplateRenderFunction($id));
-                $thisclass=self::$__class;
-                $tpl = new $thisclass();
-                $tpl->setId($id);
-                $tpl->setRenderFunction(self::createTemplateRenderFunction($id));
+                $thisclass=self::$__class; $tpl = new $thisclass(); $tpl->setId($id);
+                $fns=self::createTemplateRenderFunction($id);
+                $tpl->setRenderFunction($fns[0]); $tpl->setBlocks($fns[1]);
+                if (self::$__extends) $tpl->setParent(self::tpl(self::$__extends));
                 return $tpl;
                 break;
         }
         return null;
     }
     
-    protected static function setCachedTemplate($filename, $tplContents)
+    protected static function setCachedTemplate($filename, $tplContents) { return file_put_contents($filename, $tplContents); }
+    
+    protected static function pushState() 
     {
-        return file_put_contents($filename, $tplContents);
+        array_push(self::$__stack, array('loops'=>self::$loops, 'loopifs'=>self::$loopifs, 'ifs'=>self::$ifs, 'blockcnt'=>self::$blockcnt, 'blocks'=>self::$blocks, 'allblocks'=>$allblocks, 'extends'=>self::$__extends));
+        // reset state
+        self::$loops=0;  self::$ifs=0;  self::$loopifs=0;
+        self::$blockcnt=0; self::$blocks=array();  self::$allblocks=array();  self::$__extends=null;
     }
     
-    protected static function reset()
+    protected static function popState() 
     {
-        // reset parse counters
-        self::$loops=0;
-        self::$ifs=0;
-        self::$loopifs=0;
+        $state=array_pop(self::$__stack);
+        self::$loops=$state['loops']; self::$ifs=$state['ifs'];  self::$loopifs=$state['loopifs'];
+        self::$blockcnt=$state['blockcnt']; self::$blocks=$state['blocks'];  self::$allblocks=$state['allblocks'];  self::$__extends=$state['extends'];
+    }
+    
+    protected static function resetState() 
+    {
+        // reset state
+        self::$loops=0; self::$ifs=0; self::$loopifs=0;
+        self::$blockcnt=0; self::$blocks=array();  self::$allblocks=array();  self::$__extends=null;
     }
     
     public static function o2a($d)
@@ -805,10 +720,10 @@ class Contemplate
     }*/
     
     public static function log($m) {  return '<pre>' . print_r($m, true) . '</pre>'; }
+    public static function debug($m) {  return file_put_contents(dirname(__FILE__).'/debug.log', print_r($m, true).PHP_EOL, FILE_APPEND); }
 }
 
 // init the engine
-//require dirname(__FILE__) .'/Escaper.php';
-Contemplate::init(/*new Escaper('utf-8')*/);
+Contemplate::init();
 
 }

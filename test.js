@@ -13,7 +13,7 @@ var http=require('http'), url=require('url'), path=require('path'), fs=require('
 require(__dirname + '/src/Contemplate.js');
 
 
-var $sepleft="<%";  var $sepright="%>";
+var $sepleft="<%", $sepright="%>";
 
 // works inside Nodejs
 Contemplate.isNodeJs(true, fs);
@@ -26,8 +26,10 @@ Contemplate.setCacheMode(Contemplate.CACHE_TO_DISK_AUTOUPDATE);
 // add templates
 Contemplate.add({
     'main' : __dirname + '/_tpls/main.tpl.html',
+    'base' : __dirname + '/_tpls/base.tpl.html',
     'demo' : __dirname + '/_tpls/demo.tpl.html',
-    'sub' : __dirname + '/_tpls/sub.tpl.html'
+    'sub' : __dirname + '/_tpls/sub.tpl.html',
+    'date' : __dirname + '/_tpls/date.tpl.html'
 });
 
 // the data to be used by the templates
@@ -42,11 +44,6 @@ var $data={
             {'name':'u4', 'text':'text4', 'id':'id4'},
             {'name':'u5', 'text':'text5', 'id':'id5'},
             {'name':'u6', 'text':'text6', 'id':'id6'}
-        ],
-        [ 
-            {'name':'u7', 'text':'text7', 'id':'id7'},
-            {'name':'u8', 'text':'text8', 'id':'id8'},
-            {'name':'u9', 'text':'text9', 'id':'id9'}
         ]
     ],
     'table_data':{
@@ -75,8 +72,8 @@ var $main_template_data={
     },
     'sepleft':$sepleft,
     'sepright':$sepright,
-    'data_js':JSON.stringify($data),
-    'render_php':Contemplate.tpl('demo', $data)
+    'data_client':JSON.stringify($data),
+    'render_server':Contemplate.tpl('demo', $data)
 };
 
 // create a node http server to serve the rendered templates

@@ -1,7 +1,7 @@
 Contemplate
 ===========
 
-__Simple, light-weight and fast templating engine for both PHP, client-side Javascript and Node.js__
+__Light-weight and fast templating engine for both PHP, client-side Javascript and Node.js__
 
 ![Contemplate](/screenshots/contemplate.jpg)
 

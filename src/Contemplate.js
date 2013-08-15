@@ -1090,7 +1090,7 @@ function ajaxLoad(type, url, params)
     // private vars
     var 
         $__cacheMode=0, $__cache={}, $__templates={}, $__partials={},
-        $__locale={}, $__leftTplSep="<%", $__rightTplSep="%>", $__preserveLines="' + \"\\n\" + '",
+        $__locale={}, $__leftTplSep="<%", $__rightTplSep="%>", $__preserveLines="' + \"\\n\" + '", $sanitizeRX=/[ -]/g,
         $__stack=[],
         $loops=0, $ifs=0, $loopifs=0, $blockcnt=0, $blocks=[], $allblocks=[], $__extends=null,
     
@@ -1193,6 +1193,7 @@ function ajaxLoad(type, url, params)
         // whether working inside Node.js or not
         isNodeJs : function($bool, $fs) {
             self.IS_NODEJS=$bool;
+            //var endOfLine = require('os').EOL;
             if ($bool) { /* filesystem I/O object of Nodejs */ self.NFS = $fs || require('fs'); }
             else { self.NFS = null; }
         },
@@ -1535,11 +1536,11 @@ function ajaxLoad(type, url, params)
                 if ($code!='')
                 {
                     $s=$s.replace($code, " __instance__.renderBlock('"+$block+"'); ");
-                    $code=$code.substring($len1, $code.length-$len2);
+                    $code=$code.substring($len1, $code.length-$len2).replace("+ '' +", '+').replace("+ '';", ';'); // remove redundant code
                     $blocks[$block]="var $__p__ = ''; with(__instance__.data) { " + $code + "'; } return $__p__;";
                 }
             }
-            return [$s, $blocks];
+            return [$s.replace("+ '' +", '+').replace("+ '';", ';'), $blocks];
         },
         
         parseControlConstructs : function($s) {
@@ -1571,12 +1572,13 @@ function ajaxLoad(type, url, params)
             return $s.replace($regExps['replacements'], "' + ( $1 ) + '")
                         .split("\t").join("'; ")
                         .split($__rightTplSep).join(" $__p__ += '")
+                        .replace("+ '' +", '+').replace("+ '';", ';') // remove redundant code
                 ;
         },
         
-        getCachedTemplateName : function($id) { return $__cacheDir + $id.replace(/[ -]/g,'_') + '.tpl.js'; },
+        getCachedTemplateName : function($id) { return $__cacheDir + $id.replace($sanitizeRX, '_') + '.tpl.js'; },
         
-        getCachedTemplateClass : function($id) { return 'Contemplate_' + $id.replace(/[ -]/g,'_') + '_Cached'; },
+        getCachedTemplateClass : function($id) { return 'Contemplate_' + $id.replace($sanitizeRX, '_') + '_Cached'; },
         
         getTemplateContents : function($id) {
             if ($__templates[$id])
@@ -1607,12 +1609,8 @@ function ajaxLoad(type, url, params)
         
         createCachedTemplate : function($id, $filename, $classname) {
             self.resetState();
-            var blocks=self.parse(self.getTemplateContents($id)), funcs={}, b;
-            // defined blocks
-            var sblocks=[];
-            for (b in blocks[1])  sblocks.push(" '"+b+"' : function(__instance__) { "+ blocks[1][b]+ "}");
-            sblocks="$blocks={ " + sblocks.join(',') + "}; ";
-            var parentCode='';
+            var blocks=self.parse(self.getTemplateContents($id)), funcs={}, parentCode='', b, sblocks=[];  // defined blocks
+            for (b in blocks[1]) sblocks.push("'"+b+"' : function(__instance__) { "+ blocks[1][b]+ "}"); sblocks="$blocks={" + sblocks.join(', ') + "}; ";
             if ($__extends) parentCode="this.setParent(Contemplate.tpl('"+$__extends+"'));";
             var $class=
                 "(function(root) { " + "\n"
@@ -1638,24 +1636,21 @@ function ajaxLoad(type, url, params)
             switch($__cacheMode)
             {
                 case self.CACHE_TO_DISK_NOUPDATE:
-                    var $cachedTplFile=self.getCachedTemplateName($id);
-                    var $cachedTplClass=self.getCachedTemplateClass($id);
+                    var $cachedTplFile=self.getCachedTemplateName($id), $cachedTplClass=self.getCachedTemplateClass($id);
                     if (!self.NFS.existsSync($cachedTplFile))
                     {
                         self.createCachedTemplate($id, $cachedTplFile, $cachedTplClass);
                     }
                     if (self.NFS.existsSync($cachedTplFile))
                     {
-                        var $tplclass = require($cachedTplFile);
-                        var $tpl = new $tplclass().setId($id);
+                        var $tplclass = require($cachedTplFile), $tpl = new $tplclass().setId($id);
                         return $tpl;
                     }
                     return null;
                     break;
                 
                 case self.CACHE_TO_DISK_AUTOUPDATE:
-                    var $cachedTplFile=self.getCachedTemplateName($id);
-                    var $cachedTplClass=self.getCachedTemplateClass($id);
+                    var $cachedTplFile=self.getCachedTemplateName($id), $cachedTplClass=self.getCachedTemplateClass($id);
                     if (!self.NFS.existsSync($cachedTplFile))
                     {
                         // if tpl not exist or is out-of-sync re-create it
@@ -1663,8 +1658,7 @@ function ajaxLoad(type, url, params)
                     }
                     else
                     {
-                        var stat=self.NFS.statSync($cachedTplFile);
-                        var stat2=self.NFS.statSync($__templates[$id]);
+                        var stat=self.NFS.statSync($cachedTplFile), stat2=self.NFS.statSync($__templates[$id]);
                         if (stat.mtime.getTime() <= stat2.mtime.getTime())
                         {
                             // if tpl not exist or is out-of-sync re-create it
@@ -1673,8 +1667,7 @@ function ajaxLoad(type, url, params)
                     }
                     if (self.NFS.existsSync($cachedTplFile))
                     {
-                        var $tplclass = require($cachedTplFile);
-                        var $tpl = new $tplclass().setId($id);
+                        var $tplclass = require($cachedTplFile), $tpl = new $tplclass().setId($id);
                         return $tpl;
                     }
                     return null;
@@ -1682,8 +1675,7 @@ function ajaxLoad(type, url, params)
                 case self.CACHE_TO_DISK_NONE:
                 default:
                     // dynamic in-memory caching during page-request
-                    var funcs=self.createTemplateRenderFunction($id);
-                    var $tpl=new ContemplateInstance($id, funcs[0]).setBlocks(funcs[1]);
+                    var funcs=self.createTemplateRenderFunction($id), $tpl=new ContemplateInstance($id, funcs[0]).setBlocks(funcs[1]);
                     if ($__extends) $tpl.setParent(self.tpl($__extends));
                     return $tpl;
                     break;
@@ -1714,46 +1706,24 @@ function ajaxLoad(type, url, params)
         
         merge : function() {
             var args=Array.prototype.slice.call(arguments);
-            
             if (args.length<1) return;
-            
-            var $merged=args.shift();
-            for (var i=0, l=args.length; i<l; i++)
-            {
-                var o=args[i];
-                if (o)
-                {
-                    for (var k in o) 
-                    {
-                        if (self.hasOwn(o, k))
-                        {
-                            $merged[k]=o[k];
-                        }
-                    }
-                }
-            }
+            var $merged=args.shift(), i, k, o, l=args.length;
+            for (i=0; i<l; i++){ o=args[i]; if (o) { for (k in o) { if (self.hasOwn(o, k)) { $merged[k]=o[k]; } } } }
             return $merged;
         },
         
-        isArray : function( o ) {
-            return Object.prototype.toString.call(o) === '[object Array]';
-        },
+        isArray : function( o ) { return Object.prototype.toString.call(o) === '[object Array]'; },
         
-        hasOwn : function(o, p) {
-            return o /*&& p*/ && Object.prototype.hasOwnProperty.call(o, p);
-        },
+        hasOwn : function(o, p) { return o && Object.prototype.hasOwnProperty.call(o, p); },
         
         clonePHP : function(o) {
             if (self.isArray(o)) return o.slice();
             var c=self.merge({}, o), n;
             // use php-style variables using '$' in front of var name
-            for (n in c) { if (self.hasOwn(c, n)) { c['$'+n]=c[n]; delete c[n];} }
-            return c;
+            for (n in c) { if (self.hasOwn(c, n)) { c['$'+n]=c[n]; delete c[n];} } return c;
         },
         
-        log : function($m) {
-            if ('undefined'!=typeof(console) && console.log)   console.log($m);
-        }
+        log : function($m) { if ('undefined'!=typeof(console) && console.log)   console.log($m); }
     };
     
     // init the engine

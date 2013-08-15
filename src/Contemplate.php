@@ -451,12 +451,11 @@ class Contemplate
             if (!empty($code))
             {
                 $s=str_replace($code, " \$__instance__->renderBlock('".$block."'); ", $s);
-                $code=substr($code, $len1, -$len2);
+                $code=str_replace(array(". '' .", ". '';"), array('.', ';'), substr($code, $len1, -$len2)); // remove redundant code
                 $blocks[$block]="\$__p__ = ''; extract(\$__instance__->data); " .  $code .  "'; return \$__p__;";
-                //self::debug(array($block, $code));
             }
         }
-        return array($s, $blocks);
+        return array(str_replace(array(". '' .", ". '';"), array('.', ';'), $s), $blocks);
     }
     
     protected static function parseControlConstructs($s) 
@@ -479,7 +478,7 @@ class Contemplate
         $s = str_replace("\t", "'; ", $s);
         $s = str_replace(self::$__rightTplSep, " \$__p__ .= '", $s);
         if ($withblocks)  return self::doBlocks($s);
-        return $s;
+        return str_replace(array(". '' .", ". '';"), array('.', ';'), $s); // remove redundant code
     }
     
     public static function getTemplateContents($id)
@@ -521,10 +520,10 @@ class Contemplate
             ."if (!class_exists('" . $classname . "')) { "
             ."final class " . $classname . " extends ".self::$__class." { "
             ."public function __construct(\$id=null, \$_r=null) { \$this->id=null; \$this->data=null; \$this->_renderFunction=null; \$this->_parent=null;  \$this->_blocks=null; \$this->id=\$id; ".$parentCode." } "
-            .$sblocks // defined blocks
+            .$sblocks." " // defined blocks
             ."public function renderBlock(\$block, \$__instance__=null) { "
-            ."if(!\$__instance__) \$__instance__=\$this; "
-            ."if (method_exists(\$this, '_blockfn_'.\$block)) { return call_user_func(array(\$this, '_blockfn_'.\$block), \$__instance__); } "
+            ."if(!\$__instance__) \$__instance__=\$this; \$method='_blockfn_'.\$block; "
+            ."if (method_exists(\$this, \$method)) { return \$this->{\$method}(\$__instance__); } "
             ."elseif (\$this->_parent) { return \$this->_parent->renderBlock(\$block, \$__instance__); } "
             ."return ''; } "
             ."public function render(\$__data__, \$__instance__=null) { "
@@ -611,112 +610,71 @@ class Contemplate
         self::$blockcnt=0; self::$blocks=array();  self::$allblocks=array();  self::$__extends=null;
     }
     
-    public static function o2a($d)
-    {
-        if (is_object($d))  $d=array_merge(array(), (array)$d);
-        if (is_array($d))
-        {
-            foreach ($d as $k=>$v)
-            {
-                if (is_object($v) || is_array($v))
-                    $d[$k]=self::o2a($v);
-            }
-        }
-        return $d;
-    }
-    
     protected static function localized_date($locale, $format, $timestamp) 
     {
         $txt_words = array("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sun", "Mon", "Tues", "Wednes", "Thurs", "Fri", "Satur", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec");
         $am_pm=array('AM', 'PM', 'am', 'PM');
-        
         $date=date($format, $timestamp);
         
         // localize days/months
         $replace=array();
-        foreach ($txt_words as $word)
-        {
-            if (isset($locale[$word]))
-                $replace[$word]=$locale[$word];
-        }
+        foreach ($txt_words as $word) { if (isset($locale[$word])) $replace[$word]=$locale[$word]; }
         if (!empty($replace))  $date=str_replace(array_keys($replace), array_values($replace), $date);
             
         // localize am/pm
         $replace=array();
-        foreach ($am_pm as $word)
-        {
-            if (isset($locale[$word]))
-                $replace[$word]=$locale[$word];
-        }
+        foreach ($am_pm as $word) { if (isset($locale[$word]))  $replace[$word]=$locale[$word];  }
         if (!empty($replace))  $date=str_replace(array_keys($replace), array_values($replace), $date);
             
         // return localized date
         return $date;
     }
     
-    protected static function merge()
+    public static function o2a($d)
+    {
+        if (is_object($d)) { $d=array_merge(array(), (array)$d); }
+        if (is_array($d)) { foreach ($d as $k=>$v) { if (is_object($v) || is_array($v)) $d[$k]=self::o2a($v); } }
+        return $d;
+    }
+    
+    public static function merge()
     {
         if (func_num_args() < 1) return;
-        
-        $arrays = func_get_args();
-        $merged = array_shift($arrays);
-        
-        $isTargetObject=false;
-        if (is_object($merged))
-        {
-            $isTargetObject=true;
-            $merged=(array)$merged;
-        }
+        $arrays = func_get_args(); $merged = array_shift($arrays); $isTargetObject=false;
+        if (is_object($merged)) { $isTargetObject=true; $merged=(array)$merged; }
         
         foreach ($arrays as $arr)
         {
             $isObject=false;
-            if (is_object($arr))
-            {
-                $isObject=true;
-                $arr=(array)$arr;
-            }
+            if (is_object($arr)) { $isObject=true; $arr=(array)$arr; }
                 
             foreach($arr as $key => $val)
             {
                 if(array_key_exists($key, $merged) && (is_array($val) || is_object($val)))
                 {
                     $merged[$key] = self::merge($merged[$key], $arr[$key]);
-                    if (is_object($val))
-                        $merged[$key]=(object)$merged[$key];
+                    if (is_object($val))  $merged[$key]=(object)$merged[$key];
                 }
-                else
-                    $merged[$key] = $val;
+                else  $merged[$key] = $val;
             }
         }
-        if ($isTargetObject)
-        {
-            $isTargetObject=false;
-            $merged=(object)$merged;
-        }
+        if ($isTargetObject) { $isTargetObject=false; $merged=(object)$merged; }
         return $merged;
     }
     
     /*public static function tpl($template, array $args=array())
     {
-        if ( isset(self::$__templates__[$template]) )
-            $template_path = self::$__templates__[$template];
+        if ( isset(self::$__templates__[$template]) )  $template_path = self::$__templates__[$template];
         else return '';
         
-        if (!$template_path || !is_file($template_path))
-        {
-            printf('File "%s" doesn\'t exist!', $template_path);
-            return '';
-        }
+        if (!$template_path || !is_file($template_path)) { printf('File "%s" doesn\'t exist!', $template_path);  return ''; }
         return self::getTpl($template_path, $args);
     }
     
     private static function getTpl($______templatepath________, array $______args______=array())
     {
         if (!empty($______args______)) extract($______args______);
-        ob_start();
-            include($______templatepath________);
-        return ob_get_clean();
+        ob_start(); include($______templatepath________); return ob_get_clean();
     }*/
     
     public static function log($m) {  return '<pre>' . print_r($m, true) . '</pre>'; }

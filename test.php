@@ -12,7 +12,7 @@
 define('ABSPATH', dirname(__FILE__));
 
 // include the Contemplate Class
-include ABSPATH.'/src/Contemplate.php';
+include ABSPATH.'/src/php/Contemplate.php';
 
 $sepleft="<%";
 $sepright="%>";

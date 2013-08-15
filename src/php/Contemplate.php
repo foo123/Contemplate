@@ -477,7 +477,7 @@ class Contemplate
         $s = preg_replace(self::$regExps['replacements'], "' . ( $1 ) . '", $s);
         $s = str_replace("\t", "'; ", $s);
         $s = str_replace(self::$__rightTplSep, " \$__p__ .= '", $s);
-        if ($withblocks)  return self::doBlocks($s);
+        if ($withblocks) return self::doBlocks($s);
         return str_replace(array(". '' .", ". '';"), array('.', ';'), $s); // remove redundant code
     }
     
@@ -495,10 +495,15 @@ class Contemplate
     {
         self::resetState();
         $blocks=self::parse(self::getTemplateContents($id));
-        $func=
+        if (self::$__extends)
+        {
+            $func="return '';";
+        }
+        else
+        {
             // Introduce the data as local variables using extract()
-            "\$__p__ = '';  extract(\$__instance__->data); \$__p__ .= '" .  $blocks[0] .  "'; return \$__p__;"
-            ;
+            $func="\$__p__ = '';  extract(\$__instance__->data); \$__p__ .= '" .  $blocks[0] .  "'; return \$__p__;";
+        }
         $fn = create_function('$__instance__', $func);
         $blockfns=array();  foreach ($blocks[1] as $b=>$bc) {$blockfns[$b] = create_function('$__instance__', $bc);}
         return array($fn, $blockfns);
@@ -513,7 +518,12 @@ class Contemplate
         foreach ($blocks[1] as $b=>$bc)  $sblocks[]="private function _blockfn_".$b."(\$__instance__) { " . $bc . "}";
         $sblocks=implode(' ', $sblocks);
         $parentCode='';
-        if (self::$__extends) $parentCode="\$this->setParent(".self::$__class."::tpl('".self::$__extends."'));";
+        $renderCode=" \$__instance__->data=".self::$__class."::o2a((array)\$__data__); extract(\$__instance__->data); \$__p__ .= '" .  $blocks[0] .  "';";
+        if (self::$__extends)
+        {
+            $renderCode="\$__p__ ='';";
+            $parentCode="\$this->setParent(".self::$__class."::tpl('".self::$__extends."'));";
+        }
         $class=
             '<?php ' .PHP_EOL
             ."/* ".self::$__class." cached template '$id' */ " . PHP_EOL
@@ -529,9 +539,7 @@ class Contemplate
             ."public function render(\$__data__, \$__instance__=null) { "
             ."\$__p__ = ''; if(!\$__instance__) \$__instance__=\$this; "
             ."if (\$this->_parent) {\$__p__=\$this->_parent->render(\$__data__, \$__instance__);} "
-            ."else { \$__instance__->data=".self::$__class."::o2a((array)\$__data__); "
-            // Introduce the data as local variables using extract()
-            ."extract(\$__instance__->data); \$__p__ .= '" .  $blocks[0] .  "';} "
+            ."else {".$renderCode."} "
             ."\$this->data=null; return \$__p__;} } }"
             ;
         return self::setCachedTemplate($filename, $class);

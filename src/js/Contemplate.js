@@ -1563,17 +1563,8 @@ function ajaxLoad(type, url, params)
             
             if ('undefined'==typeof($withblocks)) $withblocks=true;
             if ($withblocks)
-                return self.doBlocks(
-                        $s.replace($regExps['replacements'], "' + ( $1 ) + '")
-                            .split("\t").join("'; ")
-                            .split($__rightTplSep).join(" $__p__ += '")
-                    )
-                    ;
-            return $s.replace($regExps['replacements'], "' + ( $1 ) + '")
-                        .split("\t").join("'; ")
-                        .split($__rightTplSep).join(" $__p__ += '")
-                        .replace("+ '' +", '+').replace("+ '';", ';') // remove redundant code
-                ;
+                return self.doBlocks($s.replace($regExps['replacements'], "' + ( $1 ) + '").split("\t").join("'; ").split($__rightTplSep).join(" $__p__ += '"));
+            return $s.replace($regExps['replacements'], "' + ( $1 ) + '").split("\t").join("'; ").split($__rightTplSep).join(" $__p__ += '").replace("+ '' +", '+').replace("+ '';", ';'); // remove redundant code
         },
         
         getCachedTemplateName : function($id) { return $__cacheDir + $id.replace($sanitizeRX, '_') + '.tpl.js'; },
@@ -1595,13 +1586,17 @@ function ajaxLoad(type, url, params)
         
         createTemplateRenderFunction : function($id) {
             self.resetState();
-            var blocks=self.parse(self.getTemplateContents($id)), funcs={}, b;
-            // main function
-            var $func=
+            var blocks=self.parse(self.getTemplateContents($id)), funcs={}, b, $func;
+            if ($__extends)
+            {
+                $func="return '';";
+            }
+            else
+            {
                 // Introduce the data as local variables using with(){}
                // Convert the template into pure JavaScript
-                "var $__p__ = ''; with(__instance__.data) { $__p__ += '" + blocks[0] + "'; } return $__p__;"
-                ;
+                $func="var $__p__ = ''; with(__instance__.data) { $__p__ += '" + blocks[0] + "'; } return $__p__;";
+            }
             // defined blocks
             for (b in blocks[1]) funcs[b]=new Function("__instance__", blocks[1][b]);
             return [new Function("__instance__", $func), funcs];
@@ -1609,9 +1604,13 @@ function ajaxLoad(type, url, params)
         
         createCachedTemplate : function($id, $filename, $classname) {
             self.resetState();
-            var blocks=self.parse(self.getTemplateContents($id)), funcs={}, parentCode='', b, sblocks=[];  // defined blocks
+            var blocks=self.parse(self.getTemplateContents($id)), funcs={}, parentCode='', renderCode="__instance__.data = Contemplate.clonePHP(data); with(__instance__.data) { $__p__ += '" + blocks[0] + "'; }", b, sblocks=[];  // defined blocks
             for (b in blocks[1]) sblocks.push("'"+b+"' : function(__instance__) { "+ blocks[1][b]+ "}"); sblocks="$blocks={" + sblocks.join(', ') + "}; ";
-            if ($__extends) parentCode="this.setParent(Contemplate.tpl('"+$__extends+"'));";
+            if ($__extends) 
+            {
+                renderCode="$__p__ ='';";
+                parentCode="this.setParent(Contemplate.tpl('"+$__extends+"'));";
+            }
             var $class=
                 "(function(root) { " + "\n"
                 +"/* Contemplate cached template '"+$id+"' */ " + "\n"
@@ -1623,7 +1622,7 @@ function ajaxLoad(type, url, params)
                 // Introduce the data as local variables using with(){}
                // Convert the template into pure JavaScript
                 +"if (!__instance__) __instance__=this; var $__p__ = ''; if ($parent) {$__p__ = $parent.render(data, __instance__);} "
-                +"else {__instance__.data = Contemplate.clonePHP(data); with(__instance__.data) { $__p__ += '" + blocks[0] + "'; }} "
+                +"else {"+renderCode+"} "
                 +"this.data=null; return $__p__; "
                 +"}; "+parentCode+" }; if ('undefined' != typeof (module) && module.exports) {module.exports="+$classname+";} else if (typeof (exports) != 'undefined') {exports="+$classname+";}  else {root." + $classname + "="+$classname+";} })(this);"
                 ;

@@ -10,7 +10,7 @@
 
 var http=require('http'), url=require('url'), path=require('path'), fs=require('fs');
 // it is globally-scoped as in browser: global.Contemplate
-require(__dirname + '/src/Contemplate.js');
+require(__dirname + '/src/js/Contemplate.js');
 
 
 var $sepleft="<%", $sepright="%>";

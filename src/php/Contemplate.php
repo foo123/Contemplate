@@ -5,7 +5,7 @@ if (!class_exists('Contemplate'))
     *  Simple light-weight php templating engine (part of javascript templating engine)
     *  @author: Nikos M.  http://nikos-web-development.netai.net/
     *  https://github.com/foo123/Contemplate
-    *  version 0.4
+    *  version 0.4.1
     *
     *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
     *  http://ejohn.org/blog/javascript-micro-templating/
@@ -38,12 +38,12 @@ class Contemplate
     protected static $__extends=null;
     
     protected static $regExps=array(
-        'functions'=>'',
-        'controlConstructs'=>'',
-        'forExpr'=>'',
-        'quotes'=>'',
         'specials'=>'',
-        'replacements'=>''
+        'tags'=>'',
+        'replacements'=>'',
+        'functions'=>'',
+        'controls'=>'',
+        'forExpr'=>''
     );
     
     protected static $__class='';
@@ -108,12 +108,13 @@ class Contemplate
     public static function init()
     {
         self::$__class='Contemplate'; // __CLASS__;
-        self::$regExps['controlConstructs']='/\t\s*\%(' . implode('|', self::$controlConstructs) . ')\b\s*\((.*)\)/';
-        self::$regExps['forExpr']='/^\s*\$([a-z0-9_]+?)\s* as \s*\$([a-z0-9_]+?)\s*=>\s*\$([a-z0-9_]+)\s*$/i';
-        self::$regExps['quotes']="/'/";
-        self::$regExps['specials']="/[\r\t]/";
-        self::$regExps['replacements']="/\t\s*(.*?)\s*".self::$__rightTplSep."/";
+        // pre-compute the needed regular expressions
+        self::$regExps['specials']='/[\r\v\t]/';
+        self::$regExps['tags']='/\t[^\v\t]*\v/';
+        self::$regExps['replacements']='/\t[ ]*(.*?)[ ]*\v/';
         if (!empty(self::$funcs)) self::$regExps['functions']='/\%(' . implode('|', self::$funcs) . ')\b/';
+        self::$regExps['controls']='/\t[ ]*\%(' . implode('|', self::$controlConstructs) . ')\b[ ]*\((.*)\)/';
+        self::$regExps['forExpr']='/^[ ]*\$([a-z0-9_]+?)[ ]* as [ ]*\$([a-z0-9_]+?)[ ]*=>[ ]*\$([a-z0-9_]+)[ ]*$/i';
     }
     
     //
@@ -125,8 +126,6 @@ class Contemplate
     {
         if ($left) self::$__leftTplSep=$left;
         if ($right) self::$__rightTplSep=$right;
-        // recompute it
-        if ($right) self::$regExps['replacements']="/\t\s*(.*?)\s*".self::$__rightTplSep."/";
     }
     
     public static function setPreserveLines($bool=true) { if ($bool)  self::$__preserveLines="' . PHP_EOL . '";  else self::$__preserveLines=""; }
@@ -413,7 +412,7 @@ class Contemplate
     //
     // utility methods
     //
-    public static function doControlConstruct($m)
+    public static function doControlConstructs($m)
     {
         if (isset($m[1]))
         {
@@ -458,25 +457,23 @@ class Contemplate
         return array(str_replace(array(". '' .", ". '';"), array('.', ';'), $s), $blocks);
     }
     
-    protected static function parseControlConstructs($s) 
+    public static function doTags($tag) 
     {
-        $s = str_replace(self::$__rightTplSep, "\n", $s);
-        $s = preg_replace_callback(self::$regExps['controlConstructs'], array(__CLASS__, 'doControlConstruct'), $s);
-        $s = str_replace("\n", self::$__rightTplSep, $s);
-        return $s;
+        $tag=$tag[0];
+        $tag = preg_replace_callback(self::$regExps['controls'], array(__CLASS__, 'doControlConstructs'), $tag);
+        if (!empty(self::$funcs))  $tag = preg_replace(self::$regExps['functions'], self::$__class.'::${1}', $tag);
+        $tag = preg_replace(self::$regExps['replacements'], "' . ( $1 ) . '", $tag);
+        $tag = str_replace(array("\t", "\v"), array("'; ", " \$__p__ .= '"), $tag);
+        return $tag;
     }
     
     protected static function parse($s, $withblocks=true) 
     {
-        $s = preg_replace(self::$regExps['specials'], " ", $s);
-        $s = str_replace(self::$__leftTplSep, "\t", $s);
-        $s = preg_replace(self::$regExps['quotes'], "\\'", $s);
+        $s=str_replace("'", "\\'", $s);  // escape single quotes (used by parse function)
         $s = str_replace("\n", self::$__preserveLines, $s); // preserve lines
-        $s = self::parseControlConstructs($s);
-        if (!empty(self::$funcs))  $s = preg_replace(self::$regExps['functions'], self::$__class.'::${1}', $s);
-        $s = preg_replace(self::$regExps['replacements'], "' . ( $1 ) . '", $s);
-        $s = str_replace("\t", "'; ", $s);
-        $s = str_replace(self::$__rightTplSep, " \$__p__ .= '", $s);
+        $s = preg_replace(self::$regExps['specials'], " ", $s); // replace special chars
+        $s=str_replace(array(self::$__leftTplSep, self::$__rightTplSep), array("\t", "\v"), $s); // replace left/right template tags
+        $s = preg_replace_callback(self::$regExps['tags'], array(__CLASS__, 'doTags'), $s); // parse each template tag section accurately
         if ($withblocks) return self::doBlocks($s);
         return str_replace(array(". '' .", ". '';"), array('.', ';'), $s); // remove redundant code
     }

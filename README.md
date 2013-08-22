@@ -128,6 +128,10 @@ Use the _test.php_ (or _test.js_ for nodejs) file to test the basic functionalit
 
 ###ChangeLog
 
+__0.4.1__
+* parse template tags a little more accurately
+* minor edits/optimizations
+
 __0.4__
 * add template inheritance and block definitions
 * allow client-js template engine to load templates via ajax

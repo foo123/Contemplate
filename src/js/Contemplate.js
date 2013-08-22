@@ -4,7 +4,7 @@
     *  Simple light-weight javascript templating engine (part of php templating engine)
     *  @author: Nikos M.  http://nikos-web-development.netai.net/
     *  https://github.com/foo123/Contemplate
-    *  version 0.4
+    *  version 0.4.1
     *
     *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
     *  http://ejohn.org/blog/javascript-micro-templating/
@@ -1095,12 +1095,12 @@ function ajaxLoad(type, url, params)
         $loops=0, $ifs=0, $loopifs=0, $blockcnt=0, $blocks=[], $allblocks=[], $__extends=null,
     
         $regExps={
-            'functions':null,
-            'controlConstructs':null,
-            'forExpr':null,
-            'quotes':null,
             'specials':null,
-            'replacements':null
+            'tags': null,
+            'replacements':null,
+            'functions':null,
+            'controls':null,
+            'forExpr':null
         },
         
         $controlConstructs=[
@@ -1167,12 +1167,12 @@ function ajaxLoad(type, url, params)
         
         init : function() {
             // pre-compute the needed regular expressions
-            $regExps['controlConstructs']=new RegExp('\\t\\s*\%('+$controlConstructs.join('|')+')\\b\\s*\\((.*)\\)', 'g');
-            $regExps['forExpr']=new RegExp('^\\s*\\$([a-z0-9_]+?)\\s* as \\s*\\$([a-z0-9_]+?)\\s*=>\\s*\\$([a-z0-9_]+)\\s*$', 'i');
-            $regExps['quotes']=new RegExp('\'', 'g');
-            $regExps['specials']=new RegExp('[\\r\\t]', 'g');
-            $regExps['replacements']=new RegExp('\\t\\s*(.*?)\\s*'+$__rightTplSep, 'g');
+            $regExps['specials']=new RegExp('[\\r\\v\\t]', 'g');
+            $regExps['tags']=new RegExp('\\t[^\\v\\t]*\\v', 'g');
+            $regExps['replacements']=new RegExp('\\t[ ]*(.*?)[ ]*\\v', 'g');
             if ($funcs.length) $regExps['functions']=new RegExp('\%('+$funcs.join('|')+')\\b', 'g');
+            $regExps['controls']=new RegExp('\\t[ ]*\%('+$controlConstructs.join('|')+')\\b[ ]*\\((.*)\\)', 'g');
+            $regExps['forExpr']=new RegExp('^[ ]*\\$([a-z0-9_]+?)[ ]* as [ ]*\\$([a-z0-9_]+?)[ ]*=>[ ]*\\$([a-z0-9_]+)[ ]*$', 'i');
         },
         
         //
@@ -1184,8 +1184,6 @@ function ajaxLoad(type, url, params)
         {
             if ($left)  $__leftTplSep=$left;
             if ($right) $__rightTplSep=$right;
-            // recompute it
-            if ($right)  $regExps['replacements']=new RegExp('\\t\\s*(.*?)\\s*'+$__rightTplSep, 'g');
         },
         
         setPreserveLines : function(b){ if('undefined'==typeof(b))b=true; if (b) $__preserveLines="' + \"\\n\" + '"; else $__preserveLines=""; },
@@ -1500,7 +1498,7 @@ function ajaxLoad(type, url, params)
         //
         // utility methods
         //
-        doControlConstruct : function($m)  {
+        doControlConstructs : function($m)  {
             if ($m[1])
             {
                 switch($m[1])
@@ -1535,7 +1533,7 @@ function ajaxLoad(type, url, params)
                 $code=$s.substr($pos1, $pos2);
                 if ($code!='')
                 {
-                    $s=$s.replace($code, " __instance__.renderBlock('"+$block+"'); ");
+                    $s=$s.split($code).join(" __instance__.renderBlock('"+$block+"'); ");
                     $code=$code.substring($len1, $code.length-$len2).replace("+ '' +", '+').replace("+ '';", ';'); // remove redundant code
                     $blocks[$block]="var $__p__ = ''; with(__instance__.data) { " + $code + "'; } return $__p__;";
                 }
@@ -1543,28 +1541,24 @@ function ajaxLoad(type, url, params)
             return [$s.replace("+ '' +", '+').replace("+ '';", ';'), $blocks];
         },
         
-        parseControlConstructs : function($s) {
-            return $s
-                .split($__rightTplSep).join("\n")
-                .replace($regExps['controlConstructs'], function($m, $m1, $m2){ return self.doControlConstruct([$m, $m1, $m2]); })
-                .split("\n").join($__rightTplSep);
+        doTags : function($tag) {
+            $tag=$tag.replace($regExps['controls'], function($m, $m1, $m2){ return self.doControlConstructs([$m, $m1, $m2]); });
+            if ($funcs.length) $tag=$tag.replace($regExps['functions'], "Contemplate.$1");
+            return $tag.replace($regExps['replacements'], "' + ( $1 ) + '").split("\t").join("'; ").split("\v").join(" $__p__ += '");
         },
         
         parse : function($s, $withblocks) {
-            $s=self.parseControlConstructs(
-                    $s
-                    .replace($regExps['specials'], " ")
-                    .split($__leftTplSep).join("\t")
-                    .replace($regExps['quotes'], "\\'")
-                    .split("\n").join($__preserveLines) // preserve lines
-               );
-                
-            if ($funcs.length) $s=$s.replace($regExps['functions'], "Contemplate.$1");
-            
+            $s=$s
+                .split("'").join("\\'")  // escape single quotes (used by parse function)
+                .split("\n").join($__preserveLines) // preserve lines
+                .replace($regExps['specials'], " ") // replace special chars
+                .split($__leftTplSep).join("\t") // replace left template tag
+                .split($__rightTplSep).join("\v") // replace right template tag
+                .replace($regExps['tags'], function($tag){ return self.doTags($tag); }) // parse each template tag section accurately
+                ;
             if ('undefined'==typeof($withblocks)) $withblocks=true;
-            if ($withblocks)
-                return self.doBlocks($s.replace($regExps['replacements'], "' + ( $1 ) + '").split("\t").join("'; ").split($__rightTplSep).join(" $__p__ += '"));
-            return $s.replace($regExps['replacements'], "' + ( $1 ) + '").split("\t").join("'; ").split($__rightTplSep).join(" $__p__ += '").replace("+ '' +", '+').replace("+ '';", ';'); // remove redundant code
+            if ($withblocks) return self.doBlocks($s); // render any blocks
+            return $s.replace("+ '' +", '+').replace("+ '';", ';'); // remove redundant code
         },
         
         getCachedTemplateName : function($id) { return $__cacheDir + $id.replace($sanitizeRX, '_') + '.tpl.js'; },

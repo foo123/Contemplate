@@ -67,7 +67,6 @@ var $data={
 
 var $main_template_data={
     'templates':{
-        'demo':Contemplate.getTemplateContents('demo'),
         'sub':Contemplate.getTemplateContents('sub'),
     },
     'sepleft':$sepleft,

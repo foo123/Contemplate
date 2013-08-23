@@ -24,7 +24,7 @@ There is an older and quite different template engine for node.js named also "co
 * [Rationale](#rationale)
 * [Features](#features)
 * [Examples/Screenshots](#screenshots)
-* [Keywords Reference](#keywords)
+* [Keywords Reference](#keywords-reference)
 * [Dependencies](#dependencies)
 * [Tests](#tests)
 * [Changelog](#changelog)

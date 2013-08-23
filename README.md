@@ -24,6 +24,7 @@ There is an older and quite different template engine for node.js named also "co
 * [Rationale](#rationale)
 * [Features](#features)
 * [Examples/Screenshots](#screenshots)
+* [Keywords Reference](#keywords)
 * [Dependencies](#dependencies)
 * [Tests](#tests)
 * [Changelog](#changelog)
@@ -112,6 +113,58 @@ Data to be used for the template
 
 PHP and Javascript rendering of the template on same page (see test.php)
 [![Template output](/screenshots/template_output.png)](https://github.com/foo123/Contemplate/raw/master/screenshots/template_output.png)
+
+###Keywords Reference
+
+__Control Constructs__
+
+* _%if(expression)_  IF construct
+* _%elseif(expression)_  ELSEIF construct
+* _%endif()_   ENDIF construct, end the if construct
+
+* _%for($obj as $key=>$val)_  FOR loop
+* _%elsefor()_   ELSEFOR, alternative code block when loop is empty
+* _%endfor()_  ENDFOR , end the loop construct
+
+* _%include(tpl_id)_  INCLUDE the template referenced by tpl_id
+* _%template(tpl_id, {"var1"=>val1, "var2"=>val2, ..})_  CALL a subtemplate referenced by tpl_id, passing the necessary data also
+
+* _%extends(tpl_id)_  Current template extends the template referenced by tpl_id, this means that tpl_id layout will be used and any blocks will be overriden as defined
+* _%block(block_id)_  Define/Override block of code identified by block_id
+* _%endblock()_  End of block definition/override
+
+
+* _%htmlselect(data, options)_  render a select box from given data with given options (shorthand construct to render a select box)
+* _%htmltable(data, options)_  render a table from given data with given options (shorthand construct to render a table)
+
+__Variables/Data__
+
+Variables inside templates are referenced same as in PHP with '$' sign. ie _$x_ , _$obj["key"]_ , etc..
+
+__Functions__
+
+* _%n(val)_   convert val to integer
+* _%s(val)_   convert val to string
+* _%f(val)_   convert val to float
+* _%q(val)_   wrap val in single quotes
+* _%dq(val)_  wrap val in double-quotes
+
+* _%sprintf(format, val1, val2, ..)_   return a formatted string using val1, val2, etc..
+* _%concat(val1, val2, val3, ..)_  string concatenate the values
+* _%ltrim(val[, delim])_   left trim val of delim 
+* _%rtrim(val[, delim])_   right trim val of delim 
+* _%trim(val[, delim])_   left/right trim val of delim 
+
+* _%count(arrayOrObject)_  return number of items in arrayOrObject val
+
+* _%now()_   return current timestamp in seconds
+* _%date(format, timestamp)_  return timestamp formatted according to format
+* _%ldate(format, timestamp)_  return localised timestamp formatted according to format
+* _%l(val)_  return localised string for val (if exists), localised strings are user-defined
+
+* _%html(val)_  html-escape val (htmlentities)
+* _%url(val)_  url-encode val (urlencode)
+
 
 
 ###Dependencies

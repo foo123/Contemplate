@@ -120,9 +120,10 @@ __Control Constructs__
 
 * _%if(expression)_  IF construct
 * _%elseif(expression)_  ELSEIF construct
+* _%else()_  ELSE construct
 * _%endif()_   ENDIF construct, end the if construct
 
-* _%for($obj as $key=>$val)_  FOR loop
+* _%for($obj as $key=>$val)_  FOR loop  (NOTE: as of now $obj can only have this form ie a single variable reference, $obj["subobj"] or other expressions will NOT work)
 * _%elsefor()_   ELSEFOR, alternative code block when loop is empty
 * _%endfor()_  ENDFOR , end the loop construct
 

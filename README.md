@@ -19,6 +19,10 @@ There is an older and quite different template engine for node.js named also "co
 
 (it seems the word *contemplate* is nice for a template engine :) )
 
+
+See an online interactive example [here](http://foo123.github.com/examples/contemplate/)
+
+
 ###Contents
 
 * [Rationale](#rationale)

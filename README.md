@@ -20,11 +20,9 @@ There is an older and quite different template engine for node.js named also "co
 (it seems the word *contemplate* is nice for a template engine :) )
 
 
-See an online interactive example [here](http://foo123.github.com/examples/contemplate/)
-
-
 ###Contents
 
+* [Online Example](http://foo123.github.com/examples/contemplate/)
 * [Rationale](#rationale)
 * [Features](#features)
 * [Examples/Screenshots](#screenshots)
@@ -127,7 +125,7 @@ __Control Constructs__
 * _%else()_  ELSE construct
 * _%endif()_   ENDIF construct, end the if construct
 
-* _%for($obj as $key=>$val)_  FOR loop  (NOTE: as of now $obj can only have this form ie a single variable reference, $obj["subobj"] or other expressions will NOT work)
+* _%for($obj as $key=>$val)_  FOR loop
 * _%elsefor()_   ELSEFOR, alternative code block when loop is empty
 * _%endfor()_  ENDFOR , end the loop construct
 
@@ -185,6 +183,12 @@ Use the _test.php_ (or _test.js_ for nodejs) file to test the basic functionalit
 
 
 ###ChangeLog
+
+__0.4.2__
+* add clear (memory) method _clearCache()_
+* allow inline templates with _addInline()_ method (see examples)
+* allow _for()_ directive to handle an expression in place of an object ( so _%for($data["subdata"] as $key=>$val)_ or other expressions WILL work)
+* allow to refresh the (memory) cache for a specific template (ie. _Contemplate.tpl(tpl_id, data, refresh)_ ) refresh = true will refresh the (memory) cache (default __false__ )
 
 __0.4.1__
 * parse template tags a little more accurately

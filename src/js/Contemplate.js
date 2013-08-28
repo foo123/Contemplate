@@ -4,7 +4,7 @@
     *  Simple light-weight javascript templating engine (part of php templating engine)
     *  @author: Nikos M.  http://nikos-web-development.netai.net/
     *  https://github.com/foo123/Contemplate
-    *  version 0.4.1
+    *  version 0.4.2
     *
     *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
     *  http://ejohn.org/blog/javascript-micro-templating/
@@ -1089,7 +1089,7 @@ function ajaxLoad(type, url, params)
     
     // private vars
     var 
-        $__cacheMode=0, $__cache={}, $__templates={}, $__partials={},
+        $__cacheMode=0, $__cache={}, $__templates={}, $__partials={},  $__inlines={},
         $__locale={}, $__leftTplSep="<%", $__rightTplSep="%>", $__preserveLines="' + \"\\n\" + '", $sanitizeRX=/[ -]/g,
         $__stack=[],
         $loops=0, $ifs=0, $loopifs=0, $blockcnt=0, $blocks=[], $allblocks=[], $__extends=null,
@@ -1172,7 +1172,7 @@ function ajaxLoad(type, url, params)
             $regExps['replacements']=new RegExp('\\t[ ]*(.*?)[ ]*\\v', 'g');
             if ($funcs.length) $regExps['functions']=new RegExp('\%('+$funcs.join('|')+')\\b', 'g');
             $regExps['controls']=new RegExp('\\t[ ]*\%('+$controlConstructs.join('|')+')\\b[ ]*\\((.*)\\)', 'g');
-            $regExps['forExpr']=new RegExp('^[ ]*\\$([a-z0-9_]+?)[ ]* as [ ]*\\$([a-z0-9_]+?)[ ]*=>[ ]*\\$([a-z0-9_]+)[ ]*$', 'i');
+            //$regExps['forExpr']=new RegExp('^[ ]*\\$([a-z0-9_]+?)[ ]* as [ ]*\\$([a-z0-9_]+?)[ ]*=>[ ]*\\$([a-z0-9_]+)[ ]*$', 'i');
         },
         
         //
@@ -1200,13 +1200,18 @@ function ajaxLoad(type, url, params)
         
         setCacheMode : function($mode) { $__cacheMode= (self.IS_NODEJS) ? $mode : self.CACHE_TO_DISK_NONE; },
         
+        clearCache : function($all) { $__cache={}; if ($all) $__partials={}; },
+        
         // add templates manually
         add : function($tpls) { $__templates=self.merge($__templates, $tpls);  },
     
-        tpl : function($id, $data) {
+        // add inline templates manually
+        addInline : function($tpls) { $__inlines=self.merge($__inlines, $tpls);  },
+        
+        tpl : function($id, $data, $refresh) {
             // Figure out if we're getting a template, or if we need to
             // load the template - and be sure to cache the result.
-            if (!$__cache[$id])  $__cache[$id]=self.getCachedTemplate($id);
+            if ($refresh || !$__cache[$id])  $__cache[$id]=self.getCachedTemplate($id);
             
             var $tpl=$__cache[$id];
             
@@ -1231,8 +1236,10 @@ function ajaxLoad(type, url, params)
         // for, foreach
         t_for : function($for_expr) {
             $loops++;  $loopifs++;
-            var $m = $for_expr.match($regExps['forExpr']), $o="$"+$m[1], $k="$"+$m[2], $v="$"+$m[3];
-            return "'; if ("+ $o +" && Object.keys("+ $o +").length) { for (var "+ $k +" in "+ $o +") { if (Contemplate.hasOwn("+ $o +", "+ $k +")) { var "+$v+"="+$o+"["+$k+"]; __instance__.data['"+$k+"']="+$k+"; __instance__.data['"+$v+"']="+$v+"; ";
+            //var $m = $for_expr.match($regExps['forExpr']), $o="$"+$m[1], $k="$"+$m[2], $v="$"+$m[3];
+            $for_expr=$for_expr.split(' as ');
+            var $o=trim($for_expr[0]), $kv=$for_expr[1].split('=>'), $k=trim($kv[0]), $v=trim($kv[1]);
+            return "'; if ("+ $o +" && Object.keys("+ $o +").length) { var "+ $k +"; for ("+ $k +" in "+ $o +") { if (Contemplate.hasOwn("+ $o +", "+ $k +")) { var "+$v+"="+$o+"["+$k+"]; __instance__.data['"+$k+"']="+$k+"; __instance__.data['"+$v+"']="+$v+"; ";
         },
         // elsefor
         t_elsefor : function() { /* else attached to  for loop */ $loopifs--;  return "'; } } } else { "; },
@@ -1566,7 +1573,11 @@ function ajaxLoad(type, url, params)
         getCachedTemplateClass : function($id) { return 'Contemplate_' + $id.replace($sanitizeRX, '_') + '_Cached'; },
         
         getTemplateContents : function($id) {
-            if ($__templates[$id])
+            if ($__inlines[$id])
+            {
+                return $__inlines[$id];
+            }
+            else if ($__templates[$id])
             {
                 // nodejs
                 if (self.IS_NODEJS && self.NFS) { return self.NFS.readFileSync($__templates[$id], self.ENC); }
@@ -1624,6 +1635,15 @@ function ajaxLoad(type, url, params)
         },
         
         getCachedTemplate : function($id) {
+            
+            // inline templates saved only in-memory
+            if ($__inlines[$id])
+            {
+                    // dynamic in-memory caching during page-request
+                    var funcs=self.createTemplateRenderFunction($id), $tpl=new ContemplateInstance($id, funcs[0]).setBlocks(funcs[1]);
+                    if ($__extends) $tpl.setParent(self.tpl($__extends));
+                    return $tpl;
+            }
             
             if (!self.IS_NODEJS) $__cacheMode=self.CACHE_TO_DISK_NONE;
             switch($__cacheMode)

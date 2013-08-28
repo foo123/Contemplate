@@ -5,7 +5,7 @@ if (!class_exists('Contemplate'))
     *  Simple light-weight php templating engine (part of javascript templating engine)
     *  @author: Nikos M.  http://nikos-web-development.netai.net/
     *  https://github.com/foo123/Contemplate
-    *  version 0.4.1
+    *  version 0.4.2
     *
     *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
     *  http://ejohn.org/blog/javascript-micro-templating/
@@ -22,6 +22,7 @@ class Contemplate
     protected static $__cacheMode=0;
     protected static $__cache=array();
     protected static $__templates=array();
+    protected static $__inlines=array();
     protected static $__partials=array();
     protected static $__locale=array();
     protected static $__leftTplSep="<%";
@@ -114,7 +115,7 @@ class Contemplate
         self::$regExps['replacements']='/\t[ ]*(.*?)[ ]*\v/';
         if (!empty(self::$funcs)) self::$regExps['functions']='/\%(' . implode('|', self::$funcs) . ')\b/';
         self::$regExps['controls']='/\t[ ]*\%(' . implode('|', self::$controlConstructs) . ')\b[ ]*\((.*)\)/';
-        self::$regExps['forExpr']='/^[ ]*\$([a-z0-9_]+?)[ ]* as [ ]*\$([a-z0-9_]+?)[ ]*=>[ ]*\$([a-z0-9_]+)[ ]*$/i';
+        //self::$regExps['forExpr']='/^[ ]*\$([a-z0-9_]+?)[ ]* as [ ]*\$([a-z0-9_]+?)[ ]*=>[ ]*\$([a-z0-9_]+)[ ]*$/i';
     }
     
     //
@@ -134,14 +135,19 @@ class Contemplate
     
     public static function setCacheMode($mode) { self::$__cacheMode=$mode; }
     
-    // add templates manually
-    public static function add($tpls=array()) { self::$__templates=self::merge(self::$__templates, $tpls); }
+    public static function clearCache($all=false) { self::$__cache=array(); if ($all) self::$__partials=array(); }
     
-    public static function tpl($id, $data=null)
+    // add templates manually
+    public static function add($tpls) { self::$__templates=self::merge(self::$__templates, $tpls); }
+    
+    // add inline templates manually
+    public static function addInline($tpls) { self::$__inlines=self::merge(self::$__inlines, $tpls);  }
+        
+    public static function tpl($id, $data=null, $refresh=false)
     {
         // Figure out if we're getting a template, or if we need to
         // load the template - and be sure to cache the result.
-        if (!isset(self::$__cache[$id]))   self::$__cache[$id]=self::getCachedTemplate($id);
+        if ($refresh || !isset(self::$__cache[$id]))   self::$__cache[$id]=self::getCachedTemplate($id);
         
         $tpl=self::$__cache[$id];
         
@@ -166,9 +172,10 @@ class Contemplate
     public static function t_for($for_expr) 
     {
         self::$loops++;  self::$loopifs++;
-        preg_match(self::$regExps['forExpr'], $for_expr, $m);
-        $o="\$${m[1]}"; $k="\$${m[2]}"; $v="\$${m[3]}";
-        return "'; if (!empty($o)) { foreach ($o as $k=>$v) { \$__instance->data['".$m[2]."']=$k; \$__instance->data['".$m[3]."']=$v; ";
+        //preg_match(self::$regExps['forExpr'], $for_expr, $m);
+        //$o="\$${m[1]}"; $k="\$${m[2]}"; $v="\$${m[3]}";
+        $for_expr=explode(' as ', $for_expr); $o=trim($for_expr[0]); $kv=explode('=>', $for_expr[1]); $k=trim($kv[0]); $v=trim($kv[1]);
+        return "'; if (!empty($o)) { foreach ($o as $k=>$v) { \$__instance->data['".ltrim($k, '$')."']=$k; \$__instance->data['".ltrim($v, '$')."']=$v; ";
     }
     // elsefor
     public static function t_elsefor() { /* else attached to  for loop */ self::$loopifs--;  return "'; } } else { "; }
@@ -480,7 +487,8 @@ class Contemplate
     
     public static function getTemplateContents($id)
     {
-        if (isset(self::$__templates[$id]) && is_file(self::$__templates[$id]))   return file_get_contents(self::$__templates[$id]);
+        if (isset(self::$__inlines[$id]))  return self::$__inlines[$id];
+        elseif (isset(self::$__templates[$id]) && is_file(self::$__templates[$id]))   return file_get_contents(self::$__templates[$id]);
         return '';
     }
     
@@ -544,6 +552,17 @@ class Contemplate
     
     protected static function getCachedTemplate($id)
     {
+        // inline templates saved only in-memory
+        if (isset(self::$__inlines[$id]))
+        {
+                // dynamic in-memory caching during page-request
+                //return new Contemplate($id, self::createTemplateRenderFunction($id));
+                $thisclass=self::$__class; $tpl = new $thisclass(); $tpl->setId($id);
+                $fns=self::createTemplateRenderFunction($id);
+                $tpl->setRenderFunction($fns[0]); $tpl->setBlocks($fns[1]);
+                if (self::$__extends) $tpl->setParent(self::tpl(self::$__extends));
+                return $tpl;
+        }
         switch(self::$__cacheMode)
         {
             case self::CACHE_TO_DISK_NOUPDATE:

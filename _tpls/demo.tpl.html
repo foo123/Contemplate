@@ -45,7 +45,7 @@
     
     <% %for($users as $i=>$usergroup) %>
         <!-- call a (sub-)template -->
-        <% %template(sub, {"i"=>$i, "usergroup"=>$usergroup}) %>
+        <% %template(sub, {"i"=>$i, "users"=>$users}) %>
     <% %endfor() %>
 
 <% %endblock() %>

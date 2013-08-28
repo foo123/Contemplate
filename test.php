@@ -30,12 +30,18 @@ Contemplate::add(array(
     'sub'=>ABSPATH.'/_tpls/sub.tpl.html',
     'date'=>ABSPATH.'/_tpls/date.tpl.html',
 ));
+// add an inline template
+Contemplate::addInline(array(
+    'inlinetpl'=>'<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>'
+));
 /* localize some strings */
 /* make sure this file is encoded in UTF-8 */
 Contemplate::setLocaleStrings(array(
     "Jul" => "Ιουλ",
     "Sep" => "Σεπτ"
 ));
+
+$listdata=array('list'=>array('item1', 'item2', 'item3'));
 
 // the data to be used by the templates
 $data=array(
@@ -77,7 +83,8 @@ $main_template_data=array(
     'sepleft'=>$sepleft,
     'sepright'=>$sepright,
     'data_client'=>json_encode($data),
-    'render_server'=>Contemplate::tpl('demo', $data)
+    'render_server'=>Contemplate::tpl('demo', $data),
+    'render_inline'=>Contemplate::tpl('inlinetpl', $listdata)
 );
 
 echo Contemplate::tpl('main', $main_template_data);

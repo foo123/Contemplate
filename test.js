@@ -31,6 +31,13 @@ Contemplate.add({
     'sub' : __dirname + '/_tpls/sub.tpl.html',
     'date' : __dirname + '/_tpls/date.tpl.html'
 });
+// add an inline template
+Contemplate.addInline({
+    'inlinetpl':'<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>'
+});
+
+var $listdata={'list':['item1', 'item2', 'item3']};
+
 
 // the data to be used by the templates
 var $data={
@@ -72,7 +79,8 @@ var $main_template_data={
     'sepleft':$sepleft,
     'sepright':$sepright,
     'data_client':JSON.stringify($data),
-    'render_server':Contemplate.tpl('demo', $data)
+    'render_server':Contemplate.tpl('demo', $data),
+    'render_inline':Contemplate.tpl('inlinetpl', $listdata)
 };
 
 // create a node http server to serve the rendered templates

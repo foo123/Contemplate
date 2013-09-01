@@ -19,6 +19,8 @@ There is an older and quite different template engine for node.js named also "co
 
 (it seems the word *contemplate* is nice for a template engine :) )
 
+![Contemplate](/screenshots/contemplate-interactive.png)
+
 
 ###Contents
 

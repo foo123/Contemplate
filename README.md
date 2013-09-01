@@ -8,7 +8,7 @@ __Light-weight and fast templating engine for both PHP, client-side Javascript a
 This started as a a __proof-of-concept__ , yet is fully working and extensible.
 The inspiration came from an old post by _John Resig_ (http://ejohn.org/blog/javascript-micro-templating/)
 
-###Notes:
+__Note__
 After creating the repository i became aware of a web framework with similar name here: http://www.arlomedia.com/software/contemplate/assembled/introduction.html
 
 *This repository and project are completely unrelated to that framework.*
@@ -19,7 +19,7 @@ There is an older and quite different template engine for node.js named also "co
 
 (it seems the word *contemplate* is nice for a template engine :) )
 
-![Contemplate](/screenshots/contemplate-interactive.png)
+[![Contemplate](/screenshots/contemplate-interactive.png)](http://foo123.github.com/examples/contemplate/)
 
 
 ###Contents

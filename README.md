@@ -1,6 +1,9 @@
 Contemplate
 ===========
 
+## Further development on this project has stopped!!
+
+
 __Light-weight and fast templating engine for both PHP, client-side Javascript and Node.js__
 
 ![Contemplate](/screenshots/contemplate.jpg)

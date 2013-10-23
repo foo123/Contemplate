@@ -4,7 +4,7 @@ Contemplate
 ## Further development on this project has stopped!!
 
 
-__Light-weight and fast templating engine for both PHP, client-side Javascript and Node.js__
+__Light-weight templating engine for PHP, client-side Javascript, Node.js and Python__
 
 ![Contemplate](/screenshots/contemplate.jpg)
 
@@ -30,9 +30,10 @@ There is an older and quite different template engine for node.js named also "co
 * [Online Example](http://foo123.github.com/examples/contemplate/)
 * [Rationale](#rationale)
 * [Features](#features)
+* [Keywords Reference](/manual.md)
 * [Examples/Screenshots](#screenshots)
-* [Keywords Reference](#keywords-reference)
 * [Dependencies](#dependencies)
+* [Todo](#todo)
 * [Tests](#tests)
 * [Changelog](/changelog.md)
 
@@ -72,7 +73,7 @@ and trying to contain the needed functionality inside the common language subset
 * Most of the time this can be accomplished, the rest functionality is built with __custom functions__ which mostly resemble the PHP
 syntax, yet work the same in Javascript.
 
-* Works the __same__ with _PHP_ , _client-side Javascript_ and _server-side Nodejs_
+* Works the __same__ with _PHP_ , _client-side Javascript_ , _server-side Nodejs_ and _Python_ (to be added)
 
 * Simple and light-weight ( __just 2 classes__ , one for php and one for javascript, no other dependencies)
 
@@ -94,21 +95,8 @@ syntax, yet work the same in Javascript.
 
 * __Template Inheritance__ , templates can *extend/inherit other templates* using __extends__ directive and *override blocks* using __block__ , __endblock__ directives (see examples)
 
-* Notes: __Literal double quotes__ should better be used inside templates
+* Notes: __Literal double quotes__ should better be used inside templates (see the [manual](/manual.md))
 
-###Differences between 'include' and 'template' directives
-The main difference is that __include__ will actually copy the subtemplate contents inside the calling template (thus only one final template is generated). This is similar to PHP's _include_ directive.
-
-On the contrary __template__ directive will call and parse a subtemplate on its own (so the data need to be passed also). In this case each subtemplate will be compiled on its own and exist in the cache.
-
-When the templates are already cached, the relative performance of these directives is similar. __include__ tends to be slightly faster since it generates only a single template, while __template__ will generate all needed templates. However if a subtemplate has been changed and is embedded in another template using __include__ , the calling template will __NOT__ be refreshed. While if __template__ is used, the calling template __WILL__ be refreshed (since the subtemplate is called as a subroutine and not copied literally inside the calling template)
-
-The syntax for __include__ is this:  %include(subtemplate_id)
-
-The syntax for __template__ is this: %template(subtemplate_id, {"var1"=>$value1, "var2"=>$value2, ..}) 
-
-where the {"var1"=>$value1, "var2"=>$value2, ..} are the data to be passed to the called template 
-this is exactly how the Contemplate::tpl($id, $data) (PHP), or Contemplate.tpl(id, data) (Javascript) are called
 
 ###Screenshots
 
@@ -121,64 +109,17 @@ Data to be used for the template
 PHP and Javascript rendering of the template on same page (see test.php)
 [![Template output](/screenshots/template_output.png)](https://github.com/foo123/Contemplate/raw/master/screenshots/template_output.png)
 
-###Keywords Reference
-
-__Control Constructs__
-
-* _%if(expression)_  IF construct
-* _%elseif(expression)_  ELSEIF construct
-* _%else()_  ELSE construct
-* _%endif()_   ENDIF construct, end the if construct
-
-* _%for($obj as $key=>$val)_  FOR loop
-* _%elsefor()_   ELSEFOR, alternative code block when loop is empty
-* _%endfor()_  ENDFOR , end the loop construct
-
-* _%include(tpl_id)_  INCLUDE the template referenced by tpl_id
-* _%template(tpl_id, {"var1"=>val1, "var2"=>val2, ..})_  CALL a subtemplate referenced by tpl_id, passing the necessary data also
-
-* _%extends(tpl_id)_  Current template extends the template referenced by tpl_id, this means that tpl_id layout will be used and any blocks will be overriden as defined
-* _%block(block_id)_  Define/Override block of code identified by block_id
-* _%endblock()_  End of block definition/override
-
-
-* _%htmlselect(data, options)_  render a select box from given data with given options (shorthand construct to render a select box)
-* _%htmltable(data, options)_  render a table from given data with given options (shorthand construct to render a table)
-
-__Variables/Data__
-
-Variables inside templates are referenced same as in PHP with '$' sign. ie _$x_ , _$obj["key"]_ , etc..
-
-__Functions__
-
-* _%n(val)_   convert val to integer
-* _%s(val)_   convert val to string
-* _%f(val)_   convert val to float
-* _%q(val)_   wrap val in single quotes
-* _%dq(val)_  wrap val in double-quotes
-
-* _%sprintf(format, val1, val2, ..)_   return a formatted string using val1, val2, etc..
-* _%concat(val1, val2, val3, ..)_  string concatenate the values
-* _%ltrim(val[, delim])_   left trim val of delim 
-* _%rtrim(val[, delim])_   right trim val of delim 
-* _%trim(val[, delim])_   left/right trim val of delim 
-
-* _%count(arrayOrObject)_  return number of items in arrayOrObject val
-
-* _%now()_   return current timestamp in seconds
-* _%date(format, timestamp)_  return timestamp formatted according to format
-* _%ldate(format, timestamp)_  return localised timestamp formatted according to format
-* _%l(val)_  return localised string for val (if exists), localised strings are user-defined
-
-* _%html(val)_  html-escape val (htmlentities)
-* _%url(val)_  url-encode val (urlencode)
-
-
 
 ###Dependencies
 
 * PHP version supported is 5.2+ , Node.js version supported is 0.8+, all major browsers.
 * Only 2 classes are used (Contemplate.php, Contemplate.js), no other dependencies
+
+###Todo
+
+* allow custom plugins to extend the template engine
+* implement Contemplate for Java
+* keep-up with php, node, browsers, python updates
 
 
 ###Tests

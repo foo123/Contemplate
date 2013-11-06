@@ -4,7 +4,7 @@ Contemplate
 ## Further development on this project has stopped!!
 
 
-__Light-weight and flexible template engine for PHP, client-side Javascript, Node and Python__
+__Light-weight and flexible template engine for PHP, Python, Node and client-side JavaScript__
 
 ![Contemplate](/screenshots/contemplate.jpg)
 

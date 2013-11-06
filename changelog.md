@@ -1,5 +1,11 @@
 ###ChangeLog
 
+__0.4.3__
+* Contemplate Engine for Python 2.x and 3.x
+* minor edits, generate formatted and anotated cached template code (better for debug)
+* tidy up repo
+* project stopped
+
 __0.4.2__
 * add clear (memory) method _clearCache()_
 * allow inline templates with _addInline()_ method (see examples)

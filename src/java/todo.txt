@@ -1,0 +1,4 @@
+TODO:
+
+
+Contemplate Implementation for Java (Scala??)

@@ -40,12 +40,10 @@ try:
     # Python 3.x
     import urllib.parse
     __urlencode__ = urllib.parse
-    #print urllib.parse.quote_plus(s) # '/%7econnolly/'
 except ImportError:
     # Python 2.x
     import urllib
     __urlencode__ = urllib
-    #print urllib.quote_plus(s) # '/%7econnolly/'
 
 
 #
@@ -128,14 +126,14 @@ class Contemplate:
     # generated tpl class code as a heredoc template
     __tplClassCode = """\
 # Contemplate cached template '__{{ID}}__'
-# extends the main Contemplate class
 
-# imports start here
-#__{{IMPORTS}}__
+# imports start here, if any
+__{{IMPORTS}}__
 # imports end here
 
 def __getTplClass__(Contemplate):
 
+    # extends the main Contemplate class
     class __{{CLASSNAME}}__(Contemplate):
         'Contemplate cached template __{{ID}}__'
 
@@ -165,7 +163,6 @@ __{{BLOCKS}}__
             if ( not __instance__ ): __instance__ = self
 
             method = '_blockfn_' + block
-            #classname = self.__class__.__name__
 
             if (hasattr(self, method) and callable(getattr(self, method))): 
                 return getattr(self, method)(__instance__)
@@ -404,16 +401,17 @@ __{{CODE}}__
     # static
     def setCacheDir(dir): 
         _self = Contemplate
-        _dir = _self.__cacheDir = os.path.abspath(dir) #os.path.join(dir.rstrip('/'), '/')
+        _dir = _self.__cacheDir = os.path.abspath(dir)
         
-        if not os.path.exists(os.path.join(_dir, '__init__.py')):
+        initPyFile = os.path.join(_dir, '__init__.py')
+        if not os.path.exists(initPyFile):
             _initPy_ = """\
 # added by Contemplate.py Engine
 # dummy Python __init__.py file
 # used with Contemplate 'import'
 # to include cached templates as modules, for optimization
 """
-            _self.write(os.path.join(_dir, '__init__.py'), _initPy_)
+            _self.write(initPyFile, _initPy_)
             
         if _dir not in os.sys.path:
             # allow to use 'import' in order to include cached templates
@@ -544,8 +542,6 @@ __{{CODE}}__
     # static
     def date(format, time=None):
         if (time is None): time = Contemplate.time() 
-        #d = datetime.datetime.fromtimestamp(time)
-        #return d.strftime(format, time)
         return Contemplate._get_php_date(format, time)
     
     # localized formatted date
@@ -617,7 +613,6 @@ __{{CODE}}__
             
             
         rows={}
-        
         for i,col in enumerate(vals):
         
             if not isinstance(col, list): colvals=[col]
@@ -706,8 +701,6 @@ __{{CODE}}__
                 
                 v1 = v
                 if isinstance(v, str) or isinstance(v, int) or not hasattr(v, '__iter__'):  v1 = [v]
-                #if isinstance(v1, list):  v1 = enumerate(v1)
-                
                 
                 for k2,v2 in ODict(v1).items():
                 
@@ -746,7 +739,7 @@ __{{CODE}}__
         _self = Contemplate
         _self.__ifs += 1
         
-        out = "'"
+        out = "' "
         # translate some logic operators to Python style
         cond = cond.replace('true', 'True').replace('false', 'False').replace(' && ', ' and ').replace(' || ', ' or ').replace(' ! ', ' not ')
         out1 =_self.__IF.replace('__{{COND}}__', cond)
@@ -759,7 +752,7 @@ __{{CODE}}__
     # static
     def t_elseif(cond='False'):
         _self = Contemplate
-        out = "'"
+        out = "' "
         # translate some logic operators to Python style
         cond = cond.replace('true', 'True').replace('false', 'False').replace(' && ', ' and ').replace(' || ', ' or ').replace(' ! ', ' not ')
         out1 = _self.__ELSEIF.replace('__{{COND}}__', cond)
@@ -774,7 +767,7 @@ __{{CODE}}__
     # static
     def t_else(args=''):
         _self = Contemplate
-        out = "'"
+        out = "' "
         out1 = _self.__ELSE
         
         _self.__level -= 1
@@ -789,7 +782,7 @@ __{{CODE}}__
         _self = Contemplate
         _self.__ifs -= 1
         
-        out = "'"
+        out = "' "
         out1 = _self.__ENDIF
         
         _self.__level -= 1
@@ -810,7 +803,7 @@ __{{CODE}}__
         k = kv[0].strip().lstrip('$')
         v = kv[1].strip().lstrip('$')
         
-        out = "'"
+        out = "' "
         out1 = _self.__FOR.replace('__{{O}}__', o).replace('__{{K}}__', k).replace('__{{V}}__', v).replace('__{{LoopO}}__', '_loopObj'+str(_self.__id))
         
         out += _self.padLines(out1)
@@ -824,7 +817,7 @@ __{{CODE}}__
         # else attached to  for loop
         _self = Contemplate
         _self.__loopifs -= 1
-        out = "'"
+        out = "' "
         out1 = _self.__ELSEFOR
         
         _self.__level += -2
@@ -837,7 +830,7 @@ __{{CODE}}__
     # static
     def t_endfor(args=''):
         _self = Contemplate
-        out = "'"
+        out = "' "
         if _self.__loopifs == _self.__loops:
             _self.__loops -= 1 
             _self.__loopifs -= 1
@@ -977,8 +970,7 @@ __{{CODE}}__
             code = s[pos1:pos2+len2]
             
             if len(code)>0:
-                code = code[len1:-len2].replace("+ '' +", '+')
-                #.replace("+ ''", '') # remove redundant code
+                code = code[len1:-len2].replace("+ '' +", '+')  # remove redundant code
                 
                 bout = _self.__DOBLOCK.replace('__{{CODE}}__', code+"'")
                 
@@ -996,8 +988,6 @@ __{{CODE}}__
                 replace = (0 <= pos1)
                 if replace: pos2 = s.find(delim2, pos1+len1)
             
-        
-        #return [ s.replace("+ '' +", '+').replace("+ ''", ''), blocks]
         return [ s.replace("+ '' +", '+'), blocks ]
     
     # static
@@ -1033,7 +1023,6 @@ __{{CODE}}__
         
         if withblocks: return _self.doBlocks(s)
         
-        #return str_replace( array(". '' .", ". '';"), array('.', ';'), $s ); # remove redundant code
         return s.replace( "+ '' +", '+' ) # remove redundant code
     
     # static
@@ -1049,9 +1038,6 @@ __{{CODE}}__
     
     # static
     def getCachedTemplateName(id):
-        #return os.path.join(Contemplate.__cacheDir, id.replace('-', '_').replace(' ', '_') + '.tpl.py')
-        #return os.path.join(Contemplate.__cacheDir, id.replace('-', '_').replace(' ', '_') + '.py')
-        #return 'Contemplate_' + id.replace('-', '_').replace(' ', '_') + '_Cached_tpl' + '.py'
         return id.replace('-', '_').replace(' ', '_') + '_tpl' + '.py'
     
     # static
@@ -1105,9 +1091,8 @@ __{{CODE}}__
             renderCode = _self.__RCODE2.replace( '__{{CODE}}__', "__p__ += '" + blocks[0] + "'" )
         
         # generate tpl class
-        classCode = _self.__tplClassCode.replace('__{{ID}}__', id).replace('__{{CLASSNAME}}__', classname).replace('__{{PARENTCODE}}__', _self.padLines(parentCode, 3)).replace('__{{BLOCKS}}__', _self.padLines(sblocks, 2)).replace('__{{RENDERCODE}}__', _self.padLines(renderCode, 4))
+        classCode = _self.__tplClassCode.replace('__{{IMPORTS}}__', '').replace('__{{ID}}__', id).replace('__{{CLASSNAME}}__', classname).replace('__{{PARENTCODE}}__', _self.padLines(parentCode, 3)).replace('__{{BLOCKS}}__', _self.padLines(sblocks, 2)).replace('__{{RENDERCODE}}__', _self.padLines(renderCode, 4))
         
-        #return _self.setCachedTemplate(filename, classCode)
         return _self.write(filename, classCode)
     
     # static
@@ -1174,27 +1159,15 @@ __{{CODE}}__
         return Contemplate.write(filename, tplContents)
     
     # static
-    #def set_timezone(tz):
-    #    os.environ['TZ'] = tz
-    #    return True
-    #    
-    # static
-    #def get_timezone():
-    #    return os.environ['TZ']    
-        
-    # static
     def _get_ordinal_suffix(n):
-        # adapted from 
-        # http://brandonwamboldt.ca/python-php-date-class-335/
+        # adapted from http://brandonwamboldt.ca/python-php-date-class-335/
         return {1: 'st', 2: 'nd', 3: 'rd'}.get(4 if 10 <= n % 100 < 20 else n % 10, "th")
     
     # static
     def _get_php_date(format, time):
         # http://php.net/manual/en/datetime.formats.date.php
         # http://strftime.org/
-        # adapted from 
-        # http://brandonwamboldt.ca/python-php-date-class-335/
-            
+        # adapted from http://brandonwamboldt.ca/python-php-date-class-335/
         _self = Contemplate
         time  = datetime.datetime.fromtimestamp(time)
         timeStr = ''
@@ -1267,9 +1240,7 @@ __{{CODE}}__
         merged = m
         
         for arg in args:
-            #for (k in arg): merged[k] = arg[k]
             # http://www.php2python.com/wiki/function.array-merge/
-            #merged = Contemplate.array_merge(merged, arg)
             merged = ODict(merged)
             merged.update(arg)
         
@@ -1303,7 +1274,7 @@ __{{CODE}}__
         _self.__extends = None
         _self.__level = 0
         _self.__id = 0
-        _self.__funcId = 0
+        #_self.__funcId = 0
     
     # static
     def padLines(lines, level=None):
@@ -1354,6 +1325,7 @@ __{{CODE}}__
         # http://www.php2python.com/wiki/function.include/
         # http://docs.python.org/dev/3.0/whatsnew/3.0.html
         # http://stackoverflow.com/questions/4821104/python-dynamic-instantiation-from-string-name-of-a-class-in-dynamically-imported
+        
         #_locals_ = {'Contemplate': Contemplate}
         #_globals_ = {'Contemplate': Contemplate}
         #if 'execfile' in globals():
@@ -1372,6 +1344,7 @@ __{{CODE}}__
         # http://stackoverflow.com/questions/11108628/python-dynamic-from-import
         # also: http://code.activestate.com/recipes/473888-lazy-module-imports/
         # using import instead of execfile, usually takes advantage of Python cached compiled code
+        
         getTplClass = None
         directory = Contemplate.__cacheDir
         currentcwd = os.getcwd()
@@ -1380,7 +1353,6 @@ __{{CODE}}__
         if os.path.exists(filename):
             
             modname = filename[:-3]  # remove .py extension
-            #tplClass = getattr(__import__(modname, globals(), locals(), [classname], -1), classname)
             # a trick in-order to pass the Contemplate super-class in a cross-module way
             getTplClass = getattr( __import__(modname), '__getTplClass__' )
         

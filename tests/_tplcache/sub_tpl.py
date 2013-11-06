@@ -1,12 +1,12 @@
 # Contemplate cached template 'sub'
-# extends the main Contemplate class
 
-# imports start here
-#__{{IMPORTS}}__
+# imports start here, if any
+
 # imports end here
 
 def __getTplClass__(Contemplate):
 
+    # extends the main Contemplate class
     class Contemplate_sub_Cached(Contemplate):
         'Contemplate cached template sub'
 
@@ -36,7 +36,6 @@ def __getTplClass__(Contemplate):
             if ( not __instance__ ): __instance__ = self
 
             method = '_blockfn_' + block
-            #classname = self.__class__.__name__
 
             if (hasattr(self, method) and callable(getattr(self, method))): 
                 return getattr(self, method)(__instance__)
@@ -59,7 +58,7 @@ def __getTplClass__(Contemplate):
                 # tpl main render code starts here
                 
                 __instance__.data = Contemplate.data( data )
-                __p__ += '<div>' + "\n" + '    <br />' + "\n" + '    <strong>Number of Items:' + str( Contemplate.count(__instance__.data['users'][__instance__.data['i']]) ) + '</strong>' + "\n" + '    <br />' + "\n" + '    '
+                __p__ += '<div>' + "\n" + '    <br />' + "\n" + '    <strong>Number of Items:' + str( Contemplate.count(__instance__.data['users'][__instance__.data['i']]) ) + '</strong>' + "\n" + '    <br />' + "\n" + '    ' 
                 if ( len(__instance__.data['users'][__instance__.data['i']])>0 ):
                     # be able to use both key/value in loop
                     if isinstance(__instance__.data['users'][__instance__.data['i']], list):
@@ -70,18 +69,18 @@ def __getTplClass__(Contemplate):
                         __instance__.data['j'] = j
                         __instance__.data['user'] = user
                          
-                        __p__ += '' + "\n" + '        <div id=\'' + str( __instance__.data['user']["id"] ) + '\' class="'        
+                        __p__ += '' + "\n" + '        <div id=\'' + str( __instance__.data['user']["id"] ) + '\' class="'         
                         if ( 0 == (__instance__.data['j'] % 2) ):
                                      
-                            __p__ += 'even'        
+                            __p__ += 'even'         
                         elif ( 1 == (__instance__.data['j'] % 2) ):
                                      
-                            __p__ += 'odd'        
+                            __p__ += 'odd'         
                                  
-                        __p__ += '">' + "\n" + '            <a href="/' + str( __instance__.data['user']["name"] ) + '">' + str( __instance__.data['user']["name"] ) + str( __instance__.data['user']["text"] ) + ' ' + str( Contemplate.n(__instance__.data['i']) + Contemplate.n(__instance__.data['j']) ) + '</a>: <strong>' + str( __instance__.data['user']["text"] ) + '</strong>' + "\n" + '        </div>' + "\n" + '    '
+                        __p__ += '">' + "\n" + '            <a href="/' + str( __instance__.data['user']["name"] ) + '">' + str( __instance__.data['user']["name"] ) + str( __instance__.data['user']["text"] ) + ' ' + str( Contemplate.n(__instance__.data['i']) + Contemplate.n(__instance__.data['j']) ) + '</a>: <strong>' + str( __instance__.data['user']["text"] ) + '</strong>' + "\n" + '        </div>' + "\n" + '    ' 
                 else:
                      
-                    __p__ += '' + "\n" + '        <div class="none">No Users</div>' + "\n" + '    '
+                    __p__ += '' + "\n" + '        <div class="none">No Users</div>' + "\n" + '    ' 
                  
                 __p__ += '' + "\n" + '</div>' + "\n" + ''
                 

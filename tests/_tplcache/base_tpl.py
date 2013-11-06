@@ -1,12 +1,12 @@
 # Contemplate cached template 'base'
-# extends the main Contemplate class
 
-# imports start here
-#__{{IMPORTS}}__
+# imports start here, if any
+
 # imports end here
 
 def __getTplClass__(Contemplate):
 
+    # extends the main Contemplate class
     class Contemplate_base_Cached(Contemplate):
         'Contemplate cached template base'
 
@@ -66,7 +66,6 @@ def __getTplClass__(Contemplate):
             if ( not __instance__ ): __instance__ = self
 
             method = '_blockfn_' + block
-            #classname = self.__class__.__name__
 
             if (hasattr(self, method) and callable(getattr(self, method))): 
                 return getattr(self, method)(__instance__)

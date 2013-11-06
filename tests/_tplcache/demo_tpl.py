@@ -1,12 +1,12 @@
 # Contemplate cached template 'demo'
-# extends the main Contemplate class
 
-# imports start here
-#__{{IMPORTS}}__
+# imports start here, if any
+
 # imports end here
 
 def __getTplClass__(Contemplate):
 
+    # extends the main Contemplate class
     class Contemplate_demo_Cached(Contemplate):
         'Contemplate cached template demo'
 
@@ -35,7 +35,7 @@ def __getTplClass__(Contemplate):
             
             __p__ = ''
              
-            __p__ += '' + "\n" + "\n" + '    <strong>Block3 is overriden by the demo template</strong>' + "\n" + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    '
+            __p__ += '' + "\n" + "\n" + '    <strong>Block3 is overriden by the demo template</strong>' + "\n" + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    ' 
             if ( len(__instance__.data['users'])>0 ):
                 # be able to use both key/value in loop
                 if isinstance(__instance__.data['users'], list):
@@ -48,7 +48,7 @@ def __getTplClass__(Contemplate):
                      
                     __p__ += '' + "\n" + '        <!-- call a (sub-)template -->' + "\n" + '        ' + Contemplate.tpl( "sub",  {"i":__instance__.data['i'], "users":__instance__.data['users']} ) 
                      
-                    __p__ += '' + "\n" + '    '
+                    __p__ += '' + "\n" + '    ' 
              
             __p__ += '' + "\n" + "\n" + ''
             return __p__
@@ -81,7 +81,6 @@ def __getTplClass__(Contemplate):
             if ( not __instance__ ): __instance__ = self
 
             method = '_blockfn_' + block
-            #classname = self.__class__.__name__
 
             if (hasattr(self, method) and callable(getattr(self, method))): 
                 return getattr(self, method)(__instance__)

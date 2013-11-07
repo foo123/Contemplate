@@ -413,9 +413,9 @@ __{{CODE}}__
 """
             _self.write(initPyFile, _initPy_)
             
-        if _dir not in os.sys.path:
-            # allow to use 'import' in order to include cached templates
-            os.sys.path.append(_dir)
+        #if _dir not in os.sys.path:
+        #    # allow to use 'import' in order to include cached templates
+        #    os.sys.path.append(_dir)
 
     
     # static
@@ -1321,7 +1321,7 @@ __{{CODE}}__
     #
     
     # static
-    def include(filename, classname):
+    def include(filename, classname, doReload=False):
         # http://www.php2python.com/wiki/function.include/
         # http://docs.python.org/dev/3.0/whatsnew/3.0.html
         # http://stackoverflow.com/questions/4821104/python-dynamic-instantiation-from-string-name-of-a-class-in-dynamically-imported
@@ -1347,17 +1347,23 @@ __{{CODE}}__
         
         getTplClass = None
         directory = Contemplate.__cacheDir
+        # add the dynamic import path to sys
+        os.sys.path.append(directory)
         currentcwd = os.getcwd()
         os.chdir(directory)   # change working directory so we know import will work
         
         if os.path.exists(filename):
             
             modname = filename[:-3]  # remove .py extension
+            mod = __import__(modname)
+            if doReload: reload(mod) # Might be out of date
             # a trick in-order to pass the Contemplate super-class in a cross-module way
-            getTplClass = getattr( __import__(modname), '__getTplClass__' )
+            getTplClass = getattr( mod, '__getTplClass__' )
         
         # restore current dir
         os.chdir(currentcwd)
+        # remove the dynamic import path from sys
+        del os.sys.path[-1]
         
         # return the tplClass if found
         if getTplClass:  return getTplClass(Contemplate)

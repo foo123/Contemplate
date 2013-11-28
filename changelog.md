@@ -1,5 +1,8 @@
 ###ChangeLog
 
+__0.4.4__
+* escape single quotes and parse template variables accurately
+
 __0.4.3__
 * Contemplate Engine for Python 2.x and 3.x
 * minor edits, generate formatted and anotated cached template code (better for debug)

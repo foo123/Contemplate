@@ -40,19 +40,19 @@ final class Contemplate_sub_Cached extends Contemplate
     }
     
     /* tpl render method */
-    public function render($__data__, $__instance__=null)
+    public function render($data, $__instance__=null)
     {
         $__p__ = '';
         if ( !$__instance__ ) $__instance__ = $this;
         
         if ( $this->_parent )
         {
-            $__p__ = $this->_parent->render($__data__, $__instance__);
+            $__p__ = $this->_parent->render($data, $__instance__);
         }
         else
         {
             /* tpl main render code starts here */
-            $__instance__->data = Contemplate::data( $__data__ ); 
+            $__instance__->data = Contemplate::data( $data ); 
             $__p__ .= '<div>' . "\n" . '    <br />' . "\n" . '    <strong>Number of Items:' . ( Contemplate::count($__instance__->data['users'][$__instance__->data['i']]) ) . '</strong>' . "\n" . '    <br />' . "\n" . '    ';        
             if ( !empty($__instance__->data['users'][$__instance__->data['i']]) )
             {

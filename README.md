@@ -8,19 +8,18 @@ __Light-weight and flexible template engine for PHP, Python, Node and client-sid
 
 ![Contemplate](/screenshots/contemplate.jpg)
 
-This started as a a __proof-of-concept__ , yet is fully working and extensible.
+This started as a a __proof-of-concept__ . 
 The inspiration came from an old post by [John Resig](https://github.com/jeresig)  (http://ejohn.org/blog/javascript-micro-templating/)
 
 ----------------------------------------------------------------------------------------------------------------------
 
 **Note**
-After creating the repository i became aware of a web framework with similar name here: http://www.arlomedia.com/software/contemplate/assembled/introduction.html
+There are a couple of other frameworks named also _contemplate_
 
-*This repository and project are completely unrelated to that framework.*
+* http://www.arlomedia.com/software/contemplate/assembled/introduction.html
+* There is an older and quite different template engine for node named also "contemplate" [here](https://npmjs.org/package/contemplate) and [here](https://github.com/enricomarino/contemplate)
 
-There is an older and quite different template engine for node named also "contemplate" [here](https://npmjs.org/package/contemplate) and [here](https://github.com/enricomarino/contemplate)
-
-*This repository and project are completely unrelated to this engine.*
+*This repository and project is completely unrelated to these frameworks.*
 
 (it seems the word *contemplate* is nice for a template engine :) )
 
@@ -103,8 +102,6 @@ syntax, yet work the same in all the engine's implementations.
 * Templates can *call another template* using __template__ directive, these templates are called as templates subroutines and parsed by themselves
 
 * __Template Inheritance__ , templates can *extend/inherit other templates* using __extends__ directive and *override blocks* using __block__ , __endblock__ directives (see examples)
-
-* Notes: __Literal double quotes__ should better be used inside templates (see the [manual](/manual.md))
 
 
 

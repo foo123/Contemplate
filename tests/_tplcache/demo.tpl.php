@@ -80,14 +80,14 @@ final class Contemplate_demo_Cached extends Contemplate
     }
     
     /* tpl render method */
-    public function render($__data__, $__instance__=null)
+    public function render($data, $__instance__=null)
     {
         $__p__ = '';
         if ( !$__instance__ ) $__instance__ = $this;
         
         if ( $this->_parent )
         {
-            $__p__ = $this->_parent->render($__data__, $__instance__);
+            $__p__ = $this->_parent->render($data, $__instance__);
         }
         else
         {

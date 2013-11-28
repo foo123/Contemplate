@@ -2,7 +2,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.4.3
+#  @version 0.4.4
 #  https://github.com/foo123/Contemplate
 #
 #  @author: Nikos M.  http://nikos-web-development.netai.net/
@@ -56,7 +56,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.4.3"
+    VERSION = "0.4.4"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -99,13 +99,11 @@ class Contemplate:
     NLRX = None
     
     __regExps = {
-        'vars' : None,
         'specials' : None,
-        'tags' : None,
         'replacements' : None,
+        'vars' : None,
         'functions' : None,
-        'controls' : None,
-        'forExpr' : None
+        'controls' : None
     }
     
     __controlConstructs = [
@@ -354,11 +352,9 @@ __{{CODE}}__
         if _self.__isInited: return
         
         # pre-compute the needed regular expressions
-        _self.__regExps['vars'] = re.compile(r'\$([a-zA-Z0-9_]+)')
-        
         _self.__regExps['specials'] = re.compile(r'[\r\v\t]')
         
-        _self.__regExps['tags'] = re.compile(r'\t[^\v\t]*\v')
+        _self.__regExps['vars'] = re.compile(r'\$([a-zA-Z_][a-zA-Z0-9_]*)')
         
         _self.__regExps['replacements'] = re.compile(r'\t[ ]*(.*?)[ ]*\v')
         
@@ -366,8 +362,7 @@ __{{CODE}}__
         
         _self.NLRX = re.compile(r'\n\r|\r\n|\n|\r')
         
-        if len(_self.__funcs)>0: 
-            _self.__regExps['functions'] = re.compile(r'%(' + '|'.join(_self.__funcs) + ')')
+        if len(_self.__funcs)>0:  _self.__regExps['functions'] = re.compile(r'%(' + '|'.join(_self.__funcs) + ')')
         
         _self.__preserveLines = _self.__preserveLinesDefault
         
@@ -993,7 +988,6 @@ __{{CODE}}__
     # static
     def doTags(tag):
         _self = Contemplate
-        tag = tag.group(0)
         
         tag = re.sub(_self.__regExps['controls'], _self.doControlConstructs, tag)
 
@@ -1009,21 +1003,52 @@ __{{CODE}}__
         return tag
     
     # static
-    def parse(s, withblocks=True):
+    def split(s):
         _self = Contemplate
-        s = s.replace( "'", "\\'" )  # escape single quotes (used by parse function)
         
-        s = s.replace( "\n", _self.__preserveLines ) # preserve lines
+        parts1 = s.split( _self.__leftTplSep )
+        l = len(parts1)
+        parts = []
+        for i in range(l):
+            tmp = parts1[i].split( _self.__rightTplSep )
+            parts.append ( tmp[0] )
+            if len(tmp) > 1: parts.append ( tmp[1] )
         
-        s = re.sub( _self.__regExps['specials'], " ", s ) # replace special chars
+        return parts
+
+    # static
+    def parse(tpl, withblocks=True):
+        _self = Contemplate
+        parts = _self.split( tpl )
+        l = len(parts)
+        isTag = False
+        out = ''
+        for i in range(l):
+            s = parts[i]
+            
+            if isTag:
+                
+                s = s.replace( "\n", _self.__preserveLines ) # preserve lines
+                
+                s = re.sub( _self.__regExps['specials'], " ", s ) # replace special chars
+                
+                s = _self.doTags( "\t" + s + "\v" ) # parse each template tag section accurately
+                
+                isTag = False
+                
+            else:
+                
+                s = s.replace( "'", "\\'" )  # escape single quotes accurately (used by parse function)
+                
+                s = s.replace( "\n", _self.__preserveLines ) # preserve lines
+            
+                isTag = True
+            
+            out += s
         
-        s = s.replace( _self.__leftTplSep, "\t" ).replace( _self.__rightTplSep, "\v" ) # replace left/right template separators
+        if withblocks: return _self.doBlocks(out)
         
-        s = re.sub( _self.__regExps['tags'], _self.doTags, s ) # parse each template tag section accurately
-        
-        if withblocks: return _self.doBlocks(s)
-        
-        return s.replace( "+ '' +", '+' ) # remove redundant code
+        return out.replace( "+ '' +", '+' ) # remove redundant code
     
     # static
     def getTemplateContents(id):

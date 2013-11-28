@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.4.3
+*  @version: 0.4.4
 *  https://github.com/foo123/Contemplate
 *
 *  @author: Nikos M.  http://nikos-web-development.netai.net/
@@ -13,7 +13,7 @@
 **/
 (function(root) {
     
-    var __version__ = "0.4.3";
+    var __version__ = "0.4.4";
     
     // export using window object on browser, or export object on node,require
     var window = this, self;
@@ -90,13 +90,11 @@
     
         $__regExps = {
             //'NLRX' : null,
-            'vars' : null,
             'specials' : null,
-            'tags' : null,
             'replacements' : null,
+            'vars' : null,
             'functions' : null,
-            'controls' : null,
-            'forExpr' : null
+            'controls' : null
         },
         
         $__controlConstructs = [
@@ -460,20 +458,15 @@
             if ($__isInited) return;
             
             // pre-compute the needed regular expressions
-            $__regExps['vars'] = new RegExp('\\$([a-zA-Z0-9_]+)', 'gm');
-        
             $__regExps['specials'] = new RegExp('[\\r\\v\\t]', 'g');
             
-            $__regExps['tags'] = new RegExp('\\t[^\\v\\t]*\\v', 'g');
-            
+            $__regExps['vars'] = new RegExp('\\$([a-zA-Z_][a-zA-Z0-9_]*)', 'gm');
+        
             $__regExps['replacements'] = new RegExp('\\t[ ]*(.*?)[ ]*\\v', 'g');
             
-            $__regExps['controls'] = new RegExp('\\t[ ]*\%('+$__controlConstructs.join('|')+')\\b[ ]*\\((.*)\\)', 'g');
+            $__regExps['controls'] = new RegExp('\\t[ ]*%('+$__controlConstructs.join('|')+')\\b[ ]*\\((.*)\\)', 'g');
             
-            //NLRX = $__regExps['NLRX'] = /\n\r|\r\n|\n|\r/g;
-            
-            if ($__funcs.length) 
-                $__regExps['functions'] = new RegExp('\%('+$__funcs.join('|')+')\\b', 'g');
+            if ($__funcs && $__funcs.length) $__regExps['functions'] = new RegExp('%('+$__funcs.join('|')+')\\b', 'g');
             
             $__preserveLines = $__preserveLinesDefault;
             
@@ -1139,28 +1132,62 @@
                 ;
         },
         
-        parse : function(s, withblocks) {
-            s = s
-                .split( "'" ).join( "\\'" )  // escape single quotes (used by parse function)
-                
-                .split( "\n" ).join( $__preserveLines ) // preserve lines
-                
-                .replace( $__regExps['specials'], " " ) // replace special chars
-                
-                .split( $__leftTplSep ).join( "\t" ) // replace left template separator
-                
-                .split( $__rightTplSep ).join( "\v" ) // replace right template separator
-                
-                .replace( $__regExps['tags'], function(tag){ 
-                    return self.doTags(tag); 
-                } ) // parse each template tag section accurately
-                ;
+        split : function(s) {
+            var parts1, len, parts, i, tmp;
+            parts1 = s.split( $__leftTplSep );
+            len = parts1.length;
+            parts = [];
+            for (i=0; i<len; i++)
+            {
+                tmp = parts1[i].split( $__rightTplSep );
+                parts.push ( tmp[0] );
+                if (tmp.length > 1) parts.push ( tmp[1] );
+            }
+            return parts;
+        },
+    
+        parse : function(tpl, withblocks) {
+            var parts, len, out, s, i, isTag;
             
+            parts = self.split( tpl );
+            len = parts.length;
+            isTag = false;
+            out = '';
+            for (i=0; i<len; i++)
+            {
+                s = parts[i];
+                
+                if ( isTag )
+                {
+                    s = s
+                        .split( "\n" ).join( $__preserveLines ) // preserve lines
+                        
+                        .replace( $__regExps['specials'], " " ) // replace special chars
+                        ;
+                    
+                    s = self.doTags( "\t" + s + "\v" ); // parse each template tag section accurately
+                    
+                    isTag = false;
+                }
+                else
+                {
+                    s = s
+                        .split( "'" ).join( "\\'" )  // escape single quotes accurately (used by parse function)
+                        
+                        .split( "\n" ).join( $__preserveLines ) // preserve lines
+                        ;
+                    
+                    isTag = true;
+                }
+                
+                out += s;
+            }
+        
             if ('undefined'==typeof(withblocks)) withblocks = true;
             
-            if ( withblocks ) return self.doBlocks( s ); // render any blocks
+            if ( withblocks ) return self.doBlocks( out ); // render any blocks
             
-            return s.replace( "+ '' +", '+' ).replace( "+ '';", ';' ); // remove redundant code
+            return out.replace( "+ '' +", '+' ).replace( "+ '';", ';' ); // remove redundant code
         },
         
         getTemplateContents : function(id) {

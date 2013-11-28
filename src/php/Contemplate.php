@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.4.3
+*  @version: 0.4.4
 *  https://github.com/foo123/Contemplate
 *
 *  @author: Nikos M.  http://nikos-web-development.netai.net/
@@ -16,7 +16,7 @@ if (!class_exists('Contemplate'))
 {
 class Contemplate
 {
-    const VERSION = "0.4.3";
+    const VERSION = "0.4.4";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -52,13 +52,11 @@ class Contemplate
     protected static $__postReplace = null;
     
     protected static $__regExps = array(
-        'vars' => null,
         'specials' => null,
-        'tags' => null,
         'replacements' => null,
+        'vars' => null,
         'functions' => null,
-        'controls' => null,
-        'forExpr' => null
+        'controls' => null
     );
     
     protected static $__controlConstructs = array(
@@ -119,14 +117,14 @@ __{{BLOCKS}}__
     }
     
     /* tpl render method */
-    public function render(\$__data__, \$__instance__=null)
+    public function render(\$data, \$__instance__=null)
     {
         \$__p__ = '';
         if ( !\$__instance__ ) \$__instance__ = \$this;
         
         if ( \$this->_parent )
         {
-            \$__p__ = \$this->_parent->render(\$__data__, \$__instance__);
+            \$__p__ = \$this->_parent->render(\$data, \$__instance__);
         }
         else
         {
@@ -240,7 +238,7 @@ _TPL_FUNC_;
     protected static $__RCODE1 = "\$__p__ = '';";
     
     protected static $__RCODE2 = <<<_TPLRENDERCODE_
-\$__instance__->data = Contemplate::data( \$__data__ ); 
+\$__instance__->data = Contemplate::data( \$data ); 
 __{{CODE}}__
 _TPLRENDERCODE_;
     
@@ -332,7 +330,7 @@ _TPLRENDERCODE_;
         elseif ( $this->_renderFunction )
         {
             /* dynamic function */
-            $__instance__->data = self::data($data); 
+            $__instance__->data = self::data( $data ); 
             $renderFunction = $this->_renderFunction;  
             $__p__ = $renderFunction( $__instance__ );
         }
@@ -350,24 +348,20 @@ _TPLRENDERCODE_;
         if ( self::$__isInited ) return;
         
         // pre-compute the needed regular expressions
-        self::$__regExps[ 'vars' ] = '/\$([a-zA-Z0-9_]+)/';
-        
         self::$__regExps[ 'specials' ] = '/[\r\v\t]/';
-        
-        self::$__regExps[ 'tags' ] = '/\t[^\v\t]*\v/';
         
         self::$__regExps[ 'replacements' ] = '/\t[ ]*(.*?)[ ]*\v/';
         
-        self::$__regExps[ 'controls' ] = '/\t[ ]*\%(' . implode('|', self::$__controlConstructs) . ')\b[ ]*\((.*)\)/';
+        self::$__regExps[ 'vars' ] = '/\$([a-zA-Z_][a-zA-Z0-9_]*)/';
         
-        if ( !empty(self::$__funcs) ) 
-            self::$__regExps[ 'functions' ] = '/\%(' . implode('|', self::$__funcs) . ')\b/';
+        self::$__regExps[ 'controls' ] = '/\t[ ]*%(' . implode('|', self::$__controlConstructs) . ')\b[ ]*\((.*)\)/';
+        
+        if ( !empty(self::$__funcs) ) self::$__regExps[ 'functions' ] = '/%(' . implode('|', self::$__funcs) . ')\b/';
         
         self::$__preserveLines = self::$__preserveLinesDefault;
         
         self::$__tplStart = "'; " . self::$__TEOL;
         self::$__tplEnd = self::$__TEOL . "\$__p__ .= '";
-        
         
         self::$__isInited = true;
     }
@@ -731,7 +725,6 @@ _TPLRENDERCODE_;
         self::$__level++;
         
         return $out;
-        //return "'; if ($cond) { "; 
     }
     
     // elseif    
@@ -745,7 +738,6 @@ _TPLRENDERCODE_;
         self::$__level++;
         
         return $out;
-        //return "'; } elseif ($cond) { "; 
     }
     
     // else
@@ -759,7 +751,6 @@ _TPLRENDERCODE_;
         self::$__level++;
         
         return $out;
-        //return "'; } else { ";  
     }
     
     // endif
@@ -774,7 +765,6 @@ _TPLRENDERCODE_;
         $out .= self::padLines($out1);
         
         return $out;
-        //return "'; } ";
     }
     
     // for, foreach
@@ -790,11 +780,6 @@ _TPLRENDERCODE_;
         $vk = ltrim($v, '$');
         
         $out = "';";
-        /*$out1 = str_replace(
-            array('__{{O}}__', '__{{K}}__', '__{{V}}__', '__{{KK}}__', '__{{VK}}__'), 
-            array($o, $k, $v, $kk, $vk), 
-            self::$__FOR
-        );*/
         $out1 = self::$__FOR;
         
         $o = preg_replace( self::$__regExps['vars'], '\$__instance__->data[\'$1\']', $o ); // replace php-style var names
@@ -807,7 +792,6 @@ _TPLRENDERCODE_;
         self::$__level+=2;
         
         return $out;
-        //return "'; if ( !empty($o) ) { foreach ($o as $k=>$v) { \$__instance->data['".ltrim($k, '$')."']=$k; \$__instance->data['".ltrim($v, '$')."']=$v; ";
     }
     
     // elsefor
@@ -823,7 +807,6 @@ _TPLRENDERCODE_;
         self::$__level+=1;
         
         return $out;
-        //return "'; } } else { "; 
     }
     
     // endfor
@@ -840,7 +823,6 @@ _TPLRENDERCODE_;
             $out .= self::padLines($out1);
             
             return $out;
-            //return "'; } } ";  
         }
         self::$__loops--;  
         $out1 = self::$__ENDFOR2;
@@ -849,7 +831,6 @@ _TPLRENDERCODE_;
         $out .= self::padLines($out1);
         
         return $out;
-        //return "'; } ";
     }
     
     // include file
@@ -858,9 +839,7 @@ _TPLRENDERCODE_;
         /* cache it */ 
         if ( !isset(self::$__partials[$id]) )
         {
-            // push state here, maybe ??
             self::$__partials[$id]=" " . self::parse(self::getTemplateContents($id), false) . "'; " . self::$__TEOL;
-            // pop state ??
         }
         return self::$__partials[$id];
     }
@@ -892,7 +871,7 @@ _TPLRENDERCODE_;
         
         self::$__blockcnt++; 
         array_push(self::$__blocks, $block); 
-        return "' .  __||" . $block . "||__";  
+        return "' . __||" . $block . "||__";  
     }
     
     // end define (overridable) block
@@ -966,7 +945,6 @@ _TPLRENDERCODE_;
         $blocks = array(); 
         $bl = count(self::$__allblocks);
         
-        //$eol = "'; ";
         while ($bl--)
         {
             $block = array_pop(self::$__allblocks);
@@ -984,11 +962,9 @@ _TPLRENDERCODE_;
             
             if ( !empty($code) )
             {
-                //$s = str_replace($code, "\$__instance__->renderBlock( '" . $block . "' ); ", $s);
-                
                 $code = str_replace(array(". '' .", ". '';"), array('.', ';'), substr($code, $len1, -$len2)); // remove redundant code
                 
-                $bout = str_replace('__{{CODE}}__', $code."';", self::$__DOBLOCK); //self::padLines($bout);
+                $bout = str_replace('__{{CODE}}__', $code."';", self::$__DOBLOCK);
                 
                 $blocks[$block] = $bout;
             }
@@ -1014,8 +990,6 @@ _TPLRENDERCODE_;
     
     protected static function doTags($tag) 
     {
-        $tag = $tag[0];
-        
         self::$__postReplace = null;
         
         $tag = preg_replace_callback( self::$__regExps['controls'], array(__CLASS__, 'doControlConstructs'), $tag );
@@ -1030,26 +1004,60 @@ _TPLRENDERCODE_;
         
         $tag = preg_replace( self::$__regExps['replacements'], '\' . ( $1 ) . \'', $tag );
         
-        $tag = str_replace( array("\t", "\v"), array(self::$__tplStart, self::padLines(self::$__tplEnd)), $tag );
+        $tag = str_replace(array("\t", "\v"), array(self::$__tplStart, self::padLines( self::$__tplEnd )), $tag);
         
         return $tag;
     }
     
-    protected static function parse($s, $withblocks=true) 
+    protected static function split($s)
     {
-        $s = str_replace( "'", "\\'", $s );  // escape single quotes (used by parse function)
+        $parts1 = explode( self::$__leftTplSep, $s );
+        $len = count( $parts1 );
+        $parts = array();
+        for ($i=0; $i<$len; $i++)
+        {
+            $tmp = explode( self::$__rightTplSep, $parts1[$i] );
+            $parts[] = $tmp[0];
+            if (isset($tmp[1])) $parts[] = $tmp[1];
+        }
+        return $parts;
+    }
+    
+    protected static function parse($tpl, $withblocks=true) 
+    {
+        $parts = self::split($tpl);
+        $len = count($parts);
+        $isTag = false;
+        $out = '';
+        for ($i=0; $i<$len; $i++)
+        {
+            $s = $parts[$i];
+            
+            if ( $isTag )
+            {
+                $s = str_replace( "\n", self::$__preserveLines, $s ); // preserve lines
+                
+                $s = preg_replace( self::$__regExps['specials'], " ", $s ); // replace special chars
+                
+                $s = self::doTags( "\t" . $s . "\v" );  // parse each template tag section accurately
+                
+                $isTag = false;
+            }
+            else
+            {
+                $s = str_replace( "'", "\\'", $s );  // escape single quotes accurately (used by parse function)
+                
+                $s = str_replace( "\n", self::$__preserveLines, $s ); // preserve lines
+                
+                $isTag = true;
+            }
+            
+            $out .= $s;
+        }
         
-        $s = str_replace( "\n", self::$__preserveLines, $s ); // preserve lines
+        if ( $withblocks ) return self::doBlocks($out);
         
-        $s = preg_replace( self::$__regExps['specials'], " ", $s ); // replace special chars
-        
-        $s = str_replace( array(self::$__leftTplSep, self::$__rightTplSep), array("\t", "\v"), $s ); // replace left/right template separators
-        
-        $s = preg_replace_callback( self::$__regExps['tags'], array(__CLASS__, 'doTags'), $s ); // parse each template tag section accurately
-        
-        if ( $withblocks ) return self::doBlocks($s);
-        
-        return str_replace( array(". '' .", ". '';"), array('.', ';'), $s ); // remove redundant code
+        return str_replace( array(". '' .", ". '';"), array('.', ';'), $out ); // remove redundant code
     }
     
     public static function getTemplateContents($id)
@@ -1085,7 +1093,6 @@ _TPLRENDERCODE_;
         }
         else
         {
-            // Introduce the data as local variables using extract()
             $func = str_replace( '__{{CODE}}__', "\$__p__ .= '" . $blocks[0] . "';", self::$__TFUNC2 );
         }
         

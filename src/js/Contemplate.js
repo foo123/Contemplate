@@ -969,9 +969,12 @@
             // cache it
             if ( !$__partials[id] )
             {
+                var prevlevel = $__level;
+                $__level = 0;
                 $__partials[id] = " " + self.parse(self.getTemplateContents(id), false) + "'; " + $__TEOL;
+                $__level = prevlevel;
             }
-            return $__partials[id];
+            return padLines( $__partials[id] );
         },
         
         // include template

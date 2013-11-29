@@ -870,9 +870,12 @@ __{{CODE}}__
         _self = Contemplate
         # cache it
         if id not in _self.__partials:
+            prevlevel = _self.__level
+            _self.__level = 0
             _self.__partials[id] = " " + _self.parse(_self.getTemplateContents(id), False) + "' " + _self.__TEOL
+            _self.__level = prevlevel
         
-        return _self.__partials[id]
+        return _self.padLines( _self.__partials[id] )
     
     # include template
     # static

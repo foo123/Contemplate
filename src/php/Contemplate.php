@@ -851,9 +851,12 @@ _TPLRENDERCODE_;
         /* cache it */ 
         if ( !isset(self::$__partials[$id]) )
         {
+            $prevlevel = self::$__level;
+            self::$__level = 0;
             self::$__partials[$id]=" " . self::parse(self::getTemplateContents($id), false) . "'; " . self::$__TEOL;
+            self::$__level = $prevlevel;
         }
-        return self::$__partials[$id];
+        return self::padLines( self::$__partials[$id] );
     }
     
     // include template

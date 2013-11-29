@@ -95,6 +95,7 @@ class Contemplate:
     __extends = None
     __id = 0
     __funcId = 0
+    __postReplace = None
     
     NLRX = None
     
@@ -102,23 +103,27 @@ class Contemplate:
         'specials' : None,
         'replacements' : None,
         'vars' : None,
+        'ids' : None,
+        'atts' : None,
         'functions' : None,
         'controls' : None
     }
     
     __controlConstructs = [
-        'if', 'elseif', 'else', 'endif', 
-        'for', 'elsefor', 'endfor',
+        'htmlselect', 'htmltable',
         'include', 'template', 
-        'extends', 'block', 'endblock',
-        'htmlselect', 'htmltable'
+        'extends', 'endblock', 'block',
+        'elsefor', 'endfor', 'for',
+        'elseif', 'else', 'endif', 'if'
     ]
     
     __funcs = [
-        'html', 'url', 'count', 
+        'htmlselect', 'htmltable',
         'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 
-        'now', 'date', 'ldate', 
-        'q', 'dq', 'l', 's', 'n', 'f' 
+        'tpl',
+        'html', 'url', 'count', 
+        'ldate', 'date', 'now',
+        'dq', 'q', 'l', 's', 'n', 'f' 
     ]
     
     # generated tpl class code as a heredoc template
@@ -225,13 +230,11 @@ else:
     __FOR = """
 if ( len(__{{O}}__)>0 ):
     # be able to use both key/value in loop
-    if isinstance(__{{O}}__, list):
-        __{{LoopO}}__ = enumerate(__{{O}}__)
-    else:
-        __{{LoopO}}__ = __{{O}}__.items()
+    __{{ASSIGN11}}__
+    __{{ASSIGN12}}__
     for  __{{K}}__,__{{V}}__ in __{{LoopO}}__ :
-        __instance__.data['__{{K}}__'] = __{{K}}__
-        __instance__.data['__{{V}}__'] = __{{V}}__
+        __{{ASSIGN21}}__
+        __{{ASSIGN22}}__
 """
     
     # generated ELSEFOR code
@@ -352,23 +355,26 @@ __{{CODE}}__
         if _self.__isInited: return
         
         # pre-compute the needed regular expressions
-        _self.__regExps['specials'] = re.compile(r'[\r\v\t]')
+        _self.__regExps['specials'] = re.compile(r'[\n\r\v\t]')
         
-        _self.__regExps['vars'] = re.compile(r'\$([a-zA-Z_][a-zA-Z0-9_]*)')
+        _self.__regExps['vars'] = re.compile(r'\$[a-zA-Z_][a-zA-Z0-9_]*')
+        
+        _self.__regExps['ids'] = re.compile(r'\$([a-zA-Z_][a-zA-Z0-9_]*)')
+        
+        _self.__regExps['atts'] = re.compile(r'\.\s*([a-zA-Z_][a-zA-Z0-9_]*)')
         
         _self.__regExps['replacements'] = re.compile(r'\t[ ]*(.*?)[ ]*\v')
         
         _self.__regExps['controls'] = re.compile(r'\t[ ]*%(' + '|'.join(_self.__controlConstructs) + ')[ ]*\((.*)\)')
         
-        _self.NLRX = re.compile(r'\n\r|\r\n|\n|\r')
+        _self.__regExps['functions'] = re.compile(r'%(' + '|'.join(_self.__funcs) + ')')
         
-        if len(_self.__funcs)>0:  _self.__regExps['functions'] = re.compile(r'%(' + '|'.join(_self.__funcs) + ')')
+        _self.NLRX = re.compile(r'\n\r|\r\n|\n|\r')
         
         _self.__preserveLines = _self.__preserveLinesDefault
         
         _self.__tplStart = "' " + _self.__TEOL
         _self.__tplEnd = _self.__TEOL + "__p__ += '"
-        
         
         _self.__isInited = True
     
@@ -383,12 +389,12 @@ __{{CODE}}__
     # static
     def setTemplateSeparators(seps=None):
         if seps:
-            if ('left' in seps): Contemplate.__leftTplSep = str(seps['left'])
-            if ('right' in seps): Contemplate.__rightTplSep = str(seps['right'])
+            if 'left' in seps: Contemplate.__leftTplSep = str(seps['left'])
+            if 'right' in seps: Contemplate.__rightTplSep = str(seps['right'])
     
     # static
     def setPreserveLines(bool=True): 
-        if (bool):  
+        if bool:  
             Contemplate.__preserveLines = Contemplate.__preserveLinesDefault
         else: 
             Contemplate.__preserveLines = ''
@@ -501,24 +507,24 @@ __{{CODE}}__
     # Trim strings in templates
     # static
     def trim(s, charlist=None):
-        if (charlist): return s.strip(charlist)
+        if charlist: return s.strip(charlist)
         else: return s.strip()
     
     # static
     def ltrim(s, charlist=None):
-        if (charlist): return s.lstrip(charlist)
+        if charlist: return s.lstrip(charlist)
         else: return s.lstrip()
     
     # static
     def rtrim(s, charlist=None):
-        if (charlist): return s.rstrip(charlist)
+        if charlist: return s.rstrip(charlist)
         else: return s.rstrip()
     
     # Sprintf in templates
     # static
     def sprintf(*args):
         numargs = len(args)
-        if (numargs>1):
+        if numargs>1:
             format = args.pop(0)
             return format % args
         return ''
@@ -536,13 +542,13 @@ __{{CODE}}__
     # formatted date
     # static
     def date(format, time=None):
-        if (time is None): time = Contemplate.time() 
+        if time is None: time = Contemplate.time() 
         return Contemplate._get_php_date(format, time)
     
     # localized formatted date
     # static
     def ldate(format, time=None): 
-        if (time is None): time = Contemplate.time() 
+        if time is None: time = Contemplate.time() 
         return Contemplate._localized_date(Contemplate.__locale, format, time)
         
     # locale, l
@@ -798,8 +804,21 @@ __{{CODE}}__
         k = kv[0].strip().lstrip('$')
         v = kv[1].strip().lstrip('$')
         
+        o = _self.doTplVars( o )
+        loopo = '_loopObj' + str(_self.__id)
+        _self.__postReplace = {
+            '__{{O}}__' : o,
+            '__{{K}}__' : k,
+            '__{{V}}__' : v,
+            '__{{LoopO}}__' : loopo,
+            '__{{ASSIGN11}}__' : 'if isinstance('+o+', list): '+loopo+' = enumerate('+o+')',
+            '__{{ASSIGN12}}__' : 'else: '+loopo+' = '+o+'.items();',
+            '__{{ASSIGN21}}__' : '__instance__.data[\''+k+'\'] = '+k+'',
+            '__{{ASSIGN22}}__' : '__instance__.data[\''+v+'\'] = '+v+''
+        }
+        
         out = "' "
-        out1 = _self.__FOR.replace('__{{O}}__', o).replace('__{{K}}__', k).replace('__{{V}}__', v).replace('__{{LoopO}}__', '_loopObj'+str(_self.__id))
+        out1 = _self.__FOR
         
         out += _self.padLines(out1)
         _self.__level += 2
@@ -861,8 +880,8 @@ __{{CODE}}__
         _self = Contemplate
         args = args.split(',')
         id = args.pop(0).strip()
-        obj = ','.join(args).replace(_self.__preserveLines, '').replace('=>', ':').replace('true', 'True').replace('false', 'False')
-        return '\' + Contemplate.tpl( "'+id+'", '+obj+' ) ' + _self.__TEOL
+        obj = ','.join(args).replace('=>', ':').replace('true', 'True').replace('false', 'False')
+        return '\' + %tpl( "'+id+'", '+obj+' ) ' + _self.__TEOL
     
     # extend another template
     # static
@@ -895,15 +914,15 @@ __{{CODE}}__
     # static
     def t_table(args):
         _self = Contemplate
-        obj = args.replace(_self.__preserveLines, '').replace('=>', ':').replace('true', 'True').replace('false', 'False')
-        return '\' + Contemplate.htmltable(' + obj + ') ' + _self.__TEOL
+        obj = args.replace('=>', ':').replace('true', 'True').replace('false', 'False')
+        return '\' + %htmltable(' + obj + ') ' + _self.__TEOL
     
     # render html select
     # static
     def t_select(args):
         _self = Contemplate
-        obj = args.replace(_self.__preserveLines, '').replace('=>', ':').replace('true', 'True').replace('false', 'False')
-        return '\' + Contemplate.htmlselect(' + obj + ') ' + _self.__TEOL
+        obj = args.replace('=>', ':').replace('true', 'True').replace('false', 'False')
+        return '\' + %htmlselect(' + obj + ') ' + _self.__TEOL
     
     #
     # auxilliary parsing methods
@@ -986,19 +1005,49 @@ __{{CODE}}__
         return [ s.replace("+ '' +", '+'), blocks ]
     
     # static
+    def doTplVars(s):
+        _self = Contemplate
+        
+        tplvars = []
+        rem = []
+        
+        # find tplvars
+        tplvars = re.findall( _self.__regExps['ids'], s )
+        
+        if len(tplvars)>0:
+        
+            rem = re.split( _self.__regExps['vars'], s )
+            remLen = len(rem)-1
+            s = ''
+            for i in range(remLen):
+            
+                s += re.sub( _self.__regExps['atts'], r"['\1']", rem[i] )  # fix dot-style attributes
+                s += "__instance__.data['" + tplvars[i] + "']";  # replace tplvars with the tpldata
+            
+            s += re.sub( _self.__regExps['atts'], r"['\1']", rem[remLen] )  # fix dot-style attributes
+        
+        return s
+        
+    # static
     def doTags(tag):
         _self = Contemplate
         
+        _self.__postReplace = None
+        
         tag = re.sub(_self.__regExps['controls'], _self.doControlConstructs, tag)
 
-        tag = re.sub( _self.__regExps['vars'], r"__instance__.data['\1']", tag ) # replace php-style var names with python valid names
+        tag = _self.doTplVars( tag ) # replace tplvars with python vars accurately
         
-        if len(_self.__funcs)>0:  
-            tag = re.sub(_self.__regExps['functions'], r'Contemplate.\1', tag)
+        if _self.__postReplace:
         
-        tag = re.sub(_self.__regExps['replacements'], r"' + str( \1 ) + '", tag)
+            for k in _self.__postReplace:  tag = tag.replace( k, _self.__postReplace[k] )
+            
         
-        tag = tag.replace("\t", _self.__tplStart).replace("\v", _self.padLines(_self.__tplEnd))
+        tag = re.sub( _self.__regExps['functions'], r'Contemplate.\1', tag )
+        
+        tag = re.sub( _self.__regExps['replacements'], r"' + str( \1 ) + '", tag )
+        
+        tag = tag.replace( "\t", _self.__tplStart ).replace( "\v", _self.padLines(_self.__tplEnd) )
         
         return tag
     
@@ -1027,8 +1076,6 @@ __{{CODE}}__
             s = parts[i]
             
             if isTag:
-                
-                s = s.replace( "\n", _self.__preserveLines ) # preserve lines
                 
                 s = re.sub( _self.__regExps['specials'], " ", s ) # replace special chars
                 

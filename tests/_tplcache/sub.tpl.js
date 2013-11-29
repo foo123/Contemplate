@@ -66,9 +66,8 @@
                    {
                        if ( Contemplate.hasOwn(__instance__.data['users'][__instance__.data['i']], j) )
                        {
-                           var user = __instance__.data['users'][__instance__.data['i']][j];
-                           __instance__.data['j'] = j;
-                           __instance__.data['user'] = user;
+                          var user = __instance__.data['users'][__instance__.data['i']][j];
+                          __instance__.data['j'] = j; __instance__.data['user'] = user;
                        
                              
                             __p__ += '' + "\n" + '        <div id=\'' + ( __instance__.data['user']["id"] ) + '\' class="';            

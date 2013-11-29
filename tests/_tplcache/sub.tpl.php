@@ -58,7 +58,8 @@ final class Contemplate_sub_Cached extends Contemplate
             {
                 foreach ( $__instance__->data['users'][$__instance__->data['i']] as $j=>$user )
                 {
-                    $__instance__->data['j'] = $j; $__instance__->data['user'] = $user;         
+                    $__instance__->data['j'] = $j;
+                    $__instance__->data['user'] = $user;         
                     $__p__ .= '' . "\n" . '        <div id=\'' . ( $__instance__->data['user']["id"] ) . '\' class="';        
                     if ( 0 == ($__instance__->data['j'] % 2) )
                     {

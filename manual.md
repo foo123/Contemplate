@@ -2,8 +2,27 @@
 
 __Variables/Data__
 
-Variables inside templates are referenced same as in PHP with '$' sign. ie _$x_ , _$obj["key"]_ , etc..
+Variables inside templates are referenced same as in PHP with '$' sign. ie 
 
+```php
+
+$x 
+
+$obj["key"]
+
+$obj[0]["key"]
+
+$obj.key  // this will also work
+
+$obj[0].key  // this will also work
+
+$obj["key"].key2
+
+// etc..
+
+```
+
+<del>
 __IMPORTANT__ :  
 Object properties and arrays are referenced with the *associative array convention* ie.
 
@@ -14,6 +33,21 @@ __CORRECT__
 $obj is a hash object (dictionary): $obj["property"], $obj["property"]["property2"]   (use double quotes to be sure of parsed correctly)
 
 $obj is a usual array: $obj[0], $obj[1] etc..  or $obj[0][1] etc for n-dimensional arrays
+</del>
+
+__UPDATE__ 
+
+All these will work correctly in all the engine's implementations:
+
+```php
+
+$obj.property, $obj.property.property2,
+$obj['property'], $obj['property'].property2,
+$obj.property, $obj.property['property2'],
+
+// etc.., WILL WORK CORRECTLY
+
+```
 
 __Literal Object data__
 Literal object data are constructed (inside a template) using a combination of JavaScript and PHP notation (this makes parsing easier :) )

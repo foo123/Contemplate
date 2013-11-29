@@ -33,9 +33,8 @@
                    {
                        if ( Contemplate.hasOwn(__instance__.data['users'], i) )
                        {
-                           var usergroup = __instance__.data['users'][i];
-                           __instance__.data['i'] = i;
-                           __instance__.data['usergroup'] = usergroup;
+                          var usergroup = __instance__.data['users'][i];
+                          __instance__.data['i'] = i; __instance__.data['usergroup'] = usergroup;
                        
                              
                             __p__ += '' + "\n" + '        <!-- call a (sub-)template -->' + "\n" + '        ' + Contemplate.tpl( "sub",  {"i":__instance__.data['i'], "users":__instance__.data['users']} ); 
@@ -64,7 +63,7 @@
                  
                 __p__ += '' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A table with alternative format</strong><br />' + "\n" + '    ' + Contemplate.htmltable(__instance__.data['table_data'], {"header":true}); 
                  
-                __p__ += '' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A select box with alternative format</strong><br />' + "\n" + '    ' + Contemplate.htmlselect(__instance__.data['select_data'], {            "optgroups":["group1", "group2", "group3"],            "selected":3,            "multiple":false,            "style":"width:200px;"        }); 
+                __p__ += '' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A select box with alternative format</strong><br />' + "\n" + '    ' + Contemplate.htmlselect(__instance__.data['select_data'], {             "optgroups":["group1", "group2", "group3"],             "selected":3,             "multiple":false,             "style":"width:200px;"         }); 
                  
                 __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    <!-- include a (sub-)template file -->' + "\n" + '     <!-- print a localized date php-style -->' + "\n" + '<strong>A (localized) date, PHP-style</strong><br />' + "\n" + ( Contemplate.ldate("M, d", Contemplate.now()) ) + '' + "\n" ; 
                  

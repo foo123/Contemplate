@@ -85,30 +85,34 @@
         
         $__preserveLinesDefault = "' + \"\\n\" + '", $__preserveLines = '',  $__EOL = "\n", $__TEOL = "\n",
         
-        $__level = 0, $__pad = "    ",
+        $__level = 0, $__pad = "    ", $__postReplace = null,
         $__loops = 0, $__ifs = 0, $__loopifs = 0, $__blockcnt = 0, $__blocks = [], $__allblocks = [], $__extends = null,
     
         $__regExps = {
-            //'NLRX' : null,
             'specials' : null,
             'replacements' : null,
             'vars' : null,
+            'ids' : null,
+            'atts' : null,
             'functions' : null,
             'controls' : null
         },
         
         $__controlConstructs = [
-            'if', 'elseif', 'else', 'endif', 
-            'for', 'elsefor', 'endfor',
-            'include', 'template', 'extends', 'block', 'endblock',
-            'htmlselect', 'htmltable'
+            'htmlselect', 'htmltable',
+            'include', 'template', 
+            'extends', 'endblock', 'block',
+            'elsefor', 'endfor', 'for',
+            'elseif', 'else', 'endif', 'if'
         ],
         
         $__funcs = [ 
-            'html', 'url', 'count', 
+            'htmlselect', 'htmltable',
             'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 
-            'now', 'date', 'ldate', 
-            'q', 'dq', 'l', 's', 'n', 'f' 
+            'tpl',
+            'html', 'url', 'count', 
+            'ldate', 'date', 'now',
+            'dq', 'q', 'l', 's', 'n', 'f' 
         ],
         
         // pad lines to generate formatted code
@@ -297,9 +301,8 @@
 ,"   {"
 ,"       if ( Contemplate.hasOwn(__{{O}}__, __{{K}}__) )"
 ,"       {"
-,"           var __{{V}}__ = __{{O}}__[__{{K}}__];"
-,"           __instance__.data['__{{K}}__'] = __{{K}}__;"
-,"           __instance__.data['__{{V}}__'] = __{{V}}__;"
+,"          __{{ASSIGN1}}__"
+,"          __{{ASSIGN2}}__"
 ,"       "
 ,""
 ].join(NL);
@@ -458,15 +461,19 @@
             if ($__isInited) return;
             
             // pre-compute the needed regular expressions
-            $__regExps['specials'] = new RegExp('[\\r\\v\\t]', 'g');
+            $__regExps['specials'] = new RegExp('[\\n\\r\\v\\t]', 'g');
             
-            $__regExps['vars'] = new RegExp('\\$([a-zA-Z_][a-zA-Z0-9_]*)', 'gm');
+            $__regExps['vars'] = new RegExp('\\$[a-zA-Z_][a-zA-Z0-9_]*', 'gm');
+        
+            $__regExps['ids'] = new RegExp('\\$([a-zA-Z_][a-zA-Z0-9_]*)', 'gm');
+        
+            $__regExps['atts'] = new RegExp('\\.\\s*([a-zA-Z_][a-zA-Z0-9_]*)', 'gm');
         
             $__regExps['replacements'] = new RegExp('\\t[ ]*(.*?)[ ]*\\v', 'g');
             
             $__regExps['controls'] = new RegExp('\\t[ ]*%('+$__controlConstructs.join('|')+')\\b[ ]*\\((.*)\\)', 'g');
             
-            if ($__funcs && $__funcs.length) $__regExps['functions'] = new RegExp('%('+$__funcs.join('|')+')\\b', 'g');
+            $__regExps['functions'] = new RegExp('%('+$__funcs.join('|')+')\\b', 'g');
             
             $__preserveLines = $__preserveLinesDefault;
             
@@ -840,7 +847,6 @@
             $__level++;
             
             return out;
-            //return "'; if (" + cond + ") { ";  
         },
         
         // elseif
@@ -855,7 +861,6 @@
             $__level++;
             
             return out;
-            //return "'; } else if (" + cond + ") { ";  
         },
         
         // else
@@ -870,7 +875,6 @@
             $__level++;
             
             return out;
-            //return "'; } else { ";  
         },
         
         // endif
@@ -885,7 +889,6 @@
             out += padLines(out1);
             
             return out;
-            //return "'; } ";  
         },
         
         // for, foreach
@@ -896,24 +899,28 @@
             
             for_expr = for_expr.split(' as ');
             
-            var $o = trim(for_expr[0]), 
-                $kv = for_expr[1].split('=>'), 
-                $k = ltrim(trim($kv[0]), '$'), 
-                $v = ltrim(trim($kv[1]), '$')
-                ;
+            var o = trim(for_expr[0]), 
+                kv = for_expr[1].split('=>'), 
+                k = ltrim(trim(kv[0]), '$'), 
+                v = ltrim(trim(kv[1]), '$')
+            ;
+            
+            o = self.doTplVars( o ); // replace php-style var names
+            $__postReplace = {
+                '__{{O}}__' : o,
+                '__{{K}}__' : k, 
+                '__{{V}}__' : v, 
+                '__{{ASSIGN1}}__' : "var "+v+" = "+o+"["+k+"];",
+                '__{{ASSIGN2}}__' : "__instance__.data['"+k+"'] = "+k+"; __instance__.data['"+v+"'] = "+v+";"
+            };
             
             out = "';";
-            out1 = $__FOR()
-                    .split( '__{{O}}__' ).join( $o )
-                    .split( '__{{K}}__' ).join( $k )
-                    .split( '__{{V}}__' ).join( $v )
-                ;
-                
+            out1 = $__FOR();
             out += padLines(out1);
+            
             $__level+=3;
             
             return out;
-            //return "'; if ("+ $o +" && Object.keys("+ $o +").length) { var "+ $k +"; for ("+ $k +" in "+ $o +") { if (Contemplate.hasOwn("+ $o +", "+ $k +")) { var "+$v+"="+$o+"["+$k+"]; __instance__.data['"+$k+"']="+$k+"; __instance__.data['"+$v+"']="+$v+"; ";
         },
         
         // elsefor
@@ -930,7 +937,6 @@
             $__level+=1;
             
             return out;
-            //return "'; } } } else { "; 
         },
         
         // endfor
@@ -947,7 +953,6 @@
                 out += padLines(out1);
                 
                 return out;
-                //return "'; } } } ";  
             }
             
             $__loops--; 
@@ -957,7 +962,6 @@
             out += padLines(out1);
             
             return out;
-            //return "'; } ";
         },
         
         // include file
@@ -974,8 +978,8 @@
         t_template : function(args) {
             args = args.split(',');
             var id = trim( args.shift() );
-            var obj = args.join(',').split($__preserveLines).join('').split('=>').join(':');
-            return '\' + Contemplate.tpl( "'+id+'", '+obj+' ); ' + $__TEOL;
+            var obj = args.join(',').split('=>').join(':');
+            return '\' + %tpl( "'+id+'", '+obj+' ); ' + $__TEOL;
         },
         
         // extend another template
@@ -1008,14 +1012,14 @@
         
         // render html table
         t_table : function(args) {
-            var obj = args.split($__preserveLines).join('').split('=>').join(':');
-            return '\' + Contemplate.htmltable(' + obj + '); ' + $__TEOL;
+            var obj = args.split('=>').join(':');
+            return '\' + %htmltable(' + obj + '); ' + $__TEOL;
         },
         
         // render html select
         t_select : function(args) {
-            var obj = args.split($__preserveLines).join('').split('=>').join(':');
-            return '\' + Contemplate.htmlselect(' + obj + '); ' + $__TEOL;
+            var obj = args.split('=>').join(':');
+            return '\' + %htmlselect(' + obj + '); ' + $__TEOL;
         },
         
         //
@@ -1112,16 +1116,41 @@
             return [s.replace( "+ '' +", '+' ).replace( "+ '';", ';' ), blocks];
         },
         
+        doTplVars : function(s) {
+            var i, match, tplvars = [], remLen, rem = [];
+            
+            // find tplvars
+            while ( match = $__regExps['ids'].exec(s) )  tplvars.push( match[1] );
+            
+            if (tplvars.length)
+            {
+                rem = s.split( $__regExps['vars'] );
+                remLen = rem.length-1;
+                s = '';
+                for (i=0; i<remLen; i++)
+                {
+                    s += rem[i].replace( $__regExps['atts'], '[\'$1\']' );  // fix dot-style attributes
+                    s += "__instance__.data['" + tplvars[i] + "']";  // replace tplvars with the tpldata
+                }
+                s += rem[remLen].replace( $__regExps['atts'], '[\'$1\']' );  // fix dot-style attributes
+            }
+            
+            return s;
+        },
+        
         doTags : function(tag) {
-            tag = tag
-                    .replace( $__regExps['controls'], function(m, m1, m2){ 
-                        return self.doControlConstructs([m, m1, m2]); 
-                    } );
+            $__postReplace = null;
             
-            tag = tag.replace($__regExps['vars'], "__instance__.data['$1']", tag ); // replace php-style var names with js valid names
+            tag = tag.replace( $__regExps['controls'], function(m, m1, m2){ return self.doControlConstructs([m, m1, m2]); } );
             
-            if ($__funcs.length) 
-                tag = tag.replace( $__regExps['functions'], 'Contemplate.$1' );
+            tag = self.doTplVars( tag ); // replace tplvars with js vars accurately
+            
+            if ( $__postReplace )
+            {
+                for (var k in $__postReplace)  tag = tag.split( k ).join( $__postReplace[k] );
+            }
+            
+            tag = tag.replace( $__regExps['functions'], 'Contemplate.$1' );
             
             return tag
                     .replace( $__regExps['replacements'], "' + ( $1 ) + '" )
@@ -1129,7 +1158,7 @@
                     .split( "\t" ).join( $__tplStart )
                     
                     .split( "\v" ).join( padLines($__tplEnd) )
-                ;
+            ;
         },
         
         split : function(s) {
@@ -1159,11 +1188,7 @@
                 
                 if ( isTag )
                 {
-                    s = s
-                        .split( "\n" ).join( $__preserveLines ) // preserve lines
-                        
-                        .replace( $__regExps['specials'], " " ) // replace special chars
-                        ;
+                    s = s.replace( $__regExps['specials'], " " ); // replace special chars
                     
                     s = self.doTags( "\t" + s + "\v" ); // parse each template tag section accurately
                     
@@ -1175,7 +1200,7 @@
                         .split( "'" ).join( "\\'" )  // escape single quotes accurately (used by parse function)
                         
                         .split( "\n" ).join( $__preserveLines ) // preserve lines
-                        ;
+                    ;
                     
                     isTag = true;
                 }

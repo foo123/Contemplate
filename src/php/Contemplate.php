@@ -55,23 +55,27 @@ class Contemplate
         'specials' => null,
         'replacements' => null,
         'vars' => null,
+        'ids' => null,
+        'atts' => null,
         'functions' => null,
         'controls' => null
     );
     
     protected static $__controlConstructs = array(
-        'if', 'elseif', 'else', 'endif', 
-        'for', 'elsefor', 'endfor',
+        'htmlselect', 'htmltable',
         'include', 'template', 
-        'extends', 'block', 'endblock',
-        'htmlselect', 'htmltable'
+        'extends', 'endblock', 'block',
+        'elsefor', 'endfor', 'for',
+        'elseif', 'else', 'endif', 'if'
     );
     
     protected static $__funcs = array( 
-        'html', 'url', 'count', 
+        'htmlselect', 'htmltable',
         'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 
-        'now', 'date', 'ldate', 
-        'q', 'dq', 'l', 's', 'n', 'f' 
+        'tpl',
+        'html', 'url', 'count', 
+        'ldate', 'date', 'now',
+        'dq', 'q', 'l', 's', 'n', 'f' 
     );
     
     // generated tpl class code as a heredoc template
@@ -189,7 +193,8 @@ if ( !empty(__{{O}}__) )
 {
     foreach ( __{{O}}__ as __{{K}}__=>__{{V}}__ )
     {
-        __{{ASSIGN}}__
+        __{{ASSIGN1}}__
+        __{{ASSIGN2}}__
 _T6_;
     
     // generated ELSEFOR code
@@ -348,15 +353,19 @@ _TPLRENDERCODE_;
         if ( self::$__isInited ) return;
         
         // pre-compute the needed regular expressions
-        self::$__regExps[ 'specials' ] = '/[\r\v\t]/';
+        self::$__regExps[ 'specials' ] = '/[\n\r\v\t]/';
         
         self::$__regExps[ 'replacements' ] = '/\t[ ]*(.*?)[ ]*\v/';
         
-        self::$__regExps[ 'vars' ] = '/\$([a-zA-Z_][a-zA-Z0-9_]*)/';
+        self::$__regExps[ 'vars' ] = '/\$[a-zA-Z_][a-zA-Z0-9_]*/';
+        
+        self::$__regExps[ 'ids' ] = '/\$([a-zA-Z_][a-zA-Z0-9_]*)/';
+        
+        self::$__regExps[ 'atts' ] = '/\.\s*([a-zA-Z_][a-zA-Z0-9_]*)/';
         
         self::$__regExps[ 'controls' ] = '/\t[ ]*%(' . implode('|', self::$__controlConstructs) . ')\b[ ]*\((.*)\)/';
         
-        if ( !empty(self::$__funcs) ) self::$__regExps[ 'functions' ] = '/%(' . implode('|', self::$__funcs) . ')\b/';
+        self::$__regExps[ 'functions' ] = '/%(' . implode('|', self::$__funcs) . ')\b/';
         
         self::$__preserveLines = self::$__preserveLinesDefault;
         
@@ -779,14 +788,17 @@ _TPLRENDERCODE_;
         $kk = ltrim($k, '$'); 
         $vk = ltrim($v, '$');
         
+        $o = self::doTplVars( $o ); // replace php-style var names
+        self::$__postReplace = array(
+            '__{{O}}__' => $o, 
+            '__{{K}}__' => $k, 
+            '__{{V}}__' => $v, 
+            '__{{ASSIGN1}}__' => "\$__instance__->data['$kk'] = $k;", 
+            '__{{ASSIGN2}}__' =>  "\$__instance__->data['$vk'] = $v;"
+        );
+        
         $out = "';";
         $out1 = self::$__FOR;
-        
-        $o = preg_replace( self::$__regExps['vars'], '\$__instance__->data[\'$1\']', $o ); // replace php-style var names
-        self::$__postReplace = array(
-            array('__{{O}}__', '__{{K}}__', '__{{V}}__', '__{{ASSIGN}}__'), 
-            array($o, $k, $v, "\$__instance__->data['$kk'] = $k; \$__instance__->data['$vk'] = $v;")
-        );
         
         $out .= self::padLines($out1);
         self::$__level+=2;
@@ -849,8 +861,8 @@ _TPLRENDERCODE_;
     {
         $args = explode(',', $args); 
         $id = trim(array_shift($args));
-        $obj = str_replace(array(self::$__preserveLines, '{', '}', '[', ']'), array('', 'array(', ')','array(', ')'), implode(',', $args));
-        return '\' . Contemplate::tpl( "'.$id.'", '.$obj.' ); ' . self::$__TEOL;
+        $obj = str_replace(array('{', '}', '[', ']'), array('array(', ')','array(', ')'), implode(',', $args));
+        return '\' . %tpl( "'.$id.'", '.$obj.' ); ' . self::$__TEOL;
     }
     
     // extend another template
@@ -888,15 +900,15 @@ _TPLRENDERCODE_;
     // render html table
     protected static function t_table($args)
     {
-        $obj = str_replace(array(self::$__preserveLines, '{', '}', '[', ']'), array('', 'array(', ')','array(', ')'), $args);
-        return '\' . Contemplate::htmltable('.$obj.'); ' . self::$__TEOL;
+        $obj = str_replace(array('{', '}', '[', ']'), array('array(', ')','array(', ')'), $args);
+        return '\' . %htmltable('.$obj.'); ' . self::$__TEOL;
     }
     
     // render html select
     protected static function t_select($args)
     {
-        $obj = str_replace(array(self::$__preserveLines, '{', '}', '[', ']'), array('', 'array(', ')','array(', ')'), $args);
-        return '\' . Contemplate::htmlselect('.$obj.'); ' . self::$__TEOL;
+        $obj = str_replace(array('{', '}', '[', ']'), array('array(', ')','array(', ')'), $args);
+        return '\' . %htmlselect('.$obj.'); ' . self::$__TEOL;
     }
     
     //
@@ -988,23 +1000,42 @@ _TPLRENDERCODE_;
         return array(str_replace(array(". '' .", ". '';"), array('.', ';'), $s), $blocks);
     }
     
+    protected static function doTplVars($s) 
+    {
+        $tplvars = array(); $rem = array();
+        
+        // find tplvars
+        if ( preg_match_all( self::$__regExps['ids'], $s,  $tplvars, PREG_PATTERN_ORDER) )
+        {
+            $rem = preg_split( self::$__regExps['vars'], $s );
+            $remLen = count($rem)-1;
+            $s = '';
+            for ($i=0; $i<$remLen; $i++)
+            {
+                $s .= preg_replace( self::$__regExps['atts'], '[\'$1\']', $rem[$i] );  // fix dot-style attributes
+                $s .= "\$__instance__->data['" . $tplvars[1][$i] . "']";  // replace tplvars with the tpldata
+            }
+            $s .= preg_replace( self::$__regExps['atts'], '[\'$1\']', $rem[$remLen] );  // fix dot-style attributes
+        }
+        
+        return $s;
+    }
+        
     protected static function doTags($tag) 
     {
         self::$__postReplace = null;
         
         $tag = preg_replace_callback( self::$__regExps['controls'], array(__CLASS__, 'doControlConstructs'), $tag );
         
-        $tag = preg_replace( self::$__regExps['vars'], '\$__instance__->data[\'$1\']', $tag ); // replace php-style var names
+        $tag = self::doTplVars( $tag ); // replace tplvars with php vars accurately
             
-        if (self::$__postReplace)
-            $tag = str_replace(self::$__postReplace[0], self::$__postReplace[1], $tag);
+        if ( self::$__postReplace )  $tag = str_replace( array_keys(self::$__postReplace), array_values(self::$__postReplace), $tag );
         
-        if (!empty(self::$__funcs))  
-            $tag = preg_replace( self::$__regExps['functions'], 'Contemplate::${1}', $tag );
+        $tag = preg_replace( self::$__regExps['functions'], 'Contemplate::${1}', $tag );
         
         $tag = preg_replace( self::$__regExps['replacements'], '\' . ( $1 ) . \'', $tag );
         
-        $tag = str_replace(array("\t", "\v"), array(self::$__tplStart, self::padLines( self::$__tplEnd )), $tag);
+        $tag = str_replace( array("\t", "\v"), array(self::$__tplStart, self::padLines( self::$__tplEnd )), $tag );
         
         return $tag;
     }
@@ -1035,8 +1066,6 @@ _TPLRENDERCODE_;
             
             if ( $isTag )
             {
-                $s = str_replace( "\n", self::$__preserveLines, $s ); // preserve lines
-                
                 $s = preg_replace( self::$__regExps['specials'], " ", $s ); // replace special chars
                 
                 $s = self::doTags( "\t" . $s . "\v" );  // parse each template tag section accurately

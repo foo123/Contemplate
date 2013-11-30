@@ -96,6 +96,7 @@ class Contemplate:
     __id = 0
     __funcId = 0
     __postReplace = None
+    __stack = None
     
     NLRX = None
     
@@ -353,6 +354,8 @@ __{{CODE}}__
         _self = Contemplate
         
         if _self.__isInited: return
+        
+        _self.__stack = []
         
         # pre-compute the needed regular expressions
         _self.__regExps['specials'] = re.compile(r'[\n\r\v\t]')
@@ -870,10 +873,10 @@ __{{CODE}}__
         _self = Contemplate
         # cache it
         if id not in _self.__partials:
-            prevlevel = _self.__level
-            _self.__level = 0
+            _self.pushState()
+            _self.resetState()
             _self.__partials[id] = " " + _self.parse(_self.getTemplateContents(id), False) + "' " + _self.__TEOL
-            _self.__level = prevlevel
+            _self.popState()
         
         return _self.padLines( _self.__partials[id] )
     
@@ -1350,6 +1353,27 @@ __{{CODE}}__
         _self.__level = 0
         _self.__id = 0
         #_self.__funcId = 0
+    
+    # static
+    def pushState():
+        # push state
+        _self = Contemplate
+        _self.__stack.append([_self.__loops, _self.__ifs, _self.__loopifs, _self.__level,
+        _self.__blockcnt, _self.__blocks,  _self.__allblocks,  _self.__extends])
+    
+    # static
+    def popState():
+        # pop state
+        _self = Contemplate
+        t = _self.__stack.pop()
+        _self.__loops = t[0] 
+        _self.__ifs = t[1] 
+        _self.__loopifs = t[2] 
+        _self.__level = t[3]
+        _self.__blockcnt = t[4] 
+        _self.__blocks = t[5]  
+        _self.__allblocks = t[6]  
+        _self.__extends = t[7]
     
     # static
     def padLines(lines, level=None):

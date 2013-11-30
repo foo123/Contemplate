@@ -50,6 +50,7 @@ class Contemplate
     protected static $__blockcnt = 0;
     protected static $__extends = null;
     protected static $__postReplace = null;
+    protected static $__stack = null;
     
     protected static $__regExps = array(
         'specials' => null,
@@ -351,6 +352,8 @@ _TPLRENDERCODE_;
     public static function init()
     {
         if ( self::$__isInited ) return;
+        
+        self::$__stack = array();
         
         // pre-compute the needed regular expressions
         self::$__regExps[ 'specials' ] = '/[\n\r\v\t]/';
@@ -851,10 +854,10 @@ _TPLRENDERCODE_;
         /* cache it */ 
         if ( !isset(self::$__partials[$id]) )
         {
-            $prevlevel = self::$__level;
-            self::$__level = 0;
+            self::pushState();
+            self::resetState();
             self::$__partials[$id]=" " . self::parse(self::getTemplateContents($id), false) . "'; " . self::$__TEOL;
-            self::$__level = $prevlevel;
+            self::popState();
         }
         return self::padLines( self::$__partials[$id] );
     }
@@ -1105,7 +1108,7 @@ _TPLRENDERCODE_;
     
     protected static function getCachedTemplateName($id) 
     { 
-        return self::$__cacheDir . str_replace(array('-', ' '), '_', $id) . '.tpl.php'; 
+        return self::$__cacheDir . str_replace(array('-', ' '), '_', $id) . '_tpl.php'; 
     }
     
     protected static function getCachedTemplateClass($id) 
@@ -1281,6 +1284,21 @@ _TPLRENDERCODE_;
         // reset state
         self::$__loops = 0; self::$__ifs = 0; self::$__loopifs = 0; self::$__level = 0;
         self::$__blockcnt = 0; self::$__blocks = array();  self::$__allblocks = array();  self::$__extends = null;
+    }
+    
+    protected static function pushState() 
+    {
+        // push state
+        array_push(self::$__stack, array(self::$__loops, self::$__ifs, self::$__loopifs, self::$__level,
+        self::$__blockcnt, self::$__blocks,  self::$__allblocks,  self::$__extends));
+    }
+    
+    protected static function popState() 
+    {
+        // pop state
+        $t = array_pop(self::$__stack);
+        self::$__loops = $t[0]; self::$__ifs = $t[1]; self::$__loopifs = $t[2]; self::$__level = $t[3];
+        self::$__blockcnt = $t[4]; self::$__blocks = $t[5];  self::$__allblocks = $t[6];  self::$__extends = $t[7];
     }
     
     protected static function _localized_date($locale, $format, $timestamp) 

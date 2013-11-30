@@ -85,7 +85,7 @@
         
         $__preserveLinesDefault = "' + \"\\n\" + '", $__preserveLines = '',  $__EOL = "\n", $__TEOL = "\n",
         
-        $__level = 0, $__pad = "    ", $__postReplace = null,
+        $__stack = null, $__level = 0, $__pad = "    ", $__postReplace = null,
         $__loops = 0, $__ifs = 0, $__loopifs = 0, $__blockcnt = 0, $__blocks = [], $__allblocks = [], $__extends = null,
     
         $__regExps = {
@@ -459,6 +459,8 @@
         
         init : function() {
             if ($__isInited) return;
+            
+            $__stack = [];
             
             // pre-compute the needed regular expressions
             $__regExps['specials'] = new RegExp('[\\n\\r\\v\\t]', 'g');
@@ -969,10 +971,10 @@
             // cache it
             if ( !$__partials[id] )
             {
-                var prevlevel = $__level;
-                $__level = 0;
+                self.pushState();
+                self.resetState();
                 $__partials[id] = " " + self.parse(self.getTemplateContents(id), false) + "'; " + $__TEOL;
-                $__level = prevlevel;
+                self.popState();
             }
             return padLines( $__partials[id] );
         },
@@ -1245,7 +1247,7 @@
         },
         
         getCachedTemplateName : function(id) { 
-            return $__cacheDir + id.replace(UNDERLNRX, '_') + '.tpl.js'; 
+            return $__cacheDir + id.replace(UNDERLNRX, '_') + '_tpl.js'; 
         },
         
         getCachedTemplateClass : function(id) { 
@@ -1415,6 +1417,19 @@
             // reset state
             $__loops = 0; $__ifs = 0; $__loopifs = 0; $__level = 0;
             $__blockcnt = 0; $__blocks = [];  $__allblocks = [];  $__extends = null;
+        },
+        
+        pushState : function() {
+            // push state
+            $__stack.push([$__loops, $__ifs, $__loopifs, $__level,
+            $__blockcnt, $__blocks,  $__allblocks,  $__extends]);
+        },
+        
+        popState : function() {
+            // pop state
+            var t = $__stack.pop();
+            $__loops = t[0]; $__ifs = t[1]; $__loopifs = t[2]; $__level = t[3];
+            $__blockcnt = t[4]; $__blocks = t[5];  $__allblocks = t[6];  $__extends = t[7];
         },
         
         hasOwn : function(o, p) { 

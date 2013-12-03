@@ -11,7 +11,7 @@
 *  http://ejohn.org/blog/javascript-micro-templating/
 *
 **/
-(function(root) {
+(function(root, undef) {
     
     var __version__ = "0.4.4";
     
@@ -20,6 +20,7 @@
     
     // auxilliaries
     var
+        _isNode = typeof global !== "undefined" && {}.toString.call(global) == '[object global]',
         _hasOwn = Object.prototype.hasOwnProperty,  slice = Array.prototype.slice,
         _toString = Object.prototype.toString,
         isArray = function( o ) { return _toString.call(o) === '[object Array]'; },
@@ -28,7 +29,12 @@
         
         UNDERLNRX = /[ -]/g, NLRX = /\n\r|\r\n|\n|\r/g,
         
-        _fs = null, fwrite, fread, fexists,  fstat, realpath
+        _fs = (_isNode) ? require('fs') : null, 
+        fwrite = (_fs) ? _fs.writeFileSync : null,
+        fread =  (_fs) ? _fs.readFileSync : null,
+        fexists = (_fs) ? _fs.existsSync : null,
+        fstat = (_fs) ? _fs.statSync : null,
+        realpath = (_fs) ? _fs.realpathSync : null
     ;
 
     // IE8- mostly
@@ -83,7 +89,7 @@
         
         $__leftTplSep = "<%", $__rightTplSep = "%>", $__tplStart = "", $__tplEnd = "", 
         
-        $__preserveLinesDefault = "' + \"\\n\" + '", $__preserveLines = '',  $__EOL = "\n", $__TEOL = "\n",
+        $__preserveLinesDefault = "' + \"\\n\" + '", $__preserveLines = '',  $__EOL = "\n", $__TEOL = (_isNode) ? require('os').EOL : "\n",
         
         $__stack = null, $__level = 0, $__pad = "    ", $__postReplace = null,
         $__loops = 0, $__ifs = 0, $__loopifs = 0, $__blockcnt = 0, $__blocks = [], $__allblocks = [], $__extends = null,
@@ -454,9 +460,6 @@
         
         ENCODING : 'utf8',
         
-        _isNode : false,
-        _fs : null,
-        
         init : function() {
             if ($__isInited) return;
             
@@ -483,30 +486,6 @@
             $__tplEnd = $__TEOL + "__p__ += '";
             
             $__isInited = true;
-        },
-        
-        // whether working inside Node.js or not
-        isNodeJs : function(bool, fs) {
-            self._isNode = bool;
-            
-            if ( bool ) 
-            { 
-                /* filesystem I/O object of Nodejs */ 
-                _fs = self._fs = fs || require('fs'); 
-                fwrite = _fs.writeFileSync;
-                fread =  _fs.readFileSync;
-                fexists = _fs.existsSync;
-                fstat = _fs.statSync;
-                realpath = _fs.realpathSync;
-                $__TEOL = require('os').EOL;
-            }
-            else 
-            { 
-                _fs = self._fs = null; 
-                $__TEOL = "\n";
-            }
-            $__tplStart = "'; " + $__TEOL;
-            $__tplEnd = $__TEOL + "__p__ += '";
         },
         
         //
@@ -539,7 +518,7 @@
         },
         
         setCacheMode : function(mode) { 
-            $__cacheMode = (self._isNode) ? mode : self.CACHE_TO_DISK_NONE; 
+            $__cacheMode = (_isNode) ? mode : self.CACHE_TO_DISK_NONE; 
         },
         
         clearCache : function(all) { 
@@ -1228,7 +1207,7 @@
             else if ( $__templates[id] )
             {
                 // nodejs
-                if ( self._isNode && self._fs ) 
+                if ( _isNode && _fs ) 
                 { 
                     return fread($__templates[id], self.ENCODING); 
                 }
@@ -1348,7 +1327,7 @@
                 return tpl;
             }
             
-            if ( !self._isNode ) $__cacheMode = self.CACHE_TO_DISK_NONE;
+            if ( !_isNode ) $__cacheMode = self.CACHE_TO_DISK_NONE;
             
             switch ( $__cacheMode )
             {
@@ -2296,6 +2275,6 @@ function ajaxLoad(type, url, params)
     else this.Contemplate = self;
     
     // add it to global namespace to be available for sub-templates, same as browser
-    if ('undefined' != typeof (global)) global.Contemplate = self;
+    if ( _isNode ) global.Contemplate = self;
     
 }).call(this);

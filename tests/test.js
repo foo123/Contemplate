@@ -26,8 +26,8 @@ var http = require('http'), httpPort = 1337,
 // it is globally-scoped as in browser: global.Contemplate
 require(path.join(__dirname, '../src/js/Contemplate.js'));
 
-// works inside Nodejs
-Contemplate.isNodeJs(true, fs);
+// works inside Nodejs, deprecated, Node detected automatically
+//Contemplate.isNodeJs(true, fs);
 
 var $sepleft="<%", $sepright="%>";
 

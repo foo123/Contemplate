@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.4.4
+*  @version: 0.4.5
 *  https://github.com/foo123/Contemplate
 *
 *  @author: Nikos M.  http://nikos-web-development.netai.net/
@@ -13,7 +13,7 @@
 **/
 (function(root, undef) {
     
-    var __version__ = "0.4.4";
+    var __version__ = "0.4.5";
     
     // export using window object on browser, or export object on node,require
     var window = this, self;
@@ -113,7 +113,7 @@
         ],
         
         $__funcs = [ 
-            'htmlselect', 'htmltable',
+            'htmlselect', 'htmltable', 'has_key',
             'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 
             'tpl',
             'html', 'url', 'count', 
@@ -127,7 +127,7 @@
             
             if (level>=0)
             {
-                // seems in js code needs one more additional level
+                // needs one more additional level due to array.length
                 level = (0===level) ? level : level+1;
                 var pad = new Array(level).join($__pad), i, l;
                 lines = lines.split(NLRX);
@@ -567,6 +567,22 @@
         
         // count items in obj/array
         count : count,
+        
+        // check if (nested) keys exist in tpl variable
+        has_key : function(v/*, key1, key2, etc.. */) {
+            var to_string = _toString.call(v);
+            if (!v || "[object Array]" != to_string && "[object Object]" != to_string) return false;
+            var args = slice.call(arguments), argslen, i, tmp;
+            args.shift();
+            argslen = args.length;
+            tmp = v;
+            for (i=0; i<argslen; i++)
+            {
+                if (undef === tmp[args[i]]) return false;
+                tmp = tmp[args[i]];
+            }
+            return true;
+        },
         
         // quote
         q : function(e) { 

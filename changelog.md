@@ -1,5 +1,8 @@
 ###ChangeLog
 
+__0.4.5__
+* add %has_key template function (see manual)
+
 __0.4.4__
 * escape single quotes and parse template variables accurately
 

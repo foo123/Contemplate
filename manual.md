@@ -127,13 +127,15 @@ __Functions__
 
 * *%sprintf(format, val1, val2, ..)*   return a formatted string using val1, val2, etc..
 * *%concat(val1, val2, val3, ..)*  string concatenate the values
-* *%ltrim(val[, delim])*   left trim val of delim 
-* *%rtrim(val[, delim])*   right trim val of delim 
-* *%trim(val[, delim])*   left/right trim val of delim 
+* *%ltrim(val [, delim])*   left trim val of delim 
+* *%rtrim(val [, delim])*   right trim val of delim 
+* *%trim(val [, delim])*   left/right trim val of delim 
 
 * *%count(arrayOrObject)*  return number of items in arrayOrObject val
+* *%has_key(arrayOrObject, key1 [,key2, ..] )*  check whether array or object tplVar has the given (nested) keys
 
 * *%now()*   return current timestamp in seconds
+* *%time()*   return current timestamp in seconds
 * *%date(format, timestamp)*  return timestamp formatted according to format
 * *%ldate(format, timestamp)*  return localised timestamp formatted according to format
 * *%l(val)*  return localised string for val (if exists), localised strings are user-defined

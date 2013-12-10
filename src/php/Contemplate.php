@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.4.4
+*  @version: 0.4.5
 *  https://github.com/foo123/Contemplate
 *
 *  @author: Nikos M.  http://nikos-web-development.netai.net/
@@ -16,7 +16,7 @@ if (!class_exists('Contemplate'))
 {
 class Contemplate
 {
-    const VERSION = "0.4.4";
+    const VERSION = "0.4.5";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -71,7 +71,7 @@ class Contemplate
     );
     
     protected static $__funcs = array( 
-        'htmlselect', 'htmltable',
+        'htmlselect', 'htmltable', 'has_key',
         'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 
         'tpl',
         'html', 'url', 'count', 
@@ -469,6 +469,22 @@ _TPLRENDERCODE_;
         return count($a); 
     }
     
+    // check if (nested) keys exist in tpl variable
+    public static function has_key($v/*, key1, key2, etc.. */) 
+    {
+        if (!$v || !is_array($v)) return false;
+        $args = func_get_args();
+        array_shift($args);
+        $argslen = count($args);
+        $tmp = $v;
+        for ($i=0; $i<$argslen; $i++)
+        {
+            if (!array_key_exists($args[$i], $tmp)) return false;
+            $tmp = $tmp[$args[$i]];
+        }
+        return true;
+    }
+        
     // quote
     public static function q($e) 
     { 

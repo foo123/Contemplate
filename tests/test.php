@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version 0.4.4
+*  @version 0.4.5
 *  https://github.com/foo123/Contemplate
 *
 *  @author: Nikos M.  http://nikos-web-development.netai.net/
@@ -66,13 +66,13 @@ $data=array(
     'users' => array(
         array( 
             array('name'=>'u1', 'text'=>'text1', 'id'=>'id1'),
-            array('name'=>'u2', 'text'=>'text2', 'id'=>'id2'),
+            array('name'=>'u2', 'text'=>'text2', 'id'=>'id2', 'key1'=>'key1'),
             array('name'=>'u3', 'text'=>'text3', 'id'=>'id3'),
         ),
         array( 
             array('name'=>'u4', 'text'=>'text4', 'id'=>'id4'),
             array('name'=>'u5', 'text'=>'text5', 'id'=>'id5'),
-            array('name'=>'u6', 'text'=>'text6', 'id'=>'id6'),
+            array('name'=>'u6', 'text'=>'text6', 'id'=>'id6', 'key'=>array('key1'=>'key1')),
         )
     ),
     'table_data' => array(

@@ -6,6 +6,11 @@
         <div id='<% $user["id"] %>' class="<% %if (0 == ($j % 2)) %>even<% %elseif(1 == ($j % 2)) %>odd<% %endif() %>">
             <a href="/<% $user["name"] %>"><% $user["name"] %><% $user["text"] %> <% %n($i) + %n($j) %></a>: <strong><% $user["text"] %></strong>
         </div>
+        <% %if( %has_key($user, "key1") ) %>
+            <div> User has key &quot;key1&quot; </div>
+        <% %elseif( %has_key($user, "key", "key1") ) %>
+            <div> User has key [&quot;key&quot;][&quot;key1&quot;] </div>
+        <% %endif() %>
     <% %elsefor() %>
         <div class="none">No Users</div>
     <% %endfor() %>

@@ -72,7 +72,19 @@ final class Contemplate_sub_Cached extends Contemplate
                         $__p__ .= 'odd';                
                     }
                              
-                    $__p__ .= '">' . "\n" . '            <a href="/' . ( $__instance__->data['user']["name"] ) . '">' . ( $__instance__->data['user']["name"] ) . ( $__instance__->data['user']["text"] ) . ' ' . ( Contemplate::n($__instance__->data['i']) + Contemplate::n($__instance__->data['j']) ) . '</a>: <strong>' . ( $__instance__->data['user']["text"] ) . '</strong>' . "\n" . '        </div>' . "\n" . '    ';        
+                    $__p__ .= '">' . "\n" . '            <a href="/' . ( $__instance__->data['user']["name"] ) . '">' . ( $__instance__->data['user']["name"] ) . ( $__instance__->data['user']["text"] ) . ' ' . ( Contemplate::n($__instance__->data['i']) + Contemplate::n($__instance__->data['j']) ) . '</a>: <strong>' . ( $__instance__->data['user']["text"] ) . '</strong>' . "\n" . '        </div>' . "\n" . '        ';        
+                    if (  Contemplate::has_key($__instance__->data['user'], "key1")  )
+                    {
+                                 
+                        $__p__ .= '' . "\n" . '            <div> User has key &quot;key1&quot; </div>' . "\n" . '        ';                
+                    }
+                    elseif (  Contemplate::has_key($__instance__->data['user'], "key", "key1")  )
+                    {
+                                 
+                        $__p__ .= '' . "\n" . '            <div> User has key [&quot;key&quot;][&quot;key1&quot;] </div>' . "\n" . '        ';                
+                    }
+                             
+                    $__p__ .= '' . "\n" . '    ';        
                 }
             }
             else

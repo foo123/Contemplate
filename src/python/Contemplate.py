@@ -2,7 +2,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.4.4
+#  @version 0.4.5
 #  https://github.com/foo123/Contemplate
 #
 #  @author: Nikos M.  http://nikos-web-development.netai.net/
@@ -56,7 +56,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.4.4"
+    VERSION = "0.4.5"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -119,7 +119,7 @@ class Contemplate:
     ]
     
     __funcs = [
-        'htmlselect', 'htmltable',
+        'htmlselect', 'htmltable', 'has_key',
         'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 
         'tpl',
         'html', 'url', 'count', 
@@ -477,6 +477,18 @@ __{{CODE}}__
         # http://www.php2python.com/wiki/function.count/
         return len(a)
     
+    # check if (nested) keys exist in tpl variable
+    def has_key(v, *args):
+        if not v or not (isinstance(v, list) or isinstance(v, dict)): return False
+        argslen = len(args)
+        tmp = v
+        for i in range(argslen):
+        
+            if args[i] not in tmp: return False
+            tmp = tmp[args[i]]
+        
+        return True
+        
     # quote
     # static
     def q(e):

@@ -1225,7 +1225,7 @@
                 // nodejs
                 if ( _isNode && _fs ) 
                 { 
-                    return fread($__templates[id], self.ENCODING); 
+                    return fread($__templates[id], { encoding: self.ENCODING }); 
                 }
                 // client-side js and #id of DOM script-element given as template holder
                 else if ( 0===$__templates[id].indexOf('#') ) 
@@ -1405,7 +1405,7 @@
         },
         
         setCachedTemplate : function(filename, tplContents) { 
-            return fwrite(filename, tplContents, self.ENCODING); 
+            return fwrite(filename, tplContents, { encoding: self.ENCODING }); 
         },
         
         resetState : function() {

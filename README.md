@@ -118,6 +118,7 @@ syntax, yet work the same in all the engine's implementations.
 
 * allow the engine to be extended by (custom) plugins
 * add Contemplate implementations for Perl, Java, Scala
+* transform Contemplate (for PHP) into a PHP C-extension, Contemplate (for node) into standalone executable (eg. https://github.com/crcn/nexe)
 * keep-up with php, node, browsers, python updates
 
 

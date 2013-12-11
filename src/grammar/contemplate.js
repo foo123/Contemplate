@@ -10,10 +10,9 @@ var contemplate_grammar = {
         // this is usefull for speed fine-tuning the parser
         "RegExpGroups" : {
             "atom" : true,
-            "keyword" : true,
-            "builtin" : true,
-            "meta" : true,
-            "operator" : true,
+            "keyword" : "\\b",
+            "function" : "\\b",
+            "operator" : "\\b",
             "delimiter" : true
         },
             
@@ -22,11 +21,10 @@ var contemplate_grammar = {
         "Style" : {
             // lang token type  -> CodeMirror (style) tag
             "error":        "error",
-            "meta":         "tagContemplate",
             "comment":      "comment",
             "atom":         "atom",
             "keyword":      "tagContemplate",
-            "builtin":      "tagContemplate",
+            "function":     "tagContemplate",
             "operator":     "operator",
             "delimiter":    "bracket",
             "variable":     "variable",
@@ -72,7 +70,7 @@ var contemplate_grammar = {
             "operator" : {
                 "type" : "simple",
                 "tokens" : [
-                    "+", "-", "*", "/", "%", "<", ">", "!",
+                    "+", "-", "*", "/", "%", "<", ">", "!", "=",
                     "=>", "==", "!=", "<=", ">=", "<>", "||", "&&"
                 ]
             },
@@ -81,7 +79,7 @@ var contemplate_grammar = {
             "delimiter" : {
                 "type" : "simple",
                 "tokens" : [ 
-                    "=", "(", ")", "[", "]"
+                    "(", ")", "[", "]"
                 ]
             },
             
@@ -89,12 +87,6 @@ var contemplate_grammar = {
             "atom" : {
                 "type" : "simple",
                 "tokens" : [ "true", "false" ]
-            },
-
-            // meta
-            "meta" : {
-                "type" : "simple",
-                "tokens" : [ "<%", "%>" ]
             },
 
             // keywords
@@ -108,7 +100,7 @@ var contemplate_grammar = {
             },
                                   
             // builtin functions, constructs, etc..
-            "builtin" : {
+            "function" : {
                 "type" : "simple",
                 "tokens" : [
                     "%now", "%date", "%ldate", "%count", "%sprintf",
@@ -122,13 +114,12 @@ var contemplate_grammar = {
         // what to parse and in what order
         "Parser" : [
             "keyword",
-            "builtin",
+            "function",
             "atom",
             "operator",
             "delimiter",
             "number",
             "string",
-            "meta",
             "variable"
         ]
 };

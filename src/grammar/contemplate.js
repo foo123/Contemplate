@@ -105,7 +105,7 @@ var contemplate_grammar = {
                 "tokens" : [
                     "%now", "%date", "%ldate", "%count", "%sprintf",
                     "%trim", "%ltrim", "%rtrim",
-                    "%htmltable", "%htmlselect", "%concat",
+                    "%htmltable", "%htmlselect", "%has_key", "%concat",
                     "%s", "%n", "%f", "%l", "%q", "%dq"
                 ]
             }

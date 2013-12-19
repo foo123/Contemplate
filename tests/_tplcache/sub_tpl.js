@@ -1,4 +1,19 @@
-(function(root) {
+!function (root, moduleName, moduleDefinition) {
+
+    //
+    // export the module
+
+    // node, CommonJS, etc..
+    if ( 'object' == typeof(module) && module.exports ) module.exports = moduleDefinition();
+
+    // AMD, etc..
+    else if ( 'function' == typeof(define) && define.amd ) define( moduleDefinition );
+
+    // browser, etc..
+    else root[ moduleName ] = moduleDefinition();
+
+
+}(this, 'Contemplate_sub_Cached', function( ) {
    /* Contemplate cached template 'sub' */
    /* quasi extends main Contemplate class */
    
@@ -126,17 +141,6 @@
    };
    
    
-   /* export the class for both Node and Browser */
-   if ( 'undefined' != typeof (module) && module.exports )
-   {
-       module.exports = Contemplate_sub_Cached;
-   }
-   else if ( 'undefined' != typeof (exports) )
-   {
-       exports = Contemplate_sub_Cached;
-   }
-   else
-   {
-       this['Contemplate_sub_Cached'] = Contemplate_sub_Cached;
-   }
-}).call(this);
+    // export it
+    return Contemplate_sub_Cached;
+});

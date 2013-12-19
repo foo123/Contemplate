@@ -11,12 +11,25 @@
 *  http://ejohn.org/blog/javascript-micro-templating/
 *
 **/
-(function(root, undef) {
+!function (root, moduleName, moduleDefinition) {
+
+    //
+    // export the module
+    
+    // node, CommonJS, etc..
+    if ( 'object' == typeof(module) && module.exports ) module.exports = moduleDefinition();
+    
+    // AMD, etc..
+    else if ( 'function' == typeof(define) && define.amd ) define( moduleDefinition );
+    
+    // browser, etc..
+    else root[ moduleName ] = moduleDefinition();
+
+
+}(this, 'Contemplate', function( undef ) {
     
     var __version__ = "0.4.5";
-    
-    // export using window object on browser, or export object on node,require
-    var window = this, self;
+    var self;
     
     // auxilliaries
     var
@@ -145,7 +158,22 @@
         $__tplClassCode = function(NL){
                     NL = NL || $__TEOL;
                     return [
-"(function(root) {"
+"!function (root, moduleName, moduleDefinition) {"
+,""
+,"    //"
+,"    // export the module"
+,""    
+,"    // node, CommonJS, etc.."
+,"    if ( 'object' == typeof(module) && module.exports ) module.exports = moduleDefinition();"
+,""    
+,"    // AMD, etc.."
+,"    else if ( 'function' == typeof(define) && define.amd ) define( moduleDefinition );"
+,""    
+,"    // browser, etc.."
+,"    else root[ moduleName ] = moduleDefinition();"
+,""
+,""
+,"}(this, '__{{CLASSNAME}}__', function( ) {"
 ,"   /* Contemplate cached template '__{{ID}}__' */"
 ,"   /* quasi extends main Contemplate class */"
 ,"   "
@@ -216,20 +244,9 @@
 ,"   };"
 ,"   "
 ,"   "
-,"   /* export the class for both Node and Browser */"
-,"   if ( 'undefined' != typeof (module) && module.exports )"
-,"   {"
-,"       module.exports = __{{CLASSNAME}}__;"
-,"   }"
-,"   else if ( 'undefined' != typeof (exports) )"
-,"   {"
-,"       exports = __{{CLASSNAME}}__;"
-,"   }"
-,"   else"
-,"   {"
-,"       this['__{{CLASSNAME}}__'] = __{{CLASSNAME}}__;"
-,"   }"
-,"}).call(this);"
+,"    // export it"
+,"    return __{{CLASSNAME}}__;"
+,"});"
 ,""
 ].join(NL);
 },   
@@ -2284,13 +2301,7 @@ function ajaxLoad(type, url, params)
     self.init();
     
     // export it
-    if ('undefined' != typeof (module) && module.exports)  module.exports = self;
-    
-    else if ('undefined' != typeof (exports)) exports = self;
-    
-    else this.Contemplate = self;
-    
     // add it to global namespace to be available for sub-templates, same as browser
     if ( _isNode ) global.Contemplate = self;
-    
-}).call(this);
+    return self;
+});

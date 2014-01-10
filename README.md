@@ -1,7 +1,7 @@
 Contemplate
 ===========
 
-## Further development on this project has stopped!!
+### Further development on this project has stopped!!
 
 
 __Light-weight and flexible template engine for PHP, Python, Node and client-side JavaScript__

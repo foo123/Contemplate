@@ -80,173 +80,48 @@ class Contemplate
     );
     
     // generated tpl class code as a heredoc template
-    protected static $__tplClassCode=<<<_T0_
-/* Contemplate cached template '__{{ID}}__' */
-if (!class_exists('__{{CLASSNAME}}__'))
-{
-final class __{{CLASSNAME}}__ extends Contemplate
-{    
-    /* constructor */
-    public function __construct(\$id=null, \$__=null)
-    {
-        /* initialize internal vars */
-        \$this->id = null; 
-        \$this->data = null;
-        \$this->_renderFunction = null;
-        \$this->_parent = null;
-        \$this->_blocks = null;
-        
-        \$this->id = \$id;
-        
-        /* parent tpl assign code starts here */
-__{{PARENTCODE}}__
-        /* parent tpl assign code ends here */
-    }    
-    
-    /* tpl-defined blocks render code starts here */
-__{{BLOCKS}}__
-    /* tpl-defined blocks render code ends here */
-    
-    /* render a tpl block method */
-    public function renderBlock(\$block, \$__instance__=null)
-    {
-        if ( !\$__instance__ ) \$__instance__ = \$this;
-        
-        \$method = '_blockfn_' . \$block;
-        
-        if ( method_exists(\$this, \$method) ) return \$this->{\$method}(\$__instance__);
-        
-        elseif ( \$this->_parent ) return \$this->_parent->renderBlock(\$block, \$__instance__);
-        
-        return '';
-    }
-    
-    /* tpl render method */
-    public function render(\$data, \$__instance__=null)
-    {
-        \$__p__ = '';
-        if ( !\$__instance__ ) \$__instance__ = \$this;
-        
-        if ( \$this->_parent )
-        {
-            \$__p__ = \$this->_parent->render(\$data, \$__instance__);
-        }
-        else
-        {
-            /* tpl main render code starts here */
-__{{RENDERCODE}}__
-            /* tpl main render code ends here */
-        }
-        \$this->data = null;
-        return \$__p__;
-    }
-}
-}
-_T0_;
+    protected static $__tplClassCode = '';
     
     // generated tpl block method code as a heredoc template
-    protected static $__tplBlockCode=<<<_T1_
-
-/* tpl block render method for block '__{{BLOCK}}__' */
-private function __{{BLOCKMETHOD}}__(\$__instance__) 
-{ 
-__{{BLOCKMETHODCODE}}__
-}
-_T1_;
+    protected static $__tplBlockCode = '';
     
     // generated IF code
-    protected static $__IF = <<<_T2_
-
-if ( __{{COND}}__ )
-{
-
-_T2_;
+    protected static $__IF = '';
     
     // generated ELSEIF code
-    protected static $__ELSEIF = <<<_T3_
-        
-}
-elseif ( __{{COND}}__ )
-{
-
-_T3_;
+    protected static $__ELSEIF = '';
 
     // generated ELSE code
-    protected static $__ELSE = <<<_T4_
-        
-}
-else
-{
-
-_T4_;
+    protected static $__ELSE = '';
     
     // generated ENDIF code
-    protected static $__ENDIF = <<<_T5_
-        
-}
-
-_T5_;
+    protected static $__ENDIF = '';
     
     // generated FOR code
-    protected static $__FOR = <<<_T6_
-        
-if ( !empty(__{{O}}__) )
-{
-    foreach ( __{{O}}__ as __{{K}}__=>__{{V}}__ )
-    {
-        __{{ASSIGN1}}__
-        __{{ASSIGN2}}__
-_T6_;
+    protected static $__FOR = '';
     
     // generated ELSEFOR code
-    protected static $__ELSEFOR = <<<_T7_
-        
-    }
-}
-else
-{    
-    
-_T7_;
+    protected static $__ELSEFOR = '';
     
     // generated ENDFOR code
-    protected static $__ENDFOR1 = <<<_T8_
-            
-    }
-}
-
-_T8_;
+    protected static $__ENDFOR1 = '';
     
     // generated ENDFOR code
-    protected static $__ENDFOR2 = <<<_T9_
-        
-}
-
-_T9_;
+    protected static $__ENDFOR2 = '';
     
     // generated block code snippet
-    protected static $__DOBLOCK = <<<_DO_BLOCK_
-\$__p__ = '';
-__{{CODE}}__
-return \$__p__;
-_DO_BLOCK_;
+    protected static $__DOBLOCK = '';
 
     
     // generated dynamic render code
-    protected static $__TFUNC1 = "return '';";
+    protected static $__TFUNC1 = '';
 
     // generated dynamic render code
-    protected static $__TFUNC2 = <<<_TPL_FUNC_
-\$__p__ = '';  
-__{{CODE}}__
-return \$__p__;
-_TPL_FUNC_;
+    protected static $__TFUNC2 = '';
 
-    protected static $__RCODE1 = "\$__p__ = '';";
+    protected static $__RCODE1 = '';
     
-    protected static $__RCODE2 = <<<_TPLRENDERCODE_
-\$__instance__->data = Contemplate::data( \$data ); 
-__{{CODE}}__
-_TPLRENDERCODE_;
+    protected static $__RCODE2 = '';
     
     
     //
@@ -354,6 +229,174 @@ _TPLRENDERCODE_;
         if ( self::$__isInited ) return;
         
         self::$__stack = array();
+        
+        self::$__tplClassCode = <<<_T0_
+/* Contemplate cached template '__{{ID}}__' */
+if (!class_exists('__{{CLASSNAME}}__'))
+{
+final class __{{CLASSNAME}}__ extends Contemplate
+{    
+    /* constructor */
+    public function __construct(\$id=null, \$__=null)
+    {
+        /* initialize internal vars */
+        \$this->id = null; 
+        \$this->data = null;
+        \$this->_renderFunction = null;
+        \$this->_parent = null;
+        \$this->_blocks = null;
+        
+        \$this->id = \$id;
+        
+        /* parent tpl assign code starts here */
+__{{PARENTCODE}}__
+        /* parent tpl assign code ends here */
+    }    
+    
+    /* tpl-defined blocks render code starts here */
+__{{BLOCKS}}__
+    /* tpl-defined blocks render code ends here */
+    
+    /* render a tpl block method */
+    public function renderBlock(\$block, \$__instance__=null)
+    {
+        if ( !\$__instance__ ) \$__instance__ = \$this;
+        
+        \$method = '_blockfn_' . \$block;
+        
+        if ( method_exists(\$this, \$method) ) return \$this->{\$method}(\$__instance__);
+        
+        elseif ( \$this->_parent ) return \$this->_parent->renderBlock(\$block, \$__instance__);
+        
+        return '';
+    }
+    
+    /* tpl render method */
+    public function render(\$data, \$__instance__=null)
+    {
+        \$__p__ = '';
+        if ( !\$__instance__ ) \$__instance__ = \$this;
+        
+        if ( \$this->_parent )
+        {
+            \$__p__ = \$this->_parent->render(\$data, \$__instance__);
+        }
+        else
+        {
+            /* tpl main render code starts here */
+__{{RENDERCODE}}__
+            /* tpl main render code ends here */
+        }
+        \$this->data = null;
+        return \$__p__;
+    }
+}
+}
+_T0_;
+    
+        // generated tpl block method code as a heredoc template
+        self::$__tplBlockCode = <<<_T1_
+
+/* tpl block render method for block '__{{BLOCK}}__' */
+private function __{{BLOCKMETHOD}}__(\$__instance__) 
+{ 
+__{{BLOCKMETHODCODE}}__
+}
+_T1_;
+    
+        // generated IF code
+        self::$__IF = <<<_T2_
+
+if ( __{{COND}}__ )
+{
+
+_T2_;
+    
+        // generated ELSEIF code
+        self::$__ELSEIF = <<<_T3_
+        
+}
+elseif ( __{{COND}}__ )
+{
+
+_T3_;
+
+        // generated ELSE code
+        self::$__ELSE = <<<_T4_
+        
+}
+else
+{
+
+_T4_;
+    
+        // generated ENDIF code
+        self::$__ENDIF = <<<_T5_
+        
+}
+
+_T5_;
+    
+        // generated FOR code
+        self::$__FOR = <<<_T6_
+        
+if ( !empty(__{{O}}__) )
+{
+    foreach ( __{{O}}__ as __{{K}}__=>__{{V}}__ )
+    {
+        __{{ASSIGN1}}__
+        __{{ASSIGN2}}__
+_T6_;
+    
+        // generated ELSEFOR code
+        self::$__ELSEFOR = <<<_T7_
+        
+    }
+}
+else
+{    
+    
+_T7_;
+    
+        // generated ENDFOR code
+        self::$__ENDFOR1 = <<<_T8_
+            
+    }
+}
+
+_T8_;
+    
+        // generated ENDFOR code
+        self::$__ENDFOR2 = <<<_T9_
+        
+}
+
+_T9_;
+    
+        // generated block code snippet
+        self::$__DOBLOCK = <<<_DO_BLOCK_
+\$__p__ = '';
+__{{CODE}}__
+return \$__p__;
+_DO_BLOCK_;
+
+    
+        // generated dynamic render code
+        self::$__TFUNC1 = "return '';";
+
+        // generated dynamic render code
+        self::$__TFUNC2 = <<<_TPL_FUNC_
+\$__p__ = '';  
+__{{CODE}}__
+return \$__p__;
+_TPL_FUNC_;
+
+        self::$__RCODE1 = "\$__p__ = '';";
+    
+        self::$__RCODE2 = <<<_TPLRENDERCODE_
+\$__instance__->data = Contemplate::data( \$data ); 
+__{{CODE}}__
+_TPLRENDERCODE_;
         
         // pre-compute the needed regular expressions
         self::$__regExps[ 'specials' ] = '/[\n\r\v\t]/';

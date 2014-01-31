@@ -2,7 +2,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.4.5
+#  @version 0.4.6
 #  https://github.com/foo123/Contemplate
 #
 #  @author: Nikos M.  http://nikos-web-development.netai.net/
@@ -56,7 +56,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.4.5"
+    VERSION = "0.4.6"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -120,6 +120,7 @@ class Contemplate:
     
     __funcs = [
         'htmlselect', 'htmltable', 'has_key',
+        'lowercase', 'uppercase', 'camelcase', 'snakecase',
         'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 
         'tpl',
         'html', 'url', 'count', 
@@ -534,6 +535,30 @@ __{{CODE}}__
     def rtrim(s, charlist=None):
         if charlist: return s.rstrip(charlist)
         else: return s.rstrip()
+    
+    def ucfirst(s):
+        return s[0].upper() + s[1:]#.lower()
+        
+    def lcfirst(s):
+        return s[0].lower() + s[1:]#.upper()
+        
+    def lowercase(s):
+        return str(s).lower()
+    
+    def uppercase(s):
+        return str(s).upper()
+    
+    def camelcase(s, sep="_", capitalizeFirst=False):
+        _self = Contemplate
+        sep = str(sep)
+        if capitalizeFirst:
+            return "".join( map( _self.ucfirst, str(s).split( sep ) ) )
+        else:
+            return _self.lcfirst( "".join( map( _self.ucfirst, str(s).split( sep ) ) ) )
+    
+    def snakecase(s, sep="_"):
+        sep = str(sep)
+        return re.sub( r'([A-Z])', lambda m: sep + m.group(1), str(s) ).lower()
     
     # Sprintf in templates
     # static

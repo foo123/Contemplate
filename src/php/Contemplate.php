@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.4.5
+*  @version: 0.4.6
 *  https://github.com/foo123/Contemplate
 *
 *  @author: Nikos M.  http://nikos-web-development.netai.net/
@@ -16,7 +16,7 @@ if (!class_exists('Contemplate'))
 {
 class Contemplate
 {
-    const VERSION = "0.4.5";
+    const VERSION = "0.4.6";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -72,6 +72,7 @@ class Contemplate
     
     protected static $__funcs = array( 
         'htmlselect', 'htmltable', 'has_key',
+        'lowercase', 'uppercase', 'camelcase', 'snakecase',
         'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 
         'tpl',
         'html', 'url', 'count', 
@@ -582,6 +583,39 @@ _TPLRENDERCODE_;
     { 
         if ( $charlist ) return rtrim($s, $charlist); 
         else return rtrim($s); 
+    }
+    
+    public static function ucfirst($s)
+    {
+        return ucfirst($s);
+    }
+    
+    public static function lcfirst($s)
+    {
+        return lcfirst($s);
+    }
+    
+    public static function lowercase($s)
+    {
+        return strtolower($s);
+    }
+    
+    public static function uppercase($s)
+    {
+        return strtoupper($s);
+    }
+    
+    public static function camelcase($s, $sep="_", $capitalizeFirst=false)
+    {
+        if ( $capitalizeFirst )
+            return implode("", array_map("ucfirst", explode($sep, $s))); 
+        else
+            return lcfirst( implode("", array_map("ucfirst", explode($sep, $s))) );
+    }
+    
+    public static function snakecase($s, $sep="_")
+    {
+        return strtolower( preg_replace( '/([A-Z])/', $sep . '$1', $s ) );
     }
     
     // Sprintf in templates

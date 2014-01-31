@@ -69,6 +69,7 @@ var contemplate_grammar = {
             // builtin functions, constructs, etc..
             "function" : [
                 "%now", "%date", "%ldate", "%count", "%sprintf",
+                "%lowercase", "%uppercase", "%camelcase", "%snakecase",
                 "%trim", "%ltrim", "%rtrim",
                 "%htmltable", "%htmlselect", "%has_key", "%concat",
                 "%s", "%n", "%f", "%l", "%q", "%dq"

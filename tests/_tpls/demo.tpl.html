@@ -43,6 +43,22 @@
 
     <br /><br />
     
+    <strong>Functions</strong><br />
+    <ul>
+    <li>trim(__FOO__, _) = <% %trim("__FOO__", "_") %></li>
+    <li>trim(  FOO  ) = <% %trim("  FOO  ") %></li>
+    <li>lowercase(FOO) = <% %lowercase("FOO") %></li>
+    <li>lowercase(fOo) = <% %lowercase("fOo") %></li>
+    <li>uppercase(foo) = <% %uppercase("foo") %></li>
+    <li>uppercase(FoO) = <% %uppercase("FoO") %></li>
+    <li>camelcase(camel_case, _) = <% %camelcase("camel_case", "_") %></li>
+    <li>camelcase(camelCase) = <% %camelcase("camelCase") %></li>
+    <li>snakecase(snakeCase, _) = <% %snakecase("snakeCase", "_") %></li>
+    <li>snakecase(snake_case) = <% %snakecase("snake_case") %></li>
+    </ul>
+    
+    <br /><br />
+    
     <% %for($users as $i=>$usergroup) %>
         <!-- call a (sub-)template -->
         <% %template(sub, {"i"=>$i, "users"=>$users}) %>

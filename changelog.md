@@ -1,5 +1,8 @@
 ###ChangeLog
 
+__0.4.6__
+* add %lowercase, %uppercase, %camelcase, %snakecase template functions (see manual)
+
 __0.4.5__
 * add %has_key template function (see manual)
 

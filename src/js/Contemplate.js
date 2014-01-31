@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.4.5
+*  @version: 0.4.6
 *  https://github.com/foo123/Contemplate
 *
 *  @author: Nikos M.  http://nikos-web-development.netai.net/
@@ -28,7 +28,7 @@
 
 }(this, 'Contemplate', function( undef ) {
     
-    var __version__ = "0.4.5";
+    var __version__ = "0.4.6";
     var self;
     
     // auxilliaries
@@ -127,6 +127,7 @@
         
         $__funcs = [ 
             'htmlselect', 'htmltable', 'has_key',
+            'lowercase', 'uppercase', 'camelcase', 'snakecase',
             'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 
             'tpl',
             'html', 'url', 'count', 
@@ -635,6 +636,30 @@
         trim : trim,
         ltrim : ltrim,
         rtrim : rtrim,
+        
+        ucfirst : function(s) {
+            return s[0].toUpperCase() + s.substr(1);//.toLowerCase();
+        },
+        lcfirst : function(s) {
+            return s[0].toLowerCase() + s.substr(1);//.toUpperCase();
+        },
+        lowercase : function(s) {
+            return s.toLowerCase();
+        },
+        uppercase : function(s) {
+            return s.toUpperCase();
+        },
+        camelcase : function(s, sep, capitalizeFirst) {
+            sep = sep || "_";
+            if ( capitalizeFirst )
+                return s.split( sep ).map( self.ucfirst ).join( "" );
+            else
+                return self.lcfirst( s.split( sep ).map( self.ucfirst ).join( "" ) );
+        },
+        snakecase : function(s, sep) {
+            sep = sep || "_";
+            return s.replace( /([A-Z])/g, sep + '$1' ).toLowerCase();
+        },
         // Sprintf in templates
         sprintf : sprintf,
         

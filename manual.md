@@ -130,6 +130,10 @@ __Functions__
 * *%ltrim(val [, delim])*   left trim val of delim 
 * *%rtrim(val [, delim])*   right trim val of delim 
 * *%trim(val [, delim])*   left/right trim val of delim 
+* *%lowercase(val)*   convert val to lowercase
+* *%uppercase(val)*   convert val to uppercase
+* *%camelcase(val [,sep="_" , capitalizeFirst=false])*   convert val to **camelCase** , based on **sep** separator
+* *%snakecase(val [,sep="_"])*   convert val to **snake_case** , based on **sep** separator
 
 * *%count(arrayOrObject)*  return number of items in arrayOrObject val
 * *%has_key(arrayOrObject, key1 [,key2, ..] )*  check whether array or object tplVar has the given (nested) keys

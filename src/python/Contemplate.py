@@ -2,7 +2,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.4.6
+#  @version 0.4.7
 #  https://github.com/foo123/Contemplate
 #
 #  @author: Nikos M.  http://nikos-web-development.netai.net/
@@ -56,7 +56,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.4.6"
+    VERSION = "0.4.7"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -74,6 +74,7 @@ class Contemplate:
     __inlines = {}
     __partials = {}
     __locale = {}
+    __plurals = {}
     
     __leftTplSep = "<%"
     __rightTplSep = "%>"
@@ -120,7 +121,7 @@ class Contemplate:
     
     __funcs = [
         'htmlselect', 'htmltable', 'has_key',
-        'lowercase', 'uppercase', 'camelcase', 'snakecase',
+        'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
         'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 
         'tpl',
         'html', 'url', 'count', 
@@ -391,6 +392,19 @@ __{{CODE}}__
         Contemplate.__locale = Contemplate.merge(Contemplate.__locale, l)
     
     # static
+    def clearLocaleStrings(): 
+        Contemplate.__locale = {}
+    
+    # static
+    def setPlurals(singular, plural=None): 
+        if not plural: plural = str(singular) + 's' # auto plural
+        Contemplate.__plurals[singular] = [singular, plural]
+    
+    # static
+    def clearPlurals(): 
+        Contemplate.__plurals = {}
+    
+    # static
     def setTemplateSeparators(seps=None):
         if seps:
             if 'left' in seps: Contemplate.__leftTplSep = str(seps['left'])
@@ -598,6 +612,13 @@ __{{CODE}}__
             return Contemplate.__locale[e]
         else:
             return e
+    
+    # pluralise
+    def pluralise(singular, count): 
+        if (singular in Contemplate.__plurals):
+            if (1 != count): return Contemplate.__plurals[singular][1]
+            else: return Contemplate.__plurals[singular][0]
+        return singular
     
     #
     #  HTML elements

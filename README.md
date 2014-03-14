@@ -1,12 +1,16 @@
 Contemplate
 ===========
 
-### Further development on this project has stopped!!
+<!--### Further development on this project has stopped!!-->
 
 
 __Light-weight and flexible template engine for PHP, Python, Node and client-side JavaScript__
 
 ![Contemplate](/screenshots/contemplate.jpg)
+
+
+**see also** [modelview.js](https://github.com/foo123/modelview.js) a simple, extendable mv* (MVVM) framework based on jQuery
+
 
 This started as a a __proof-of-concept__ . 
 The inspiration came from an old post by [John Resig](https://github.com/jeresig)  (http://ejohn.org/blog/javascript-micro-templating/)

@@ -34,6 +34,8 @@ var $sepleft="<%", $sepright="%>";
 // set the template separators
 Contemplate.setTemplateSeparators({'left' : $sepleft, 'right' : $sepright});
 
+Contemplate.setPlurals('item'); // auto plural
+
 // make sure it exists
 Contemplate.setCacheDir(fs.realpathSync(path.join(__dirname, '/_tplcache')));
 

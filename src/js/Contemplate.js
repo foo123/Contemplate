@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.4.6
+*  @version: 0.4.7
 *  https://github.com/foo123/Contemplate
 *
 *  @author: Nikos M.  http://nikos-web-development.netai.net/
@@ -28,7 +28,7 @@
 
 }(this, 'Contemplate', function( undef ) {
     
-    var __version__ = "0.4.6";
+    var __version__ = "0.4.7";
     var self;
     
     // auxilliaries
@@ -96,7 +96,7 @@
     
     // private vars
     var 
-        $__isInited = false,  $__locale = {}, 
+        $__isInited = false,  $__locale = {}, $__plurals = {},
         
         $__cacheMode = 0, $__cache = {}, $__templates = {}, $__partials = {}, $__inlines = {},
         
@@ -127,7 +127,7 @@
         
         $__funcs = [ 
             'htmlselect', 'htmltable', 'has_key',
-            'lowercase', 'uppercase', 'camelcase', 'snakecase',
+            'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
             'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 
             'tpl',
             'html', 'url', 'count', 
@@ -514,6 +514,18 @@
             $__locale = self.merge($__locale, l); 
         },
         
+        clearLocaleStrings : function() { 
+            $__locale = {}; 
+        },
+        
+        setPlurals : function(singular, plural) { 
+            $__plurals[singular] = [singular, undef !== plural ? plural : (singular+'s')]; // auto plural
+        },
+        
+        clearPlurals : function() { 
+            $__plurals = {}; 
+        },
+        
         setTemplateSeparators : function(seps) {
             if (seps)
             {
@@ -688,6 +700,13 @@
         locale : function(e) { 
             return (_hasOwn.call($__locale, e)) ? $__locale[e] : e; 
         },
+        // pluralise
+        pluralise : function(singular, count) {
+            if ($__plurals[singular])
+                return 1 !== count ? $__plurals[singular][1] : $__plurals[singular][0];
+            return singular;
+        },
+        
         
         //
         //  HTML elements

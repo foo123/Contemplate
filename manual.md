@@ -4,7 +4,7 @@ __Variables/Data__
 
 Variables inside templates are referenced same as in PHP with '$' sign. ie 
 
-```php
+```javascript
 
 $x 
 
@@ -39,7 +39,7 @@ __UPDATE__
 
 All these will work correctly in all the engine's implementations:
 
-```php
+```javascript
 
 $obj.property, $obj.property.property2,
 $obj['property'], $obj['property'].property2,
@@ -55,7 +55,11 @@ like this:
 
 eg. an object having various string values, numeric, values and arrays:
 
-{ "stringVar"=> "stringValue", "numericVar"=>123, "arrayVar"=>[0, 1, "astring", 3] } etc
+```javascript
+
+{ "stringVar"=> "stringValue", "numericVar"=>123, "arrayVar"=>[0, 1, "astring", 3] } // etc
+
+```
 
 arbitrary level of recursion is fine as long as the convention is followed and literal strings do not contain the {, =>, } characters, variable strings (strings contained in a variable) can contain anything (see examples/tests)
 
@@ -63,13 +67,29 @@ eg.
 
 this will cause the parsing to fail:
 
-{ "stringVar"=> "string{Value" } or { "stringVar"=> "string}Value" } or { "stringVar"=> "stringValue=>" } or { "string=>Var"=> "stringValue" } etc..
+```javascript
+
+{ "stringVar"=> "string{Value" } 
+// or 
+{ "stringVar"=> "string}Value" } 
+// or 
+{ "stringVar"=> "stringValue=>" } 
+// or 
+{ "string=>Var"=> "stringValue" } 
+// etc..
+
+
+```
 
 while this will be fine:
 
-assuming the (template) variable $x = "=>"
+```javascript
 
-{ "stringVar" => $x } or { $x => "stringValue" } etc..
+// assuming the (template) variable $x = "=>"
+
+{ "stringVar" => $x } or { $x => "stringValue" } // etc..
+
+```
 
 
 
@@ -142,7 +162,8 @@ __Functions__
 * *%time()*   return current timestamp in seconds
 * *%date(format, timestamp)*  return timestamp formatted according to format
 * *%ldate(format, timestamp)*  return localised timestamp formatted according to format
-* *%l(val)*  return localised string for val (if exists), localised strings are user-defined
+* *%locale(val)* , *%l(val)*  return localised string for val (if exists), localised strings are user-defined
+* *%pluralise(singular, count)*  return plural string for singular (if exists) depending on count, pluralised strings are user-defined
 
 * *%html(val)*  html-escape val (htmlentities)
 * *%url(val)*  url-encode val (urlencode)

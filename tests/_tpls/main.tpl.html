@@ -40,6 +40,8 @@
         <script>
             /* set the template separators */
             Contemplate.setTemplateSeparators({"left": "<% $sepleft %>", "right": "<% $sepright %>"});
+            Contemplate.setPlurals('item'); // auto plural
+
             /* add the templates */
             Contemplate.add({
                 'base': "./_tpls/base.tpl.html", // load the template from this url using ajax (slower)

@@ -31,6 +31,8 @@ $sepleft="<%";  $sepright="%>";
 // set the template separators
 Contemplate::setTemplateSeparators(array('left'=>$sepleft, 'right'=>$sepright));
 
+Contemplate::setPlurals('item'); // auto plural
+
 // set the cache directory (make sure to exist)
 Contemplate::setCacheDir(ABSPATH.'/_tplcache');
 

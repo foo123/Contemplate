@@ -1,5 +1,8 @@
 ###ChangeLog
 
+__0.4.7__
+* add %pluralise function, clearLocaleStrings, setPlurals, clearPlurals methods
+
 __0.4.6__
 * add %lowercase, %uppercase, %camelcase, %snakecase template functions (see manual)
 

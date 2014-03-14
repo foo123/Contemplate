@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.4.6
+*  @version: 0.4.7
 *  https://github.com/foo123/Contemplate
 *
 *  @author: Nikos M.  http://nikos-web-development.netai.net/
@@ -16,7 +16,7 @@ if (!class_exists('Contemplate'))
 {
 class Contemplate
 {
-    const VERSION = "0.4.6";
+    const VERSION = "0.4.7";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -30,6 +30,7 @@ class Contemplate
     protected static $__inlines = array();
     protected static $__partials = array();
     protected static $__locale = array();
+    protected static $__plurals = array();
     
     protected static $__leftTplSep = "<%";
     protected static $__rightTplSep = "%>";
@@ -72,7 +73,7 @@ class Contemplate
     
     protected static $__funcs = array( 
         'htmlselect', 'htmltable', 'has_key',
-        'lowercase', 'uppercase', 'camelcase', 'snakecase',
+        'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
         'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 
         'tpl',
         'html', 'url', 'count', 
@@ -431,6 +432,22 @@ _TPLRENDERCODE_;
         self::$__locale = self::merge(self::$__locale, $l); 
     }
     
+    public static function clearLocaleStrings() 
+    { 
+        self::$__locale = array(); 
+    }
+    
+    public static function setPlurals($singular, $plural=null) 
+    { 
+        if ( null == $plural ) $plural = $singular.'s'; // auto plural
+        self::$__plurals[$singular] = array($singular, $plural); 
+    }
+    
+    public static function clearPlurals() 
+    { 
+        self::$__plurals = array(); 
+    }
+    
     public static function setTemplateSeparators($seps=null)
     {
         if (is_array($seps))
@@ -662,6 +679,13 @@ _TPLRENDERCODE_;
     public static function l($e) 
     { 
         return self::locale($e); 
+    }
+    // pluralise
+    public static function pluralise($singular, $count) 
+    { 
+        if ( isset(self::$__plurals[$singular]) )
+            return 1 != $count ? self::$__plurals[$singular][1] : self::$__plurals[$singular][0];
+        return $singular;
     }
     
     //

@@ -116,6 +116,7 @@ syntax, yet work the same in all the engine's implementations.
 
 ###Todo
 
+* enable asynchronous template loading/rendering for node/browser
 * allow the engine to be extended by (custom) plugins
 * add Contemplate implementations for Perl, Java, Scala
 * transform Contemplate (for PHP) into a PHP C-extension, Contemplate (for node) into standalone executable (eg. https://github.com/crcn/nexe)

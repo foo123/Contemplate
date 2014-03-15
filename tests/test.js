@@ -2,10 +2,8 @@
 *  Contemplate
 *  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version 0.4.5
+*  @version 0.4.7
 *  https://github.com/foo123/Contemplate
-*
-*  @author: Nikos M.  http://nikos-web-development.netai.net/
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
 *  http://ejohn.org/blog/javascript-micro-templating/
@@ -34,7 +32,12 @@ var $sepleft="<%", $sepright="%>";
 // set the template separators
 Contemplate.setTemplateSeparators({'left' : $sepleft, 'right' : $sepright});
 
-Contemplate.setPlurals('item'); // auto plural
+Contemplate.setLocaleStrings({
+    "locale": "γλωσσική περιοχή"
+});
+Contemplate.setPlurals([
+    ['item'] // auto plural
+]);
 
 // make sure it exists
 Contemplate.setCacheDir(fs.realpathSync(path.join(__dirname, '/_tplcache')));

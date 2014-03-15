@@ -1,11 +1,10 @@
+# -*- coding: UTF-8 -*-
 ##
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
 #  @version 0.4.7
 #  https://github.com/foo123/Contemplate
-#
-#  @author: Nikos M.  http://nikos-web-development.netai.net/
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
 #  http://ejohn.org/blog/javascript-micro-templating/
@@ -63,7 +62,7 @@ class Contemplate:
     CACHE_TO_DISK_NOUPDATE = 4
     
     # set file encoding if needed, here (eg 'utf8')
-    ENCODING = 'utf8'
+    ENCODING = 'utf-8'
     
     # (protected) static/class properties
     __isInited = False
@@ -125,12 +124,13 @@ class Contemplate:
         'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 
         'tpl',
         'html', 'url', 'count', 
-        'ldate', 'date', 'now',
+        'ldate', 'date', 'now', 'locale',
         'dq', 'q', 'l', 's', 'n', 'f' 
     ]
     
     # generated tpl class code as a heredoc template
     __tplClassCode = """\
+# -*- coding: UTF-8 -*-
 # Contemplate cached template '__{{ID}}__'
 
 # imports start here, if any
@@ -396,9 +396,12 @@ __{{CODE}}__
         Contemplate.__locale = {}
     
     # static
-    def setPlurals(singular, plural=None): 
-        if not plural: plural = str(singular) + 's' # auto plural
-        Contemplate.__plurals[singular] = [singular, plural]
+    def setPlurals(plurals): 
+        for pl in plurals:
+            singular = pl[0]
+            if len(pl) < 2: plural = str(singular) + 's' # auto plural
+            else: plural = pl[1]
+            Contemplate.__plurals[singular] = [singular, plural]
     
     # static
     def clearPlurals(): 
@@ -1349,10 +1352,16 @@ __{{CODE}}__
         replacements['e'] = "" #_self.get_timezone()
         replacements['I'] = str( time.dst() )
         
-        for regex, replace in replacements.items():
-            format = format.replace(regex, replace)
+        #for regex, replace in replacements.items():
+        #    format = format.replace(regex, replace)
+        newformat = ''
+        for c in format:
+            if c in replacements:
+                newformat += replacements[c]
+            else:
+                newformat += c
 
-        return format
+        return newformat
         
     # static
     def _localized_date(locale, format, timestamp):
@@ -1362,8 +1371,7 @@ __{{CODE}}__
         
         # localize days/months
         for word in txt_words: 
-            if word in locale: 
-                date = date.replace(word, locale[word])
+            if word in locale: date = date.replace(word, locale[word])
             
         # return localized date
         return date
@@ -1454,11 +1462,12 @@ __{{CODE}}__
     
     # static
     def open(file, op):
-        if Contemplate.ENCODING: 
-            f = open(file, op, encoding=Contemplate.ENCODING)
-        else: 
-            f = open(file, op)
-        return f
+        #if Contemplate.ENCODING: 
+        #    f = open(file, op, encoding=Contemplate.ENCODING)
+        #else: 
+        #    f = open(file, op)
+        #return f
+        return open(file, op, -1, Contemplate.ENCODING)
 
     # static
     def read(file):

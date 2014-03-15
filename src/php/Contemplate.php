@@ -6,8 +6,6 @@
 *  @version: 0.4.7
 *  https://github.com/foo123/Contemplate
 *
-*  @author: Nikos M.  http://nikos-web-development.netai.net/
-*
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
 *  http://ejohn.org/blog/javascript-micro-templating/
 *
@@ -77,7 +75,7 @@ class Contemplate
         'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 
         'tpl',
         'html', 'url', 'count', 
-        'ldate', 'date', 'now',
+        'ldate', 'date', 'now', 'locale',
         'dq', 'q', 'l', 's', 'n', 'f' 
     );
     
@@ -437,10 +435,17 @@ _TPLRENDERCODE_;
         self::$__locale = array(); 
     }
     
-    public static function setPlurals($singular, $plural=null) 
+    public static function setPlurals($plurals) 
     { 
-        if ( null == $plural ) $plural = $singular.'s'; // auto plural
-        self::$__plurals[$singular] = array($singular, $plural); 
+        if ( is_array($plurals) )
+        {
+            foreach ($plurals as $i=>$pl)
+            {
+                $singular = $pl[0];
+                $plural = ( isset($pl[1]) ) ? $pl[1] : ($singular.'s'); // auto plural
+                self::$__plurals[$singular] = array($singular, $plural); 
+            }
+        }
     }
     
     public static function clearPlurals() 

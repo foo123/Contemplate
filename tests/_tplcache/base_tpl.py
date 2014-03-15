@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 # Contemplate cached template 'base'
 
 # imports start here, if any

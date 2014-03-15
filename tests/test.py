@@ -1,12 +1,11 @@
 #!/usr/bin/env python
+# -*- coding: UTF-8 -*-
 ##
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.4.5
+#  @version 0.4.7
 #  https://github.com/foo123/Contemplate
-#
-#  @author: Nikos M.  http://nikos-web-development.netai.net/
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
 #  http://ejohn.org/blog/javascript-micro-templating/
@@ -54,7 +53,12 @@ sepright="%>"
 # set the template separators
 Contemplate.setTemplateSeparators({'left':sepleft, 'right':sepright})
 
-Contemplate.setPlurals('item'); # auto plural
+Contemplate.setLocaleStrings({
+    "locale": "γλωσσική περιοχή"
+})
+Contemplate.setPlurals([
+    ['item'] # auto plural
+])
 
 # set the cache directory (make sure to exist)
 Contemplate.setCacheDir('./_tplcache')

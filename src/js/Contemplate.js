@@ -5,8 +5,6 @@
 *  @version: 0.4.7
 *  https://github.com/foo123/Contemplate
 *
-*  @author: Nikos M.  http://nikos-web-development.netai.net/
-*
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
 *  http://ejohn.org/blog/javascript-micro-templating/
 *
@@ -131,7 +129,7 @@
             'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 
             'tpl',
             'html', 'url', 'count', 
-            'ldate', 'date', 'now',
+            'ldate', 'date', 'now', 'locale',
             'dq', 'q', 'l', 's', 'n', 'f' 
         ],
         
@@ -518,8 +516,18 @@
             $__locale = {}; 
         },
         
-        setPlurals : function(singular, plural) { 
-            $__plurals[singular] = [singular, undef !== plural ? plural : (singular+'s')]; // auto plural
+        setPlurals : function(plurals) { 
+            var i, l, singular, plural;
+            if ( plurals )
+            {
+                l = plurals.length;
+                for (i=0; i<l; i++)
+                {
+                    singular = plurals[i][0];
+                    plural = undef !== plurals[i][1] ? plurals[i][1] : (singular+'s'); // auto plural
+                    $__plurals[singular] = [singular, plural];
+                }
+            }
         },
         
         clearPlurals : function() { 

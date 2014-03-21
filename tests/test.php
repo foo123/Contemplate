@@ -33,7 +33,7 @@ Contemplate::setLocaleStrings(array(
     "locale"=> "γλωσσική περιοχή"
 ));
 Contemplate::setPlurals(array(
-    array('item') // auto plural
+    'item'=> null // auto plural
 ));
 
 // set the cache directory (make sure to exist)
@@ -49,12 +49,16 @@ Contemplate::add(array(
     'demo' => ABSPATH.'/_tpls/demo.tpl.html',
     'sub' => ABSPATH.'/_tpls/sub.tpl.html',
     'date' => ABSPATH.'/_tpls/date.tpl.html',
+    // add an inline template
+    'inlinetpl' => array('<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>')
 ));
 
+/*
 // add an inline template
 Contemplate::addInline(array(
     'inlinetpl' => '<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>'
 ));
+*/
 
 /* localize some strings */
 /* make sure this file is encoded in UTF-8 */

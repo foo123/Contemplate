@@ -1,5 +1,8 @@
 ###ChangeLog
 
+__0.4.8__
+* change %pluralise signature, unify Contemplate.add, Contemplate.addInline methods, edits, optimizations
+
 __0.4.7__
 * add %pluralise function, clearLocaleStrings, setPlurals, clearPlurals methods
 

@@ -56,9 +56,9 @@ Contemplate.setTemplateSeparators({'left':sepleft, 'right':sepright})
 Contemplate.setLocaleStrings({
     "locale": "γλωσσική περιοχή"
 })
-Contemplate.setPlurals([
-    ['item'] # auto plural
-])
+Contemplate.setPlurals({
+    'item': None # auto plural
+})
 
 # set the cache directory (make sure to exist)
 Contemplate.setCacheDir('./_tplcache')
@@ -72,13 +72,15 @@ Contemplate.add({
     'base' : './_tpls/base.tpl.html',
     'demo' : './_tpls/demo.tpl.html',
     'sub' : './_tpls/sub.tpl.html',
-    'date' : './_tpls/date.tpl.html'
+    'date' : './_tpls/date.tpl.html',
+    # add an inline template
+    'inlinetpl' : ['<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>']
 })
 
-# add an inline template
-Contemplate.addInline({
-    'inlinetpl' : '<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>'
-})
+## add an inline template
+#Contemplate.addInline({
+#    'inlinetpl' : '<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>'
+#})
 
 # the data to be used by the templates
 listdata = {'list' : ['item1', 'item2', 'item3'] }

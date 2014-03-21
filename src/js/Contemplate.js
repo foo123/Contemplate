@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.4.7
+*  @version: 0.4.8
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -26,15 +26,14 @@
 
 }(this, 'Contemplate', function( undef ) {
     
-    var __version__ = "0.4.7";
+    var __version__ = "0.4.8";
     var self;
     
     // auxilliaries
-    var
-        _isNode = typeof global !== "undefined" && {}.toString.call(global) == '[object global]',
-        _hasOwn = Object.prototype.hasOwnProperty,  slice = Array.prototype.slice,
-        _toString = Object.prototype.toString,
-        isArray = function( o ) { return _toString.call(o) === '[object Array]'; },
+    var OP = Object.prototype, AP = Array.prototype, FP = Function.prototype,
+        _toString = FP.call.bind(OP.toString), _hasOwn = FP.call.bind(OP.hasOwnProperty), slice = FP.call.bind(AP.slice),
+        _isNode = typeof global !== "undefined" && _toString(global) == '[object global]',
+        isArray = function( o ) { return (_toString(o) === '[object Array]') || (o instanceof Array); },
         
         log = echo = ('undefined'!=typeof(console) && console.log) ? function(s) { console.log(s); } : function() {},
         
@@ -49,11 +48,11 @@
     ;
 
     // IE8- mostly
-    if ( !Array.prototype.indexOf ) 
+    if ( !AP.indexOf ) 
     {
         var Abs = Math.abs;
         
-        Array.prototype.indexOf = function (searchElement , fromIndex) {
+        AP.indexOf = function (searchElement , fromIndex) {
             var i,
                 pivot = (fromIndex) ? fromIndex : 0,
                 length;
@@ -517,16 +516,17 @@
         },
         
         setPlurals : function(plurals) { 
-            var i, l, singular, plural;
             if ( plurals )
             {
-                l = plurals.length;
-                for (i=0; i<l; i++)
+                for (var singular in plurals)
                 {
-                    singular = plurals[i][0];
-                    plural = undef !== plurals[i][1] ? plurals[i][1] : (singular+'s'); // auto plural
-                    $__plurals[singular] = [singular, plural];
+                    if ( null == plurals[ singular ] )
+                    {
+                        // auto plural
+                        plurals[ singular ] = singular+'s';
+                    }
                 }
+                $__plurals = self.merge($__plurals, plurals); 
             }
         },
         
@@ -566,7 +566,21 @@
         
         // add templates manually
         add : function(tpls) { 
-            $__templates = self.merge($__templates, tpls);  
+            if ( tpls )
+            {
+                for (var tplID in tpls)
+                {
+                    if ( isArray( tpls[ tplID ] ) )
+                    {
+                        // unified way to add tpls both as reference and inline
+                        // inline tpl, passed as array
+                        if ( tpls[ tplID ][ 0 ] )
+                            $__inlines[ tplID ] = tpls[ tplID ][ 0 ];
+                        delete tpls[ tplID ];
+                    }
+                }
+                $__templates = self.merge($__templates, tpls);  
+            }
         },
     
         // add inline templates manually
@@ -608,9 +622,9 @@
         
         // check if (nested) keys exist in tpl variable
         has_key : function(v/*, key1, key2, etc.. */) {
-            var to_string = _toString.call(v);
+            var to_string = _toString(v);
             if (!v || "[object Array]" != to_string && "[object Object]" != to_string) return false;
-            var args = slice.call(arguments), argslen, i, tmp;
+            var args = slice(arguments), argslen, i, tmp;
             args.shift();
             argslen = args.length;
             tmp = v;
@@ -649,7 +663,7 @@
         
         // Concatenate strings/vars
         concat : function() { 
-            return slice.call(arguments).join(''); 
+            return slice(arguments).join(''); 
         },
         
         // Trim strings in templates
@@ -706,12 +720,12 @@
         // locale
         // locale, l
         locale : function(e) { 
-            return (_hasOwn.call($__locale, e)) ? $__locale[e] : e; 
+            return (_hasOwn($__locale, e)) ? $__locale[e] : e; 
         },
         // pluralise
         pluralise : function(singular, count) {
             if ($__plurals[singular])
-                return 1 !== count ? $__plurals[singular][1] : $__plurals[singular][0];
+                return 1 !== count ? $__plurals[singular] : singular;
             return singular;
         },
         
@@ -1497,11 +1511,11 @@
         },
         
         hasOwn : function(o, p) { 
-            return o && _hasOwn.call(o, p); 
+            return o && _hasOwn(o, p); 
         },
         
         merge : function() {
-            var args = slice.call(arguments);
+            var args = slice(arguments);
             if (args.length<1) return;
             var merged = args.shift(), i, k, o, l = args.length;
             for (i=0; i<l; i++)
@@ -1511,7 +1525,7 @@
                 { 
                     for (k in o) 
                     { 
-                        if (_hasOwn.call(o, k)) 
+                        if (_hasOwn(o, k)) 
                         { 
                             merged[k] = o[k]; 
                         } 
@@ -1528,7 +1542,7 @@
             // use php-style variables using '$' in front of var name
             for (key in o) 
             { 
-                if (_hasOwn.call(o, key)) 
+                if (_hasOwn(o, key)) 
                 { 
                     //if ('$'==n[0]) continue;
                     //if ('$'==key[0]) newkey = key;

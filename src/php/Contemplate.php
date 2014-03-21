@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.4.7
+*  @version: 0.4.8
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -14,7 +14,7 @@ if (!class_exists('Contemplate'))
 {
 class Contemplate
 {
-    const VERSION = "0.4.7";
+    const VERSION = "0.4.8";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -439,12 +439,15 @@ _TPLRENDERCODE_;
     { 
         if ( is_array($plurals) )
         {
-            foreach ($plurals as $i=>$pl)
+            foreach ($plurals as $singular=>$plural)
             {
-                $singular = $pl[0];
-                $plural = ( isset($pl[1]) ) ? $pl[1] : ($singular.'s'); // auto plural
-                self::$__plurals[$singular] = array($singular, $plural); 
+                if ( null == $plural )
+                {
+                    // auto plural
+                    $plurals[ $singular ] = $singular.'s';
+                }
             }
+            self::$__plurals = self::merge(self::$__plurals, $plurals); 
         }
     }
     
@@ -489,7 +492,21 @@ _TPLRENDERCODE_;
     // add templates manually
     public static function add($tpls) 
     { 
-        self::$__templates = self::merge(self::$__templates, $tpls); 
+        if ( is_array($tpls) )
+        {
+            foreach ($tpls as $tplID=>$tplData)
+            {
+                if ( is_array( $tplData ) )
+                {
+                    // unified way to add tpls both as reference and inline
+                    // inline tpl, passed as array
+                    if ( isset($tplData[ 0 ]) )
+                        self::$__inlines[ $tplID ] = $tplData[ 0 ];
+                    unset( $tpls[ $tplID ] );
+                }
+            }
+            self::$__templates = self::merge(self::$__templates, $tpls); 
+        }
     }
     
     // add inline templates manually
@@ -689,7 +706,7 @@ _TPLRENDERCODE_;
     public static function pluralise($singular, $count) 
     { 
         if ( isset(self::$__plurals[$singular]) )
-            return 1 != $count ? self::$__plurals[$singular][1] : self::$__plurals[$singular][0];
+            return 1 != $count ? self::$__plurals[$singular] : $singular;
         return $singular;
     }
     

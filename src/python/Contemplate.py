@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.4.7
+#  @version 0.4.8
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -55,7 +55,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.4.7"
+    VERSION = "0.4.8"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -397,11 +397,11 @@ __{{CODE}}__
     
     # static
     def setPlurals(plurals): 
-        for pl in plurals:
-            singular = pl[0]
-            if len(pl) < 2: plural = str(singular) + 's' # auto plural
-            else: plural = pl[1]
-            Contemplate.__plurals[singular] = [singular, plural]
+        for singular in plurals:
+            if plurals[ singular ] is None: 
+                # auto plural
+                plurals[ singular ] = str(singular) + 's'
+        Contemplate.__plurals = Contemplate.merge(Contemplate.__plurals, plurals)
     
     # static
     def clearPlurals(): 
@@ -452,6 +452,16 @@ __{{CODE}}__
     # add templates manually
     # static
     def add(tpls):
+        _inlines = {}
+        for tplID in tpls:
+            if isinstance(tpls[ tplID ], (list, tuple)):
+                # unified way to add tpls both as reference and inline
+                # inline tpl, passed as array
+                if len( tpls[ tplID ][ 0 ] ):
+                    Contemplate.__inlines[ tplID ] = tpls[ tplID ][ 0 ]
+                _inlines[ tplID ] = True
+                
+        for tplID in _inlines: del tpls[ tplID ]
         Contemplate.__templates = Contemplate.merge(Contemplate.__templates, tpls)
     
     # add inline templates manually
@@ -579,10 +589,10 @@ __{{CODE}}__
     
     # Sprintf in templates
     # static
-    def sprintf(*args):
+    def sprintf(format, *args):
         numargs = len(args)
-        if numargs>1:
-            format = args.pop(0)
+        if numargs>0:
+            #format = args.pop(0)
             return format % args
         return ''
     
@@ -619,8 +629,8 @@ __{{CODE}}__
     # pluralise
     def pluralise(singular, count): 
         if (singular in Contemplate.__plurals):
-            if (1 != count): return Contemplate.__plurals[singular][1]
-            else: return Contemplate.__plurals[singular][0]
+            if (1 != count): return Contemplate.__plurals[singular]
+            else: return singular
         return singular
     
     #

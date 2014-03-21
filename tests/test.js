@@ -35,9 +35,9 @@ Contemplate.setTemplateSeparators({'left' : $sepleft, 'right' : $sepright});
 Contemplate.setLocaleStrings({
     "locale": "γλωσσική περιοχή"
 });
-Contemplate.setPlurals([
-    ['item'] // auto plural
-]);
+Contemplate.setPlurals({
+    'item': null // auto plural
+});
 
 // make sure it exists
 Contemplate.setCacheDir(fs.realpathSync(path.join(__dirname, '/_tplcache')));
@@ -51,14 +51,16 @@ Contemplate.add({
     'base' : path.join(__dirname, '/_tpls/base.tpl.html'),
     'demo' : path.join(__dirname, '/_tpls/demo.tpl.html'),
     'sub' : path.join(__dirname, '/_tpls/sub.tpl.html'),
-    'date' : path.join(__dirname, '/_tpls/date.tpl.html')
+    'date' : path.join(__dirname, '/_tpls/date.tpl.html'),
+    // add an inline template
+    'inlinetpl' : ['<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>']
 });
-
+/*
 // add an inline template
 Contemplate.addInline({
     'inlinetpl' : '<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>'
 });
-
+*/
 
 
 // the data to be used by the templates

@@ -1,5 +1,8 @@
 ###ChangeLog
 
+__0.4.9__
+* add %uuid function (generate universal unique id)
+
 __0.4.8__
 * change %pluralise signature, unify Contemplate.add, Contemplate.addInline methods, edits, optimizations
 

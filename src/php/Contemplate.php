@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.4.8
+*  @version: 0.4.9
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -14,7 +14,7 @@ if (!class_exists('Contemplate'))
 {
 class Contemplate
 {
-    const VERSION = "0.4.8";
+    const VERSION = "0.4.9";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -50,6 +50,7 @@ class Contemplate
     protected static $__extends = null;
     protected static $__postReplace = null;
     protected static $__stack = null;
+    protected static $__uuid = 0;
     
     protected static $__regExps = array(
         'specials' => null,
@@ -73,7 +74,7 @@ class Contemplate
         'htmlselect', 'htmltable', 'has_key',
         'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
         'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 
-        'tpl',
+        'tpl', 'uuid',
         'html', 'url', 'count', 
         'ldate', 'date', 'now', 'locale',
         'dq', 'q', 'l', 's', 'n', 'f' 
@@ -708,6 +709,12 @@ _TPLRENDERCODE_;
         if ( isset(self::$__plurals[$singular]) )
             return 1 != $count ? self::$__plurals[$singular] : $singular;
         return $singular;
+    }
+    
+    // generate a uuid
+    public static function uuid($namespace='UUID') 
+    {
+        return implode('_', array($namespace, ++self::$__uuid, time()));
     }
     
     //

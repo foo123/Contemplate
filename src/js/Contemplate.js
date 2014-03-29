@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.4.8
+*  @version: 0.4.9
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -26,7 +26,7 @@
 
 }(this, 'Contemplate', function( undef ) {
     
-    var __version__ = "0.4.8";
+    var __version__ = "0.4.9";
     var self;
     
     // auxilliaries
@@ -104,6 +104,8 @@
         $__stack = null, $__level = 0, $__pad = "    ", $__postReplace = null,
         $__loops = 0, $__ifs = 0, $__loopifs = 0, $__blockcnt = 0, $__blocks = [], $__allblocks = [], $__extends = null,
     
+        $__uuid = 0,
+        
         $__regExps = {
             'specials' : null,
             'replacements' : null,
@@ -126,7 +128,7 @@
             'htmlselect', 'htmltable', 'has_key',
             'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
             'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 
-            'tpl',
+            'tpl', 'uuid',
             'html', 'url', 'count', 
             'ldate', 'date', 'now', 'locale',
             'dq', 'q', 'l', 's', 'n', 'f' 
@@ -729,6 +731,10 @@
             return singular;
         },
         
+        // generate a uuid
+        uuid : function(namespace) {
+            return [namespace||'UUID', ++$__uuid, time()].join('_');
+        },
         
         //
         //  HTML elements

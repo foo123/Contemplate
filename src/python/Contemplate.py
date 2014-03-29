@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.4.8
+#  @version 0.4.9
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -55,7 +55,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.4.8"
+    VERSION = "0.4.9"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -97,6 +97,7 @@ class Contemplate:
     __funcId = 0
     __postReplace = None
     __stack = None
+    __uuid = 0
     
     NLRX = None
     
@@ -122,7 +123,7 @@ class Contemplate:
         'htmlselect', 'htmltable', 'has_key',
         'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
         'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 
-        'tpl',
+        'tpl', 'uuid',
         'html', 'url', 'count', 
         'ldate', 'date', 'now', 'locale',
         'dq', 'q', 'l', 's', 'n', 'f' 
@@ -632,6 +633,11 @@ __{{CODE}}__
             if (1 != count): return Contemplate.__plurals[singular]
             else: return singular
         return singular
+    
+    # generate a uuid
+    def uuid(namespace='UUID'):
+        Contemplate.__uuid += 1
+        return '_'.join( [ str(namespace), str(Contemplate.__uuid), str(int(time.time())) ] )
     
     #
     #  HTML elements

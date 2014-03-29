@@ -164,6 +164,7 @@ __Functions__
 * *%ldate(format, timestamp)*  return localised timestamp formatted according to format
 * *%locale(val)* , *%l(val)*  return localised string for val (if exists), localised strings are user-defined
 * *%pluralise(singular, count)*  return plural string for singular (if exists) depending on count, pluralised strings are user-defined
+* *%uuid(namespace)*  generate a uuid (universal unique identifier)
 
 * *%html(val)*  html-escape val (htmlentities)
 * *%url(val)*  url-encode val (urlencode)

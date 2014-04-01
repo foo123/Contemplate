@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.4.9
+*  @version: 0.4.10
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -26,7 +26,7 @@
 
 }(this, 'Contemplate', function( undef ) {
     
-    var __version__ = "0.4.9";
+    var __version__ = "0.4.10";
     var self;
     
     // auxilliaries
@@ -97,7 +97,7 @@
         
         $__cacheMode = 0, $__cache = {}, $__templates = {}, $__partials = {}, $__inlines = {},
         
-        $__leftTplSep = "<%", $__rightTplSep = "%>", $__tplStart = "", $__tplEnd = "", 
+        $__leftTplSep = "<%", $__rightTplSep = "%>", $__tplStart = "", $__tplEnd = "", $__tplPrefixCode = "",
         
         $__preserveLinesDefault = "' + \"\\n\" + '", $__preserveLines = '',  $__EOL = "\n", $__TEOL = (_isNode) ? require('os').EOL : "\n",
         
@@ -158,7 +158,8 @@
         $__tplClassCode = function(NL){
                     NL = NL || $__TEOL;
                     return [
-"!function (root, moduleName, moduleDefinition) {"
+"__{{PREFIX_CODE}}__"
+,"!function (root, moduleName, moduleDefinition) {"
 ,""
 ,"    //"
 ,"    // export the module"
@@ -509,6 +510,11 @@
         // Main methods
         //
         
+        setPrefixCode : function(preCode) {
+            if ( preCode )
+                $__tplPrefixCode = '' + preCode;
+        },
+    
         setLocaleStrings : function(l) { 
             $__locale = self.merge($__locale, l); 
         },
@@ -1408,8 +1414,15 @@
                 renderCode = $__RCODE2().split( '__{{CODE}}__' ).join( padLines("__p__ += '" + blocks[0] + "';", 0) );
             }
             
-            // generate tpl class
+            var prefixCode;
+            if ( $__tplPrefixCode )
+                prefixCode = $__tplPrefixCode;
+            else
+                prefixCode = '';
+            
+          // generate tpl class
             var classCode = $__tplClassCode()
+                                .split( '__{{PREFIX_CODE}}__' ).join( prefixCode )
                                 .split( '__{{ID}}__' ).join( id )
                                 .split( '__{{CLASSNAME}}__' ).join( classname )
                                 .split( '__{{PARENTCODE}}__' ).join( padLines(parentCode, 2) )

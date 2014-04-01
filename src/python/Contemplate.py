@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.4.9
+#  @version 0.4.10
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -55,7 +55,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.4.9"
+    VERSION = "0.4.10"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -83,6 +83,7 @@ class Contemplate:
     __TEOL = os.linesep
     __tplStart = ''
     __tplEnd = ''
+    __tplPrefixCode = ''
     
     __pad = "    "
     __level = 0
@@ -133,6 +134,8 @@ class Contemplate:
     __tplClassCode = """\
 # -*- coding: UTF-8 -*-
 # Contemplate cached template '__{{ID}}__'
+
+__{{PREFIX_CODE}}__
 
 # imports start here, if any
 __{{IMPORTS}}__
@@ -387,6 +390,11 @@ __{{CODE}}__
     #
     # Main template static methods
     #
+    
+    # static
+    def setPrefixCode(preCode=None):
+        if preCode:
+            Contemplate.__tplPrefixCode = str(preCode)
     
     # static
     def setLocaleStrings(l): 
@@ -1245,8 +1253,13 @@ __{{CODE}}__
             parentCode = ''
             renderCode = _self.__RCODE2.replace( '__{{CODE}}__', "__p__ += '" + blocks[0] + "'" )
         
+        if _self.__tplPrefixCode:
+            prefixCode = _self.__tplPrefixCode
+        else
+            prefixCode = ''
+            
         # generate tpl class
-        classCode = _self.__tplClassCode.replace('__{{IMPORTS}}__', '').replace('__{{ID}}__', id).replace('__{{CLASSNAME}}__', classname).replace('__{{PARENTCODE}}__', _self.padLines(parentCode, 3)).replace('__{{BLOCKS}}__', _self.padLines(sblocks, 2)).replace('__{{RENDERCODE}}__', _self.padLines(renderCode, 4))
+        classCode = _self.__tplClassCode.replace('__{{PREFIX_CODE}}__', prefixCode).replace('__{{IMPORTS}}__', '').replace('__{{ID}}__', id).replace('__{{CLASSNAME}}__', classname).replace('__{{PARENTCODE}}__', _self.padLines(parentCode, 3)).replace('__{{BLOCKS}}__', _self.padLines(sblocks, 2)).replace('__{{RENDERCODE}}__', _self.padLines(renderCode, 4))
         
         return _self.write(filename, classCode)
     

@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.4.9
+*  @version: 0.4.10
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -14,7 +14,7 @@ if (!class_exists('Contemplate'))
 {
 class Contemplate
 {
-    const VERSION = "0.4.9";
+    const VERSION = "0.4.10";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -38,6 +38,7 @@ class Contemplate
     protected static $__TEOL = PHP_EOL;
     protected static $__tplStart = '';
     protected static $__tplEnd = '';
+    protected static $__tplPrefixCode = '';
     
     protected static $__pad = "    ";
     protected static $__level = 0;
@@ -232,6 +233,7 @@ class Contemplate
         self::$__stack = array();
         
         self::$__tplClassCode = <<<_T0_
+__{{PREFIX_CODE}}__
 /* Contemplate cached template '__{{ID}}__' */
 if (!class_exists('__{{CLASSNAME}}__'))
 {
@@ -425,6 +427,13 @@ _TPLRENDERCODE_;
     //
     // Main template static methods
     //
+    
+    // custom php code to add to start of template (eg custom access checks etc..)
+    public static function setPrefixCode($preCode=null)
+    {
+        if ( $preCode )
+            self::$__tplPrefixCode = (string)$preCode;
+    }
     
     public static function setLocaleStrings($l) 
     { 
@@ -1324,9 +1333,15 @@ _TPLRENDERCODE_;
             $renderCode = str_replace( '__{{CODE}}__', "\$__p__ .= '" . $blocks[0] . "';", self::$__RCODE2 );
         }
         
+        if ( self::$__tplPrefixCode )
+            $prefixCode = self::$__tplPrefixCode;
+        else
+            $prefixCode = '';
+            
         // generate tpl class
         $class = '<?php ' .self::$__TEOL . str_replace(
                     array(
+                        '__{{PREFIX_CODE}}__',
                         '__{{ID}}__',
                         '__{{CLASSNAME}}__',
                         '__{{PARENTCODE}}__',
@@ -1334,6 +1349,7 @@ _TPLRENDERCODE_;
                         '__{{RENDERCODE}}__'
                     ),
                     array(
+                        $prefixCode,
                         $id,
                         $classname,
                         self::padLines($parentCode, 2),

@@ -10,7 +10,14 @@
 
     <strong>A table</strong><br />
     <% %htmltable($table_data, $table_options) %>
-
+    
+    <br /><br />
+    
+    <strong>Set a new tpl variable and use it in a custom plugin</strong><br />
+    <% %set("foo", "123") %>
+    
+    <% %plugin_test($foo) %>
+    
     <br /><br />
     
     <strong>A select box</strong><br />

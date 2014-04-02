@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.4.10
+#  @version 0.5
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -44,65 +44,49 @@ except ImportError:
     import urllib
     __urlencode__ = urllib
 
+    
 
-#
-# The Contemplate Engine Main Python Class
-#
-class Contemplate:
-    """
-    Contemplate Template Engine for Python,
-    https://github.com/foo123/Contemplate
-    """
-    
-    # constants (not real constants in Python)
-    VERSION = "0.4.10"
-    
-    CACHE_TO_DISK_NONE = 0
-    CACHE_TO_DISK_AUTOUPDATE = 2
-    CACHE_TO_DISK_NOUPDATE = 4
-    
-    # set file encoding if needed, here (eg 'utf8')
-    ENCODING = 'utf-8'
-    
-    # (protected) static/class properties
-    __isInited = False
-    __cacheDir = './'
-    __cacheMode = 0
-    __cache = {}
-    __templates = {}
-    __inlines = {}
-    __partials = {}
-    __locale = {}
-    __plurals = {}
-    
-    __leftTplSep = "<%"
-    __rightTplSep = "%>"
-    __preserveLinesDefault = "' + \"\\n\" + '"
-    __preserveLines = ''
-    __EOL = "\n"
-    __TEOL = os.linesep
-    __tplStart = ''
-    __tplEnd = ''
-    __tplPrefixCode = ''
-    
-    __pad = "    "
-    __level = 0
-    __loops = 0
-    __ifs = 0
-    __loopifs = 0
-    __blocks = []
-    __allblocks = []
-    __blockcnt = 0
-    __extends = None
-    __id = 0
-    __funcId = 0
-    __postReplace = None
-    __stack = None
-    __uuid = 0
-    
+# (protected) global properties
+class _G:
+
+    isInited = False
+    cacheDir = './'
+    cacheMode = 0
+    cache = {}
+    templates = {}
+    inlines = {}
+    partials = {}
+    locale = {}
+    plurals = {}
+
+    leftTplSep = "<%"
+    rightTplSep = "%>"
+    preserveLinesDefault = "' + \"\\n\" + '"
+    preserveLines = ''
+    EOL = "\n"
+    TEOL = os.linesep
+    tplStart = ''
+    tplEnd = ''
+    tplPrefixCode = ''
+
+    pad = "    "
+    level = 0
+    loops = 0
+    ifs = 0
+    loopifs = 0
+    blocks = []
+    allblocks = []
+    blockcnt = 0
+    extends = None
+    id = 0
+    funcId = 0
+    postReplace = None
+    stack = None
+    uuid = 0
+
     NLRX = None
-    
-    __regExps = {
+
+    regExps = {
         'specials' : None,
         'replacements' : None,
         'vars' : None,
@@ -111,16 +95,18 @@ class Contemplate:
         'functions' : None,
         'controls' : None
     }
-    
-    __controlConstructs = [
+
+    controlConstructs = [
         'htmlselect', 'htmltable',
         'include', 'template', 
         'extends', 'endblock', 'block',
         'elsefor', 'endfor', 'for',
+        'set', 'unset',
         'elseif', 'else', 'endif', 'if'
     ]
-    
-    __funcs = [
+
+    funcs = [
+        'plugin_([a-zA-Z0-9_]+)',
         'htmlselect', 'htmltable', 'has_key',
         'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
         'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 
@@ -129,9 +115,11 @@ class Contemplate:
         'ldate', 'date', 'now', 'locale',
         'dq', 'q', 'l', 's', 'n', 'f' 
     ]
-    
+
+    plugins = {}
+            
     # generated tpl class code as a heredoc template
-    __tplClassCode = """\
+    tplClassCode = """\
 # -*- coding: UTF-8 -*-
 # Contemplate cached template '__{{ID}}__'
 
@@ -206,7 +194,7 @@ __all__ = ['__getTplClass__']
 """
     
     # generated tpl block method code as a heredoc template
-    __tplBlockCode = """
+    tplBlockCode = """
 # tpl block render method for block '__{{BLOCK}}__'
 def __{{BLOCKMETHOD}}__(self, __instance__):
 __{{BLOCKMETHODCODE}}__
@@ -214,27 +202,27 @@ __{{BLOCKMETHODCODE}}__
 
     
     # generated IF code
-    __IF = """
+    IF = """
 if ( __{{COND}}__ ):
 """
     
     # generated ELSEIF code
-    __ELSEIF = """
+    ELSEIF = """
 elif ( __{{COND}}__ ):
 """
 
     # generated ELSE code
-    __ELSE = """
+    ELSE = """
 else:
 """
     
     # generated ENDIF code
-    __ENDIF = """
+    ENDIF = """
 """
     
     # a = [51,27,13,56]   dict(enumerate(a))
     # generated FOR code
-    __FOR = """
+    FOR = """
 if ( len(__{{O}}__)>0 ):
     # be able to use both key/value in loop
     __{{ASSIGN11}}__
@@ -245,20 +233,20 @@ if ( len(__{{O}}__)>0 ):
 """
     
     # generated ELSEFOR code
-    __ELSEFOR = """
+    ELSEFOR = """
 else:
 """
     
     # generated ENDFOR code
-    __ENDFOR1 = """
+    ENDFOR1 = """
 """
     
     # generated ENDFOR code
-    __ENDFOR2 = """
+    ENDFOR2 = """
 """
     
     # generated block code snippet
-    __DOBLOCK = """
+    DOBLOCK = """
 __p__ = ''
 __{{CODE}}__
 return __p__
@@ -266,22 +254,849 @@ return __p__
 
     
     # generated dynamic render code
-    __TFUNC1 = "return ''"
+    TFUNC1 = "return ''"
 
     # generated dynamic render code
-    __TFUNC2 = """
+    TFUNC2 = """
 __p__ = '' 
 __{{CODE}}__
 return __p__
 """
 
-    __RCODE1 = "__p__ = ''"
+    RCODE1 = "__p__ = ''"
     
-    __RCODE2 = """
+    RCODE2 = """
 __instance__.data = Contemplate.data( data )
 __{{CODE}}__
 """
+
+
+#
+# Control structures
+#
+
+# set/create/update tpl var
+def t_set(args):
+    global _G
+    args = args.split(',')
+    varname = args.pop(0).strip()
+    expr = ','.join(args).strip()
+    _G.postReplace = {
+        '__{{SETVAR1}}__' : '__instance__.data[' + varname + '] = ('+ expr +')'
+    }
+    return "';" + _G.TEOL + padLines( '__{{SETVAR1}}__' ) + _G.TEOL
+
+# unset/remove/delete tpl var
+def t_unset(varname=None):
+    global _G
+    if varname:
+        varname = str(varname).strip()
+        _G.postReplace = {
+            '__{{UNSETVAR0}}__' : '__instance__.data',
+            '__{{UNSETVAR1}}__' : '__instance__.data[' + varname + ']'
+        }
+        return "';" + _G.TEOL + padLines( 'if ( '+varname+' in __{{UNSETVAR0}}__ ): del __{{UNSETVAR1}}__' ) + _G.TEOL
+    return "'; " + _G.TEOL
     
+# if
+# static
+def t_if(cond='False'):
+    global _G
+    _G.ifs += 1
+    
+    out = "' "
+    # translate some logic operators to Python style
+    cond = cond.replace('true', 'True').replace('false', 'False').replace(' && ', ' and ').replace(' || ', ' or ').replace(' ! ', ' not ')
+    out1 = _G.IF.replace('__{{COND}}__', cond)
+    out += padLines(out1)
+    _G.level += 1
+    
+    return out
+    
+# elseif    
+# static
+def t_elseif(cond='False'):
+    global _G
+    out = "' "
+    # translate some logic operators to Python style
+    cond = cond.replace('true', 'True').replace('false', 'False').replace(' && ', ' and ').replace(' || ', ' or ').replace(' ! ', ' not ')
+    out1 = _G.ELSEIF.replace('__{{COND}}__', cond)
+
+    _G.level -= 1
+    out += padLines(out1)
+    _G.level += 1
+    
+    return out
+    
+# else
+# static
+def t_else(args=''):
+    global _G
+    out = "' "
+    out1 = _G.ELSE
+    
+    _G.level -= 1
+    out += padLines(out1)
+    _G.level += 1
+    
+    return out
+
+# endif
+# static
+def t_endif(args=''):
+    global _G
+    _G.ifs -= 1
+    
+    out = "' "
+    out1 = _G.ENDIF
+    
+    _G.level -= 1
+    out += padLines(out1)
+    
+    return out
+    
+# for, foreach
+# static
+def t_for(for_expr):
+    global _G
+    _G.loops += 1  
+    _G.loopifs += 1
+    _G.id += 1
+    for_expr = for_expr.split(' as ')
+    o = for_expr[0].strip()
+    kv = for_expr[1].split('=>')
+    k = kv[0].strip().lstrip('$')
+    v = kv[1].strip().lstrip('$')
+    
+    o = doTplVars( o )
+    loopo = '_loopObj' + str(_G.id)
+    _G.postReplace = {
+        '__{{O}}__' : o,
+        '__{{K}}__' : k,
+        '__{{V}}__' : v,
+        '__{{LoopO}}__' : loopo,
+        '__{{ASSIGN11}}__' : 'if isinstance('+o+', list): '+loopo+' = enumerate('+o+')',
+        '__{{ASSIGN12}}__' : 'else: '+loopo+' = '+o+'.items();',
+        '__{{ASSIGN21}}__' : '__instance__.data[\''+k+'\'] = '+k+'',
+        '__{{ASSIGN22}}__' : '__instance__.data[\''+v+'\'] = '+v+''
+    }
+    
+    out = "' "
+    out1 = _G.FOR
+    
+    out += padLines(out1)
+    _G.level += 2
+    
+    return out
+
+# elsefor
+# static
+def t_elsefor(args=''):
+    # else attached to  for loop
+    global _G
+    _G.loopifs -= 1
+    out = "' "
+    out1 = _G.ELSEFOR
+    
+    _G.level += -2
+    out += padLines(out1)
+    _G.level += 1
+    
+    return out
+    
+# endfor
+# static
+def t_endfor(args=''):
+    global _G
+    out = "' "
+    if _G.loopifs == _G.loops:
+        _G.loops -= 1 
+        _G.loopifs -= 1
+        
+        out1 = _G.ENDFOR1
+        
+        _G.level += -2
+        out += padLines(out1)
+        
+        return out
+    
+    _G.loops -= 1
+    out1 = _G.ENDFOR2
+    
+    _G.level += -1
+    out += padLines(out1)
+    
+    return out
+
+# include file
+# static
+def t_include(id):
+    global _G
+    # cache it
+    if id not in _G.partials:
+        pushState()
+        resetState()
+        _G.partials[id] = " " + parse(Contemplate.getTemplateContents(id), False) + "' " + _G.TEOL
+        popState()
+    
+    return padLines( _G.partials[id] )
+
+# include template
+# static
+def t_template(args):
+    global _G
+    args = args.split(',')
+    id = args.pop(0).strip()
+    obj = ','.join(args).replace('=>', ':').replace('true', 'True').replace('false', 'False')
+    return '\' + %tpl( "'+id+'", '+obj+' ) ' + _G.TEOL
+
+# extend another template
+# static
+def t_extends(tpl):
+    global _G
+    _G.extends = tpl
+    return "' " + _G.TEOL
+    
+# define (overridable) block
+# static
+def t_block(block):
+    global _G
+    block = block.strip()
+    if block not in _G.allblocks:
+        _G.allblocks.append(block)
+    
+    _G.blockcnt += 1
+    _G.blocks.append(block)
+    return "' +  __||" + block + "||__"  
+    
+# end define (overridable) block
+# static
+def t_endblock(args=''):
+    global _G
+    if _G.blockcnt>0:
+        _G.blockcnt -= 1
+        return "__||/" + _G.blocks.pop() + "||__"
+    return ''
+
+# render html table
+# static
+def t_table(args):
+    global _G
+    obj = args.replace('=>', ':').replace('true', 'True').replace('false', 'False')
+    return '\' + %htmltable(' + obj + ') ' + _G.TEOL
+
+# render html select
+# static
+def t_select(args):
+    global _G
+    obj = args.replace('=>', ':').replace('true', 'True').replace('false', 'False')
+    return '\' + %htmlselect(' + obj + ') ' + _G.TEOL
+
+#
+# auxilliary parsing methods
+#
+
+# static
+def doControlConstructs(m):
+    t = m.group(1) 
+    a = m.group(2)
+    
+    if ('set'==t): return t_set(a)
+    
+    elif ('unset'==t): return t_unset(a)
+    
+    elif ('if'==t): return t_if(a)
+    
+    elif ('elseif'==t): return t_elseif(a)
+    
+    elif ('else'==t): return t_else(a)
+    
+    elif ('endif'==t): return t_endif(a)
+    
+    elif ('for'==t): return t_for(a)
+    
+    elif ('elsefor'==t): return t_elsefor(a)
+    
+    elif ('endfor'==t): return t_endfor(a)
+    
+    elif ('template'==t): return t_template(a)
+    
+    elif ('extends'==t): return t_extends(a)
+    
+    elif ('block'==t): return t_block(a)
+    
+    elif ('endblock'==t): return t_endblock(a)
+    
+    elif ('include'==t): return t_include(a)
+    
+    elif ('htmltable'==t): return t_table(a)
+    
+    elif ('htmlselect'==t): return t_select(a)
+    
+    return m.group(0)
+
+# static
+def doBlocks(s):
+    global _G
+    blocks = {} 
+    bl = len(_G.allblocks)
+    while bl:
+        bl -= 1
+        block = _G.allblocks.pop()
+        delim1 = '__||' + block + '||__' 
+        delim2 = '__||/' + block + '||__'
+        
+        len1 = len(delim1) 
+        len2 = len1+1 
+        
+        pos1 = s.find(delim1, 0) 
+        pos2 = s.find(delim2, pos1+len1)
+        
+        code = s[pos1:pos2+len2]
+        
+        if len(code)>0:
+            code = code[len1:-len2].replace("+ '' +", '+')  # remove redundant code
+            
+            bout = _G.DOBLOCK.replace('__{{CODE}}__', code+"'")
+            
+            blocks[block] = bout
+        
+        replace = True
+        while replace:
+            # replace all occurances of the block on the current template, 
+            # with the code found previously
+            # in the 1st block definition
+            s = s[0:pos1] + "__instance__.renderBlock( '" + block + "' ) " + s[pos2+len2:]
+            
+            
+            pos1 = s.find(delim1, 0)
+            replace = (0 <= pos1)
+            if replace: pos2 = s.find(delim2, pos1+len1)
+        
+    return [ s.replace("+ '' +", '+'), blocks ]
+
+# static
+def doTplVars(s):
+    global _G
+    tplvars = []
+    rem = []
+    
+    # find tplvars
+    tplvars = re.findall( _G.regExps['ids'], s )
+    
+    if len(tplvars)>0:
+    
+        rem = re.split( _G.regExps['vars'], s )
+        remLen = len(rem)-1
+        s = ''
+        for i in range(remLen):
+        
+            s += re.sub( _G.regExps['atts'], r"['\1']", rem[i] )  # fix dot-style attributes
+            s += "__instance__.data['" + tplvars[i] + "']";  # replace tplvars with the tpldata
+        
+        s += re.sub( _G.regExps['atts'], r"['\1']", rem[remLen] )  # fix dot-style attributes
+    
+    return s
+    
+# static
+def doTags(tag):
+    global _G
+    _G.postReplace = None
+    
+    tag = re.sub(_G.regExps['controls'], doControlConstructs, tag)
+
+    tag = doTplVars( tag ) # replace tplvars with python vars accurately
+    
+    if _G.postReplace:
+    
+        for k in _G.postReplace:  tag = tag.replace( k, _G.postReplace[k] )
+        
+    def tplfunc(m):
+        plugin = m.group(2) 
+        if plugin and plugin in _G.plugins: 
+            return 'Contemplate.plugin_' + plugin 
+        else: 
+            return 'Contemplate.' + m.group(1)
+            
+    tag = re.sub( _G.regExps['functions'], tplfunc, tag )
+    
+    tag = re.sub( _G.regExps['replacements'], r"' + str( \1 ) + '", tag )
+    
+    tag = tag.replace( "\t", _G.tplStart ).replace( "\v", padLines(_G.tplEnd) )
+    
+    return tag
+
+# static
+def split(s):
+    global _G
+    parts1 = s.split( _G.leftTplSep )
+    l = len(parts1)
+    parts = []
+    for i in range(l):
+        tmp = parts1[i].split( _G.rightTplSep )
+        parts.append ( tmp[0] )
+        if len(tmp) > 1: parts.append ( tmp[1] )
+    
+    return parts
+
+# static
+def parse(tpl, withblocks=True):
+    global _G
+    parts = split( tpl )
+    l = len(parts)
+    isTag = False
+    out = ''
+    for i in range(l):
+        s = parts[i]
+        
+        if isTag:
+            
+            s = re.sub( _G.regExps['specials'], " ", s ) # replace special chars
+            
+            s = doTags( "\t" + s + "\v" ) # parse each template tag section accurately
+            
+            isTag = False
+            
+        else:
+            
+            s = s.replace( "'", "\\'" )  # escape single quotes accurately (used by parse function)
+            
+            s = s.replace( "\n", _G.preserveLines ) # preserve lines
+        
+            isTag = True
+        
+        out += s
+    
+    if withblocks: return doBlocks(out)
+    
+    return out.replace( "+ '' +", '+' ) # remove redundant code
+
+# static
+def getCachedTemplateName(id):
+    return id.replace('-', '_').replace(' ', '_') + '_tpl' + '.py'
+
+# static
+def getCachedTemplateClass(id):
+    return 'Contemplate_' + id.replace('-', '_').replace(' ', '_') + '_Cached'
+
+# static
+def createTemplateRenderFunction(id):
+    global _G
+    resetState()
+    
+    blocks = parse(Contemplate.getTemplateContents(id))
+    
+    if _G.extends:
+        func = _G.TFUNC1
+    
+    else:
+        func = _G.TFUNC2.replace( '__{{CODE}}__', "__p__ += '" + blocks[0] + "'")
+    
+    _G.funcId += 1
+    
+    funcName = '_contemplateFn' + str(_G.funcId)
+    fn = createFunction(funcName, '__instance__=None', padLines(func, 1), {'Contemplate': Contemplate})
+    
+    blockfns = {}
+    for b,bc in blocks[1].items():
+        funcName = '_contemplateBlockFn_' + b + '_' + str(_G.funcId)
+        blockfns[b] = createFunction(funcName, '__instance__=None', padLines(bc, 1), {'Contemplate': Contemplate})
+    
+    return [ fn, blockfns]
+
+# static
+def createCachedTemplate(id, filename, classname):
+    global _G
+    resetState()
+    
+    blocks = parse(Contemplate.getTemplateContents(id))
+    
+    # tpl-defined blocks
+    sblocks = ''
+    for b,bc in blocks[1].items():
+        sblocks += _G.TEOL + _G.tplBlockCode.replace('__{{BLOCK}}__', b).replace('__{{BLOCKMETHOD}}__', "_blockfn_"+b).replace('__{{BLOCKMETHODCODE}}__', padLines(bc, 1))
+    
+    # tpl render code
+    if _G.extends:
+        parentCode = "self.setParent( '"+_G.extends+"' )"
+        renderCode = _G.RCODE1
+    
+    else:
+        parentCode = ''
+        renderCode = _G.RCODE2.replace( '__{{CODE}}__', "__p__ += '" + blocks[0] + "'" )
+    
+    if _G.tplPrefixCode:
+        prefixCode = _G.tplPrefixCode
+    else:
+        prefixCode = ''
+        
+    # generate tpl class
+    classCode = _G.tplClassCode.replace('__{{PREFIX_CODE}}__', prefixCode).replace('__{{IMPORTS}}__', '').replace('__{{ID}}__', id).replace('__{{CLASSNAME}}__', classname).replace('__{{PARENTCODE}}__', padLines(parentCode, 3)).replace('__{{BLOCKS}}__', padLines(sblocks, 2)).replace('__{{RENDERCODE}}__', padLines(renderCode, 4))
+    
+    return Contemplate.write(filename, classCode)
+
+# static
+def getCachedTemplate(id):
+    global _G
+    # inline templates saved only in-memory
+    if id in _G.inlines:
+        # dynamic in-memory caching during page-request
+        tpl = Contemplate()
+        tpl.setId( id )
+        fns = createTemplateRenderFunction(id)
+        tpl.setRenderFunction( fns[0] )
+        tpl.setBlocks( fns[1] )
+        if _G.extends: tpl.setParent( Contemplate.tpl(_G.extends) )
+        return tpl
+    
+    CM = _G.cacheMode
+    
+    if CM == Contemplate.CACHE_TO_DISK_NOUPDATE:
+    
+        cachedTplFile = getCachedTemplateName(id)
+        cachedTplPath = os.path.join(_G.cacheDir, cachedTplFile)
+        cachedTplClass = getCachedTemplateClass(id)
+        if not os.path.isfile(cachedTplPath):
+            # if not exist, create it
+            createCachedTemplate(id, cachedTplPath, cachedTplClass)
+        if os.path.isfile(cachedTplPath):
+            tpl = include(cachedTplFile, cachedTplClass)()
+            tpl.setId( id )
+            return tpl
+        return None
+
+    
+    elif CM == Contemplate.CACHE_TO_DISK_AUTOUPDATE:
+    
+        cachedTplFile = getCachedTemplateName(id)
+        cachedTplPath = os.path.join(_G.cacheDir, cachedTplFile)
+        cachedTplClass = getCachedTemplateClass(id)
+        if not os.path.isfile(cachedTplPath) or (os.path.getmtime(cachedTplPath) <= os.path.getmtime(_G.templates[id])):
+            # if tpl not exist or is out-of-sync (re-)create it
+            createCachedTemplate(id, cachedTplPath, cachedTplClass)
+        if os.path.isfile(cachedTplPath):
+            tpl = include(cachedTplFile, cachedTplClass)()
+            tpl.setId( id )
+            return tpl
+        return None
+    
+    else:
+    
+        # dynamic in-memory caching during page-request
+        tpl = Contemplate()
+        tpl.setId( id )
+        fns = createTemplateRenderFunction(id)
+        tpl.setRenderFunction( fns[0] )
+        tpl.setBlocks( fns[1] )
+        if _G.extends: tpl.setParent( Contemplate.tpl(_G.extends) )
+        return tpl
+    
+    return None
+
+# static
+def setCachedTemplate(filename, tplContents): 
+    return Contemplate.write(filename, tplContents)
+
+# static
+def _get_ordinal_suffix(n):
+    # adapted from http://brandonwamboldt.ca/python-php-date-class-335/
+    return {1: 'st', 2: 'nd', 3: 'rd'}.get(4 if 10 <= n % 100 < 20 else n % 10, "th")
+
+# static
+def _get_php_date(format, time):
+    # http://php.net/manual/en/datetime.formats.date.php
+    # http://strftime.org/
+    # adapted from http://brandonwamboldt.ca/python-php-date-class-335/
+    time  = datetime.datetime.fromtimestamp(time)
+    timeStr = ''
+
+    replacements = {}
+
+    """ Day """
+    replacements['d'] = str( time.day ).zfill(2)
+    replacements['D'] = calendar.day_abbr[ time.weekday() ]
+    replacements['j'] = str( time.day )
+    replacements['l'] = calendar.day_name[ time.weekday() ]
+    replacements['S'] = _get_ordinal_suffix( time.day )
+    replacements['w'] = str( time.weekday() )
+    replacements['z'] = str( time.timetuple().tm_yday )
+    
+    """ Week """
+    replacements['W'] = str( time.isocalendar()[1] )
+    
+    """ Month """
+    replacements['F'] = calendar.month_name[ time.month ]
+    replacements['m'] = str( time.month ).zfill(2)
+    replacements['M'] = calendar.month_abbr[ time.month ]
+    replacements['n'] = str( time.month )
+    replacements['t'] = str( calendar.monthrange(time.year, time.month)[1] )
+    
+    """ Year """
+    replacements['L'] = str(int( calendar.isleap(time.year) ))
+    replacements['Y'] = str( time.year )
+    replacements['y'] = str( time.year )[2:]
+    
+    """ Time """
+    replacements['a'] = time.strftime("%p").lower()
+    replacements['A'] = time.strftime("%p")
+    replacements['g'] = str( int(time.strftime("%I")) )
+    replacements['G'] = str( int(time.strftime("%H")) )
+    replacements['h'] = time.strftime("%I")
+    replacements['H'] = time.strftime("%H")
+    replacements['i'] = str( time.minute ).zfill(2)
+    replacements['s'] = str( time.second ).zfill(2)
+    replacements['u'] = str( time.microsecond )
+    
+    """ Timezone """
+    replacements['e'] = "" #_self.get_timezone()
+    replacements['I'] = str( time.dst() )
+    
+    #for regex, replace in replacements.items():
+    #    format = format.replace(regex, replace)
+    newformat = ''
+    for c in format:
+        if c in replacements:
+            newformat += replacements[c]
+        else:
+            newformat += c
+
+    return newformat
+    
+# static
+def _localized_date(locale, format, timestamp):
+    txt_words = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sun", "Mon", "Tues", "Wednes", "Thurs", "Fri", "Satur", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    
+    date = _get_php_date(format, timestamp)
+    
+    # localize days/months
+    for word in txt_words: 
+        if word in locale: date = date.replace(word, locale[word])
+        
+    # return localized date
+    return date
+
+# static
+def resetState():
+    # reset state
+    global _G
+    _G.loops = 0 
+    _G.ifs = 0 
+    _G.loopifs = 0
+    _G.blockcnt = 0 
+    _G.blocks = []  
+    _G.allblocks = [] 
+    _G.extends = None
+    _G.level = 0
+    _G.id = 0
+    #_G.funcId = 0
+
+# static
+def pushState():
+    # push state
+    global _G
+    _G.stack.append([_G.loops, _G.ifs, _G.loopifs, _G.level,
+    _G.blockcnt, _G.blocks,  _G.allblocks,  _G.extends])
+
+# static
+def popState():
+    # pop state
+    global _G
+    t = _G.stack.pop()
+    _G.loops = t[0] 
+    _G.ifs = t[1] 
+    _G.loopifs = t[2] 
+    _G.level = t[3]
+    _G.blockcnt = t[4] 
+    _G.blocks = t[5]  
+    _G.allblocks = t[6]  
+    _G.extends = t[7]
+
+# static
+def padLines(lines, level=None):
+    global _G
+    if level is None:  level = _G.level
+    
+    if level >= 0:
+        pad = _G.pad * level
+        
+        lines = re.split(_G.NLRX, lines)
+        lenlines = len(lines)
+        
+        for i in range(lenlines):
+            lines[i] = pad + lines[i]
+        
+        lines = _G.TEOL.join(lines)
+    
+    return lines
+
+#
+#  Auxilliary methods 
+# (mostly methods to simulate php-like functionality needed by the engine)
+#
+# static
+def include(filename, classname, doReload=False):
+    # http://www.php2python.com/wiki/function.include/
+    # http://docs.python.org/dev/3.0/whatsnew/3.0.html
+    # http://stackoverflow.com/questions/4821104/python-dynamic-instantiation-from-string-name-of-a-class-in-dynamically-imported
+    
+    #_locals_ = {'Contemplate': Contemplate}
+    #_globals_ = {'Contemplate': Contemplate}
+    #if 'execfile' in globals():
+    #    # Python 2.x
+    #    execfile(filename, _globals_, _locals_)
+    #    return _locals_[classname]
+    #else:
+    #    # Python 3.x
+    #    exec(Contemplate.read(filename), _globals_, _locals_)
+    #    return _locals_[classname]
+    
+    # http://docs.python.org/2/library/imp.html
+    # http://docs.python.org/2/library/functions.html#__import__
+    # http://docs.python.org/3/library/functions.html#__import__
+    # http://stackoverflow.com/questions/301134/dynamic-module-import-in-python
+    # http://stackoverflow.com/questions/11108628/python-dynamic-from-import
+    # also: http://code.activestate.com/recipes/473888-lazy-module-imports/
+    # using import instead of execfile, usually takes advantage of Python cached compiled code
+    
+    global _G
+    getTplClass = None
+    directory = _G.cacheDir
+    # add the dynamic import path to sys
+    os.sys.path.append(directory)
+    currentcwd = os.getcwd()
+    os.chdir(directory)   # change working directory so we know import will work
+    
+    if os.path.exists(filename):
+        
+        modname = filename[:-3]  # remove .py extension
+        mod = __import__(modname)
+        if doReload: reload(mod) # Might be out of date
+        # a trick in-order to pass the Contemplate super-class in a cross-module way
+        getTplClass = getattr( mod, '__getTplClass__' )
+    
+    # restore current dir
+    os.chdir(currentcwd)
+    # remove the dynamic import path from sys
+    del os.sys.path[-1]
+    
+    # return the tplClass if found
+    if getTplClass:  return getTplClass(Contemplate)
+    return None
+
+# static
+def createFunction(funcName, args, sourceCode, additional_symbols=dict()):
+    # http://code.activestate.com/recipes/550804-create-a-restricted-python-function-from-a-string/
+
+    # The list of symbols that are included by default in the generated
+    # function's environment
+    SAFE_SYMBOLS = [
+        "list", "dict", "enumerate", "tuple", "set", "long", "float", "object",
+        "bool", "callable", "True", "False", "dir",
+        "frozenset", "getattr", "hasattr", "abs", "cmp", "complex",
+        "divmod", "id", "pow", "round", "slice", "vars",
+        "hash", "hex", "int", "isinstance", "issubclass", "len",
+        "map", "filter", "max", "min", "oct", "chr", "ord", "range",
+        "reduce", "repr", "str", "type", "zip", "xrange", "None",
+        "Exception", "KeyboardInterrupt"
+    ]
+    
+    # Also add the standard exceptions
+    __bi = __builtins__
+    if type(__bi) is not dict:
+        __bi = __bi.__dict__
+    for k in __bi:
+        if k.endswith("Error") or k.endswith("Warning"):
+            SAFE_SYMBOLS.append(k)
+    del __bi
+    
+    # Include the sourcecode as the code of a function funcName:
+    s = "def " + funcName + "(%s):\n" % args
+    s += sourceCode # this should be already properly padded
+
+    # Byte-compilation (optional)
+    byteCode = compile(s, "<string>", 'exec')  
+
+    # Setup the local and global dictionaries of the execution
+    # environment for __TheFunction__
+    bis   = dict() # builtins
+    globs = dict()
+    locs  = dict()
+
+    # Setup a standard-compatible python environment
+    bis["locals"]  = lambda: locs
+    bis["globals"] = lambda: globs
+    globs["__builtins__"] = bis
+    globs["__name__"] = "SUBENV"
+    globs["__doc__"] = sourceCode
+
+    # Determine how the __builtins__ dictionary should be accessed
+    if type(__builtins__) is dict:
+        bi_dict = __builtins__
+    else:
+        bi_dict = __builtins__.__dict__
+
+    # Include the safe symbols
+    for k in SAFE_SYMBOLS:
+        
+        # try from current locals
+        try:
+          locs[k] = locals()[k]
+          continue
+        except KeyError:
+          pass
+        
+        # Try from globals
+        try:
+          globs[k] = globals()[k]
+          continue
+        except KeyError:
+          pass
+        
+        # Try from builtins
+        try:
+          bis[k] = bi_dict[k]
+        except KeyError:
+          # Symbol not available anywhere: silently ignored
+          pass
+
+    # Include the symbols added by the caller, in the globals dictionary
+    globs.update(additional_symbols)
+
+    # Finally execute the Function statement:
+    eval(byteCode, globs, locs)
+    
+    # As a result, the function is defined as the item funcName
+    # in the locals dictionary
+    fct = locs[funcName]
+    # Attach the function to the globals so that it can be recursive
+    del locs[funcName]
+    globs[funcName] = fct
+    
+    # Attach the actual source code to the docstring
+    fct.__doc__ = sourceCode
+    
+    # return the compiled function object
+    return fct
+
+
+#
+# The Contemplate Engine Main Python Class
+#
+class Contemplate:
+    """
+    Contemplate Template Engine for Python,
+    https://github.com/foo123/Contemplate
+    """
+    
+    # constants (not real constants in Python)
+    VERSION = "0.5"
+    
+    CACHE_TO_DISK_NONE = 0
+    CACHE_TO_DISK_AUTOUPDATE = 2
+    CACHE_TO_DISK_NOUPDATE = 4
+    
+    # set file encoding if needed, here (eg 'utf8')
+    ENCODING = 'utf-8'
     
     #
     #  Instance template methods (for in-memory only templates)
@@ -357,82 +1172,98 @@ __{{CODE}}__
     
     # static
     def init():
-        _self = Contemplate
         
-        if _self.__isInited: return
+        global _G
         
-        _self.__stack = []
+        if _G.isInited: return
+            
+        _G.stack = []
         
         # pre-compute the needed regular expressions
-        _self.__regExps['specials'] = re.compile(r'[\n\r\v\t]')
+        _G.regExps['specials'] = re.compile(r'[\n\r\v\t]')
         
-        _self.__regExps['vars'] = re.compile(r'\$[a-zA-Z_][a-zA-Z0-9_]*')
+        _G.regExps['vars'] = re.compile(r'\$[a-zA-Z_][a-zA-Z0-9_]*')
         
-        _self.__regExps['ids'] = re.compile(r'\$([a-zA-Z_][a-zA-Z0-9_]*)')
+        _G.regExps['ids'] = re.compile(r'\$([a-zA-Z_][a-zA-Z0-9_]*)')
         
-        _self.__regExps['atts'] = re.compile(r'\.\s*([a-zA-Z_][a-zA-Z0-9_]*)')
+        _G.regExps['atts'] = re.compile(r'\.\s*([a-zA-Z_][a-zA-Z0-9_]*)')
         
-        _self.__regExps['replacements'] = re.compile(r'\t[ ]*(.*?)[ ]*\v')
+        _G.regExps['replacements'] = re.compile(r'\t[ ]*(.*?)[ ]*\v')
         
-        _self.__regExps['controls'] = re.compile(r'\t[ ]*%(' + '|'.join(_self.__controlConstructs) + ')[ ]*\((.*)\)')
+        _G.regExps['controls'] = re.compile(r'\t[ ]*%(' + '|'.join(_G.controlConstructs) + ')[ ]*\((.*)\)')
         
-        _self.__regExps['functions'] = re.compile(r'%(' + '|'.join(_self.__funcs) + ')')
+        _G.regExps['functions'] = re.compile(r'%(' + '|'.join(_G.funcs) + ')')
+            
+        _G.NLRX = re.compile(r'\n\r|\r\n|\n|\r')
         
-        _self.NLRX = re.compile(r'\n\r|\r\n|\n|\r')
+        _G.preserveLines = _G.preserveLinesDefault
         
-        _self.__preserveLines = _self.__preserveLinesDefault
+        _G.tplStart = "' " + _G.TEOL
+        _G.tplEnd = _G.TEOL + "__p__ += '"
         
-        _self.__tplStart = "' " + _self.__TEOL
-        _self.__tplEnd = _self.__TEOL + "__p__ += '"
-        
-        _self.__isInited = True
+        _G.isInited = True
     
     #
     # Main template static methods
     #
     
+    # add custom plugins as template functions
+    def addPlugin(name, handler):
+        global _G
+        plugin_name = 'plugin_' + str(name)
+        setattr(Contemplate, plugin_name, handler)
+        _G.plugins[ plugin_name ] = True
+    
     # static
     def setPrefixCode(preCode=None):
+        global _G
         if preCode:
-            Contemplate.__tplPrefixCode = str(preCode)
+            _G.tplPrefixCode = str(preCode)
     
     # static
     def setLocaleStrings(l): 
-        Contemplate.__locale = Contemplate.merge(Contemplate.__locale, l)
+        global _G
+        _G.locale = Contemplate.merge(_G.locale, l)
     
     # static
     def clearLocaleStrings(): 
-        Contemplate.__locale = {}
+        global _G
+        _G.locale = {}
     
     # static
     def setPlurals(plurals): 
+        global _G
         for singular in plurals:
             if plurals[ singular ] is None: 
                 # auto plural
                 plurals[ singular ] = str(singular) + 's'
-        Contemplate.__plurals = Contemplate.merge(Contemplate.__plurals, plurals)
+        _G.plurals = Contemplate.merge(_G.plurals, plurals)
     
     # static
     def clearPlurals(): 
-        Contemplate.__plurals = {}
+        global _G
+        _G.plurals = {}
     
     # static
     def setTemplateSeparators(seps=None):
+        global _G
         if seps:
-            if 'left' in seps: Contemplate.__leftTplSep = str(seps['left'])
-            if 'right' in seps: Contemplate.__rightTplSep = str(seps['right'])
+            if 'left' in seps: _G.leftTplSep = str(seps['left'])
+            if 'right' in seps: _G.rightTplSep = str(seps['right'])
     
     # static
     def setPreserveLines(bool=True): 
+        global _G
         if bool:  
-            Contemplate.__preserveLines = Contemplate.__preserveLinesDefault
+            _G.preserveLines = _G.preserveLinesDefault
         else: 
-            Contemplate.__preserveLines = ''
+            _G.preserveLines = ''
     
     # static
     def setCacheDir(dir): 
+        global _G
         _self = Contemplate
-        _dir = _self.__cacheDir = os.path.abspath(dir)
+        _dir = _G.cacheDir = os.path.abspath(dir)
         
         initPyFile = os.path.join(_dir, '__init__.py')
         if not os.path.exists(initPyFile):
@@ -451,42 +1282,47 @@ __{{CODE}}__
     
     # static
     def setCacheMode(mode): 
-        Contemplate.__cacheMode = mode
+        global _G
+        _G.cacheMode = mode
     
     # static
     def clearCache(all=False): 
-        Contemplate.__cache = {}
-        if all: Contemplate.__partials = {}
+        global _G
+        _G.cache = {}
+        if all: _G.partials = {}
     
     # add templates manually
     # static
     def add(tpls):
+        global _G
         _inlines = {}
         for tplID in tpls:
             if isinstance(tpls[ tplID ], (list, tuple)):
                 # unified way to add tpls both as reference and inline
                 # inline tpl, passed as array
                 if len( tpls[ tplID ][ 0 ] ):
-                    Contemplate.__inlines[ tplID ] = tpls[ tplID ][ 0 ]
+                    _G.inlines[ tplID ] = tpls[ tplID ][ 0 ]
                 _inlines[ tplID ] = True
                 
         for tplID in _inlines: del tpls[ tplID ]
-        Contemplate.__templates = Contemplate.merge(Contemplate.__templates, tpls)
+        _G.templates = Contemplate.merge(_G.templates, tpls)
     
     # add inline templates manually
     # static
     def addInline(tpls):
-        Contemplate.__inlines = Contemplate.merge(Contemplate.__inlines, tpls)
+        global _G
+        _G.inlines = Contemplate.merge(_G.inlines, tpls)
         
     # return the requested template (with optional data)
     # static
     def tpl(id, data=None, refresh=False):
+        global _G
         # Figure out if we're getting a template, or if we need to
         # load the template - and be sure to cache the result.
-        if refresh or not (id in Contemplate.__cache): 
-            Contemplate.__cache[id] = Contemplate.getCachedTemplate(id)
+        if refresh or not (id in _G.cache): 
+            _G.cache[id] = getCachedTemplate(id)
         
-        tpl = Contemplate.__cache[id]
+        tpl = _G.cache[id]
         
         # Provide some basic currying to the user
         if data is not None: return str(tpl.render( data ))
@@ -619,33 +1455,37 @@ __{{CODE}}__
     # static
     def date(format, time=None):
         if time is None: time = Contemplate.time() 
-        return Contemplate._get_php_date(format, time)
+        return _get_php_date(format, time)
     
     # localized formatted date
     # static
     def ldate(format, time=None): 
+        global _G
         if time is None: time = Contemplate.time() 
-        return Contemplate._localized_date(Contemplate.__locale, format, time)
+        return _localized_date(_G.locale, format, time)
         
     # locale, l
     # static
     def locale(e): 
-        if (e in Contemplate.__locale):
-            return Contemplate.__locale[e]
+        global _G
+        if (e in _G.locale):
+            return _G.locale[e]
         else:
             return e
     
     # pluralise
     def pluralise(singular, count): 
-        if (singular in Contemplate.__plurals):
-            if (1 != count): return Contemplate.__plurals[singular]
+        global _G
+        if (singular in _G.plurals):
+            if (1 != count): return _G.plurals[singular]
             else: return singular
         return singular
     
     # generate a uuid
     def uuid(namespace='UUID'):
-        Contemplate.__uuid += 1
-        return '_'.join( [ str(namespace), str(Contemplate.__uuid), str(int(time.time())) ] )
+        global _G
+        _G.uuid += 1
+        return '_'.join( [ str(namespace), str(_G.uuid), str(int(time.time())) ] )
     
     #
     #  HTML elements
@@ -818,592 +1658,16 @@ __{{CODE}}__
         o+="</select>"
         return o
     
-    #
-    # Control structures
-    #
-    
-    # if
-    # static
-    def t_if(cond='False'):
-        _self = Contemplate
-        _self.__ifs += 1
-        
-        out = "' "
-        # translate some logic operators to Python style
-        cond = cond.replace('true', 'True').replace('false', 'False').replace(' && ', ' and ').replace(' || ', ' or ').replace(' ! ', ' not ')
-        out1 =_self.__IF.replace('__{{COND}}__', cond)
-        out += _self.padLines(out1)
-        _self.__level += 1
-        
-        return out
-        
-    # elseif    
-    # static
-    def t_elseif(cond='False'):
-        _self = Contemplate
-        out = "' "
-        # translate some logic operators to Python style
-        cond = cond.replace('true', 'True').replace('false', 'False').replace(' && ', ' and ').replace(' || ', ' or ').replace(' ! ', ' not ')
-        out1 = _self.__ELSEIF.replace('__{{COND}}__', cond)
-
-        _self.__level -= 1
-        out += _self.padLines(out1)
-        _self.__level += 1
-        
-        return out
-        
-    # else
-    # static
-    def t_else(args=''):
-        _self = Contemplate
-        out = "' "
-        out1 = _self.__ELSE
-        
-        _self.__level -= 1
-        out += _self.padLines(out1)
-        _self.__level += 1
-        
-        return out
-    
-    # endif
-    # static
-    def t_endif(args=''):
-        _self = Contemplate
-        _self.__ifs -= 1
-        
-        out = "' "
-        out1 = _self.__ENDIF
-        
-        _self.__level -= 1
-        out += _self.padLines(out1)
-        
-        return out
-        
-    # for, foreach
-    # static
-    def t_for(for_expr):
-        _self = Contemplate
-        _self.__loops += 1  
-        _self.__loopifs += 1
-        _self.__id += 1
-        for_expr = for_expr.split(' as ')
-        o = for_expr[0].strip()
-        kv = for_expr[1].split('=>')
-        k = kv[0].strip().lstrip('$')
-        v = kv[1].strip().lstrip('$')
-        
-        o = _self.doTplVars( o )
-        loopo = '_loopObj' + str(_self.__id)
-        _self.__postReplace = {
-            '__{{O}}__' : o,
-            '__{{K}}__' : k,
-            '__{{V}}__' : v,
-            '__{{LoopO}}__' : loopo,
-            '__{{ASSIGN11}}__' : 'if isinstance('+o+', list): '+loopo+' = enumerate('+o+')',
-            '__{{ASSIGN12}}__' : 'else: '+loopo+' = '+o+'.items();',
-            '__{{ASSIGN21}}__' : '__instance__.data[\''+k+'\'] = '+k+'',
-            '__{{ASSIGN22}}__' : '__instance__.data[\''+v+'\'] = '+v+''
-        }
-        
-        out = "' "
-        out1 = _self.__FOR
-        
-        out += _self.padLines(out1)
-        _self.__level += 2
-        
-        return out
-    
-    # elsefor
-    # static
-    def t_elsefor(args=''):
-        # else attached to  for loop
-        _self = Contemplate
-        _self.__loopifs -= 1
-        out = "' "
-        out1 = _self.__ELSEFOR
-        
-        _self.__level += -2
-        out += _self.padLines(out1)
-        _self.__level += 1
-        
-        return out
-        
-    # endfor
-    # static
-    def t_endfor(args=''):
-        _self = Contemplate
-        out = "' "
-        if _self.__loopifs == _self.__loops:
-            _self.__loops -= 1 
-            _self.__loopifs -= 1
-            
-            out1 = _self.__ENDFOR1
-            
-            _self.__level += -2
-            out += _self.padLines(out1)
-            
-            return out
-        
-        _self.__loops -= 1
-        out1 = _self.__ENDFOR2
-        
-        _self.__level += -1
-        out += _self.padLines(out1)
-        
-        return out
-    
-    # include file
-    # static
-    def t_include(id):
-        _self = Contemplate
-        # cache it
-        if id not in _self.__partials:
-            _self.pushState()
-            _self.resetState()
-            _self.__partials[id] = " " + _self.parse(_self.getTemplateContents(id), False) + "' " + _self.__TEOL
-            _self.popState()
-        
-        return _self.padLines( _self.__partials[id] )
-    
-    # include template
-    # static
-    def t_template(args):
-        _self = Contemplate
-        args = args.split(',')
-        id = args.pop(0).strip()
-        obj = ','.join(args).replace('=>', ':').replace('true', 'True').replace('false', 'False')
-        return '\' + %tpl( "'+id+'", '+obj+' ) ' + _self.__TEOL
-    
-    # extend another template
-    # static
-    def t_extends(tpl):
-        Contemplate.__extends = tpl
-        return "' " + Contemplate.__TEOL
-        
-    # define (overridable) block
-    # static
-    def t_block(block):
-        _self = Contemplate
-        block = block.strip()
-        if block not in _self.__allblocks:
-            _self.__allblocks.append(block)
-        
-        _self.__blockcnt += 1
-        _self.__blocks.append(block)
-        return "' +  __||" + block + "||__"  
-        
-    # end define (overridable) block
-    # static
-    def t_endblock(args=''):
-        _self = Contemplate
-        if _self.__blockcnt>0:
-            _self.__blockcnt -= 1
-            return "__||/" + _self.__blocks.pop() + "||__"
-        return ''
-    
-    # render html table
-    # static
-    def t_table(args):
-        _self = Contemplate
-        obj = args.replace('=>', ':').replace('true', 'True').replace('false', 'False')
-        return '\' + %htmltable(' + obj + ') ' + _self.__TEOL
-    
-    # render html select
-    # static
-    def t_select(args):
-        _self = Contemplate
-        obj = args.replace('=>', ':').replace('true', 'True').replace('false', 'False')
-        return '\' + %htmlselect(' + obj + ') ' + _self.__TEOL
-    
-    #
-    # auxilliary parsing methods
-    #
-    
-    # static
-    def doControlConstructs(m):
-        _self = Contemplate
-        t = m.group(1) 
-        a = m.group(2)
-        
-        if ('if'==t): return _self.t_if(a)
-        
-        elif ('elseif'==t): return _self.t_elseif(a)
-        
-        elif ('else'==t): return _self.t_else(a)
-        
-        elif ('endif'==t): return _self.t_endif(a)
-        
-        elif ('for'==t): return _self.t_for(a)
-        
-        elif ('elsefor'==t): return _self.t_elsefor(a)
-        
-        elif ('endfor'==t): return _self.t_endfor(a)
-        
-        elif ('template'==t): return _self.t_template(a)
-        
-        elif ('extends'==t): return _self.t_extends(a)
-        
-        elif ('block'==t): return _self.t_block(a)
-        
-        elif ('endblock'==t): return _self.t_endblock(a)
-        
-        elif ('include'==t): return _self.t_include(a)
-        
-        elif ('htmltable'==t): return _self.t_table(a)
-        
-        elif ('htmlselect'==t): return _self.t_select(a)
-        
-        return m.group(0)
-    
-    # static
-    def doBlocks(s):
-        _self = Contemplate
-        blocks = {} 
-        bl = len(_self.__allblocks)
-        while bl:
-            bl -= 1
-            block = _self.__allblocks.pop()
-            delim1 = '__||' + block + '||__' 
-            delim2 = '__||/' + block + '||__'
-            
-            len1 = len(delim1) 
-            len2 = len1+1 
-            
-            pos1 = s.find(delim1, 0) 
-            pos2 = s.find(delim2, pos1+len1)
-            
-            code = s[pos1:pos2+len2]
-            
-            if len(code)>0:
-                code = code[len1:-len2].replace("+ '' +", '+')  # remove redundant code
-                
-                bout = _self.__DOBLOCK.replace('__{{CODE}}__', code+"'")
-                
-                blocks[block] = bout
-            
-            replace = True
-            while replace:
-                # replace all occurances of the block on the current template, 
-                # with the code found previously
-                # in the 1st block definition
-                s = s[0:pos1] + "__instance__.renderBlock( '" + block + "' ) " + s[pos2+len2:]
-                
-                
-                pos1 = s.find(delim1, 0)
-                replace = (0 <= pos1)
-                if replace: pos2 = s.find(delim2, pos1+len1)
-            
-        return [ s.replace("+ '' +", '+'), blocks ]
-    
-    # static
-    def doTplVars(s):
-        _self = Contemplate
-        
-        tplvars = []
-        rem = []
-        
-        # find tplvars
-        tplvars = re.findall( _self.__regExps['ids'], s )
-        
-        if len(tplvars)>0:
-        
-            rem = re.split( _self.__regExps['vars'], s )
-            remLen = len(rem)-1
-            s = ''
-            for i in range(remLen):
-            
-                s += re.sub( _self.__regExps['atts'], r"['\1']", rem[i] )  # fix dot-style attributes
-                s += "__instance__.data['" + tplvars[i] + "']";  # replace tplvars with the tpldata
-            
-            s += re.sub( _self.__regExps['atts'], r"['\1']", rem[remLen] )  # fix dot-style attributes
-        
-        return s
-        
-    # static
-    def doTags(tag):
-        _self = Contemplate
-        
-        _self.__postReplace = None
-        
-        tag = re.sub(_self.__regExps['controls'], _self.doControlConstructs, tag)
-
-        tag = _self.doTplVars( tag ) # replace tplvars with python vars accurately
-        
-        if _self.__postReplace:
-        
-            for k in _self.__postReplace:  tag = tag.replace( k, _self.__postReplace[k] )
-            
-        
-        tag = re.sub( _self.__regExps['functions'], r'Contemplate.\1', tag )
-        
-        tag = re.sub( _self.__regExps['replacements'], r"' + str( \1 ) + '", tag )
-        
-        tag = tag.replace( "\t", _self.__tplStart ).replace( "\v", _self.padLines(_self.__tplEnd) )
-        
-        return tag
-    
-    # static
-    def split(s):
-        _self = Contemplate
-        
-        parts1 = s.split( _self.__leftTplSep )
-        l = len(parts1)
-        parts = []
-        for i in range(l):
-            tmp = parts1[i].split( _self.__rightTplSep )
-            parts.append ( tmp[0] )
-            if len(tmp) > 1: parts.append ( tmp[1] )
-        
-        return parts
-
-    # static
-    def parse(tpl, withblocks=True):
-        _self = Contemplate
-        parts = _self.split( tpl )
-        l = len(parts)
-        isTag = False
-        out = ''
-        for i in range(l):
-            s = parts[i]
-            
-            if isTag:
-                
-                s = re.sub( _self.__regExps['specials'], " ", s ) # replace special chars
-                
-                s = _self.doTags( "\t" + s + "\v" ) # parse each template tag section accurately
-                
-                isTag = False
-                
-            else:
-                
-                s = s.replace( "'", "\\'" )  # escape single quotes accurately (used by parse function)
-                
-                s = s.replace( "\n", _self.__preserveLines ) # preserve lines
-            
-                isTag = True
-            
-            out += s
-        
-        if withblocks: return _self.doBlocks(out)
-        
-        return out.replace( "+ '' +", '+' ) # remove redundant code
-    
-    # static
+   # static
     def getTemplateContents(id):
-        _self = Contemplate
-        if id in _self.__inlines: 
-            return _self.__inlines[id]
+        global _G
+        if id in _G.inlines: 
+            return _G.inlines[id]
         
-        elif (id in _self.__templates) and os.path.exists(_self.__templates[id]): 
-            return _self.read(_self.__templates[id])
+        elif (id in _G.templates) and os.path.exists(_G.templates[id]): 
+            return Contemplate.read(_G.templates[id])
         
         return ''
-    
-    # static
-    def getCachedTemplateName(id):
-        return id.replace('-', '_').replace(' ', '_') + '_tpl' + '.py'
-    
-    # static
-    def getCachedTemplateClass(id):
-        return 'Contemplate_' + id.replace('-', '_').replace(' ', '_') + '_Cached'
-    
-    # static
-    def createTemplateRenderFunction(id):
-        _self = Contemplate
-        _self.resetState()
-        
-        blocks = _self.parse(_self.getTemplateContents(id))
-        
-        if _self.__extends:
-            func = _self.__TFUNC1
-        
-        else:
-            func = _self.__TFUNC2.replace( '__{{CODE}}__', "__p__ += '" + blocks[0] + "'")
-        
-        _self.__funcId += 1
-        
-        funcName = '_contemplateFn' + str(_self.__funcId)
-        fn = _self.createFunction(funcName, '__instance__=None', _self.padLines(func, 1), {'Contemplate': Contemplate})
-        
-        blockfns = {}
-        for b,bc in blocks[1].items():
-            funcName = '_contemplateBlockFn_' + b + '_' + str(_self.__funcId)
-            blockfns[b] = _self.createFunction(funcName, '__instance__=None', _self.padLines(bc, 1), {'Contemplate': Contemplate})
-        
-        return [ fn, blockfns]
-    
-    # static
-    def createCachedTemplate(id, filename, classname):
-        _self = Contemplate
-        _self.resetState()
-        
-        blocks = _self.parse(_self.getTemplateContents(id))
-        
-        # tpl-defined blocks
-        sblocks = ''
-        for b,bc in blocks[1].items():
-            sblocks += _self.__TEOL + _self.__tplBlockCode.replace('__{{BLOCK}}__', b).replace('__{{BLOCKMETHOD}}__', "_blockfn_"+b).replace('__{{BLOCKMETHODCODE}}__', _self.padLines(bc, 1))
-        
-        # tpl render code
-        if _self.__extends:
-            parentCode = "self.setParent( '"+_self.__extends+"' )"
-            renderCode = _self.__RCODE1
-        
-        else:
-            parentCode = ''
-            renderCode = _self.__RCODE2.replace( '__{{CODE}}__', "__p__ += '" + blocks[0] + "'" )
-        
-        if _self.__tplPrefixCode:
-            prefixCode = _self.__tplPrefixCode
-        else
-            prefixCode = ''
-            
-        # generate tpl class
-        classCode = _self.__tplClassCode.replace('__{{PREFIX_CODE}}__', prefixCode).replace('__{{IMPORTS}}__', '').replace('__{{ID}}__', id).replace('__{{CLASSNAME}}__', classname).replace('__{{PARENTCODE}}__', _self.padLines(parentCode, 3)).replace('__{{BLOCKS}}__', _self.padLines(sblocks, 2)).replace('__{{RENDERCODE}}__', _self.padLines(renderCode, 4))
-        
-        return _self.write(filename, classCode)
-    
-    # static
-    def getCachedTemplate(id):
-        _self = Contemplate
-        
-        # inline templates saved only in-memory
-        if id in _self.__inlines:
-            # dynamic in-memory caching during page-request
-            tpl = Contemplate()
-            tpl.setId( id )
-            fns = _self.createTemplateRenderFunction(id)
-            tpl.setRenderFunction( fns[0] )
-            tpl.setBlocks( fns[1] )
-            if _self.__extends: tpl.setParent( _self.tpl(_self.__extends) )
-            return tpl
-        
-        CM = _self.__cacheMode
-        
-        if CM == _self.CACHE_TO_DISK_NOUPDATE:
-        
-            cachedTplFile = _self.getCachedTemplateName(id)
-            cachedTplPath = os.path.join(Contemplate.__cacheDir, cachedTplFile)
-            cachedTplClass = _self.getCachedTemplateClass(id)
-            if not os.path.isfile(cachedTplPath):
-                # if not exist, create it
-                _self.createCachedTemplate(id, cachedTplPath, cachedTplClass)
-            if os.path.isfile(cachedTplPath):
-                tpl = _self.include(cachedTplFile, cachedTplClass)()
-                tpl.setId( id )
-                return tpl
-            return None
-
-        
-        elif CM == _self.CACHE_TO_DISK_AUTOUPDATE:
-        
-            cachedTplFile = _self.getCachedTemplateName(id)
-            cachedTplPath = os.path.join(Contemplate.__cacheDir, cachedTplFile)
-            cachedTplClass = _self.getCachedTemplateClass(id)
-            if not os.path.isfile(cachedTplPath) or (os.path.getmtime(cachedTplPath) <= os.path.getmtime(_self.__templates[id])):
-                # if tpl not exist or is out-of-sync (re-)create it
-                _self.createCachedTemplate(id, cachedTplPath, cachedTplClass)
-            if os.path.isfile(cachedTplPath):
-                tpl = _self.include(cachedTplFile, cachedTplClass)()
-                tpl.setId( id )
-                return tpl
-            return None
-        
-        else:
-        
-            # dynamic in-memory caching during page-request
-            tpl = Contemplate()
-            tpl.setId( id )
-            fns = _self.createTemplateRenderFunction(id)
-            tpl.setRenderFunction( fns[0] )
-            tpl.setBlocks( fns[1] )
-            if _self.__extends: tpl.setParent( _self.tpl(_self.__extends) )
-            return tpl
-        
-        return None
-    
-    # static
-    def setCachedTemplate(filename, tplContents): 
-        return Contemplate.write(filename, tplContents)
-    
-    # static
-    def _get_ordinal_suffix(n):
-        # adapted from http://brandonwamboldt.ca/python-php-date-class-335/
-        return {1: 'st', 2: 'nd', 3: 'rd'}.get(4 if 10 <= n % 100 < 20 else n % 10, "th")
-    
-    # static
-    def _get_php_date(format, time):
-        # http://php.net/manual/en/datetime.formats.date.php
-        # http://strftime.org/
-        # adapted from http://brandonwamboldt.ca/python-php-date-class-335/
-        _self = Contemplate
-        time  = datetime.datetime.fromtimestamp(time)
-        timeStr = ''
-
-        replacements = {}
-
-        """ Day """
-        replacements['d'] = str( time.day ).zfill(2)
-        replacements['D'] = calendar.day_abbr[ time.weekday() ]
-        replacements['j'] = str( time.day )
-        replacements['l'] = calendar.day_name[ time.weekday() ]
-        replacements['S'] = _self._get_ordinal_suffix( time.day )
-        replacements['w'] = str( time.weekday() )
-        replacements['z'] = str( time.timetuple().tm_yday )
-        
-        """ Week """
-        replacements['W'] = str( time.isocalendar()[1] )
-        
-        """ Month """
-        replacements['F'] = calendar.month_name[ time.month ]
-        replacements['m'] = str( time.month ).zfill(2)
-        replacements['M'] = calendar.month_abbr[ time.month ]
-        replacements['n'] = str( time.month )
-        replacements['t'] = str( calendar.monthrange(time.year, time.month)[1] )
-        
-        """ Year """
-        replacements['L'] = str(int( calendar.isleap(time.year) ))
-        replacements['Y'] = str( time.year )
-        replacements['y'] = str( time.year )[2:]
-        
-        """ Time """
-        replacements['a'] = time.strftime("%p").lower()
-        replacements['A'] = time.strftime("%p")
-        replacements['g'] = str( int(time.strftime("%I")) )
-        replacements['G'] = str( int(time.strftime("%H")) )
-        replacements['h'] = time.strftime("%I")
-        replacements['H'] = time.strftime("%H")
-        replacements['i'] = str( time.minute ).zfill(2)
-        replacements['s'] = str( time.second ).zfill(2)
-        replacements['u'] = str( time.microsecond )
-        
-        """ Timezone """
-        replacements['e'] = "" #_self.get_timezone()
-        replacements['I'] = str( time.dst() )
-        
-        #for regex, replace in replacements.items():
-        #    format = format.replace(regex, replace)
-        newformat = ''
-        for c in format:
-            if c in replacements:
-                newformat += replacements[c]
-            else:
-                newformat += c
-
-        return newformat
-        
-    # static
-    def _localized_date(locale, format, timestamp):
-        txt_words = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sun", "Mon", "Tues", "Wednes", "Thurs", "Fri", "Satur", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-        
-        date = Contemplate._get_php_date(format, timestamp)
-        
-        # localize days/months
-        for word in txt_words: 
-            if word in locale: date = date.replace(word, locale[word])
-            
-        # return localized date
-        return date
     
     # static
     def merge(m, *args): 
@@ -1435,61 +1699,6 @@ __{{CODE}}__
             return cdata
         
     # static
-    def resetState():
-        # reset state
-        _self = Contemplate
-        _self.__loops = 0 
-        _self.__ifs = 0 
-        _self.__loopifs = 0
-        _self.__blockcnt = 0 
-        _self.__blocks = []  
-        _self.__allblocks = [] 
-        _self.__extends = None
-        _self.__level = 0
-        _self.__id = 0
-        #_self.__funcId = 0
-    
-    # static
-    def pushState():
-        # push state
-        _self = Contemplate
-        _self.__stack.append([_self.__loops, _self.__ifs, _self.__loopifs, _self.__level,
-        _self.__blockcnt, _self.__blocks,  _self.__allblocks,  _self.__extends])
-    
-    # static
-    def popState():
-        # pop state
-        _self = Contemplate
-        t = _self.__stack.pop()
-        _self.__loops = t[0] 
-        _self.__ifs = t[1] 
-        _self.__loopifs = t[2] 
-        _self.__level = t[3]
-        _self.__blockcnt = t[4] 
-        _self.__blocks = t[5]  
-        _self.__allblocks = t[6]  
-        _self.__extends = t[7]
-    
-    # static
-    def padLines(lines, level=None):
-        _self = Contemplate
-        
-        if level is None:  level = _self.__level
-        
-        if level >= 0:
-            pad = _self.__pad * level
-            
-            lines = re.split(_self.NLRX, lines)
-            lenlines = len(lines)
-            
-            for i in range(lenlines):
-                lines[i] = pad + lines[i]
-            
-            lines = _self.__TEOL.join(lines)
-        
-        return lines
-    
-    # static
     def open(file, op):
         #if Contemplate.ENCODING: 
         #    f = open(file, op, encoding=Contemplate.ENCODING)
@@ -1510,154 +1719,6 @@ __{{CODE}}__
         with Contemplate.open(file, 'w') as f:
             f.write(text)
 
-    #
-    #  Auxilliary methods 
-    # (mostly methods to simulate php-like functionality needed by the engine)
-    #
-    
-    # static
-    def include(filename, classname, doReload=False):
-        # http://www.php2python.com/wiki/function.include/
-        # http://docs.python.org/dev/3.0/whatsnew/3.0.html
-        # http://stackoverflow.com/questions/4821104/python-dynamic-instantiation-from-string-name-of-a-class-in-dynamically-imported
-        
-        #_locals_ = {'Contemplate': Contemplate}
-        #_globals_ = {'Contemplate': Contemplate}
-        #if 'execfile' in globals():
-        #    # Python 2.x
-        #    execfile(filename, _globals_, _locals_)
-        #    return _locals_[classname]
-        #else:
-        #    # Python 3.x
-        #    exec(Contemplate.read(filename), _globals_, _locals_)
-        #    return _locals_[classname]
-        
-        # http://docs.python.org/2/library/imp.html
-        # http://docs.python.org/2/library/functions.html#__import__
-        # http://docs.python.org/3/library/functions.html#__import__
-        # http://stackoverflow.com/questions/301134/dynamic-module-import-in-python
-        # http://stackoverflow.com/questions/11108628/python-dynamic-from-import
-        # also: http://code.activestate.com/recipes/473888-lazy-module-imports/
-        # using import instead of execfile, usually takes advantage of Python cached compiled code
-        
-        getTplClass = None
-        directory = Contemplate.__cacheDir
-        # add the dynamic import path to sys
-        os.sys.path.append(directory)
-        currentcwd = os.getcwd()
-        os.chdir(directory)   # change working directory so we know import will work
-        
-        if os.path.exists(filename):
-            
-            modname = filename[:-3]  # remove .py extension
-            mod = __import__(modname)
-            if doReload: reload(mod) # Might be out of date
-            # a trick in-order to pass the Contemplate super-class in a cross-module way
-            getTplClass = getattr( mod, '__getTplClass__' )
-        
-        # restore current dir
-        os.chdir(currentcwd)
-        # remove the dynamic import path from sys
-        del os.sys.path[-1]
-        
-        # return the tplClass if found
-        if getTplClass:  return getTplClass(Contemplate)
-        return None
-    
-    # static
-    def createFunction(funcName, args, sourceCode, additional_symbols=dict()):
-        # http://code.activestate.com/recipes/550804-create-a-restricted-python-function-from-a-string/
-
-        # The list of symbols that are included by default in the generated
-        # function's environment
-        SAFE_SYMBOLS = [
-            "list", "dict", "enumerate", "tuple", "set", "long", "float", "object",
-            "bool", "callable", "True", "False", "dir",
-            "frozenset", "getattr", "hasattr", "abs", "cmp", "complex",
-            "divmod", "id", "pow", "round", "slice", "vars",
-            "hash", "hex", "int", "isinstance", "issubclass", "len",
-            "map", "filter", "max", "min", "oct", "chr", "ord", "range",
-            "reduce", "repr", "str", "type", "zip", "xrange", "None",
-            "Exception", "KeyboardInterrupt"
-        ]
-        
-        # Also add the standard exceptions
-        __bi = __builtins__
-        if type(__bi) is not dict:
-            __bi = __bi.__dict__
-        for k in __bi:
-            if k.endswith("Error") or k.endswith("Warning"):
-                SAFE_SYMBOLS.append(k)
-        del __bi
-        
-        # Include the sourcecode as the code of a function funcName:
-        s = "def " + funcName + "(%s):\n" % args
-        s += sourceCode # this should be already properly padded
-
-        # Byte-compilation (optional)
-        byteCode = compile(s, "<string>", 'exec')  
-
-        # Setup the local and global dictionaries of the execution
-        # environment for __TheFunction__
-        bis   = dict() # builtins
-        globs = dict()
-        locs  = dict()
-
-        # Setup a standard-compatible python environment
-        bis["locals"]  = lambda: locs
-        bis["globals"] = lambda: globs
-        globs["__builtins__"] = bis
-        globs["__name__"] = "SUBENV"
-        globs["__doc__"] = sourceCode
-
-        # Determine how the __builtins__ dictionary should be accessed
-        if type(__builtins__) is dict:
-            bi_dict = __builtins__
-        else:
-            bi_dict = __builtins__.__dict__
-
-        # Include the safe symbols
-        for k in SAFE_SYMBOLS:
-            
-            # try from current locals
-            try:
-              locs[k] = locals()[k]
-              continue
-            except KeyError:
-              pass
-            
-            # Try from globals
-            try:
-              globs[k] = globals()[k]
-              continue
-            except KeyError:
-              pass
-            
-            # Try from builtins
-            try:
-              bis[k] = bi_dict[k]
-            except KeyError:
-              # Symbol not available anywhere: silently ignored
-              pass
-
-        # Include the symbols added by the caller, in the globals dictionary
-        globs.update(additional_symbols)
-
-        # Finally execute the Function statement:
-        eval(byteCode, globs, locs)
-        
-        # As a result, the function is defined as the item funcName
-        # in the locals dictionary
-        fct = locs[funcName]
-        # Attach the function to the globals so that it can be recursive
-        del locs[funcName]
-        globs[funcName] = fct
-        
-        # Attach the actual source code to the docstring
-        fct.__doc__ = sourceCode
-        
-        # return the compiled function object
-        return fct
 
 
 # aliases

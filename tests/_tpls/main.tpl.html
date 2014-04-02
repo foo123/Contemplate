@@ -54,6 +54,11 @@
                 "sub" : "#sub_tpl", // load the template from this DOM element
                 'date': "./_tpls/date.tpl.html" // load the template from this url using ajax (slower)
             });
+            Contemplate.addPlugin('test', function(v){
+                if ( v ) return 'Plugin Test value: ' + v;
+                return 'Plugin Test no value given';
+            });
+
             
             var results = document.getElementById("results_client");
             results.innerHTML = Contemplate.tpl('demo', <% $data_client %>);

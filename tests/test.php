@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version 0.4.9
+*  @version 0.5
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -35,6 +35,12 @@ Contemplate::setLocaleStrings(array(
 Contemplate::setPlurals(array(
     'item'=> null // auto plural
 ));
+function test_plugin($v=null)
+{
+    if ( $v ) return 'Plugin Test value: ' . $v;
+    return 'Plugin Test no value given';
+}
+Contemplate::addPlugin('test', test_plugin);
 
 // set the cache directory (make sure to exist)
 Contemplate::setCacheDir(ABSPATH.'/_tplcache');

@@ -101,6 +101,9 @@ so any notation will be valid, however for now this is how it works.
 
 __Control Constructs__
 
+* *%set(varName, exprVal)*  SET / UPDATE a tpl variable with nme varName to given value or expression
+* *%unset(varName)*  UNSET / DELETE tpl variable with name varName
+
 * *%if(expression)*  IF construct
 * *%elseif(expression)*  ELSEIF construct
 * *%else()*  ELSE construct
@@ -169,3 +172,4 @@ __Functions__
 * *%html(val)*  html-escape val (htmlentities)
 * *%url(val)*  url-encode val (urlencode)
 
+* *%plugin_[plugin_name]([val1, val2, ..])*  call a custom (user-defined) plugin as template function

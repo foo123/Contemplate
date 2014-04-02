@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.4.10
+*  @version: 0.5
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -14,46 +14,50 @@ if (!class_exists('Contemplate'))
 {
 class Contemplate
 {
-    const VERSION = "0.4.10";
+    const VERSION = "0.5";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
     const CACHE_TO_DISK_NOUPDATE = 4;
     
-    protected static $__isInited = false;
-    protected static $__cacheDir = './';
-    protected static $__cacheMode = 0;
-    protected static $__cache = array();
-    protected static $__templates = array();
-    protected static $__inlines = array();
-    protected static $__partials = array();
-    protected static $__locale = array();
-    protected static $__plurals = array();
+    /*private static $ALPHA = '/^[a-zA-Z_]/';
+    private static $ALPHANUM = '/^[a-zA-Z0-9_]/';
+    private static $SPACE = '/^\\s/';*/
     
-    protected static $__leftTplSep = "<%";
-    protected static $__rightTplSep = "%>";
-    protected static $__preserveLinesDefault = "' . \"\\n\" . '";
-    protected static $__preserveLines = '';
-    protected static $__EOL = "\n";
-    protected static $__TEOL = PHP_EOL;
-    protected static $__tplStart = '';
-    protected static $__tplEnd = '';
-    protected static $__tplPrefixCode = '';
+    private static $__isInited = false;
+    private static $__cacheDir = './';
+    private static $__cacheMode = 0;
+    private static $__cache = array();
+    private static $__templates = array();
+    private static $__inlines = array();
+    private static $__partials = array();
+    private static $__locale = array();
+    private static $__plurals = array();
     
-    protected static $__pad = "    ";
-    protected static $__level = 0;
-    protected static $__loops = 0;
-    protected static $__ifs = 0;
-    protected static $__loopifs = 0;
-    protected static $__blocks = array();
-    protected static $__allblocks = array();
-    protected static $__blockcnt = 0;
-    protected static $__extends = null;
-    protected static $__postReplace = null;
-    protected static $__stack = null;
-    protected static $__uuid = 0;
+    private static $__leftTplSep = "<%";
+    private static $__rightTplSep = "%>";
+    private static $__preserveLinesDefault = "' . \"\\n\" . '";
+    private static $__preserveLines = '';
+    private static $__EOL = "\n";
+    private static $__TEOL = PHP_EOL;
+    private static $__tplStart = '';
+    private static $__tplEnd = '';
+    private static $__tplPrefixCode = '';
     
-    protected static $__regExps = array(
+    private static $__pad = "    ";
+    private static $__level = 0;
+    private static $__loops = 0;
+    private static $__ifs = 0;
+    private static $__loopifs = 0;
+    private static $__blocks = array();
+    private static $__allblocks = array();
+    private static $__blockcnt = 0;
+    private static $__extends = null;
+    private static $__postReplace = null;
+    private static $__stack = null;
+    private static $__uuid = 0;
+    
+    private static $__regExps = array(
         'specials' => null,
         'replacements' => null,
         'vars' => null,
@@ -63,15 +67,17 @@ class Contemplate
         'controls' => null
     );
     
-    protected static $__controlConstructs = array(
+    private static $__controlConstructs = array(
         'htmlselect', 'htmltable',
         'include', 'template', 
         'extends', 'endblock', 'block',
         'elsefor', 'endfor', 'for',
+        'set', 'unset',
         'elseif', 'else', 'endif', 'if'
     );
     
-    protected static $__funcs = array( 
+    private static $__funcs = array( 
+        'plugin_([a-zA-Z0-9_]+)',
         'htmlselect', 'htmltable', 'has_key',
         'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
         'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 
@@ -81,49 +87,50 @@ class Contemplate
         'dq', 'q', 'l', 's', 'n', 'f' 
     );
     
+    private static $__plugins = array();
+    
     // generated tpl class code as a heredoc template
-    protected static $__tplClassCode = '';
+    private static $__tplClassCode = '';
     
     // generated tpl block method code as a heredoc template
-    protected static $__tplBlockCode = '';
+    private static $__tplBlockCode = '';
     
     // generated IF code
-    protected static $__IF = '';
+    private static $__IF = '';
     
     // generated ELSEIF code
-    protected static $__ELSEIF = '';
+    private static $__ELSEIF = '';
 
     // generated ELSE code
-    protected static $__ELSE = '';
+    private static $__ELSE = '';
     
     // generated ENDIF code
-    protected static $__ENDIF = '';
+    private static $__ENDIF = '';
     
     // generated FOR code
-    protected static $__FOR = '';
+    private static $__FOR = '';
     
     // generated ELSEFOR code
-    protected static $__ELSEFOR = '';
+    private static $__ELSEFOR = '';
     
     // generated ENDFOR code
-    protected static $__ENDFOR1 = '';
+    private static $__ENDFOR1 = '';
     
     // generated ENDFOR code
-    protected static $__ENDFOR2 = '';
+    private static $__ENDFOR2 = '';
     
     // generated block code snippet
-    protected static $__DOBLOCK = '';
-
-    
-    // generated dynamic render code
-    protected static $__TFUNC1 = '';
+    private static $__DOBLOCK = '';
 
     // generated dynamic render code
-    protected static $__TFUNC2 = '';
+    private static $__TFUNC1 = '';
 
-    protected static $__RCODE1 = '';
+    // generated dynamic render code
+    private static $__TFUNC2 = '';
+
+    private static $__RCODE1 = '';
     
-    protected static $__RCODE2 = '';
+    private static $__RCODE2 = '';
     
     
     //
@@ -424,9 +431,29 @@ _TPLRENDERCODE_;
         self::$__isInited = true;
     }
     
+    // http://www.blainesch.com/403/dynamically-adding-methods-to-classes-and-objects-in-php/
+    public static function __callstatic($method, $params=array()) 
+    {
+        if ( isset( self::$__plugins[ $method ] ) && is_callable( self::$__plugins[ $method ] ) ) 
+        {
+            return call_user_func_array(self::$__plugins[ $method ], $params);
+        } 
+        /*else 
+        {
+            throw new Exception("Method not defined.");
+        }*/
+        return '';
+    }
+    
     //
     // Main template static methods
     //
+    
+    // add custom plugins as template functions
+    public static function addPlugin($name, $handler) 
+    {
+        self::$__plugins[ "plugin_$name" ] = $handler;
+    }
     
     // custom php code to add to start of template (eg custom access checks etc..)
     public static function setPrefixCode($preCode=null)
@@ -881,8 +908,34 @@ _TPLRENDERCODE_;
     // Control structures
     //
     
+    // set/create/update tpl var
+    private static function t_set($args) 
+    {
+        $args = explode(',', $args);
+        $varname = trim( array_shift($args) );
+        $expr = trim(implode(',', $args));
+        self::$__postReplace = array(
+            '__{{SETVAR1}}__' => "\$__instance__->data[$varname] = ( $expr );"
+        );
+        return "';" . self::$__TEOL . self::padLines( '__{{SETVAR1}}__' ) . self::$__TEOL;
+    }
+    
+    // unset/remove/delete tpl var
+    private static function t_unset($varname=null) 
+    {
+        if ( $varname && strlen($varname) )
+        {
+            $varname = trim( $varname );
+            self::$__postReplace = array(
+                '__{{UNSETVAR1}}__' => "\$__instance__->data[$varname]"
+            );
+            return "';" . self::$__TEOL . self::padLines( 'if ( isset(__{{UNSETVAR1}}__) ) unset( __{{UNSETVAR1}}__ );' ) . self::$__TEOL;
+        }
+        return "'; " . self::$__TEOL; 
+    }
+        
     // if
-    protected static function t_if($cond='false') 
+    private static function t_if($cond='false') 
     {  
         self::$__ifs++;  
         
@@ -895,7 +948,7 @@ _TPLRENDERCODE_;
     }
     
     // elseif    
-    protected static function t_elseif($cond='false') 
+    private static function t_elseif($cond='false') 
     { 
         $out = "';";
         $out1 = str_replace( '__{{COND}}__', $cond, self::$__ELSEIF );
@@ -908,7 +961,7 @@ _TPLRENDERCODE_;
     }
     
     // else
-    protected static function t_else() 
+    private static function t_else() 
     { 
         $out = "';";
         $out1 = self::$__ELSE;
@@ -921,7 +974,7 @@ _TPLRENDERCODE_;
     }
     
     // endif
-    protected static function t_endif() 
+    private static function t_endif() 
     { 
         self::$__ifs--;  
         
@@ -935,7 +988,7 @@ _TPLRENDERCODE_;
     }
     
     // for, foreach
-    protected static function t_for($for_expr) 
+    private static function t_for($for_expr) 
     {
         self::$__loops++;  self::$__loopifs++;
         $for_expr = explode(' as ', $for_expr); 
@@ -965,7 +1018,7 @@ _TPLRENDERCODE_;
     }
     
     // elsefor
-    protected static function t_elsefor() 
+    private static function t_elsefor() 
     { 
         /* else attached to  for loop */ 
         self::$__loopifs--;  
@@ -980,7 +1033,7 @@ _TPLRENDERCODE_;
     }
     
     // endfor
-    protected static function t_endfor() 
+    private static function t_endfor() 
     {
         $out = "';";
         if ( self::$__loopifs==self::$__loops ) 
@@ -1004,7 +1057,7 @@ _TPLRENDERCODE_;
     }
     
     // include file
-    protected static function t_include($id) 
+    private static function t_include($id) 
     { 
         /* cache it */ 
         if ( !isset(self::$__partials[$id]) )
@@ -1018,7 +1071,7 @@ _TPLRENDERCODE_;
     }
     
     // include template
-    protected static function t_template($args)
+    private static function t_template($args)
     {
         $args = explode(',', $args); 
         $id = trim(array_shift($args));
@@ -1027,14 +1080,14 @@ _TPLRENDERCODE_;
     }
     
     // extend another template
-    protected static function t_extends($tpl) 
+    private static function t_extends($tpl) 
     { 
         self::$__extends = $tpl; 
         return "'; " . self::$__TEOL; 
     }
     
     // define (overridable) block
-    protected static function t_block($block) 
+    private static function t_block($block) 
     { 
         $block = trim($block);
         if ( !in_array($block, self::$__allblocks) )
@@ -1048,7 +1101,7 @@ _TPLRENDERCODE_;
     }
     
     // end define (overridable) block
-    protected static function t_endblock() 
+    private static function t_endblock() 
     { 
         if ( self::$__blockcnt ) 
         {
@@ -1059,14 +1112,14 @@ _TPLRENDERCODE_;
     }
     
     // render html table
-    protected static function t_table($args)
+    private static function t_table($args)
     {
         $obj = str_replace(array('{', '}', '[', ']'), array('array(', ')','array(', ')'), $args);
         return '\' . %htmltable('.$obj.'); ' . self::$__TEOL;
     }
     
     // render html select
-    protected static function t_select($args)
+    private static function t_select($args)
     {
         $obj = str_replace(array('{', '}', '[', ']'), array('array(', ')','array(', ')'), $args);
         return '\' . %htmlselect('.$obj.'); ' . self::$__TEOL;
@@ -1075,12 +1128,16 @@ _TPLRENDERCODE_;
     //
     // auxilliary parsing methods
     //
-    protected static function doControlConstructs($m)
+    private static function doControlConstructs($m)
     {
         if (isset($m[1]))
         {
             switch($m[1])
             {
+                case 'set': return self::t_set($m[2]);  break;
+                
+                case 'unset': return self::t_unset($m[2]);  break;
+                
                 case 'if': return self::t_if($m[2]);  break;
                 
                 case 'elseif': return self::t_elseif($m[2]); break;
@@ -1113,7 +1170,7 @@ _TPLRENDERCODE_;
         return $m[0];
     }
     
-    protected static function doBlocks($s) 
+    private static function doBlocks($s) 
     {
         $blocks = array(); 
         $bl = count(self::$__allblocks);
@@ -1161,7 +1218,7 @@ _TPLRENDERCODE_;
         return array(str_replace(array(". '' .", ". '';"), array('.', ';'), $s), $blocks);
     }
     
-    protected static function doTplVars($s) 
+    private static function doTplVars($s) 
     {
         $tplvars = array(); $rem = array();
         
@@ -1181,8 +1238,213 @@ _TPLRENDERCODE_;
         
         return $s;
     }
+    /*    
+    private static function parseString($s, $q, $i, $l)
+    {
+        $string = $q;
+        $escaped = false;
+        $ch = '';
+        while ( $i < $l )
+        {
+            $ch = $s[$i++];
+            $string .= $ch
+            if ( $q == $ch && !$escaped )
+                break;
+            $escaped = (!$escaped && '\\' == $ch);
+        }
+        return $string;
+    }
+    
+    private static function parseVariable($s, $i, $l)
+    {
+        $variable = null;
+        if ( preg_match(self::$ALPHA, $s[$i], $m) )
+        {
+            $variable = $s[$i++];
+            $space = '';
+            $property = '';
+            $done = $i >= $l;
+            while ( !$done )
+            {
+                while ( $i < $l && preg_match(self::$ALPHANUM, $s[$i], $m) )
+                {
+                    $variable .= $s[$i++];
+                }
+                while ( $i < $l && preg_match(self::$SPACE, $s[$i], $m) )
+                {
+                    $space .= $s[$i++];
+                }
+                while ( $i < $l && '.' == $s[$i] )
+                {
+                    $sub = substr($s, $i);
+                    $property = self::parseVariable($sub, 0, strlen($sub));
+                    if ( $property )
+                    {
+                        $variable .= $space . '.' . $property;
+                        $space = '';
+                        $i += strlen( $property );
+                        while ( $i < $l && preg_match(self::$SPACE, $s[$i], $m) )
+                        {
+                            $space .= $s[$i++];
+                        }
+                    }
+                }
+                while ( $i < $l && '[' == $s[$i] )
+                {
+                    $sub = substr($s, $i);
+                    $property = self::parseVariable($sub, 0, strlen($sub));
+                    if ( $property )
+                    {
+                        $variable .= $space . '.' . $property;
+                        $space = '';
+                        $i += strlen( $property );
+                        while ( $i < $l && preg_match(self::$SPACE, $s[$i], $m) )
+                        {
+                            $space .= $s[$i++];
+                        }
+                    }
+                }
+                $done = $i >= $l;
+            }
+        }
+        return $variable;
+    }
+    
+    private static function parseTag( $tag )
+    {
+        $count = strlen( $tag );
+        $index = 0;
+        $ch = '';
+        $tok = null;
+        $out = '';
+        while ( $index < $count )
+        {
+            $ch = $tag[$index++];
+            
+            if ( '%' === $ch )
+            {
+                if ( preg_match(self::$ALPHA, $tag[$index], $m) )
+                {
+                    // parse identifier of control construct or template function
+                    $space = '';
+                    $params = '';
+                    $ident = '';
+                    $ident .= $tag[$index++];
+                    
+                    while ( $index < $count && preg_match(self::$ALPHANUM, $tag[$index], $m) )
+                    {
+                        $ident .= $tag[$index++];
+                    }
+                    if ( in_array($ident, self::$__controlConstructs) )
+                    {
+                        while ( $index < $count && preg_match(self::$SPACE, $tag[$index], $m) )
+                        {
+                            $space .= $index++;
+                        }
+                        if ( $index < $count )
+                        {
+                            $paren = 0;
+                            if ( '(' = $tag[$index] )
+                            {
+                                $paren++;
+                                while ( $index < $count && $paren )
+                                {
+                                    $next = $tag[$index++];
+                                    if ( ')' == $next ) 
+                                    {
+                                        $paren--;
+                                        if ( $paren )
+                                            $params .= $next;
+                                    }
+                                    else if ( '(' == $next ) 
+                                    {
+                                        $paren++;
+                                        $params .= $next;
+                                    }
+                                    else if ( '"' == $next || "'" == $next )
+                                    {
+                                        $string = self::parseString( $tag, $next, $index++, $count );
+                                        $params .= $string;
+                                        $index += strlen($string)-1;
+                                    }
+                                    else
+                                    {
+                                        $params .= $next;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    elseif ( $tok && 'func' == $tok->type )
+                    {
+                        $out .= 'Contemplate::'.$tok->val;
+                    }
+                }
+                else
+                {
+                    $out .= $ch;
+                }
+            }
+            elseif ( '$' === $ch )
+            {
+                $out .= '$';
+                $variable = self::parseVariable($tag, $index++, $count);
+                if ( $variable )
+                {
+                    $out .= $variable;
+                    $index += strlen($variable);
+                }
+            }
+            elseif ( '"' == $ch || "'" == $ch )
+            {
+                $string = self::parseString( $tag, $ch, $index++, $count );
+                $out .= $string;
+                $index += strlen($string)-1;
+            }
+            else
+            {
+                $out .= $ch;
+            }
+        }
+        return $out;
+    }
+    
+    public static function test($tpl, $withblocks=false) 
+    {
+        $parts = self::split($tpl);
+        $len = count($parts);
+        $isTag = false;
+        $out = '';
+        for ($i=0; $i<$len; $i++)
+        {
+            $s = $parts[$i];
+            
+            if ( $isTag )
+            {
+                $s = preg_replace( self::$__regExps['specials'], " ", $s ); // replace special chars
+                
+                $s = self::parseTag( $s );  // parse each template tag section accurately
+                
+                $isTag = false;
+            }
+            else
+            {
+                $s = str_replace( "'", "\\'", $s );  // escape single quotes accurately (used by parse function)
+                
+                $s = str_replace( "\n", self::$__preserveLines, $s ); // preserve lines
+                
+                $isTag = true;
+            }
+            
+            $out .= $s;
+        }
         
-    protected static function doTags($tag) 
+        if ( $withblocks ) return self::doBlocks( $out );
+        
+        return $out;
+    }
+    */
+    private static function doTags($tag) 
     {
         self::$__postReplace = null;
         
@@ -1201,7 +1463,7 @@ _TPLRENDERCODE_;
         return $tag;
     }
     
-    protected static function split($s)
+    private static function split($s)
     {
         $parts1 = explode( self::$__leftTplSep, $s );
         $len = count( $parts1 );
@@ -1210,12 +1472,12 @@ _TPLRENDERCODE_;
         {
             $tmp = explode( self::$__rightTplSep, $parts1[$i] );
             $parts[] = $tmp[0];
-            if (isset($tmp[1])) $parts[] = $tmp[1];
+            if ( isset($tmp[1]) ) $parts[] = $tmp[1];
         }
         return $parts;
     }
     
-    protected static function parse($tpl, $withblocks=true) 
+    private static function parse($tpl, $withblocks=true) 
     {
         $parts = self::split($tpl);
         $len = count($parts);
@@ -1261,17 +1523,17 @@ _TPLRENDERCODE_;
         return '';
     }
     
-    protected static function getCachedTemplateName($id) 
+    private static function getCachedTemplateName($id) 
     { 
         return self::$__cacheDir . str_replace(array('-', ' '), '_', $id) . '_tpl.php'; 
     }
     
-    protected static function getCachedTemplateClass($id) 
+    private static function getCachedTemplateClass($id) 
     { 
         return 'Contemplate_' . str_replace(array('-', ' '), '_', $id) . '_Cached';  
     }
     
-    protected static function createTemplateRenderFunction($id)
+    private static function createTemplateRenderFunction($id)
     {
         self::resetState();
         
@@ -1297,7 +1559,7 @@ _TPLRENDERCODE_;
         return array($fn, $blockfns);
     }
     
-    protected static function createCachedTemplate($id, $filename, $classname)
+    private static function createCachedTemplate($id, $filename, $classname)
     {
         self::resetState();
         
@@ -1362,7 +1624,7 @@ _TPLRENDERCODE_;
         return file_put_contents($filename, $class);
     }
     
-    protected static function getCachedTemplate($id)
+    private static function getCachedTemplate($id)
     {
         // inline templates saved only in-memory
         if ( isset(self::$__inlines[$id]) )
@@ -1436,26 +1698,26 @@ _TPLRENDERCODE_;
         return null;
     }
     
-    protected static function setCachedTemplate($filename, $tplContents) 
+    private static function setCachedTemplate($filename, $tplContents) 
     { 
         return file_put_contents($filename, $tplContents); 
     }
     
-    protected static function resetState() 
+    private static function resetState() 
     {
         // reset state
         self::$__loops = 0; self::$__ifs = 0; self::$__loopifs = 0; self::$__level = 0;
         self::$__blockcnt = 0; self::$__blocks = array();  self::$__allblocks = array();  self::$__extends = null;
     }
     
-    protected static function pushState() 
+    private static function pushState() 
     {
         // push state
         array_push(self::$__stack, array(self::$__loops, self::$__ifs, self::$__loopifs, self::$__level,
         self::$__blockcnt, self::$__blocks,  self::$__allblocks,  self::$__extends));
     }
     
-    protected static function popState() 
+    private static function popState() 
     {
         // pop state
         $t = array_pop(self::$__stack);
@@ -1463,7 +1725,7 @@ _TPLRENDERCODE_;
         self::$__blockcnt = $t[4]; self::$__blocks = $t[5];  self::$__allblocks = $t[6];  self::$__extends = $t[7];
     }
     
-    protected static function _localized_date($locale, $format, $timestamp) 
+    private static function _localized_date($locale, $format, $timestamp) 
     {
         $txt_words = array("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sun", "Mon", "Tues", "Wednes", "Thurs", "Fri", "Satur", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec");
         
@@ -1483,7 +1745,7 @@ _TPLRENDERCODE_;
         return $date;
     }
     
-    protected static function padLines($lines, $level=null)
+    private static function padLines($lines, $level=null)
     {
         if (null === $level)  $level = self::$__level;
         

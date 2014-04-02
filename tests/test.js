@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version 0.4.9
+*  @version 0.5
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -37,6 +37,11 @@ Contemplate.setLocaleStrings({
 });
 Contemplate.setPlurals({
     'item': null // auto plural
+});
+
+Contemplate.addPlugin('test', function(v){
+    if ( v ) return 'Plugin Test value: ' + v;
+    return 'Plugin Test no value given';
 });
 
 // make sure it exists

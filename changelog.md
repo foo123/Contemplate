@@ -1,5 +1,14 @@
 ###ChangeLog
 
+__0.5__
+* add support for custom (user-defined) plugins as template functions with addPlugin(name, handler) method
+* add support for setting/unsetting custom variables inside template (on-the-fly) with %set(var, val), %unset(var) directives
+* refine parser (in progress)
+* updates / edits
+
+__0.4.10__
+* add custom codePrefix in cached templates
+
 __0.4.9__
 * add %uuid function (generate universal unique id)
 

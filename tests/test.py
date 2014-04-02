@@ -4,7 +4,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.4.9
+#  @version 0.5
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -27,8 +27,9 @@ ContemplateModulePath = os.path.join(os.path.dirname(__file__), '../src/python/'
 try:
     ContemplateFp, ContemplatePath, ContemplateDesc  = imp.find_module('Contemplate', [ContemplateModulePath])
     Contemplate = getattr( imp.load_module('Contemplate', ContemplateFp, ContemplatePath, ContemplateDesc), 'Contemplate' )
-except:
+except ImportError as exc:
     Contemplate = None
+    sys.stderr.write("Error: failed to import module ({})".format(exc))
 finally:
     if ContemplateFp: ContemplateFp.close()
 
@@ -59,6 +60,12 @@ Contemplate.setLocaleStrings({
 Contemplate.setPlurals({
     'item': None # auto plural
 })
+
+def test_plugin(v=None):
+    if v: return 'Plugin Test value: ' + str(v)
+    return 'Plugin Test no value given'
+    
+Contemplate.addPlugin('test', test_plugin)
 
 # set the cache directory (make sure to exist)
 Contemplate.setCacheDir('./_tplcache')

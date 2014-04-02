@@ -172,4 +172,4 @@ __Functions__
 * *%html(val)*  html-escape val (htmlentities)
 * *%url(val)*  url-encode val (urlencode)
 
-* *%plugin_[plugin_name]([val1, val2, ..])*  call a custom (user-defined) plugin as template function
+* *%plugin_plugin_name([val1, val2, ..])*  call a custom (user-defined) plugin as template function

@@ -31,6 +31,7 @@ $obj.key["key2"]  // this will also work
 
 
 __Literal Template Data__
+
 Literal object/array data are constructed (inside a template) using **JavaScript Literal Object-style Notation** (similar to JSON)
 
 **note** 

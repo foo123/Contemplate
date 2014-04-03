@@ -101,7 +101,7 @@
                             }
                             
                                          
-                            __p__ += '">' + "\n" + '            <a href="/' + ( __instance__.data['user']["name"] ) + '">' + ( __instance__.data['user']["name"] ) + ( __instance__.data['user']["text"] ) + ' ' + ( Contemplate.n(__instance__.data['i']) + Contemplate.n(__instance__.data['j']) ) + '</a>: <strong>' + ( __instance__.data['user']["text"] ) + '</strong>' + "\n" + '        </div>' + "\n" + '        ';            
+                            __p__ += '">' + "\n" + '            <a href="/' + ( __instance__.data['user']["name"] ) + '">' + ( __instance__.data['user']['name'] ) + ( __instance__.data['user']['text'] ) + ' ' + ( Contemplate.n(__instance__.data['i']) + Contemplate.n(__instance__.data['j']) ) + '</a>: <strong>' + ( __instance__.data['user']["text"] ) + '</strong>' + "\n" + '        </div>' + "\n" + '        ';            
                             if (  Contemplate.has_key(__instance__.data['user'], "key1")  )
                             {
                             
@@ -124,7 +124,7 @@
                 {  
                     
                      
-                    __p__ += '' + "\n" + '        <div class="none">No Users</div>' + "\n" + '    ';
+                    __p__ += '' + "\n" + '        <div class="none">' + ( Contemplate.l("No Users") ) + '</div>' + "\n" + '    ';
                 }
                 
                  

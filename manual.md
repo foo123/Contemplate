@@ -1,8 +1,12 @@
 ###Manual - Keywords Reference
 
-__Variables/Data__
 
-Variables inside templates are referenced same as in PHP with '$' sign. ie 
+
+__Template Variables__
+
+Variables inside templates are referenced using **PHP-style Notation** with '$' sign. 
+
+example:
 
 ```javascript
 
@@ -10,102 +14,60 @@ $x
 
 $obj["key"]
 
-$obj[0]["key"]
-
 $obj.key  // this will also work
 
-$obj[0].key  // this will also work
+$obj[0]["key"]
+
+$obj.0.key  // this will also work
 
 $obj["key"].key2
 
+$obj.key["key2"]  // this will also work
+
 // etc..
 
 ```
 
-<del>
-__IMPORTANT__ :  
-Object properties and arrays are referenced with the *associative array convention* ie.
 
-__WRONG__
-$obj is a hash object (dictionary), $obj.property, $obj.property.property2
 
-__CORRECT__
-$obj is a hash object (dictionary): $obj["property"], $obj["property"]["property2"]   (use double quotes to be sure of parsed correctly)
+__Literal Template Data__
+Literal object/array data are constructed (inside a template) using **JavaScript Literal Object-style Notation** (similar to JSON)
 
-$obj is a usual array: $obj[0], $obj[1] etc..  or $obj[0][1] etc for n-dimensional arrays
-</del>
+**note** 
 
-__UPDATE__ 
+literal object data in this format cannot be passed to (template) functions 
 
-All these will work correctly in all the engine's implementations:
+this is no real limitation since by using the **%set** directive (which accepts the literal data format), you can set a new variable with the data, which in turn can be used as argument in template functions
 
-```javascript
+it is possible this may change in future updates, for now this is how it works since functions are called at runtime, so parameters' format is platform-specific
 
-$obj.property, $obj.property.property2,
-$obj['property'], $obj['property'].property2,
-$obj.property, $obj.property['property2'],
 
-// etc.., WILL WORK CORRECTLY
-
-```
-
-__Literal Object data__
-Literal object data are constructed (inside a template) using a combination of JavaScript and PHP notation (this makes parsing easier :) )
-like this:
-
-eg. an object having various string values, numeric, values and arrays:
+example:
 
 ```javascript
 
-{ "stringVar"=> "stringValue", "numericVar"=>123, "arrayVar"=>[0, 1, "astring", 3] } // etc
-
-```
-
-arbitrary level of recursion is fine as long as the convention is followed and literal strings do not contain the {, =>, } characters, variable strings (strings contained in a variable) can contain anything (see examples/tests)
-
-eg.
-
-this will cause the parsing to fail:
-
-```javascript
-
-{ "stringVar"=> "string{Value" } 
-// or 
-{ "stringVar"=> "string}Value" } 
-// or 
-{ "stringVar"=> "stringValue=>" } 
-// or 
-{ "string=>Var"=> "stringValue" } 
-// etc..
-
-
-```
-
-while this will be fine:
-
-```javascript
-
-// assuming the (template) variable $x = "=>"
-
-{ "stringVar" => $x } or { $x => "stringValue" } // etc..
+// eg. a literal object having various string values, numeric, values and arrays:
+{ 
+    "stringVar"     : "stringValue", 
+    "numericVar"    : 123, 
+    "arrayVar"      : [
+        0, 1, "astring", 3, 
+        { "prop": 1 } 
+    ] 
+} // etc
 
 ```
 
 
 
-This is needed because the engine has to have uniform support for all the platforms in which it is implemented
-(PHP, JavaScript, Python), Contemplate is supposed to be a light-weight template engine (no heavy parsing is done)
 
-NOTE: It is possible in later versions a generic cross-platform dictionary class can be used (this is still light-weight if used correctly)
-so any notation will be valid, however for now this is how it works.
+__Template Directives / Control Constructs__
 
-__Control Constructs__
+* *%set(var, expressionOrValue)*  SET / UPDATE a tpl variable *$var* to given value or expression
+* *%unset(var)*  UNSET / DELETE tpl variable *$var*
 
-* *%set(varName, exprVal)*  SET / UPDATE a tpl variable with nme varName to given value or expression
-* *%unset(varName)*  UNSET / DELETE tpl variable with name varName
-
-* *%if(expression)*  IF construct
-* *%elseif(expression)*  ELSEIF construct
+* *%if(expressionOrValue)*  IF construct
+* *%elseif(expressionOrValue)*  ELSEIF construct
 * *%else()*  ELSE construct
 * *%endif()*   ENDIF construct, end the if construct
 
@@ -114,7 +76,7 @@ __Control Constructs__
 * *%endfor()*  ENDFOR , end the loop construct
 
 * *%include(tplID)*  INCLUDE (inline) the template referenced by *tplID*
-* *%template(tplID, {"var1"=>val1, "var2"=>val2, ..})*  CALL a subtemplate referenced by *tplID* passing the necessary data also
+* *%template(tplID, {"var1" : val1, "var2" : val2, ..})*  CALL a subtemplate referenced by *tplID* passing the necessary data also
 
 * *%extends(tplID)*  Current template extends the template referenced by *tplID* , this means that *tplID* layout will be used and any blocks will be overriden as defined
 * *%block(blockID)*  Define/Override block of code identified by *blockID*
@@ -134,13 +96,15 @@ When the templates are already cached, the relative performance of these directi
 
 The syntax for __include__ is this:  %include(subtemplateId)
 
-The syntax for __template__ is this: %template(subtemplateId, {"var1"=>$value1, "var2"=>$value2, ..}) 
+The syntax for __template__ is this: %template(subtemplateId, {"var1":$value1, "var2":$value2, ..}) 
 
-where the {"var1"=>$value1, "var2"=>$value2, ..} are the data to be passed to the called template 
+where the {"var1":$value1, "var2":$value2, ..} are the data to be passed to the called template 
 this is exactly how the Contemplate::tpl($id, $data) (PHP), or Contemplate.tpl(id, data) (Javascript) are called
 
 
-__Functions__
+
+
+__Template Functions / Plugins__
 
 * *%n(val)*   convert val to integer
 * *%s(val)*   convert val to string
@@ -172,4 +136,4 @@ __Functions__
 * *%html(val)*  html-escape val (htmlentities)
 * *%url(val)*  url-encode val (urlencode)
 
-* *%plugin_plugin_name([val1, val2, ..])*  call a custom (user-defined) plugin as template function
+* *%plugin_pluginName([val1, val2, ..])*  call a custom (user-defined) plugin called as a template function

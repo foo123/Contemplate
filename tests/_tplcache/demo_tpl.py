@@ -42,12 +42,12 @@ def __getTplClass__(Contemplate):
             if ( len(__instance__.data['users'])>0 ):
                 # be able to use both key/value in loop
                 if isinstance(__instance__.data['users'], list): _loopObj1 = enumerate(__instance__.data['users'])
-                else: _loopObj1 = __instance__.data['users'].items();
+                else: _loopObj1 = __instance__.data['users'].items()
                 for  i,usergroup in _loopObj1 :
                     __instance__.data['i'] = i
                     __instance__.data['usergroup'] = usergroup
                      
-                    __p__ += '' + "\n" + '        <!-- call a (sub-)template -->' + "\n" + '        ' + Contemplate.tpl( "sub",  {"i":__instance__.data['i'], "users":__instance__.data['users']} ) 
+                    __p__ += '' + "\n" + '        <!-- call a (sub-)template -->' + "\n" + '        ' + Contemplate.tpl( "sub",  {"i" : __instance__.data['i'], "users" : __instance__.data['users']} ) 
                      
                     __p__ += '' + "\n" + '    ' 
              
@@ -64,13 +64,13 @@ def __getTplClass__(Contemplate):
             __p__ += '' + "\n" + "\n" + '    <strong>Block2 is overriden by the demo template</strong>' + "\n" + "\n" + '    <br /><br />' + "\n" + "\n" + '    <strong>A table</strong><br />' + "\n" + '    ' + Contemplate.htmltable(__instance__.data['table_data'], __instance__.data['table_options']) 
              
             __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>Set a new tpl variable and use it in a custom plugin</strong><br />' + "\n" + '    ';
-            __instance__.data["foo"] = ("123")
+            __instance__.data['foo'] = ("123")
              
             __p__ += '' + "\n" + '    ' + "\n" + '    ' + str( Contemplate.plugin_test(__instance__.data['foo']) ) + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A select box</strong><br />' + "\n" + '    ' + Contemplate.htmlselect(__instance__.data['select_data'], __instance__.data['select_options']) 
              
-            __p__ += '' + "\n" + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A table with alternative format</strong><br />' + "\n" + '    ' + Contemplate.htmltable(__instance__.data['table_data'], {"header":True}) 
+            __p__ += '' + "\n" + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A table with alternative format</strong><br />' + "\n" + '    ' + Contemplate.htmltable(__instance__.data['table_data'], {"header" : True}) 
              
-            __p__ += '' + "\n" + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A select box with alternative format</strong><br />' + "\n" + '    ' + Contemplate.htmlselect(__instance__.data['select_data'], {             "optgroups":["group1", "group2", "group3"],             "selected":3,             "multiple":False,             "style":"width:200px;"         }) 
+            __p__ += '' + "\n" + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A select box with alternative format</strong><br />' + "\n" + '    ' + Contemplate.htmlselect(__instance__.data['select_data'], {             "optgroups" : ["group1", "group2", "group3"],             "selected" : 3,             "multiple" : False,             "style" : "width:200px;",             "foo123" : ":,=>"         }) 
              
             __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    <!-- include a (sub-)template file -->' + "\n" + '     <!-- print a localized date php-style -->' + "\n" + '<strong>A (localized) date, PHP-style</strong><br />' + "\n" + str( Contemplate.ldate("M, d", Contemplate.now()) ) + "\n" + '' 
              

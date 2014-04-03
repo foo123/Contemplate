@@ -65,7 +65,7 @@ def __getTplClass__(Contemplate):
                 if ( len(__instance__.data['users'][__instance__.data['i']])>0 ):
                     # be able to use both key/value in loop
                     if isinstance(__instance__.data['users'][__instance__.data['i']], list): _loopObj1 = enumerate(__instance__.data['users'][__instance__.data['i']])
-                    else: _loopObj1 = __instance__.data['users'][__instance__.data['i']].items();
+                    else: _loopObj1 = __instance__.data['users'][__instance__.data['i']].items()
                     for  j,user in _loopObj1 :
                         __instance__.data['j'] = j
                         __instance__.data['user'] = user
@@ -78,7 +78,7 @@ def __getTplClass__(Contemplate):
                                      
                             __p__ += 'odd'         
                                  
-                        __p__ += '">' + "\n" + '            <a href="/' + str( __instance__.data['user']["name"] ) + '">' + str( __instance__.data['user']["name"] ) + str( __instance__.data['user']["text"] ) + ' ' + str( Contemplate.n(__instance__.data['i']) + Contemplate.n(__instance__.data['j']) ) + '</a>: <strong>' + str( __instance__.data['user']["text"] ) + '</strong>' + "\n" + '        </div>' + "\n" + '        '         
+                        __p__ += '">' + "\n" + '            <a href="/' + str( __instance__.data['user']["name"] ) + '">' + str( __instance__.data['user']['name'] ) + str( __instance__.data['user']['text'] ) + ' ' + str( Contemplate.n(__instance__.data['i']) + Contemplate.n(__instance__.data['j']) ) + '</a>: <strong>' + str( __instance__.data['user']["text"] ) + '</strong>' + "\n" + '        </div>' + "\n" + '        '         
                         if (  Contemplate.has_key(__instance__.data['user'], "key1")  ):
                                      
                             __p__ += '' + "\n" + '            <div> User has key &quot;key1&quot; </div>' + "\n" + '        '         
@@ -89,7 +89,7 @@ def __getTplClass__(Contemplate):
                         __p__ += '' + "\n" + '    ' 
                 else:
                      
-                    __p__ += '' + "\n" + '        <div class="none">No Users</div>' + "\n" + '    ' 
+                    __p__ += '' + "\n" + '        <div class="none">' + str( Contemplate.l("No Users") ) + '</div>' + "\n" + '    ' 
                  
                 __p__ += '' + "\n" + '</div>' + "\n" + ''
                 

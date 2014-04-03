@@ -37,7 +37,7 @@ final class Contemplate_demo_Cached extends Contemplate
             {
                 $__instance__->data['i'] = $i;
                 $__instance__->data['usergroup'] = $usergroup;         
-                $__p__ .= '' . "\n" . '        <!-- call a (sub-)template -->' . "\n" . '        ' . Contemplate::tpl( "sub",  array("i"=>$__instance__->data['i'], "users"=>$__instance__->data['users']) ); 
+                $__p__ .= '' . "\n" . '        <!-- call a (sub-)template -->' . "\n" . '        ' . Contemplate::tpl( "sub",  array("i" => $__instance__->data['i'], "users" => $__instance__->data['users']) ); 
                  
                 $__p__ .= '' . "\n" . '    ';            
             }
@@ -55,13 +55,13 @@ final class Contemplate_demo_Cached extends Contemplate
         $__p__ .= '' . "\n" . "\n" . '    <strong>Block2 is overriden by the demo template</strong>' . "\n" . "\n" . '    <br /><br />' . "\n" . "\n" . '    <strong>A table</strong><br />' . "\n" . '    ' . Contemplate::htmltable($__instance__->data['table_data'], $__instance__->data['table_options']); 
          
         $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>Set a new tpl variable and use it in a custom plugin</strong><br />' . "\n" . '    ';
-        $__instance__->data["foo"] = ( "123" );
+        $__instance__->data['foo'] = ( "123" );
          
         $__p__ .= '' . "\n" . '    ' . "\n" . '    ' . ( Contemplate::plugin_test($__instance__->data['foo']) ) . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>A select box</strong><br />' . "\n" . '    ' . Contemplate::htmlselect($__instance__->data['select_data'], $__instance__->data['select_options']); 
          
-        $__p__ .= '' . "\n" . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>A table with alternative format</strong><br />' . "\n" . '    ' . Contemplate::htmltable($__instance__->data['table_data'], array("header"=>true)); 
+        $__p__ .= '' . "\n" . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>A table with alternative format</strong><br />' . "\n" . '    ' . Contemplate::htmltable($__instance__->data['table_data'], array("header" => true)); 
          
-        $__p__ .= '' . "\n" . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>A select box with alternative format</strong><br />' . "\n" . '    ' . Contemplate::htmlselect($__instance__->data['select_data'], array(             "optgroups"=>array("group1", "group2", "group3"),             "selected"=>3,             "multiple"=>false,             "style"=>"width:200px;"         )); 
+        $__p__ .= '' . "\n" . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>A select box with alternative format</strong><br />' . "\n" . '    ' . Contemplate::htmlselect($__instance__->data['select_data'], array(             "optgroups" => array("group1", "group2", "group3"),             "selected" => 3,             "multiple" => false,             "style" => "width:200px;",             "foo123" => ":,=>"         )); 
          
         $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    <!-- include a (sub-)template file -->' . "\n" . '     <!-- print a localized date php-style -->' . "\n" . '<strong>A (localized) date, PHP-style</strong><br />' . "\n" . ( Contemplate::ldate("M, d", Contemplate::now()) ) . "\n" ; 
          

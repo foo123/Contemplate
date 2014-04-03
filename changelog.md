@@ -3,7 +3,7 @@
 __0.5__
 * add support for custom (user-defined) plugins as template functions with addPlugin(name, handler) method
 * add support for setting/unsetting custom variables inside template (on-the-fly) with %set(var, val), %unset(var) directives
-* refine parser (in progress)
+* refine/optimize template parsing for strings and variables
 * updates / edits
 
 __0.4.10__

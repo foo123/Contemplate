@@ -1,9 +1,6 @@
 Contemplate
 ===========
 
-<!--### Further development on this project has stopped!!-->
-
-
 __Light-weight and flexible template engine for PHP, Python, Node and client-side JavaScript__
 
 ![Contemplate](/screenshots/contemplate.jpg)
@@ -78,14 +75,14 @@ The solution is inspired by _John Resig's post_ ([see above](http://ejohn.org/bl
 ###Features:
 
 * *Contemplate* does a __minimum parsing__ (and caching) in order to create dynamic templates
-and trying to contain the needed functionality inside the common language subset.
+and trying to contain the needed functionality inside the common language subset(s).
 
 * Most of the time this can be accomplished, the rest functionality is built with __custom functions__ which mostly resemble the PHP
 syntax, yet work the same in all the engine's implementations.
 
 * Engine Implementations for __PHP__ , __Python__ , __Node__  and __client-side JavaScript__
 
-* Simple and __light-weight__ ( only one (relatively small) class for each implementation, no other dependencies )
+* Simple and __light-weight__ ( only one relatively small class for each implementation, no other dependencies )
 
 * __Fast__ , can cache templates dynamically (filesystem caching has 3 modes, __NONE__ which uses only in-memory caching, __NOUPDATE__ which caches the templates only once and __AUTOUPDATE__ which re-creates the cached template if original template has changed, useful for debugging)
 
@@ -95,7 +92,7 @@ syntax, yet work the same in all the engine's implementations.
 
 * Easily __extensible__ , __configurable__
 
-* __Localization__ , __Date formatting__ built-in and configurable easily ( simple __Data escaping__  is also supported)
+* __Localization__ , __Pluralisation__ , __Date formatting__ built-in and configurable easily ( simple __Data escaping__  is also supported)
 
 * __Date manipulation__ similar to PHP format (ie __date__ function). An extended, localized version of php's date function __ldate__ is also implemented in the framework
 
@@ -107,6 +104,7 @@ syntax, yet work the same in all the engine's implementations.
 
 * __Template Inheritance__ , templates can *extend/inherit other templates* using __extends__ directive and *override blocks* using __block__ , __endblock__ directives (see examples)
 
+* __Custom Plugins__ , can be used as template functions to enhance/extend the engine functionality
 
 
 ###Dependencies
@@ -120,9 +118,9 @@ syntax, yet work the same in all the engine's implementations.
 
 ###Todo
 
-* enable asynchronous template loading/rendering for node/browser
-* refine template parsing
-* allow the engine to be extended by (custom) plugins [DONE]
+* refined template parsing (v.0.5+) [DONE]
+* support (custom) plugins (v.0.5+) [DONE]
+* support asynchronous template loading/rendering for node/browser
 * add Contemplate implementations for Perl, Java, Scala
 * transform Contemplate (for PHP) into a PHP C-extension, Contemplate (for node) into standalone executable (eg. https://github.com/crcn/nexe)
 * keep-up with php, node, browsers, python updates

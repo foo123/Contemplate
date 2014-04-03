@@ -26,6 +26,8 @@
 
 }(this, 'Contemplate', function( undef ) {
     
+    "use_strict";
+    
     var __version__ = "0.5";
     var self;
     
@@ -38,6 +40,7 @@
         log = echo = ('undefined'!=typeof(console) && console.log) ? function(s) { console.log(s); } : function() {},
         
         UNDERLNRX = /[ -]/g, NLRX = /\n\r|\r\n|\n|\r/g,
+        ALPHA = /^[a-zA-Z_]/, NUM = /^[0-9]/, ALPHANUM = /^[a-zA-Z0-9_]/i, SPACE = /^\s/,
         
         _fs = (_isNode) ? require('fs') : null, 
         fwrite = (_fs) ? _fs.writeFileSync : null,
@@ -101,7 +104,7 @@
         
         $__preserveLinesDefault = "' + \"\\n\" + '", $__preserveLines = '',  $__EOL = "\n", $__TEOL = (_isNode) ? require('os').EOL : "\n",
         
-        $__stack = null, $__level = 0, $__pad = "    ", $__postReplace = null,
+        $__stack = null, $__level = 0, $__pad = "    ", 
         $__loops = 0, $__ifs = 0, $__loopifs = 0, $__blockcnt = 0, $__blocks = [], $__allblocks = [], $__extends = null,
     
         $__uuid = 0,
@@ -109,9 +112,6 @@
         $__regExps = {
             'specials' : null,
             'replacements' : null,
-            'vars' : null,
-            'ids' : null,
-            'atts' : null,
             'functions' : null,
             'controls' : null
         },
@@ -167,7 +167,7 @@
             args = args.split(',');
             var varname = trim( args.shift() );
             var expr = trim(args.join(','));
-            return "';" + $__TEOL + padLines( '__instance__.data[' + varname + '] = ('+ expr +');' ) + $__TEOL;
+            return "';" + $__TEOL + padLines( varname + ' = ('+ expr +');' ) + $__TEOL;
         },
         
         // unset/remove/delete tpl var
@@ -175,7 +175,7 @@
             if ( varname && varname.length )
             {
                 varname = trim( varname );
-                return "';" + $__TEOL + padLines( 'if ( "undefined" !== typeof (__instance__.data[' + varname + ']) ) delete __instance__.data[' + varname + '];' ) + $__TEOL;
+                return "';" + $__TEOL + padLines( 'if ( "undefined" !== typeof (' + varname + ') ) delete ' + varname + ';' ) + $__TEOL;
             }
             return "'; " + $__TEOL; 
         },
@@ -246,21 +246,21 @@
             
             var o = trim(for_expr[0]), 
                 kv = for_expr[1].split('=>'), 
-                k = ltrim(trim(kv[0]), '$'), 
-                v = ltrim(trim(kv[1]), '$')
+                k = trim(kv[0]) + '__RAW__', 
+                v = trim(kv[1]) + '__RAW__',
+                forReplace = {
+                    '__{{O}}__' : o,
+                    '__{{K}}__' : k, 
+                    '__{{V}}__' : v, 
+                    '__{{ASSIGN1}}__' : "var "+v+" = "+o+"["+k+"];",
+                    '__{{ASSIGN2}}__' : "__instance__.data['"+k+"'] = "+k+"; __instance__.data['"+v+"'] = "+v+";"
+                }
             ;
-            
-            o = doTplVars( o ); // replace php-style var names
-            $__postReplace = {
-                '__{{O}}__' : o,
-                '__{{K}}__' : k, 
-                '__{{V}}__' : v, 
-                '__{{ASSIGN1}}__' : "var "+v+" = "+o+"["+k+"];",
-                '__{{ASSIGN2}}__' : "__instance__.data['"+k+"'] = "+k+"; __instance__.data['"+v+"'] = "+v+";"
-            };
             
             out = "';";
             out1 = $__FOR();
+            for (var k in forReplace) out1 = out1.split( k ).join( forReplace[k] );
+            
             out += padLines(out1);
             
             $__level+=3;
@@ -326,7 +326,7 @@
         t_template = function(args) {
             args = args.split(',');
             var id = trim( args.shift() );
-            var obj = args.join(',').split('=>').join(':');
+            var obj = args.join(',');
             return '\' + %tpl( "'+id+'", '+obj+' ); ' + $__TEOL;
         },
         
@@ -360,13 +360,13 @@
         
         // render html table
         t_table = function(args) {
-            var obj = args.split('=>').join(':');
+            var obj = args;
             return '\' + %htmltable(' + obj + '); ' + $__TEOL;
         },
         
         // render html select
         t_select = function(args) {
-            var obj = args.split('=>').join(':');
+            var obj = args;
             return '\' + %htmlselect(' + obj + '); ' + $__TEOL;
         },
         
@@ -468,50 +468,291 @@
             return [s.replace( "+ '' +", '+' ).replace( "+ '';", ';' ), blocks];
         },
         
-        doTplVars = function(s) {
-            var i, match, tplvars = [], remLen, rem = [];
-            
-            // find tplvars
-            while ( match = $__regExps['ids'].exec(s) )  tplvars.push( match[1] );
-            
-            if (tplvars.length)
+        parseString = function(s, q, i, l) {
+            var string = q, escaped = false, ch = '';
+            while ( i < l )
             {
-                rem = s.split( $__regExps['vars'] );
-                remLen = rem.length-1;
-                s = '';
-                for (i=0; i<remLen; i++)
-                {
-                    s += rem[i].replace( $__regExps['atts'], '[\'$1\']' );  // fix dot-style attributes
-                    s += "__instance__.data['" + tplvars[i] + "']";  // replace tplvars with the tpldata
-                }
-                s += rem[remLen].replace( $__regExps['atts'], '[\'$1\']' );  // fix dot-style attributes
+                ch = s[i++];
+                string += ch;
+                if ( q == ch && !escaped )  break;
+                escaped = (!escaped && '\\' == ch);
             }
-            
-            return s;
+            return string;
         },
         
-        doTags = function(tag) {
-            $__postReplace = null;
+        parseVariable = function(s, i, l, pre)  {
+            pre = pre || 'VARSTR';
             
-            tag = tag.replace( $__regExps['controls'], doControlConstructs );
-            
-            tag = doTplVars( tag ); // replace tplvars with js vars accurately
-            
-            if ( $__postReplace )
+            if ( ALPHA.test(s[i]) )
             {
-                for (var k in $__postReplace)  tag = tag.split( k ).join( $__postReplace[k] );
+                var cnt = 0, strings = {}, variables = [], subvariables,
+                    variable, property, variable_raw,
+                    len, lenv, backlen, backlenv, l,
+                    has_extra, bracketcnt, delim, ch, 
+                    strid, sub
+                ;
+                
+                // main variable
+                variable = s[i++];
+                while ( i < l && ALPHANUM.test(s[i]) )
+                {
+                    variable += s[i++];
+                }
+                
+                variable_raw = '' + variable;
+                // transform into tpl variable
+                variable = "__instance__.data['" + variable + "']";
+                len = variable_raw.length;
+                lenv = variable.length;
+                
+                // extra space
+                backlen = len;
+                backlenv = lenv;
+                while ( i < l && SPACE.test(s[i]) )
+                {
+                    variable += s[i++];
+                    len++;
+                    lenv++;
+                }
+                
+                has_extra = false;
+                
+                bracketcnt = 0;
+                // optional properties and extra spaces
+                while ( i < l && ('.' == s[i] || '[' == s[i] || ']' == s[i]) )
+                {
+                    has_extra = true;
+                    
+                    delim = s[i];
+                    
+                    backlen = len;
+                    backlenv = lenv;
+                    
+                    if ( '[' == delim ) 
+                    {
+                        bracketcnt++;
+                        variable += delim;
+                        len++;
+                        lenv++;
+                    }
+                    else if ( ']' == delim ) 
+                    {
+                        if ( bracketcnt>0 )
+                        {
+                            bracketcnt--;
+                            variable += delim;
+                            len++;
+                            lenv++;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    i++;
+                    
+                    // extra space
+                    while ( i < l && SPACE.test(s[i]) )
+                    {
+                        variable += s[i++];
+                        len++;
+                        lenv++;
+                    }
+                    
+                    // alpha-numeric dot property
+                    if ( '.' == delim )
+                    {
+                        property = '';
+                        while ( i < l && ALPHANUM.test(s[i]) )
+                        {
+                            property += s[i++];
+                        }
+                        l = property.length;
+                        if ( l )
+                        {
+                            // transform into tpl variable bracketed property
+                            variable += "['" + property + "']";
+                            len += l+1;
+                            lenv += l+4;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    
+                    // bracketed property
+                    else if ( '[' == delim )
+                    {
+                        ch = s[i++];
+                        
+                        // literal string property
+                        if ( '"' == ch || "'" == ch )
+                        {
+                            property = parseString( s, ch, i, l );
+                            cnt++;
+                            strid = "__##"+pre+cnt+"##__";
+                            strings[ strid ] = property;
+                            variable += strid;
+                            l = property.length;
+                            i += l;
+                            len += l;
+                            lenv += strid.length;
+                        }
+                        
+                        // numeric array property
+                        else if ( NUM.test(ch) )
+                        {
+                            property = ch;
+                            while ( i < l && NUM.test(s[i]) )
+                            {
+                                property += s[i++];
+                            }
+                            variable += property;
+                            l = property.length;
+                            len += l;
+                            lenv += l;
+                        }
+                        
+                        // sub-variable property
+                        else if ( '$' == ch )
+                        {
+                            sub = s.slice(i);
+                            subvariables = parseVariable(sub, 0, sub.length, pre + '_' + cnt + '_');
+                            if ( subvariables )
+                            {
+                                // transform into tpl variable property
+                                property = subvariables[ subvariables.length-1 ];
+                                variable += property[0][0];
+                                l = property[1];
+                                i += l+1;
+                                len += l+1;
+                                lenv += l;
+                                variables = variables.concat( subvariables );
+                            }
+                        }
+                        
+                        else
+                        {
+                            len = backlen;
+                            lenv = backlenv;
+                            variable = variable.slice(0, lenv);
+                            break;
+                        }
+                    }
+                    
+                    // extra space
+                    while ( i < l && SPACE.test(s[i]) )
+                    {
+                        variable += s[i++];
+                        len++;
+                        lenv++;
+                    }
+                }
+                
+                // remove extra space
+                if ( !has_extra )
+                {
+                    len = backlen;
+                    lenv = backlenv;
+                    variable = variable.slice(0, lenv);
+                }
+                
+                variables.push( [[variable, variable_raw], len, strings] );
+                return variables;
+            }
+            return null;
+        },
+        
+        parseTag = function( tag ) {
+            var countl = tag.length,
+                index = 0,
+                ch = '',
+                out = '',
+                cnt = 0,
+                variables = {},
+                strings = {},
+                tok, id, v, tokv
+            ;
+            while ( index < countl )
+            {
+                ch = tag[index++];
+                
+                // parse mainly literal strings and variables
+                
+                // literal string
+                if ( '"' == ch || "'" == ch )
+                {
+                    tok = parseString( tag, ch, index, countl );
+                    cnt++;
+                    id = "__##STR"+cnt+"##__";
+                    strings[ id ] = tok;
+                    out += id;
+                    index += tok.length-1;
+                }
+                // variable
+                else if ( '$' == ch )
+                {
+                    tok = parseVariable(tag, index, countl);
+                    if ( tok )
+                    {
+                        for (v=0; v<tok.length; v++)
+                        {
+                            tokv = tok[ v ];
+                            cnt++;
+                            id = "__##VAR"+cnt+"##__";
+                            variables[ id ] = tokv[ 0 ];
+                            strings = self.merge( strings, tokv[ 2 ] );
+                        }
+                        out += id;
+                        index += tokv[ 1 ];
+                    }
+                    else
+                    {
+                        out += '$';
+                    }
+                }
+                // rest, bypass
+                else
+                {
+                    out += ch;
+                }
+            }
+            return [out, variables, strings];
+        },
+
+        doTags = function(tag) {
+            var strings, variables, id;
+            
+            // refined parsing
+            tag = parseTag( tag );
+            strings = tag[ 2 ]; 
+            variables = tag[ 1 ];
+            tag = tag[ 0 ];
+        
+            tag = tag
+                    .replace( $__regExps['controls'], doControlConstructs )
+            
+                    .replace( $__regExps['functions'], function(m, func, plugin) {
+                        // allow custom plugins as template functions
+                        if ( plugin && $__plugins[ plugin ]/*self['plugin_' + plugin ]*/ )
+                            return 'Contemplate.plugin_' + plugin;
+                        return 'Contemplate.' + func; 
+                    })
+                    
+                    .replace( $__regExps['replacements'], "' + ( $1 ) + '" )
+                ;
+            
+            for (id in variables)  
+            {
+                tag = tag.split( id+'__RAW__' ).join( variables[id][1] );
+                tag = tag.split( id ).join( variables[id][0] );
             }
             
-            tag = tag.replace( $__regExps['functions'], function(m, func, plugin) {
-                // allow custom plugins as template functions
-                if ( plugin && $__plugins[ plugin ]/*self['plugin_' + plugin ]*/ )
-                    return 'Contemplate.plugin_' + plugin;
-                return 'Contemplate.' + func; 
-            });
-            
+            for (id in strings)  
+                tag = tag.split( id ).join( strings[id] );
+                
             return tag
-                    .replace( $__regExps['replacements'], "' + ( $1 ) + '" )
-                    
                     .split( "\t" ).join( $__tplStart )
                     
                     .split( "\v" ).join( padLines($__tplEnd) )

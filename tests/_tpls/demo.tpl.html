@@ -14,7 +14,7 @@
     <br /><br />
     
     <strong>Set a new tpl variable and use it in a custom plugin</strong><br />
-    <% %set("foo", "123") %>
+    <% %set($foo, "123") %>
     
     <% %plugin_test($foo) %>
     
@@ -26,16 +26,17 @@
     <br /><br />
     
     <strong>A table with alternative format</strong><br />
-    <% %htmltable($table_data, {"header"=>true}) %>
+    <% %htmltable($table_data, {"header" : true}) %>
 
     <br /><br />
     
     <strong>A select box with alternative format</strong><br />
     <% %htmlselect($select_data, {
-            "optgroups"=>["group1", "group2", "group3"],
-            "selected"=>3,
-            "multiple"=>false,
-            "style"=>"width:200px;"
+            "optgroups" : ["group1", "group2", "group3"],
+            "selected" : 3,
+            "multiple" : false,
+            "style" : "width:200px;",
+            "foo123" : ":,=>"
         }) %>
     
     <br /><br />
@@ -74,7 +75,7 @@
     
     <% %for($users as $i=>$usergroup) %>
         <!-- call a (sub-)template -->
-        <% %template(sub, {"i"=>$i, "users"=>$users}) %>
+        <% %template(sub, {"i" : $i, "users" : $users}) %>
     <% %endfor() %>
 
 <% %endblock() %>

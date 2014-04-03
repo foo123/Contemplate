@@ -12,6 +12,7 @@
 **/
 if (!class_exists('Contemplate'))
 {
+
 class Contemplate
 {
     const VERSION = "0.5";
@@ -20,9 +21,10 @@ class Contemplate
     const CACHE_TO_DISK_AUTOUPDATE = 2;
     const CACHE_TO_DISK_NOUPDATE = 4;
     
-    /*private static $ALPHA = '/^[a-zA-Z_]/';
+    private static $ALPHA = '/^[a-zA-Z_]/';
+    private static $NUM = '/^[0-9]/';
     private static $ALPHANUM = '/^[a-zA-Z0-9_]/';
-    private static $SPACE = '/^\\s/';*/
+    private static $SPACE = '/^\\s/';
     
     private static $__isInited = false;
     private static $__cacheDir = './';
@@ -53,16 +55,12 @@ class Contemplate
     private static $__allblocks = array();
     private static $__blockcnt = 0;
     private static $__extends = null;
-    private static $__postReplace = null;
     private static $__stack = null;
     private static $__uuid = 0;
     
     private static $__regExps = array(
         'specials' => null,
         'replacements' => null,
-        'vars' => null,
-        'ids' => null,
-        'atts' => null,
         'functions' => null,
         'controls' => null
     );
@@ -409,19 +407,13 @@ __{{CODE}}__
 _TPLRENDERCODE_;
         
         // pre-compute the needed regular expressions
-        self::$__regExps[ 'specials' ] = '/[\n\r\v\t]/';
+        self::$__regExps[ 'specials' ] = '/[\\n\\r\\v\\t]/';
         
-        self::$__regExps[ 'replacements' ] = '/\t[ ]*(.*?)[ ]*\v/';
+        self::$__regExps[ 'replacements' ] = '/\\t[ ]*(.*?)[ ]*\\v/';
         
-        self::$__regExps[ 'vars' ] = '/\$[a-zA-Z_][a-zA-Z0-9_]*/';
+        self::$__regExps[ 'controls' ] = '/\\t[ ]*%(' . implode('|', self::$__controlConstructs) . ')\\b[ ]*\\((.*)\\)/';
         
-        self::$__regExps[ 'ids' ] = '/\$([a-zA-Z_][a-zA-Z0-9_]*)/';
-        
-        self::$__regExps[ 'atts' ] = '/\.\s*([a-zA-Z_][a-zA-Z0-9_]*)/';
-        
-        self::$__regExps[ 'controls' ] = '/\t[ ]*%(' . implode('|', self::$__controlConstructs) . ')\b[ ]*\((.*)\)/';
-        
-        self::$__regExps[ 'functions' ] = '/%(' . implode('|', self::$__funcs) . ')\b/';
+        self::$__regExps[ 'functions' ] = '/%(' . implode('|', self::$__funcs) . ')\\b/';
         
         self::$__preserveLines = self::$__preserveLinesDefault;
         
@@ -914,10 +906,8 @@ _TPLRENDERCODE_;
         $args = explode(',', $args);
         $varname = trim( array_shift($args) );
         $expr = trim(implode(',', $args));
-        self::$__postReplace = array(
-            '__{{SETVAR1}}__' => "\$__instance__->data[$varname] = ( $expr );"
-        );
-        return "';" . self::$__TEOL . self::padLines( '__{{SETVAR1}}__' ) . self::$__TEOL;
+        $expr = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), $expr);
+        return "';" . self::$__TEOL . self::padLines( "$varname = ( $expr );" ) . self::$__TEOL;
     }
     
     // unset/remove/delete tpl var
@@ -926,10 +916,7 @@ _TPLRENDERCODE_;
         if ( $varname && strlen($varname) )
         {
             $varname = trim( $varname );
-            self::$__postReplace = array(
-                '__{{UNSETVAR1}}__' => "\$__instance__->data[$varname]"
-            );
-            return "';" . self::$__TEOL . self::padLines( 'if ( isset(__{{UNSETVAR1}}__) ) unset( __{{UNSETVAR1}}__ );' ) . self::$__TEOL;
+            return "';" . self::$__TEOL . self::padLines( "if ( isset($varname) ) unset( $varname );" ) . self::$__TEOL;
         }
         return "'; " . self::$__TEOL; 
     }
@@ -994,22 +981,23 @@ _TPLRENDERCODE_;
         $for_expr = explode(' as ', $for_expr); 
         $o = trim($for_expr[0]); 
         $kv = explode('=>', $for_expr[1]); 
-        $k = trim($kv[0]); 
-        $v = trim($kv[1]);
-        $kk = ltrim($k, '$'); 
-        $vk = ltrim($v, '$');
-        
-        $o = self::doTplVars( $o ); // replace php-style var names
-        self::$__postReplace = array(
-            '__{{O}}__' => $o, 
-            '__{{K}}__' => $k, 
-            '__{{V}}__' => $v, 
-            '__{{ASSIGN1}}__' => "\$__instance__->data['$kk'] = $k;", 
-            '__{{ASSIGN2}}__' =>  "\$__instance__->data['$vk'] = $v;"
-        );
+        $k = trim($kv[0]) . '__RAW__'; 
+        $v = trim($kv[1]) . '__RAW__'; 
         
         $out = "';";
-        $out1 = self::$__FOR;
+        $out1 = str_replace(array(
+            '__{{O}}__', 
+            '__{{K}}__', 
+            '__{{V}}__', 
+            '__{{ASSIGN1}}__', 
+            '__{{ASSIGN2}}__'
+        ), array(
+            $o, 
+            '$'.$k,
+            '$'.$v,
+            "\$__instance__->data['$k'] = \${$k};",
+            "\$__instance__->data['$v'] = \${$v};"
+        ), self::$__FOR);
         
         $out .= self::padLines($out1);
         self::$__level+=2;
@@ -1075,7 +1063,7 @@ _TPLRENDERCODE_;
     {
         $args = explode(',', $args); 
         $id = trim(array_shift($args));
-        $obj = str_replace(array('{', '}', '[', ']'), array('array(', ')','array(', ')'), implode(',', $args));
+        $obj = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), implode(',', $args));
         return '\' . %tpl( "'.$id.'", '.$obj.' ); ' . self::$__TEOL;
     }
     
@@ -1114,14 +1102,14 @@ _TPLRENDERCODE_;
     // render html table
     private static function t_table($args)
     {
-        $obj = str_replace(array('{', '}', '[', ']'), array('array(', ')','array(', ')'), $args);
+        $obj = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), $args);
         return '\' . %htmltable('.$obj.'); ' . self::$__TEOL;
     }
     
     // render html select
     private static function t_select($args)
     {
-        $obj = str_replace(array('{', '}', '[', ']'), array('array(', ')','array(', ')'), $args);
+        $obj = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), $args);
         return '\' . %htmlselect('.$obj.'); ' . self::$__TEOL;
     }
     
@@ -1217,28 +1205,7 @@ _TPLRENDERCODE_;
         
         return array(str_replace(array(". '' .", ". '';"), array('.', ';'), $s), $blocks);
     }
-    
-    private static function doTplVars($s) 
-    {
-        $tplvars = array(); $rem = array();
-        
-        // find tplvars
-        if ( preg_match_all( self::$__regExps['ids'], $s,  $tplvars, PREG_PATTERN_ORDER) )
-        {
-            $rem = preg_split( self::$__regExps['vars'], $s );
-            $remLen = count($rem)-1;
-            $s = '';
-            for ($i=0; $i<$remLen; $i++)
-            {
-                $s .= preg_replace( self::$__regExps['atts'], '[\'$1\']', $rem[$i] );  // fix dot-style attributes
-                $s .= "\$__instance__->data['" . $tplvars[1][$i] . "']";  // replace tplvars with the tpldata
-            }
-            $s .= preg_replace( self::$__regExps['atts'], '[\'$1\']', $rem[$remLen] );  // fix dot-style attributes
-        }
-        
-        return $s;
-    }
-    /*    
+
     private static function parseString($s, $q, $i, $l)
     {
         $string = $q;
@@ -1247,67 +1214,197 @@ _TPLRENDERCODE_;
         while ( $i < $l )
         {
             $ch = $s[$i++];
-            $string .= $ch
-            if ( $q == $ch && !$escaped )
-                break;
+            $string .= $ch;
+            if ( $q == $ch && !$escaped )  break;
             $escaped = (!$escaped && '\\' == $ch);
         }
         return $string;
     }
     
-    private static function parseVariable($s, $i, $l)
+    private static function parseVariable($s, $i, $l, $pre='VARSTR')
     {
-        $variable = null;
+        $cnt = 0;
         if ( preg_match(self::$ALPHA, $s[$i], $m) )
         {
+            $strings = array();
+            $variables = array();
+            
+            // main variable
             $variable = $s[$i++];
-            $space = '';
-            $property = '';
-            $done = $i >= $l;
-            while ( !$done )
+            while ( $i < $l && preg_match(self::$ALPHANUM, $s[$i], $m) )
             {
-                while ( $i < $l && preg_match(self::$ALPHANUM, $s[$i], $m) )
+                $variable .= $s[$i++];
+            }
+            
+            $variable_raw = $variable;
+            // transform into tpl variable
+            $variable = "\$__instance__->data['" . $variable . "']";
+            $len = strlen($variable_raw);
+            $lenv = strlen($variable);
+            
+            // extra space
+            $backlen = $len;
+            $backlenv = $lenv;
+            while ( $i < $l && preg_match(self::$SPACE, $s[$i], $m) )
+            {
+                $variable .= $s[$i++];
+                $len++;
+                $lenv++;
+            }
+            
+            $has_extra = false;
+            
+            $bracketcnt = 0;
+            // optional properties and extra spaces
+            while ( $i < $l && ('.' == $s[$i] || '[' == $s[$i] || ']' == $s[$i]) )
+            {
+                $has_extra = true;
+                
+                $delim = $s[$i];
+                
+                $backlen = $len;
+                $backlenv = $lenv;
+                
+                if ( '[' == $delim ) 
                 {
-                    $variable .= $s[$i++];
+                    $bracketcnt++;
+                    $variable .= $delim;
+                    $len++;
+                    $lenv++;
                 }
+                elseif ( ']' == $delim ) 
+                {
+                    if ( $bracketcnt>0 )
+                    {
+                        $bracketcnt--;
+                        $variable .= $delim;
+                        $len++;
+                        $lenv++;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                $i++;
+                
+                // extra space
                 while ( $i < $l && preg_match(self::$SPACE, $s[$i], $m) )
                 {
-                    $space .= $s[$i++];
+                    $variable .= $s[$i++];
+                    $len++;
+                    $lenv++;
                 }
-                while ( $i < $l && '.' == $s[$i] )
+                
+                // alpha-numeric dot property
+                if ( '.' == $delim )
                 {
-                    $sub = substr($s, $i);
-                    $property = self::parseVariable($sub, 0, strlen($sub));
-                    if ( $property )
+                    $property = '';
+                    while ( $i < $l && preg_match(self::$ALPHANUM, $s[$i], $m) )
                     {
-                        $variable .= $space . '.' . $property;
-                        $space = '';
-                        $i += strlen( $property );
-                        while ( $i < $l && preg_match(self::$SPACE, $s[$i], $m) )
-                        {
-                            $space .= $s[$i++];
-                        }
+                        $property .= $s[$i++];
+                    }
+                    $l = strlen($property);
+                    if ( $l )
+                    {
+                        // transform into tpl variable bracketed property
+                        $variable .= "['" . $property . "']";
+                        $len += $l+1;
+                        $lenv += $l+4;
+                    }
+                    else
+                    {
+                        break;
                     }
                 }
-                while ( $i < $l && '[' == $s[$i] )
+                
+                // bracketed property
+                elseif ( '[' == $delim )
                 {
-                    $sub = substr($s, $i);
-                    $property = self::parseVariable($sub, 0, strlen($sub));
-                    if ( $property )
+                    $ch = $s[$i++];
+                    
+                    // literal string property
+                    if ( '"' == $ch || "'" == $ch )
                     {
-                        $variable .= $space . '.' . $property;
-                        $space = '';
-                        $i += strlen( $property );
-                        while ( $i < $l && preg_match(self::$SPACE, $s[$i], $m) )
+                        $property = self::parseString( $s, $ch, $i, $l );
+                        $cnt++;
+                        $strings[ "__##$pre$cnt##__" ] = $property;
+                        $variable .= "__##$pre$cnt##__";
+                        $l = strlen($property);
+                        $i += $l;
+                        $len += $l;
+                        $lenv += strlen("__##$pre$cnt##__");
+                    }
+                    
+                    // numeric array property
+                    elseif ( preg_match(self::$NUM, $ch, $m) )
+                    {
+                        $property = $ch;
+                        while ( $i < $l && preg_match(self::$NUM, $s[$i], $m) )
                         {
-                            $space .= $s[$i++];
+                            $property .= $s[$i++];
+                        }
+                        $variable .= $property;
+                        $l = strlen($property);
+                        $len += $l;
+                        $lenv += $l;
+                    }
+                    
+                    // sub-variable property
+                    elseif ( '$' == $ch )
+                    {
+                        $sub = substr($s, $i);
+                        $subvariables = self::parseVariable($sub, 0, strlen($sub), $pre . '_' . $cnt . '_');
+                        if ( $subvariables )
+                        {
+                            // transform into tpl variable property
+                            $property = end($subvariables);
+                            $variable .= $property[0][0];
+                            $l = $property[1];
+                            $i += $l+1;
+                            $len += $l+1;
+                            $lenv += $l;
+                            $variables = array_merge($variables, $subvariables);
                         }
                     }
+                    
+                    else
+                    {
+                        $len = $backlen;
+                        $lenv = $backlenv;
+                        $variable = substr($variable, 0, $lenv);
+                        break;
+                    }
                 }
-                $done = $i >= $l;
+                
+                /*elseif ( ']' == $delim )
+                {
+                    $variable .= $delim;
+                    $len++;
+                    $lenv++;
+                }*/
+                
+                // extra space
+                while ( $i < $l && preg_match(self::$SPACE, $s[$i], $m) )
+                {
+                    $variable .= $s[$i++];
+                    $len++;
+                    $lenv++;
+                }
             }
+            
+            // remove extra space
+            if ( !$has_extra )
+            {
+                $len = $backlen;
+                $lenv = $backlenv;
+                $variable = substr($variable, 0, $lenv);
+            }
+            
+            $variables[] = array(array($variable, $variable_raw), $len, $strings);
+            return $variables;
         }
-        return $variable;
+        return null;
     }
     
     private static function parseTag( $tag )
@@ -1315,148 +1412,74 @@ _TPLRENDERCODE_;
         $count = strlen( $tag );
         $index = 0;
         $ch = '';
-        $tok = null;
         $out = '';
+        $cnt = 0;
+        $variables = array();
+        $strings = array();
         while ( $index < $count )
         {
             $ch = $tag[$index++];
             
-            if ( '%' === $ch )
+            // parse mainly literal strings and variables
+            
+            // literal string
+            if ( '"' == $ch || "'" == $ch )
             {
-                if ( preg_match(self::$ALPHA, $tag[$index], $m) )
+                $tok = self::parseString( $tag, $ch, $index, $count );
+                $cnt++;
+                $strings[ "__##STR$cnt##__" ] = $tok;
+                $out .= "__##STR$cnt##__";
+                $index += strlen($tok)-1;
+            }
+            // variable
+            elseif ( '$' == $ch )
+            {
+                $tok = self::parseVariable($tag, $index, $count);
+                if ( $tok )
                 {
-                    // parse identifier of control construct or template function
-                    $space = '';
-                    $params = '';
-                    $ident = '';
-                    $ident .= $tag[$index++];
-                    
-                    while ( $index < $count && preg_match(self::$ALPHANUM, $tag[$index], $m) )
+                    foreach ($tok as $tokv)
                     {
-                        $ident .= $tag[$index++];
+                        $cnt++;
+                        $variables[ "__##VAR$cnt##__" ] = $tokv[ 0 ];
+                        $strings = array_merge( $strings, $tokv[ 2 ] );
                     }
-                    if ( in_array($ident, self::$__controlConstructs) )
-                    {
-                        while ( $index < $count && preg_match(self::$SPACE, $tag[$index], $m) )
-                        {
-                            $space .= $index++;
-                        }
-                        if ( $index < $count )
-                        {
-                            $paren = 0;
-                            if ( '(' = $tag[$index] )
-                            {
-                                $paren++;
-                                while ( $index < $count && $paren )
-                                {
-                                    $next = $tag[$index++];
-                                    if ( ')' == $next ) 
-                                    {
-                                        $paren--;
-                                        if ( $paren )
-                                            $params .= $next;
-                                    }
-                                    else if ( '(' == $next ) 
-                                    {
-                                        $paren++;
-                                        $params .= $next;
-                                    }
-                                    else if ( '"' == $next || "'" == $next )
-                                    {
-                                        $string = self::parseString( $tag, $next, $index++, $count );
-                                        $params .= $string;
-                                        $index += strlen($string)-1;
-                                    }
-                                    else
-                                    {
-                                        $params .= $next;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    elseif ( $tok && 'func' == $tok->type )
-                    {
-                        $out .= 'Contemplate::'.$tok->val;
-                    }
+                    $out .= "__##VAR$cnt##__";
+                    $index += $tokv[ 1 ];
                 }
                 else
                 {
-                    $out .= $ch;
+                    $out .= '$';
                 }
             }
-            elseif ( '$' === $ch )
-            {
-                $out .= '$';
-                $variable = self::parseVariable($tag, $index++, $count);
-                if ( $variable )
-                {
-                    $out .= $variable;
-                    $index += strlen($variable);
-                }
-            }
-            elseif ( '"' == $ch || "'" == $ch )
-            {
-                $string = self::parseString( $tag, $ch, $index++, $count );
-                $out .= $string;
-                $index += strlen($string)-1;
-            }
+            // rest, bypass
             else
             {
                 $out .= $ch;
             }
         }
-        return $out;
+        return array($out, $variables, $strings);
     }
-    
-    public static function test($tpl, $withblocks=false) 
-    {
-        $parts = self::split($tpl);
-        $len = count($parts);
-        $isTag = false;
-        $out = '';
-        for ($i=0; $i<$len; $i++)
-        {
-            $s = $parts[$i];
-            
-            if ( $isTag )
-            {
-                $s = preg_replace( self::$__regExps['specials'], " ", $s ); // replace special chars
-                
-                $s = self::parseTag( $s );  // parse each template tag section accurately
-                
-                $isTag = false;
-            }
-            else
-            {
-                $s = str_replace( "'", "\\'", $s );  // escape single quotes accurately (used by parse function)
-                
-                $s = str_replace( "\n", self::$__preserveLines, $s ); // preserve lines
-                
-                $isTag = true;
-            }
-            
-            $out .= $s;
-        }
-        
-        if ( $withblocks ) return self::doBlocks( $out );
-        
-        return $out;
-    }
-    */
+
     private static function doTags($tag) 
     {
-        self::$__postReplace = null;
+        // refined parsing
+        $tag = self::parseTag( $tag );
+        $strings = $tag[ 2 ];
+        $variables = $tag[ 1 ];
+        $tag = $tag[ 0 ];
         
         $tag = preg_replace_callback( self::$__regExps['controls'], array(__CLASS__, 'doControlConstructs'), $tag );
-        
-        $tag = self::doTplVars( $tag ); // replace tplvars with php vars accurately
-            
-        if ( self::$__postReplace )  $tag = str_replace( array_keys(self::$__postReplace), array_values(self::$__postReplace), $tag );
         
         $tag = preg_replace( self::$__regExps['functions'], 'Contemplate::${1}', $tag );
         
         $tag = preg_replace( self::$__regExps['replacements'], '\' . ( $1 ) . \'', $tag );
+        
+        foreach($variables as $id=>$variable)
+        {
+            $tag = str_replace("{$id}__RAW__", $variable[1], $tag);
+            $tag = str_replace($id, $variable[0], $tag);
+        }
+        $tag = str_replace(array_keys($strings), array_values($strings), $tag);
         
         $tag = str_replace( array("\t", "\v"), array(self::$__tplStart, self::padLines( self::$__tplEnd )), $tag );
         

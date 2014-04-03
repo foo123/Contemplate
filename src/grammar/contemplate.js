@@ -63,16 +63,19 @@ var contemplate_grammar = {
             "keyword" : [
                 "%extends", "%block", "%endblock", "%template", "%include",
                 "%if", "%elseif", "%else", "%endif", "%for", "%elsefor",
-                "%endfor", "as"
+                "%endfor", "%set", "%unset", "as"
             ],
                                   
             // builtin functions, constructs, etc..
             "function" : [
-                "%now", "%date", "%ldate", "%count", "%sprintf",
-                "%lowercase", "%uppercase", "%camelcase", "%snakecase",
-                "%trim", "%ltrim", "%rtrim",
-                "%htmltable", "%htmlselect", "%has_key", "%concat",
-                "%s", "%n", "%f", "%l", "%q", "%dq"
+                "RegExp::/%plugin_[a-z0-9_]+/i",
+                [
+                    "%now", "%date", "%ldate", "%count", "%sprintf",
+                    "%lowercase", "%uppercase", "%camelcase", "%snakecase",
+                    "%trim", "%ltrim", "%rtrim", '%uuid', '%pluralise',
+                    "%htmltable", "%htmlselect", "%has_key", "%concat",
+                    "%s", "%n", "%f", "%l", "%q", "%dq"
+                ]
             ]
         },
     

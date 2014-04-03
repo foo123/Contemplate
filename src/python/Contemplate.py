@@ -80,18 +80,19 @@ class _G:
     extends = None
     id = 0
     funcId = 0
-    postReplace = None
     stack = None
     uuid = 0
 
     NLRX = None
 
+    ALPHA = r'^[a-zA-Z_]'
+    NUM = r'^[0-9]'
+    ALPHANUM = r'^[a-zA-Z0-9_]'
+    SPACE = r'^\s'
+    
     regExps = {
         'specials' : None,
         'replacements' : None,
-        'vars' : None,
-        'ids' : None,
-        'atts' : None,
         'functions' : None,
         'controls' : None
     }
@@ -281,21 +282,15 @@ def t_set(args):
     args = args.split(',')
     varname = args.pop(0).strip()
     expr = ','.join(args).strip()
-    _G.postReplace = {
-        '__{{SETVAR1}}__' : '__instance__.data[' + varname + '] = ('+ expr +')'
-    }
-    return "';" + _G.TEOL + padLines( '__{{SETVAR1}}__' ) + _G.TEOL
+    expr = expr.replace('true', 'True').replace('false', 'False').replace('null', 'None')
+    return "';" + _G.TEOL + padLines( varname + ' = ('+ expr +')' ) + _G.TEOL
 
 # unset/remove/delete tpl var
 def t_unset(varname=None):
     global _G
     if varname:
         varname = str(varname).strip()
-        _G.postReplace = {
-            '__{{UNSETVAR0}}__' : '__instance__.data',
-            '__{{UNSETVAR1}}__' : '__instance__.data[' + varname + ']'
-        }
-        return "';" + _G.TEOL + padLines( 'if ( '+varname+' in __{{UNSETVAR0}}__ ): del __{{UNSETVAR1}}__' ) + _G.TEOL
+        return "';" + _G.TEOL + padLines( 'if ( "'+varname+'__RAW__" in __instance__.data ): del ' + varname ) + _G.TEOL
     return "'; " + _G.TEOL
     
 # if
@@ -306,7 +301,7 @@ def t_if(cond='False'):
     
     out = "' "
     # translate some logic operators to Python style
-    cond = cond.replace('true', 'True').replace('false', 'False').replace(' && ', ' and ').replace(' || ', ' or ').replace(' ! ', ' not ')
+    cond = cond.replace('true', 'True').replace('false', 'False').replace('null', 'None').replace(' && ', ' and ').replace(' || ', ' or ').replace(' ! ', ' not ')
     out1 = _G.IF.replace('__{{COND}}__', cond)
     out += padLines(out1)
     _G.level += 1
@@ -319,7 +314,7 @@ def t_elseif(cond='False'):
     global _G
     out = "' "
     # translate some logic operators to Python style
-    cond = cond.replace('true', 'True').replace('false', 'False').replace(' && ', ' and ').replace(' || ', ' or ').replace(' ! ', ' not ')
+    cond = cond.replace('true', 'True').replace('false', 'False').replace('null', 'None').replace(' && ', ' and ').replace(' || ', ' or ').replace(' ! ', ' not ')
     out1 = _G.ELSEIF.replace('__{{COND}}__', cond)
 
     _G.level -= 1
@@ -365,24 +360,25 @@ def t_for(for_expr):
     for_expr = for_expr.split(' as ')
     o = for_expr[0].strip()
     kv = for_expr[1].split('=>')
-    k = kv[0].strip().lstrip('$')
-    v = kv[1].strip().lstrip('$')
+    k = kv[0].strip() + '__RAW__'
+    v = kv[1].strip() + '__RAW__'
     
-    o = doTplVars( o )
     loopo = '_loopObj' + str(_G.id)
-    _G.postReplace = {
+    forReplace = {
         '__{{O}}__' : o,
         '__{{K}}__' : k,
         '__{{V}}__' : v,
         '__{{LoopO}}__' : loopo,
         '__{{ASSIGN11}}__' : 'if isinstance('+o+', list): '+loopo+' = enumerate('+o+')',
-        '__{{ASSIGN12}}__' : 'else: '+loopo+' = '+o+'.items();',
+        '__{{ASSIGN12}}__' : 'else: '+loopo+' = '+o+'.items()',
         '__{{ASSIGN21}}__' : '__instance__.data[\''+k+'\'] = '+k+'',
         '__{{ASSIGN22}}__' : '__instance__.data[\''+v+'\'] = '+v+''
     }
     
-    out = "' "
     out1 = _G.FOR
+    for k in forReplace:  out1 = out1.replace( k, forReplace[k] )
+    
+    out = "' "
     
     out += padLines(out1)
     _G.level += 2
@@ -447,7 +443,7 @@ def t_template(args):
     global _G
     args = args.split(',')
     id = args.pop(0).strip()
-    obj = ','.join(args).replace('=>', ':').replace('true', 'True').replace('false', 'False')
+    obj = ','.join(args).replace('true', 'True').replace('false', 'False').replace('null', 'None')
     return '\' + %tpl( "'+id+'", '+obj+' ) ' + _G.TEOL
 
 # extend another template
@@ -482,14 +478,14 @@ def t_endblock(args=''):
 # static
 def t_table(args):
     global _G
-    obj = args.replace('=>', ':').replace('true', 'True').replace('false', 'False')
+    obj = args.replace('true', 'True').replace('false', 'False').replace('null', 'None')
     return '\' + %htmltable(' + obj + ') ' + _G.TEOL
 
 # render html select
 # static
 def t_select(args):
     global _G
-    obj = args.replace('=>', ':').replace('true', 'True').replace('false', 'False')
+    obj = args.replace('true', 'True').replace('false', 'False').replace('null', 'None')
     return '\' + %htmlselect(' + obj + ') ' + _G.TEOL
 
 #
@@ -575,52 +571,269 @@ def doBlocks(s):
         
     return [ s.replace("+ '' +", '+'), blocks ]
 
-# static
-def doTplVars(s):
+def parseString(s, q, i, l):
+    string = q
+    escaped = False
+    ch = ''
+    while ( i < l ):
+        ch = s[i]
+        i += 1
+        string += ch
+        if ( q == ch and not escaped ):  break
+        escaped = (not escaped and '\\' == ch)
+    return string
+
+def parseVariable(s, i, l, pre='VARSTR'):
     global _G
-    tplvars = []
-    rem = []
-    
-    # find tplvars
-    tplvars = re.findall( _G.regExps['ids'], s )
-    
-    if len(tplvars)>0:
-    
-        rem = re.split( _G.regExps['vars'], s )
-        remLen = len(rem)-1
-        s = ''
-        for i in range(remLen):
+    cnt = 0
+    if re.match(_G.ALPHA, s[i]):
         
-            s += re.sub( _G.regExps['atts'], r"['\1']", rem[i] )  # fix dot-style attributes
-            s += "__instance__.data['" + tplvars[i] + "']";  # replace tplvars with the tpldata
+        strings = {}
+        variables = []
         
-        s += re.sub( _G.regExps['atts'], r"['\1']", rem[remLen] )  # fix dot-style attributes
+        # main variable
+        variable = s[i]
+        i += 1
+        while ( i < l and re.match(_G.ALPHANUM, s[i]) ):
+            variable += s[i]
+            i += 1
+        
+        variable_raw = str(variable)
+        # transform into tpl variable
+        variable = "__instance__.data['" + variable + "']"
+        _len = len(variable_raw)
+        _lenv = len(variable)
+        
+        # extra space
+        backlen = _len
+        backlenv = _lenv
+        while ( i < l and re.match(_G.SPACE, s[i]) ):
+            variable += s[i]
+            i += 1 
+            _len += 1
+            _lenv += 1
+        
+        has_extra = False
+        
+        bracketcnt = 0
+        # optional properties and extra spaces
+        while ( i < l and ('.' == s[i] or '[' == s[i] or ']' == s[i]) ):
+            has_extra = True
+            
+            delim = s[i]
+            
+            backlen = _len
+            backlenv = _lenv
+            
+            if ( '[' == delim ): 
+                bracketcnt += 1
+                variable += delim
+                _len += 1
+                _lenv += 1
+            
+            elif ( ']' == delim ): 
+                if ( bracketcnt>0 ):
+                    bracketcnt -= 1
+                    variable += delim
+                    _len += 1 
+                    _lenv += 1 
+                else:
+                    break
+            i += 1
+            
+            # extra space
+            while ( i < l and re.match(_G.SPACE, s[i]) ):
+                variable += s[i]
+                i += 1
+                _len += 1
+                _lenv += 1
+            
+            # alpha-numeric dot property
+            if ( '.' == delim ):
+                property = ''
+                while ( i < l and re.match(_G.ALPHANUM, s[i]) ):
+                    property += s[i]
+                    i += 1
+                l = len(property)
+                if ( l ):
+                    # transform into tpl variable bracketed property
+                    variable += "['" + property + "']"
+                    _len += l+1
+                    _lenv += l+4
+                
+                else:
+                
+                    break
+                
+            
+            
+            # bracketed property
+            elif ( '[' == delim ):
+            
+                ch = s[i]
+                i += 1
+                
+                # literal string property
+                if ( '"' == ch or "'" == ch ):
+                
+                    property = parseString( s, ch, i, l )
+                    cnt += 1
+                    strid = "__##" + pre + str(cnt) + "##__"
+                    strings[ strid ] = property
+                    variable += strid
+                    l = len(property)
+                    i += l
+                    _len += l
+                    _lenv += len(strid)
+                
+                
+                # numeric array property
+                elif ( re.match(_G.NUM, ch) ):
+                
+                    property = ch
+                    while ( i < l and re.match(_G.NUM, s[i]) ):
+                    
+                        property += s[i]
+                        i += 1
+                    
+                    variable += property
+                    l = len(property)
+                    _len += l
+                    _lenv += l
+                
+                
+                # sub-variable property
+                elif ( '$' == ch ):
+                
+                    sub = s[i:]
+                    subvariables = parseVariable(sub, 0, len(sub), pre + '_' + str(cnt) + '_')
+                    if ( subvariables ):
+                    
+                        # transform into tpl variable property
+                        property = subvariables[-1]
+                        variable += property[0][0]
+                        l = property[1]
+                        i += l+1
+                        _len += l+1
+                        _lenv += l
+                        variables = variables + subvariables
+                    
+                
+                
+                else:
+                
+                    _len = backlen
+                    _lenv = backlenv
+                    variable = variable[0:_lenv]
+                    break
+                
+            
+            # extra space
+            while ( i < l and re.match(_G.SPACE, s[i]) ):
+            
+                variable += s[i]
+                i += 1
+                _len += 1
+                _lenv += 1
+            
+        
+        
+        # remove extra space
+        if ( not has_extra ):
+        
+            _len = backlen
+            _lenv = backlenv
+            variable = variable[0:_lenv]
+        
+        
+        variables.append( [[variable, variable_raw], _len, strings] )
+        return variables
     
-    return s
+    return None
+
+
+def parseTag( tag ):
+    count = len( tag )
+    index = 0
+    ch = ''
+    out = ''
+    cnt = 0
+    variables = {}
+    strings = {}
+    while ( index < count ):
+    
+        ch = tag[index]
+        index  += 1
+        
+        # parse mainly literal strings and variables
+        
+        # literal string
+        if ( '"' == ch or "'" == ch ):
+        
+            tok = parseString( tag, ch, index, count )
+            cnt += 1
+            id = "__##STR" + str(cnt) + "##__"
+            strings[ id ] = tok
+            out += id
+            index += len(tok)-1
+        
+        # variable
+        elif ( '$' == ch ):
+        
+            tok = parseVariable(tag, index, count)
+            if ( tok ):
+            
+                for tokv in tok:
+                    cnt += 1
+                    id = "__##VAR" + str(cnt) + "##__"
+                    variables[ id ] = tokv[ 0 ]
+                    strings.update( tokv[ 2 ] )
+                out += id
+                index += tokv[ 1 ]
+            
+            else:
+            
+                out += '$'
+            
+        
+        # rest, bypass
+        else:
+        
+            out += ch
+        
+    
+    return [out, variables, strings]
+
     
 # static
 def doTags(tag):
     global _G
-    _G.postReplace = None
     
-    tag = re.sub(_G.regExps['controls'], doControlConstructs, tag)
-
-    tag = doTplVars( tag ) # replace tplvars with python vars accurately
-    
-    if _G.postReplace:
-    
-        for k in _G.postReplace:  tag = tag.replace( k, _G.postReplace[k] )
-        
     def tplfunc(m):
         plugin = m.group(2) 
         if plugin and plugin in _G.plugins: 
             return 'Contemplate.plugin_' + plugin 
         else: 
             return 'Contemplate.' + m.group(1)
-            
+    
+    # refined parsing
+    tag = parseTag( tag )
+    strings = tag[ 2 ]
+    variables = tag[ 1 ]
+    tag = tag[ 0 ]
+        
+    tag = re.sub(_G.regExps['controls'], doControlConstructs, tag)
+
     tag = re.sub( _G.regExps['functions'], tplfunc, tag )
     
     tag = re.sub( _G.regExps['replacements'], r"' + str( \1 ) + '", tag )
+    
+    for (id,variable) in variables.items():  
+        tag = tag.replace( id+'__RAW__', variable[1] )
+        tag = tag.replace( id, variable[0] )
+    
+    for (id,string) in strings.items():  
+        tag = tag.replace( id, string )
     
     tag = tag.replace( "\t", _G.tplStart ).replace( "\v", padLines(_G.tplEnd) )
     
@@ -1182,12 +1395,6 @@ class Contemplate:
         # pre-compute the needed regular expressions
         _G.regExps['specials'] = re.compile(r'[\n\r\v\t]')
         
-        _G.regExps['vars'] = re.compile(r'\$[a-zA-Z_][a-zA-Z0-9_]*')
-        
-        _G.regExps['ids'] = re.compile(r'\$([a-zA-Z_][a-zA-Z0-9_]*)')
-        
-        _G.regExps['atts'] = re.compile(r'\.\s*([a-zA-Z_][a-zA-Z0-9_]*)')
-        
         _G.regExps['replacements'] = re.compile(r'\t[ ]*(.*?)[ ]*\v')
         
         _G.regExps['controls'] = re.compile(r'\t[ ]*%(' + '|'.join(_G.controlConstructs) + ')[ ]*\((.*)\)')
@@ -1195,6 +1402,11 @@ class Contemplate:
         _G.regExps['functions'] = re.compile(r'%(' + '|'.join(_G.funcs) + ')')
             
         _G.NLRX = re.compile(r'\n\r|\r\n|\n|\r')
+        
+        _G.ALPHA = re.compile( _G.ALPHA )
+        _G.NUM = re.compile( _G.NUM )
+        _G.ALPHANUM = re.compile( _G.ALPHANUM )
+        _G.SPACE = re.compile( _G.SPACE )
         
         _G.preserveLines = _G.preserveLinesDefault
         

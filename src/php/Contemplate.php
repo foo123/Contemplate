@@ -66,7 +66,6 @@ class Contemplate
     );
     
     private static $__controlConstructs = array(
-        'htmlselect', 'htmltable',
         'include', 'template', 
         'extends', 'endblock', 'block',
         'elsefor', 'endfor', 'for',
@@ -75,8 +74,8 @@ class Contemplate
     );
     
     private static $__funcs = array( 
-        'plugin_([a-zA-Z0-9_]+)',
-        'htmlselect', 'htmltable', 'has_key',
+        'htmlselect', 'htmltable',
+        'plugin_([a-zA-Z0-9_]+)', 'has_key',
         'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
         'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 
         'tpl', 'uuid',
@@ -906,7 +905,6 @@ _TPLRENDERCODE_;
         $args = explode(',', $args);
         $varname = trim( array_shift($args) );
         $expr = trim(implode(',', $args));
-        $expr = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), $expr);
         return "';" . self::$__TEOL . self::padLines( "$varname = ( $expr );" ) . self::$__TEOL;
     }
     
@@ -1063,7 +1061,7 @@ _TPLRENDERCODE_;
     {
         $args = explode(',', $args); 
         $id = trim(array_shift($args));
-        $obj = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), implode(',', $args));
+        $obj = implode(',', $args);
         return '\' . %tpl( "'.$id.'", '.$obj.' ); ' . self::$__TEOL;
     }
     
@@ -1098,21 +1096,7 @@ _TPLRENDERCODE_;
         }  
         return '';  
     }
-    
-    // render html table
-    private static function t_table($args)
-    {
-        $obj = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), $args);
-        return '\' . %htmltable('.$obj.'); ' . self::$__TEOL;
-    }
-    
-    // render html select
-    private static function t_select($args)
-    {
-        $obj = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), $args);
-        return '\' . %htmlselect('.$obj.'); ' . self::$__TEOL;
-    }
-    
+
     //
     // auxilliary parsing methods
     //
@@ -1120,39 +1104,38 @@ _TPLRENDERCODE_;
     {
         if (isset($m[1]))
         {
-            switch($m[1])
+            $ctrl = $m[1];
+            $args = isset($m[2]) ? $m[2] : '';
+            
+            switch($ctrl)
             {
-                case 'set': return self::t_set($m[2]);  break;
+                case 'set': return self::t_set($args);  break;
                 
-                case 'unset': return self::t_unset($m[2]);  break;
+                case 'unset': return self::t_unset($args);  break;
                 
-                case 'if': return self::t_if($m[2]);  break;
+                case 'if': return self::t_if($args);  break;
                 
-                case 'elseif': return self::t_elseif($m[2]); break;
+                case 'elseif': return self::t_elseif($args); break;
                 
-                case 'else': return self::t_else($m[2]);  break;
+                case 'else': return self::t_else($args);  break;
                 
-                case 'endif': return self::t_endif($m[2]);  break;
+                case 'endif': return self::t_endif($args);  break;
                 
-                case 'for': return self::t_for($m[2]);  break;
+                case 'for': return self::t_for($args);  break;
                 
-                case 'elsefor': return self::t_elsefor($m[2]); break;
+                case 'elsefor': return self::t_elsefor($args); break;
                 
-                case 'endfor': return self::t_endfor($m[2]); break;
+                case 'endfor': return self::t_endfor($args); break;
                 
-                case 'template': return self::t_template($m[2]); break;
+                case 'template': return self::t_template($args); break;
                 
-                case 'extends': return self::t_extends($m[2]); break;
+                case 'extends': return self::t_extends($args); break;
                 
-                case 'block': return self::t_block($m[2]); break;
+                case 'block': return self::t_block($args); break;
                 
-                case 'endblock': return self::t_endblock($m[2]); break;
+                case 'endblock': return self::t_endblock($args); break;
                 
-                case 'include': return self::t_include($m[2]); break;
-                
-                case 'htmltable': return self::t_table($m[2]); break;
-                
-                case 'htmlselect': return self::t_select($m[2]); break;
+                case 'include': return self::t_include($args); break;
             }
         }
         return $m[0];
@@ -1223,9 +1206,9 @@ _TPLRENDERCODE_;
     
     private static function parseVariable($s, $i, $l, $pre='VARSTR')
     {
-        $cnt = 0;
         if ( preg_match(self::$ALPHA, $s[$i], $m) )
         {
+            $cnt = 0;
             $strings = array();
             $variables = array();
             
@@ -1240,77 +1223,45 @@ _TPLRENDERCODE_;
             // transform into tpl variable
             $variable = "\$__instance__->data['" . $variable . "']";
             $len = strlen($variable_raw);
-            $lenv = strlen($variable);
             
             // extra space
-            $backlen = $len;
-            $backlenv = $lenv;
+            $space = 0;
             while ( $i < $l && preg_match(self::$SPACE, $s[$i], $m) )
             {
-                $variable .= $s[$i++];
-                $len++;
-                $lenv++;
+                $space++;
+                $i++;
             }
             
-            $has_extra = false;
-            
             $bracketcnt = 0;
-            // optional properties and extra spaces
-            while ( $i < $l && ('.' == $s[$i] || '[' == $s[$i] || ']' == $s[$i]) )
+            
+            // optional properties
+            while ( $i < $l && ('.' == $s[$i] || '[' == $s[$i]) )
             {
-                $has_extra = true;
-                
-                $delim = $s[$i];
-                
-                $backlen = $len;
-                $backlenv = $lenv;
-                
-                if ( '[' == $delim ) 
-                {
-                    $bracketcnt++;
-                    $variable .= $delim;
-                    $len++;
-                    $lenv++;
-                }
-                elseif ( ']' == $delim ) 
-                {
-                    if ( $bracketcnt>0 )
-                    {
-                        $bracketcnt--;
-                        $variable .= $delim;
-                        $len++;
-                        $lenv++;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-                $i++;
+                $delim = $s[$i++];
                 
                 // extra space
                 while ( $i < $l && preg_match(self::$SPACE, $s[$i], $m) )
                 {
-                    $variable .= $s[$i++];
-                    $len++;
-                    $lenv++;
+                    $space++;
+                    $i++;
                 }
-                
+            
                 // alpha-numeric dot property
                 if ( '.' == $delim )
                 {
+                    // property
                     $property = '';
                     while ( $i < $l && preg_match(self::$ALPHANUM, $s[$i], $m) )
                     {
                         $property .= $s[$i++];
                     }
-                    $l = strlen($property);
-                    if ( $l )
+                    $lp = strlen($property);
+                    if ( $lp )
                     {
                         // transform into tpl variable bracketed property
                         $variable .= "['" . $property . "']";
-                        $len += $l+1;
-                        $lenv += $l+4;
+                        $len += $space + 1 + $lp;
+                        $space = 0;
                     }
                     else
                     {
@@ -1321,84 +1272,108 @@ _TPLRENDERCODE_;
                 // bracketed property
                 elseif ( '[' == $delim )
                 {
-                    $ch = $s[$i++];
+                    $bracketcnt++;
+                    
+                    $ch = $s[$i];
                     
                     // literal string property
                     if ( '"' == $ch || "'" == $ch )
                     {
-                        $property = self::parseString( $s, $ch, $i, $l );
+                        $property = self::parseString( $s, $ch, $i+1, $l );
                         $cnt++;
-                        $strings[ "__##$pre$cnt##__" ] = $property;
-                        $variable .= "__##$pre$cnt##__";
-                        $l = strlen($property);
-                        $i += $l;
-                        $len += $l;
-                        $lenv += strlen("__##$pre$cnt##__");
+                        $strid = "__##$pre$cnt##__";
+                        $strings[ $strid ] = $property;
+                        $variable .= $delim . $strid;
+                        $lp = strlen($property);
+                        $i += $lp;
+                        $len += $space + 1 + $lp;
+                        $space = 0;
                     }
                     
                     // numeric array property
                     elseif ( preg_match(self::$NUM, $ch, $m) )
                     {
-                        $property = $ch;
+                        $property = $s[$i++];
                         while ( $i < $l && preg_match(self::$NUM, $s[$i], $m) )
                         {
                             $property .= $s[$i++];
                         }
-                        $variable .= $property;
-                        $l = strlen($property);
-                        $len += $l;
-                        $lenv += $l;
+                        $variable .= $delim . $property;
+                        $lp = strlen($property);
+                        $len += $space + 1 + $lp;
+                        $space = 0;
                     }
                     
                     // sub-variable property
                     elseif ( '$' == $ch )
                     {
-                        $sub = substr($s, $i);
+                        $sub = substr($s, $i+1);
                         $subvariables = self::parseVariable($sub, 0, strlen($sub), $pre . '_' . $cnt . '_');
                         if ( $subvariables )
                         {
                             // transform into tpl variable property
                             $property = end($subvariables);
-                            $variable .= $property[0][0];
-                            $l = $property[1];
-                            $i += $l+1;
-                            $len += $l+1;
-                            $lenv += $l;
+                            $variable .= $delim . $property[0][0];
+                            $lp = $property[1];
+                            $i += $lp + 1;
+                            $len += $space + 2 + $lp;
+                            $space = 0;
                             $variables = array_merge($variables, $subvariables);
+                        }
+                    }
+                    
+                    // close bracket
+                    elseif ( ']' == $ch )
+                    {
+                        if ( $bracketcnt > 0 )
+                        {
+                            $bracketcnt--;
+                            $variable .= $delim . $s[$i++];
+                            $len += $space + 2;
+                            $space = 0;
+                        }
+                        else
+                        {
+                            break;
                         }
                     }
                     
                     else
                     {
-                        $len = $backlen;
-                        $lenv = $backlenv;
-                        $variable = substr($variable, 0, $lenv);
                         break;
                     }
+                    
+                    
+                    // extra space
+                    while ( $i < $l && preg_match(self::$SPACE, $s[$i], $m) )
+                    {
+                        $space++;
+                        $i++;
+                    }
+            
+                    // close bracket
+                    if ( ']' == $s[$i] )
+                    {
+                        if ( $bracketcnt > 0 )
+                        {
+                            $bracketcnt--;
+                            $variable .= $s[$i++];
+                            $len += $space + 1;
+                            $space = 0;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
                 }
-                
-                /*elseif ( ']' == $delim )
-                {
-                    $variable .= $delim;
-                    $len++;
-                    $lenv++;
-                }*/
                 
                 // extra space
                 while ( $i < $l && preg_match(self::$SPACE, $s[$i], $m) )
                 {
-                    $variable .= $s[$i++];
-                    $len++;
-                    $lenv++;
+                    $space++;
+                    $i++;
                 }
-            }
-            
-            // remove extra space
-            if ( !$has_extra )
-            {
-                $len = $backlen;
-                $lenv = $backlenv;
-                $variable = substr($variable, 0, $lenv);
             }
             
             $variables[] = array(array($variable, $variable_raw), $len, $strings);
@@ -1462,16 +1437,22 @@ _TPLRENDERCODE_;
 
     private static function doTags($tag) 
     {
-        // refined parsing
+        // refined parsing of strings and variables
         $tag = self::parseTag( $tag );
         $strings = $tag[ 2 ];
         $variables = $tag[ 1 ];
         $tag = $tag[ 0 ];
         
+        // fix literal data notation
+        $tag = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), $tag);
+        
+        // directives and control constructs
         $tag = preg_replace_callback( self::$__regExps['controls'], array(__CLASS__, 'doControlConstructs'), $tag );
         
+        // functions
         $tag = preg_replace( self::$__regExps['functions'], 'Contemplate::${1}', $tag );
         
+        // other replacements
         $tag = preg_replace( self::$__regExps['replacements'], '\' . ( $1 ) . \'', $tag );
         
         foreach($variables as $id=>$variable)

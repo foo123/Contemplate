@@ -15,6 +15,7 @@ var contemplate_grammar = {
             "function":     "builtin",
             "operator":     "operator",
             "variable":     "variable",
+            "property":     "variable",
             "number":       "number",
             "string":       "string"
         },
@@ -24,8 +25,11 @@ var contemplate_grammar = {
         // Lexical model
         "Lex" : {
             
-            // contemplate variables
+            // template variables
             "variable" : "RegExp::/\\$[_A-Za-z][_A-Za-z0-9]*/",
+            
+            // template variables' properties
+            "property" : "RegExp::/\\.[_A-Za-z][_A-Za-z0-9]*/",
 
             // numbers, in order of matching
             "number" : [
@@ -53,28 +57,27 @@ var contemplate_grammar = {
                 "=>", "==", "!=", "<=", ">=", "<>", "||", "&&"
             ],
             
-            // delimiters
-            //"delimiter" : [ "(", ")", "[", "]" ],
-            
             // atoms
-            "atom" : [ "true", "false" ],
+            "atom" : [ "true", "false", "null" ],
 
-            // keywords
+            // template keywords, directives, constructs, etc..
             "keyword" : [
                 "%extends", "%block", "%endblock", "%template", "%include",
-                "%if", "%elseif", "%else", "%endif", "%for", "%elsefor",
-                "%endfor", "%set", "%unset", "as"
+                "%if", "%elseif", "%else", "%endif", 
+                "%for", "%elsefor", "%endfor", "as", 
+                "%set", "%unset"
             ],
                                   
-            // builtin functions, constructs, etc..
+            // template functions, plugins, etc..
             "function" : [
-                "RegExp::/%plugin_[a-z0-9_]+/i",
+                "RegExp::/%plugin_[a-zA-Z0-9_]+/",
                 [
-                    "%now", "%date", "%ldate", "%count", "%sprintf",
-                    "%lowercase", "%uppercase", "%camelcase", "%snakecase",
-                    "%trim", "%ltrim", "%rtrim", '%uuid', '%pluralise',
-                    "%htmltable", "%htmlselect", "%has_key", "%concat",
-                    "%s", "%n", "%f", "%l", "%q", "%dq"
+                    "%htmlselect", "%htmltable", "%html", "%url", "%uuid",
+                    "%sprintf", "%concat", "%ltrim", "%rtrim", "%trim", 
+                    "%lowercase", "%uppercase", "%camelcase", "%snakecase", 
+                    "%count", "%has_key", "%now", "%time", "%date", 
+                    "%ldate", "%locale", "%l", "%pluralise", 
+                    "%dq", "%n", "%s", "%f","%q"
                 ]
             ]
         },
@@ -87,7 +90,7 @@ var contemplate_grammar = {
             "number",
             "string",
             "variable",
+            "property",
             "operator"
-            //"delimiter",
         ]
 };

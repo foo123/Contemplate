@@ -58,6 +58,9 @@
                 if ( v ) return 'Plugin Test value: ' + v;
                 return 'Plugin Test no value given';
             });
+            Contemplate.addPlugin('print', function(v){
+                return '<pre>' + JSON.stringify(v, null, 4) + '</pre>';
+            });
 
             
             var results = document.getElementById("results_client");

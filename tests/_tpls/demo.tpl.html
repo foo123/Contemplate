@@ -13,10 +13,23 @@
     
     <br /><br />
     
-    <strong>Set a new tpl variable and use it in a custom plugin</strong><br />
+    <strong>Set a new tpl variable and use it in a custom test plugin</strong><br />
     <% %set($foo, "123") %>
     
     <% %plugin_test($foo) %>
+    
+    <br /><br />
+    
+    <!-- use contemplate literal data with template function, in this case a print test plugin -->
+    <strong>use literal data with template function, in this case a print plugin</strong><br />
+    <% %plugin_print({ 
+        "stringVar"     : "stringValue", 
+        "numericVar"    : 123, 
+        "arrayVar"      : [
+            0, 1, "astring", 3, 
+            { "prop": 1 } 
+        ] 
+    }) %>
     
     <br /><br />
     
@@ -74,6 +87,7 @@
     <br /><br />
     
     <% %for($users as $i=>$usergroup) %>
+        <% %count($users[$i]) %>
         <!-- call a (sub-)template -->
         <% %template(sub, {"i" : $i, "users" : $users}) %>
     <% %endfor() %>

@@ -118,7 +118,6 @@
         },
         
         $__controlConstructs = [
-            'htmlselect', 'htmltable',
             'include', 'template', 
             'extends', 'endblock', 'block',
             'elsefor', 'endfor', 'for',
@@ -127,8 +126,8 @@
         ],
         
         $__funcs = [ 
-            'plugin_([a-zA-Z0-9_]+)',
-            'htmlselect', 'htmltable', 'has_key',
+            'htmlselect', 'htmltable', 
+            'plugin_([a-zA-Z0-9_]+)', 'has_key',
             'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
             'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 
             'tpl', 'uuid',
@@ -359,24 +358,13 @@
             return '';  
         },
         
-        // render html table
-        t_table = function(args) {
-            var obj = args;
-            return '\' + %htmltable(' + obj + '); ' + $__TEOL;
-        },
-        
-        // render html select
-        t_select = function(args) {
-            var obj = args;
-            return '\' + %htmlselect(' + obj + '); ' + $__TEOL;
-        },
-        
         //
         // auxilliary parsing methods
         //
         doControlConstructs = function(match, ctrl, args)  {
             if ( ctrl )
             {
+                args = args || '';
                 switch ( ctrl )
                 {
                     case 'set': return t_set( args );  break;
@@ -406,10 +394,6 @@
                     case 'template': return t_template( args );  break;
                     
                     case 'include':  return t_include( args );  break;
-                    
-                    case 'htmltable': return t_table( args );  break;
-                    
-                    case 'htmlselect': return t_select( args );  break;
                 }
             }
             return match;
@@ -483,14 +467,12 @@
         
         parseVariable = function(s, i, l, pre)  {
             pre = pre || 'VARSTR';
-            
             if ( ALPHA.test(s[i]) )
             {
                 var cnt = 0, strings = {}, variables = [], subvariables,
                     variable, property, variable_raw,
-                    len, lenv, backlen, backlenv, l,
-                    has_extra, bracketcnt, delim, ch, 
-                    strid, sub
+                    len, lp, bracketcnt, delim, ch, 
+                    strid, sub, space = 0
                 ;
                 
                 // main variable
@@ -500,81 +482,49 @@
                     variable += s[i++];
                 }
                 
-                variable_raw = '' + variable;
+                variable_raw = variable;
                 // transform into tpl variable
                 variable = "__instance__.data['" + variable + "']";
                 len = variable_raw.length;
-                lenv = variable.length;
                 
                 // extra space
-                backlen = len;
-                backlenv = lenv;
+                space = 0;
                 while ( i < l && SPACE.test(s[i]) )
                 {
-                    variable += s[i++];
-                    len++;
-                    lenv++;
+                    space++;
+                    i++;
                 }
                 
-                has_extra = false;
-                
                 bracketcnt = 0;
-                // optional properties and extra spaces
-                while ( i < l && ('.' == s[i] || '[' == s[i] || ']' == s[i]) )
+                
+                // optional properties
+                while ( i < l && ('.' == s[i] || '[' == s[i]) )
                 {
-                    has_extra = true;
-                    
-                    delim = s[i];
-                    
-                    backlen = len;
-                    backlenv = lenv;
-                    
-                    if ( '[' == delim ) 
-                    {
-                        bracketcnt++;
-                        variable += delim;
-                        len++;
-                        lenv++;
-                    }
-                    else if ( ']' == delim ) 
-                    {
-                        if ( bracketcnt>0 )
-                        {
-                            bracketcnt--;
-                            variable += delim;
-                            len++;
-                            lenv++;
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                    i++;
+                    delim = s[i++];
                     
                     // extra space
                     while ( i < l && SPACE.test(s[i]) )
                     {
-                        variable += s[i++];
-                        len++;
-                        lenv++;
+                        space++;
+                        i++;
                     }
-                    
+                
                     // alpha-numeric dot property
                     if ( '.' == delim )
                     {
+                        // property
                         property = '';
                         while ( i < l && ALPHANUM.test(s[i]) )
                         {
                             property += s[i++];
                         }
-                        l = property.length;
-                        if ( l )
+                        lp = property.length;
+                        if ( lp )
                         {
                             // transform into tpl variable bracketed property
                             variable += "['" + property + "']";
-                            len += l+1;
-                            lenv += l+4;
+                            len += space + 1 + lp;
+                            space = 0;
                         }
                         else
                         {
@@ -585,82 +535,112 @@
                     // bracketed property
                     else if ( '[' == delim )
                     {
-                        ch = s[i++];
+                        bracketcnt++;
+                        
+                        ch = s[i];
                         
                         // literal string property
                         if ( '"' == ch || "'" == ch )
                         {
-                            property = parseString( s, ch, i, l );
+                            property = parseString( s, ch, i+1, l );
                             cnt++;
                             strid = "__##"+pre+cnt+"##__";
                             strings[ strid ] = property;
-                            variable += strid;
-                            l = property.length;
-                            i += l;
-                            len += l;
-                            lenv += strid.length;
+                            variable += delim + strid;
+                            lp = property.length;
+                            i += lp;
+                            len += space + 1 + lp;
+                            space = 0;
                         }
                         
                         // numeric array property
                         else if ( NUM.test(ch) )
                         {
-                            property = ch;
+                            property = s[i++];
                             while ( i < l && NUM.test(s[i]) )
                             {
                                 property += s[i++];
                             }
-                            variable += property;
-                            l = property.length;
-                            len += l;
-                            lenv += l;
+                            variable += delim + property;
+                            lp = property.length;
+                            len += space + 1 + lp;
+                            space = 0;
                         }
                         
                         // sub-variable property
                         else if ( '$' == ch )
                         {
-                            sub = s.slice(i);
+                            sub = s.slice(i+1);
                             subvariables = parseVariable(sub, 0, sub.length, pre + '_' + cnt + '_');
                             if ( subvariables )
                             {
                                 // transform into tpl variable property
-                                property = subvariables[ subvariables.length-1 ];
-                                variable += property[0][0];
-                                l = property[1];
-                                i += l+1;
-                                len += l+1;
-                                lenv += l;
-                                variables = variables.concat( subvariables );
+                                property = subvariables[subvariables.length-1];
+                                variable += delim + property[0][0];
+                                lp = property[1];
+                                i += lp + 1;
+                                len += space + 2 + lp;
+                                space = 0;
+                                variables = variables.concat(subvariables);
+                            }
+                        }
+                        
+                        // close bracket
+                        else if ( ']' == ch )
+                        {
+                            if ( bracketcnt > 0 )
+                            {
+                                bracketcnt--;
+                                variable += delim + s[i++];
+                                len += space + 2;
+                                space = 0;
+                            }
+                            else
+                            {
+                                break;
                             }
                         }
                         
                         else
                         {
-                            len = backlen;
-                            lenv = backlenv;
-                            variable = variable.slice(0, lenv);
                             break;
+                        }
+                        
+                        
+                        // extra space
+                        while ( i < l && SPACE.test(s[i]) )
+                        {
+                            space++;
+                            i++;
+                        }
+                
+                        // close bracket
+                        if ( ']' == s[i] )
+                        {
+                            if ( bracketcnt > 0 )
+                            {
+                                bracketcnt--;
+                                variable += s[i++];
+                                len += space + 1;
+                                space = 0;
+                            }
+                            else
+                            {
+                                break;
+                            }
                         }
                     }
                     
                     // extra space
                     while ( i < l && SPACE.test(s[i]) )
                     {
-                        variable += s[i++];
-                        len++;
-                        lenv++;
+                        space++;
+                        i++;
                     }
                 }
                 
-                // remove extra space
-                if ( !has_extra )
-                {
-                    len = backlen;
-                    lenv = backlenv;
-                    variable = variable.slice(0, lenv);
-                }
-                
                 variables.push( [[variable, variable_raw], len, strings] );
-                return variables;
+                return variables
             }
             return null;
         },
@@ -730,6 +710,9 @@
             strings = tag[ 2 ]; 
             variables = tag[ 1 ];
             tag = tag[ 0 ];
+        
+            // fix literal data notation, not needed here
+            //tag = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), tag);
         
             tag = tag
                     .replace( $__regExps['controls'], doControlConstructs )

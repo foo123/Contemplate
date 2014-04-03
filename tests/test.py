@@ -20,6 +20,7 @@
 # Python 3+, a very basic http server that serves files from current dir
 # http://docs.python.org/3/library/http.server.html
 import os, sys, http.server, socketserver
+import pprint
 
 # import the Contemplate.py engine (as a) module, probably you will want to place this in another dir/package
 import imp
@@ -64,8 +65,11 @@ Contemplate.setPlurals({
 def test_plugin(v=None):
     if v: return 'Plugin Test value: ' + str(v)
     return 'Plugin Test no value given'
-    
+def print_plugin(v=None):
+    return '<pre>' + pprint.pformat(v, 4) + '</pre>' 
+
 Contemplate.addPlugin('test', test_plugin)
+Contemplate.addPlugin('print', print_plugin)
 
 # set the cache directory (make sure to exist)
 Contemplate.setCacheDir('./_tplcache')

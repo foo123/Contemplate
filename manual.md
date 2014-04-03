@@ -4,7 +4,7 @@
 
 __Template Variables__
 
-Variables inside templates are referenced using **PHP-style Notation** with '$' sign. 
+Variables in a templates are referenced using **PHP-style Notation** with '$' sign. 
 
 example:
 
@@ -32,16 +32,7 @@ $obj.key["key2"]  // this will also work
 
 __Literal Template Data__
 
-Literal object/array data are constructed (inside a template) using **JavaScript Literal Object-style Notation** (similar to JSON)
-
-**note** 
-
-literal object data in this format cannot be passed to (template) functions 
-
-this is no real limitation since by using the **%set** directive (which accepts the literal data format), you can set a new variable with the data, which in turn can be used as argument in template functions
-
-it is possible this may change in future updates, for now this is how it works since functions are called at runtime, so parameters' format is platform-specific
-
+Literal object/array data are constructed in a template using **JavaScript Literal Object-style Notation** (similar to JSON)
 
 example:
 
@@ -84,9 +75,6 @@ __Template Directives / Control Constructs__
 * *%endblock()*  End of block definition/override
 
 
-* *%htmlselect(data, options)*  render a select box from given data with given options (shorthand construct to render a select box)
-* *%htmltable(data, options)*  render a table from given data with given options (shorthand construct to render a table)
-
 
 ###Differences between 'include' and 'template' directives
 The main difference is that __include__ will actually copy the subtemplate contents inside the calling template (thus only one final template is generated). This is similar to PHP's _include_ directive.
@@ -125,14 +113,17 @@ __Template Functions / Plugins__
 
 * *%count(arrayOrObject)*  return number of items in arrayOrObject val
 * *%has_key(arrayOrObject, key1 [,key2, ..] )*  check whether array or object tplVar has the given (nested) keys
+* *%uuid(namespace)*  generate a uuid (universal unique identifier)
 
 * *%now()*   return current timestamp in seconds
 * *%time()*   return current timestamp in seconds
 * *%date(format, timestamp)*  return timestamp formatted according to format
-* *%ldate(format, timestamp)*  return localised timestamp formatted according to format
+* *%ldate(format, timestamp)*  return localised timestamp formatted according to format, localised strings are user-defined
 * *%locale(val)* , *%l(val)*  return localised string for val (if exists), localised strings are user-defined
 * *%pluralise(singular, count)*  return plural string for singular (if exists) depending on count, pluralised strings are user-defined
-* *%uuid(namespace)*  generate a uuid (universal unique identifier)
+
+* *%htmlselect(data, options)*  render a select box from given data with given options (shorthand to render a select box)
+* *%htmltable(data, options)*  render a table from given data with given options (shorthand to render a table)
 
 * *%html(val)*  html-escape val (htmlentities)
 * *%url(val)*  url-encode val (urlencode)

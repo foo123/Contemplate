@@ -43,6 +43,9 @@ Contemplate.addPlugin('test', function(v){
     if ( v ) return 'Plugin Test value: ' + v;
     return 'Plugin Test no value given';
 });
+Contemplate.addPlugin('print', function(v){
+    return '<pre>' + JSON.stringify(v, null, 4) + '</pre>';
+});
 
 // make sure it exists
 Contemplate.setCacheDir(fs.realpathSync(path.join(__dirname, '/_tplcache')));

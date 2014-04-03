@@ -40,7 +40,12 @@ function test_plugin($v=null)
     if ( $v ) return 'Plugin Test value: ' . $v;
     return 'Plugin Test no value given';
 }
+function print_plugin($v=null)
+{
+    return '<pre>' . print_r($v, true) . '</pre>';
+}
 Contemplate::addPlugin('test', test_plugin);
+Contemplate::addPlugin('print', print_plugin);
 
 // set the cache directory (make sure to exist)
 Contemplate::setCacheDir(ABSPATH.'/_tplcache');

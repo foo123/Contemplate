@@ -98,7 +98,6 @@ class _G:
     }
 
     controlConstructs = [
-        'htmlselect', 'htmltable',
         'include', 'template', 
         'extends', 'endblock', 'block',
         'elsefor', 'endfor', 'for',
@@ -107,8 +106,8 @@ class _G:
     ]
 
     funcs = [
-        'plugin_([a-zA-Z0-9_]+)',
-        'htmlselect', 'htmltable', 'has_key',
+        'htmlselect', 'htmltable',
+        'plugin_([a-zA-Z0-9_]+)', 'has_key',
         'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
         'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 
         'tpl', 'uuid',
@@ -282,7 +281,6 @@ def t_set(args):
     args = args.split(',')
     varname = args.pop(0).strip()
     expr = ','.join(args).strip()
-    expr = expr.replace('true', 'True').replace('false', 'False').replace('null', 'None')
     return "';" + _G.TEOL + padLines( varname + ' = ('+ expr +')' ) + _G.TEOL
 
 # unset/remove/delete tpl var
@@ -300,8 +298,6 @@ def t_if(cond='False'):
     _G.ifs += 1
     
     out = "' "
-    # translate some logic operators to Python style
-    cond = cond.replace('true', 'True').replace('false', 'False').replace('null', 'None').replace(' && ', ' and ').replace(' || ', ' or ').replace(' ! ', ' not ')
     out1 = _G.IF.replace('__{{COND}}__', cond)
     out += padLines(out1)
     _G.level += 1
@@ -313,8 +309,6 @@ def t_if(cond='False'):
 def t_elseif(cond='False'):
     global _G
     out = "' "
-    # translate some logic operators to Python style
-    cond = cond.replace('true', 'True').replace('false', 'False').replace('null', 'None').replace(' && ', ' and ').replace(' || ', ' or ').replace(' ! ', ' not ')
     out1 = _G.ELSEIF.replace('__{{COND}}__', cond)
 
     _G.level -= 1
@@ -443,7 +437,7 @@ def t_template(args):
     global _G
     args = args.split(',')
     id = args.pop(0).strip()
-    obj = ','.join(args).replace('true', 'True').replace('false', 'False').replace('null', 'None')
+    obj = ','.join(args)
     return '\' + %tpl( "'+id+'", '+obj+' ) ' + _G.TEOL
 
 # extend another template
@@ -474,19 +468,6 @@ def t_endblock(args=''):
         return "__||/" + _G.blocks.pop() + "||__"
     return ''
 
-# render html table
-# static
-def t_table(args):
-    global _G
-    obj = args.replace('true', 'True').replace('false', 'False').replace('null', 'None')
-    return '\' + %htmltable(' + obj + ') ' + _G.TEOL
-
-# render html select
-# static
-def t_select(args):
-    global _G
-    obj = args.replace('true', 'True').replace('false', 'False').replace('null', 'None')
-    return '\' + %htmlselect(' + obj + ') ' + _G.TEOL
 
 #
 # auxilliary parsing methods
@@ -494,40 +475,37 @@ def t_select(args):
 
 # static
 def doControlConstructs(m):
-    t = m.group(1) 
-    a = m.group(2)
+    global _G
+    ctrl = m.group(1) 
+    args = m.group(2)
     
-    if ('set'==t): return t_set(a)
+    if ('set'==ctrl): return t_set(args)
     
-    elif ('unset'==t): return t_unset(a)
+    elif ('unset'==ctrl): return t_unset(args)
     
-    elif ('if'==t): return t_if(a)
+    elif ('if'==ctrl): return t_if(args)
     
-    elif ('elseif'==t): return t_elseif(a)
+    elif ('elseif'==ctrl): return t_elseif(args)
     
-    elif ('else'==t): return t_else(a)
+    elif ('else'==ctrl): return t_else(args)
     
-    elif ('endif'==t): return t_endif(a)
+    elif ('endif'==ctrl): return t_endif(args)
     
-    elif ('for'==t): return t_for(a)
+    elif ('for'==ctrl): return t_for(args)
     
-    elif ('elsefor'==t): return t_elsefor(a)
+    elif ('elsefor'==ctrl): return t_elsefor(args)
     
-    elif ('endfor'==t): return t_endfor(a)
+    elif ('endfor'==ctrl): return t_endfor(args)
     
-    elif ('template'==t): return t_template(a)
+    elif ('template'==ctrl): return t_template(args)
     
-    elif ('extends'==t): return t_extends(a)
+    elif ('extends'==ctrl): return t_extends(args)
     
-    elif ('block'==t): return t_block(a)
+    elif ('block'==ctrl): return t_block(args)
     
-    elif ('endblock'==t): return t_endblock(a)
+    elif ('endblock'==ctrl): return t_endblock(args)
     
-    elif ('include'==t): return t_include(a)
-    
-    elif ('htmltable'==t): return t_table(a)
-    
-    elif ('htmlselect'==t): return t_select(a)
+    elif ('include'==ctrl): return t_include(args)
     
     return m.group(0)
 
@@ -585,81 +563,69 @@ def parseString(s, q, i, l):
 
 def parseVariable(s, i, l, pre='VARSTR'):
     global _G
-    cnt = 0
-    if re.match(_G.ALPHA, s[i]):
-        
+    
+    if ( _G.ALPHA.match(s[i]) ):
+    
+        cnt = 0
         strings = {}
         variables = []
+        space = 0
+        
         
         # main variable
         variable = s[i]
         i += 1
-        while ( i < l and re.match(_G.ALPHANUM, s[i]) ):
+        while ( i < l and _G.ALPHANUM.match(s[i]) ):
+        
             variable += s[i]
             i += 1
         
-        variable_raw = str(variable)
+        
+        variable_raw = variable
         # transform into tpl variable
         variable = "__instance__.data['" + variable + "']"
         _len = len(variable_raw)
-        _lenv = len(variable)
         
         # extra space
-        backlen = _len
-        backlenv = _lenv
-        while ( i < l and re.match(_G.SPACE, s[i]) ):
-            variable += s[i]
-            i += 1 
-            _len += 1
-            _lenv += 1
+        space = 0
+        while ( i < l and _G.SPACE.match(s[i]) ):
         
-        has_extra = False
+            space += 1
+            i += 1
+        
         
         bracketcnt = 0
-        # optional properties and extra spaces
-        while ( i < l and ('.' == s[i] or '[' == s[i] or ']' == s[i]) ):
-            has_extra = True
-            
+        
+        # optional properties
+        while ( i < l and ('.' == s[i] or '[' == s[i]) ):
+        
             delim = s[i]
-            
-            backlen = _len
-            backlenv = _lenv
-            
-            if ( '[' == delim ): 
-                bracketcnt += 1
-                variable += delim
-                _len += 1
-                _lenv += 1
-            
-            elif ( ']' == delim ): 
-                if ( bracketcnt>0 ):
-                    bracketcnt -= 1
-                    variable += delim
-                    _len += 1 
-                    _lenv += 1 
-                else:
-                    break
             i += 1
             
             # extra space
-            while ( i < l and re.match(_G.SPACE, s[i]) ):
-                variable += s[i]
-                i += 1
-                _len += 1
-                _lenv += 1
+            while ( i < l and _G.SPACE.match(s[i]) ):
             
+                space += 1
+                i += 1
+            
+        
             # alpha-numeric dot property
             if ( '.' == delim ):
+            
+                # property
                 property = ''
-                while ( i < l and re.match(_G.ALPHANUM, s[i]) ):
+                while ( i < l and _G.ALPHANUM.match(s[i]) ):
+                
                     property += s[i]
                     i += 1
-                l = len(property)
-                if ( l ):
+                
+                lp = len(property)
+                if ( lp ):
+                
                     # transform into tpl variable bracketed property
                     variable += "['" + property + "']"
-                    _len += l+1
-                    _lenv += l+4
+                    _len += space + 1 + lp
+                    space = 0
                 
                 else:
                 
@@ -670,80 +636,112 @@ def parseVariable(s, i, l, pre='VARSTR'):
             # bracketed property
             elif ( '[' == delim ):
             
+                bracketcnt += 1
+                
                 ch = s[i]
-                i += 1
                 
                 # literal string property
                 if ( '"' == ch or "'" == ch ):
                 
-                    property = parseString( s, ch, i, l )
+                    property = parseString( s, ch, i+1, l )
                     cnt += 1
-                    strid = "__##" + pre + str(cnt) + "##__"
+                    strid = "__##"+pre+str(cnt)+"##__"
                     strings[ strid ] = property
-                    variable += strid
-                    l = len(property)
-                    i += l
-                    _len += l
-                    _lenv += len(strid)
+                    variable += delim + strid
+                    lp = len(property)
+                    i += lp
+                    _len += space + 1 + lp
+                    space = 0
                 
                 
                 # numeric array property
-                elif ( re.match(_G.NUM, ch) ):
+                elif ( _G.NUM.match(ch) ):
                 
-                    property = ch
-                    while ( i < l and re.match(_G.NUM, s[i]) ):
+                    property = s[i]
+                    i += 1
+                    while ( i < l and _G.NUM.match(s[i]) ):
                     
                         property += s[i]
                         i += 1
                     
-                    variable += property
-                    l = len(property)
-                    _len += l
-                    _lenv += l
+                    variable += delim + property
+                    lp = len(property)
+                    _len += space + 1 + lp
+                    space = 0
                 
                 
                 # sub-variable property
                 elif ( '$' == ch ):
                 
-                    sub = s[i:]
-                    subvariables = parseVariable(sub, 0, len(sub), pre + '_' + str(cnt) + '_')
+                    sub = s[i+1:]
+                    subvariables = parseVariable(sub, 0, len(sub), pre + '_' + str(cnt) + '_');
                     if ( subvariables ):
                     
                         # transform into tpl variable property
                         property = subvariables[-1]
-                        variable += property[0][0]
-                        l = property[1]
-                        i += l+1
-                        _len += l+1
-                        _lenv += l
+                        variable += delim + property[0][0]
+                        lp = property[1]
+                        i += lp + 1
+                        _len += space + 2 + lp
+                        space = 0
                         variables = variables + subvariables
+                    
+                
+                
+                # close bracket
+                elif ( ']' == ch ):
+                
+                    if ( bracketcnt > 0 ):
+                    
+                        bracketcnt -= 1
+                        variable += delim + s[i]
+                        i += 1
+                        _len += space + 2
+                        space = 0
+                    
+                    else:
+                    
+                        break
                     
                 
                 
                 else:
                 
-                    _len = backlen
-                    _lenv = backlenv
-                    variable = variable[0:_lenv]
                     break
                 
+                
+                
+                # extra space
+                while ( i < l and _G.SPACE.match(s[i]) ):
+                
+                    space += 1
+                    i += 1
+                
+        
+                # close bracket
+                if ( ']' == s[i] ):
+                
+                    if ( bracketcnt > 0 ):
+                    
+                        bracketcnt -= 1
+                        variable += s[i]
+                        i += 1
+                        _len += space + 1
+                        space = 0
+                    
+                    else:
+                    
+                        break
+                    
+                
+            
             
             # extra space
-            while ( i < l and re.match(_G.SPACE, s[i]) ):
+            while ( i < l and _G.SPACE.match(s[i]) ):
             
-                variable += s[i]
+                space += 1
                 i += 1
-                _len += 1
-                _lenv += 1
             
-        
-        
-        # remove extra space
-        if ( not has_extra ):
-        
-            _len = backlen
-            _lenv = backlenv
-            variable = variable[0:_lenv]
         
         
         variables.append( [[variable, variable_raw], _len, strings] )
@@ -822,6 +820,9 @@ def doTags(tag):
     variables = tag[ 1 ]
     tag = tag[ 0 ]
         
+    # fix literal data notation python-style
+    tag = tag.replace('true', 'True').replace('false', 'False').replace('null', 'None').replace(' && ', ' and ').replace(' || ', ' or ').replace(' ! ', ' not ')
+    
     tag = re.sub(_G.regExps['controls'], doControlConstructs, tag)
 
     tag = re.sub( _G.regExps['functions'], tplfunc, tag )

@@ -26,7 +26,7 @@
 
 }(this, 'Contemplate', function( undef ) {
     
-    "use_strict";
+    //"use strict";
     
     var __version__ = "0.5";
     var self;
@@ -37,10 +37,8 @@
         _isNode = typeof global !== "undefined" && _toString(global) == '[object global]',
         isArray = function( o ) { return (_toString(o) === '[object Array]') || (o instanceof Array); },
         
-        log = echo = ('undefined'!=typeof(console) && console.log) ? function(s) { console.log(s); } : function() {},
-        
-        UNDERLNRX = /[ -]/g, NLRX = /\n\r|\r\n|\n|\r/g,
-        ALPHA = /^[a-zA-Z_]/, NUM = /^[0-9]/, ALPHANUM = /^[a-zA-Z0-9_]/i, SPACE = /^\s/,
+        echo = ('undefined'!=typeof(console) && console.log) ? function(s) { console.log(s); } : function() {},
+        log = echo,
         
         _fs = (_isNode) ? require('fs') : null, 
         fwrite = (_fs) ? _fs.writeFileSync : null,
@@ -98,7 +96,7 @@
     var 
         $__isInited = false,  $__locale = {}, $__plurals = {},
         
-        $__cacheMode = 0, $__cache = {}, $__templates = {}, $__partials = {}, $__inlines = {},
+        $__cacheMode = 0, $__cacheDir = './', $__cache = {}, $__templates = {}, $__partials = {}, $__inlines = {},
         
         $__leftTplSep = "<%", $__rightTplSep = "%>", $__tplStart = "", $__tplEnd = "", $__tplPrefixCode = "",
         
@@ -108,6 +106,9 @@
         $__loops = 0, $__ifs = 0, $__loopifs = 0, $__blockcnt = 0, $__blocks = [], $__allblocks = [], $__extends = null,
     
         $__uuid = 0,
+        
+        UNDERLNRX = /[ -]/g, NLRX = /\n\r|\r\n|\n|\r/g,
+        ALPHA = /^[a-zA-Z_]/, NUM = /^[0-9]/, ALPHANUM = /^[a-zA-Z0-9_]/i, SPACE = /^\s/,
         
         $__regExps = {
             'specials' : null,
@@ -1688,7 +1689,8 @@
                 $odd=!$odd;
             }
             $rows=null;
-            delete $rows;
+            // strict mode error, top level indentifier
+            //delete $rows;
             
             $o+=$footer;
             $o+="</table>";

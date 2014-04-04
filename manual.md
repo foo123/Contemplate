@@ -101,6 +101,8 @@ __Template Functions / Plugins__
 * *%q(val)*   wrap val in single quotes
 * *%dq(val)*  wrap val in double-quotes
 
+* *%addslashes(str)*  addslashes (php-like) function
+* *%stripslashes(str)*  stripslashes (php-like) function
 * *%sprintf(format, val1, val2, ..)*   return a formatted string using val1, val2, etc..
 * *%concat(val1, val2, val3, ..)*  string concatenate the values
 * *%ltrim(val [, delim])*   left trim val of delim 

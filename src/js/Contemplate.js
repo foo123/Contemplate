@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.5
+*  @version: 0.5.1
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -28,7 +28,7 @@
     
     //"use strict";
     
-    var __version__ = "0.5";
+    var __version__ = "0.5.1";
     var self;
     
     // auxilliaries
@@ -129,7 +129,7 @@
             'htmlselect', 'htmltable', 
             'plugin_([a-zA-Z0-9_]+)', 'has_key',
             'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
-            'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 
+            'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'addslashes', 'stripslashes',
             'tpl', 'uuid',
             'html', 'url', 'count', 
             'ldate', 'date', 'now', 'locale',
@@ -1322,12 +1322,6 @@
             // pre-compute the needed regular expressions
             $__regExps['specials'] = new RegExp('[\\n\\r\\v\\t]', 'g');
             
-            $__regExps['vars'] = new RegExp('\\$[a-zA-Z_][a-zA-Z0-9_]*', 'gm');
-        
-            $__regExps['ids'] = new RegExp('\\$([a-zA-Z_][a-zA-Z0-9_]*)', 'gm');
-        
-            $__regExps['atts'] = new RegExp('\\.\\s*([a-zA-Z_][a-zA-Z0-9_]*)', 'gm');
-        
             $__regExps['replacements'] = new RegExp('\\t[ ]*(.*?)[ ]*\\v', 'g');
             
             $__regExps['controls'] = new RegExp('\\t[ ]*%('+$__controlConstructs.join('|')+')\\b[ ]*\\((.*)\\)', 'g');
@@ -1451,7 +1445,7 @@
             var tpl = $__cache[id];
             
             // Provide some basic currying to the user
-            if ( data )  return tpl.render( data );
+            if ( data && "object" == typeof(data) ) return tpl.render( data );
             else  return tpl;
         },
         
@@ -1512,6 +1506,47 @@
         // to Float
         f : function(e) { 
             return parseFloat(e, 10); 
+        },
+        
+        addslashes : function(str) {
+            // http://kevin.vanzonneveld.net
+            // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+            // +   improved by: Ates Goral (http://magnetiq.com)
+            // +   improved by: marrtins
+            // +   improved by: Nate
+            // +   improved by: Onno Marsman
+            // +   input by: Denny Wardhana
+            // +   improved by: Brett Zamir (http://brett-zamir.me)
+            // +   improved by: Oskar Larsson Högfeldt (http://oskar-lh.name/)
+            // *     example 1: addslashes("kevin's birthday");
+            // *     returns 1: 'kevin\'s birthday'
+            return (str + '').replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0');
+        },
+        
+        stripslashes : function(str) {
+            // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+            // +   improved by: Ates Goral (http://magnetiq.com)
+            // +      fixed by: Mick@el
+            // +   improved by: marrtins
+            // +   bugfixed by: Onno Marsman
+            // +   improved by: rezna
+            // +   input by: Rick Waldron
+            // +   reimplemented by: Brett Zamir (http://brett-zamir.me)
+            // +   input by: Brant Messenger (http://www.brantmessenger.com/)
+            // +   bugfixed by: Brett Zamir (http://brett-zamir.me)
+            // *     example 1: stripslashes('Kevin\'s code');
+            // *     returns 1: "Kevin's code"
+            // *     example 2: stripslashes('Kevin\\\'s code');
+            // *     returns 2: "Kevin\'s code"
+            return (str + '').replace(/\\(.?)/g, function (s, n1) {
+                switch (n1) 
+                {
+                    case '\\': return '\\';
+                    case '0': return '\u0000';
+                    case '': return '';
+                    default: return n1;
+                }
+            });
         },
         
         // Concatenate strings/vars

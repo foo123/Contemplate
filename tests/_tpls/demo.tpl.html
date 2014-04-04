@@ -81,13 +81,14 @@
     <li>pluralise(item, 1) = <% %pluralise("item", 1) %></li>
     <li>pluralise(item, 2) = <% %pluralise("item", 2) %></li>
     <li>sprintf("%02d : %02d : %02d", 2, 0, 12) = <% %sprintf("%02d : %02d : %02d", 2, 0, 12) %></li>
+    <li>addslashes("this string's s\"s s\\"s s\\\"s") = <% %addslashes("this string's s\'s s\\'s s\\\'s") %></li>
+    <li>stripslashes("this string's s\"s s\\"s s\\\"s") = <% %stripslashes("this string's s\'s s\\'s s\\\'s") %></li>
     <li>uuid(namespace) = <% %uuid("namespace") %></li>
     </ul>
     
     <br /><br />
     
     <% %for($users as $i=>$usergroup) %>
-        <% %count($users[$i]) %>
         <!-- call a (sub-)template -->
         <% %template(sub, {"i" : $i, "users" : $users}) %>
     <% %endfor() %>

@@ -1,5 +1,9 @@
 ###ChangeLog
 
+__0.5.1__
+* add %addslashes, %stripslashes tpl functions
+* updates / edits
+
 __0.5__
 * add support for custom (user-defined) plugins as template functions with addPlugin(name, handler) method
 * add support for setting/unsetting custom variables inside template (on-the-fly) with %set(var, val), %unset(var) directives

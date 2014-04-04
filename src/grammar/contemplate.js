@@ -73,6 +73,7 @@ var contemplate_grammar = {
                 "RegExp::/%plugin_[a-zA-Z0-9_]+/",
                 [
                     "%htmlselect", "%htmltable", "%html", "%url", "%uuid",
+                    "%addslashes", "%stripslashes",
                     "%sprintf", "%concat", "%ltrim", "%rtrim", "%trim", 
                     "%lowercase", "%uppercase", "%camelcase", "%snakecase", 
                     "%count", "%has_key", "%now", "%time", "%date", 

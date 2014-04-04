@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.5
+#  @version 0.5.1
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -12,7 +12,7 @@
 ##
 
 # needed imports
-import os, sys, re, time, datetime, calendar
+import os, sys, re, time, datetime, calendar, codecs
 
 # http://docs.python.org/2/library/collections.html#collections.OrderedDict
 # http://code.activestate.com/recipes/576693/
@@ -29,11 +29,24 @@ try:
     import html
     __htmlent__ = html
     __ENT_COMPAT__ = False
+    
+    # http://www.php2python.com/wiki/function.stripslashes/
+    # http://tech.7starsea.com/post/203
+    # static
+    def stripslashes(s):
+        return codecs.decode(s, 'unicode_escape')
+        
+
 except ImportError:
     # Python 2.x
     import cgi
     __htmlent__ = cgi
     __ENT_COMPAT__ = True
+    
+    # http://www.php2python.com/wiki/function.stripslashes/
+    # static
+    def stripslashes(s):
+        return s.decode('string_escape')
 
 try:
     # Python 3.x
@@ -109,7 +122,7 @@ class _G:
         'htmlselect', 'htmltable',
         'plugin_([a-zA-Z0-9_]+)', 'has_key',
         'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
-        'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 
+        'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'addslashes', 'stripslashes',
         'tpl', 'uuid',
         'html', 'url', 'count', 
         'ldate', 'date', 'now', 'locale',
@@ -1303,7 +1316,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.5"
+    VERSION = "0.5.1"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -1538,7 +1551,7 @@ class Contemplate:
         tpl = _G.cache[id]
         
         # Provide some basic currying to the user
-        if data is not None: return str(tpl.render( data ))
+        if isinstance(data, dict): return str(tpl.render( data ))
         else: return tpl
     
     #
@@ -1599,6 +1612,20 @@ class Contemplate:
     # static
     def f(e):
         return float(e)
+    
+    # http://www.php2python.com/wiki/function.addslashes/
+    # static
+    def addslashes(s):
+        l = ["\\", '"', "'", "\0", ]
+        s = str(s)
+        for i in l:
+            if i in s:  s = s.replace(i, '\\'+i)
+        return s
+
+    # http://www.php2python.com/wiki/function.stripslashes/
+    # static
+    def stripslashes(s):
+        return stripslashes(s) 
     
     # Concatenate strings/vars
     # static

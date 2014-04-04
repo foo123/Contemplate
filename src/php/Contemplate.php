@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.5
+*  @version: 0.5.1
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -15,7 +15,7 @@ if (!class_exists('Contemplate'))
 
 class Contemplate
 {
-    const VERSION = "0.5";
+    const VERSION = "0.5.1";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -77,7 +77,7 @@ class Contemplate
         'htmlselect', 'htmltable',
         'plugin_([a-zA-Z0-9_]+)', 'has_key',
         'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
-        'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 
+        'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'addslashes', 'stripslashes',
         'tpl', 'uuid',
         'html', 'url', 'count', 
         'ldate', 'date', 'now', 'locale',
@@ -554,7 +554,7 @@ _TPLRENDERCODE_;
         $tpl = self::$__cache[$id];
         
         // Provide some basic currying to the user
-        if ( $data )  return $tpl->render( $data );
+        if ( is_array( $data ) )  return $tpl->render( $data );
         else  return $tpl;
     }
     
@@ -624,6 +624,16 @@ _TPLRENDERCODE_;
     public static function f($e) 
     { 
         return floatval($e); 
+    }
+    
+    public static function addslashes($s)
+    {
+        return addslashes($s);
+    }
+    
+    public static function stripslashes($s)
+    {
+        return stripslashes($s);
     }
     
     // Concatenate strings/vars

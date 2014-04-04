@@ -1784,7 +1784,7 @@ _TPLRENDERCODE_;
     
     public static function data($d)
     {
-        if ( is_object($d) ) 
+        if ( $d instanceof \stdClass ) 
         {
             $d = (array)$d; //array_merge(array(), (array)$d);
         }
@@ -1792,7 +1792,7 @@ _TPLRENDERCODE_;
         { 
             foreach ($d as $k=>$v) 
             { 
-                if ( is_object($v) || is_array($v) ) $d[$k] = self::data($v); 
+                if ( $v instanceof \stdClass || is_array($v) ) $d[$k] = self::data($v); 
             } 
         }
         return $d;

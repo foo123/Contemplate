@@ -62,10 +62,11 @@ def __getTplClass__(Contemplate):
                 
                 __instance__.data = Contemplate.data( data )
                 __p__ += '<div>' + "\n" + '    <br />' + "\n" + '    <strong>Number of Items:' + str( Contemplate.count(__instance__.data['users'][__instance__.data['i']]) ) + '</strong>' + "\n" + '    <br />' + "\n" + '    ' 
-                if ( len(__instance__.data['users'][__instance__.data['i']])>0 ):
+                _loopObj2 = __instance__.data['users'][__instance__.data['i']]
+                if ( len(_loopObj2) > 0  ):
                     # be able to use both key/value in loop
-                    if isinstance(__instance__.data['users'][__instance__.data['i']], list): _loopObj1 = enumerate(__instance__.data['users'][__instance__.data['i']])
-                    else: _loopObj1 = __instance__.data['users'][__instance__.data['i']].items()
+                    if isinstance(_loopObj2, list): _loopObj1 = enumerate(_loopObj2)
+                    else: _loopObj1 = _loopObj2.items()
                     for  j,user in _loopObj1 :
                         __instance__.data['j'] = j
                         __instance__.data['user'] = user

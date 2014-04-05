@@ -75,14 +75,15 @@
                 
                 __instance__.data = Contemplate.data( data );
                 __p__ += '<div>' + "\n" + '    <br />' + "\n" + '    <strong>Number of Items:' + ( Contemplate.count(__instance__.data['users'][__instance__.data['i']]) ) + '</strong>' + "\n" + '    <br />' + "\n" + '    ';
-                if ( __instance__.data['users'][__instance__.data['i']] && Object.keys(__instance__.data['users'][__instance__.data['i']]).length )
+                var _loopObj3 = __instance__.data['users'][__instance__.data['i']];
+                if ( _loopObj3 && Object.keys(_loopObj3).length )
                 {
                    var j;
-                   for ( j in __instance__.data['users'][__instance__.data['i']] )
+                   for ( j in _loopObj3 )
                    {
-                       if ( Contemplate.hasOwn(__instance__.data['users'][__instance__.data['i']], j) )
+                       if ( Contemplate.hasOwn(_loopObj3, j) )
                        {
-                          var user = __instance__.data['users'][__instance__.data['i']][j];
+                          var user = _loopObj3[j];
                           __instance__.data['j'] = j; __instance__.data['user'] = user;
                        
                              

@@ -1,5 +1,10 @@
 ###ChangeLog
 
+__0.5.2__
+* enable literal data to be used as a loop object (see examples)
+* php data func (deep object) fixed
+
+
 __0.5.1__
 * add %addslashes, %stripslashes tpl functions
 * updates / edits

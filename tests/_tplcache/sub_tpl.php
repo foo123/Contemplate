@@ -54,10 +54,11 @@ final class Contemplate_sub_Cached extends Contemplate
         {
             /* tpl main render code starts here */
             $__instance__->data = Contemplate::data( $data ); 
-            $__p__ .= '<div>' . "\n" . '    <br />' . "\n" . '    <strong>Number of Items:' . ( Contemplate::count($__instance__->data['users'][$__instance__->data['i']]) ) . '</strong>' . "\n" . '    <br />' . "\n" . '    ';        
-            if ( !empty($__instance__->data['users'][$__instance__->data['i']]) )
+            $__p__ .= '<div>' . "\n" . '    <br />' . "\n" . '    <strong>Number of Items:' . ( Contemplate::count($__instance__->data['users'][$__instance__->data['i']]) ) . '</strong>' . "\n" . '    <br />' . "\n" . '    ';
+            $_loopObj3 = $__instance__->data['users'][$__instance__->data['i']];
+            if ( !empty($_loopObj3) )
             {
-                foreach ( $__instance__->data['users'][$__instance__->data['i']] as $j=>$user )
+                foreach ( $_loopObj3 as $j=>$user )
                 {
                     $__instance__->data['j'] = $j;
                     $__instance__->data['user'] = $user;         

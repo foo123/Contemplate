@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.5.1
+*  @version: 0.5.2
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -28,7 +28,7 @@
     
     //"use strict";
     
-    var __version__ = "0.5.1";
+    var __version__ = "0.5.2";
     var self;
     
     // auxilliaries
@@ -102,7 +102,7 @@
         
         $__preserveLinesDefault = "' + \"\\n\" + '", $__preserveLines = '',  $__EOL = "\n", $__TEOL = (_isNode) ? require('os').EOL : "\n",
         
-        $__stack = null, $__level = 0, $__pad = "    ", 
+        $__stack = null, $__level = 0, $__pad = "    ", $__idcnt = 0,
         $__loops = 0, $__ifs = 0, $__loopifs = 0, $__blockcnt = 0, $__blocks = [], $__allblocks = [], $__extends = null,
     
         $__uuid = 0,
@@ -244,11 +244,13 @@
             
             for_expr = for_expr.split(' as ');
             
-            var o = trim(for_expr[0]), 
+            var exprO = trim(for_expr[0]), 
                 kv = for_expr[1].split('=>'), 
                 k = trim(kv[0]) + '__RAW__', 
                 v = trim(kv[1]) + '__RAW__',
+                o = '_loopObj' + (++$__idcnt),
                 forReplace = {
+                    '__{{FOR_EXPR_O}}__' : exprO,
                     '__{{O}}__' : o,
                     '__{{K}}__' : k, 
                     '__{{V}}__' : v, 
@@ -1154,6 +1156,7 @@
         $__FOR = function(NL){
                     NL = NL || $__TEOL;
                     return [""
+,"var __{{O}}__ = __{{FOR_EXPR_O}}__;"
 ,"if ( __{{O}}__ && Object.keys(__{{O}}__).length )"
 ,"{"
 ,"   var __{{K}}__;"

@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.5.1
+#  @version 0.5.2
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -236,7 +236,8 @@ else:
     # a = [51,27,13,56]   dict(enumerate(a))
     # generated FOR code
     FOR = """
-if ( len(__{{O}}__)>0 ):
+__{{O}}__ = __{{FOR_EXPR_O}}__
+if ( len(__{{O}}__) > 0  ):
     # be able to use both key/value in loop
     __{{ASSIGN11}}__
     __{{ASSIGN12}}__
@@ -363,15 +364,18 @@ def t_for(for_expr):
     global _G
     _G.loops += 1  
     _G.loopifs += 1
-    _G.id += 1
     for_expr = for_expr.split(' as ')
-    o = for_expr[0].strip()
+    exprO = for_expr[0].strip()
     kv = for_expr[1].split('=>')
     k = kv[0].strip() + '__RAW__'
     v = kv[1].strip() + '__RAW__'
     
+    _G.id += 1
     loopo = '_loopObj' + str(_G.id)
+    _G.id += 1
+    o = '_loopObj' + str(_G.id)
     forReplace = {
+        '__{{FOR_EXPR_O}}__' : exprO,
         '__{{O}}__' : o,
         '__{{K}}__' : k,
         '__{{V}}__' : v,
@@ -1316,7 +1320,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.5.1"
+    VERSION = "0.5.2"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2

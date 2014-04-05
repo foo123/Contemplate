@@ -33,6 +33,13 @@
     
     <br /><br />
     
+    <strong>use literal data in loop</strong><br />
+    <% %for(["a", "b", "c"] as $index=>$value) %>
+        [<% $index %>] = <strong><% $value %></strong><br /> 
+    <% %endfor() %>
+    
+    <br /><br />
+    
     <strong>A select box</strong><br />
     <% %htmlselect($select_data, $select_options) %>
 

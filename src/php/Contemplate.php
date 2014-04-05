@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.5.1
+*  @version: 0.5.2
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -15,7 +15,7 @@ if (!class_exists('Contemplate'))
 
 class Contemplate
 {
-    const VERSION = "0.5.1";
+    const VERSION = "0.5.2";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -346,7 +346,8 @@ _T5_;
     
         // generated FOR code
         self::$__FOR = <<<_T6_
-        
+
+__{{O}}__ = __{{FOR_EXPR_O}}__;
 if ( !empty(__{{O}}__) )
 {
     foreach ( __{{O}}__ as __{{K}}__=>__{{V}}__ )
@@ -985,21 +986,26 @@ _TPLRENDERCODE_;
     // for, foreach
     private static function t_for($for_expr) 
     {
+        static $id = 0;
+        
         self::$__loops++;  self::$__loopifs++;
         $for_expr = explode(' as ', $for_expr); 
-        $o = trim($for_expr[0]); 
+        $exprO = trim($for_expr[0]); 
         $kv = explode('=>', $for_expr[1]); 
         $k = trim($kv[0]) . '__RAW__'; 
         $v = trim($kv[1]) . '__RAW__'; 
-        
+        $o = '$_loopObj' . (++$id);
+
         $out = "';";
         $out1 = str_replace(array(
+            '__{{FOR_EXPR_O}}__',
             '__{{O}}__', 
             '__{{K}}__', 
             '__{{V}}__', 
             '__{{ASSIGN1}}__', 
             '__{{ASSIGN2}}__'
         ), array(
+            $exprO,
             $o, 
             '$'.$k,
             '$'.$v,

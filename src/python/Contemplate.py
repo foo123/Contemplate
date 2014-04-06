@@ -767,95 +767,6 @@ def parseVariable(s, i, l, pre='VARSTR'):
     return None
 
 
-def parseTag( tag ):
-    count = len( tag )
-    index = 0
-    ch = ''
-    out = ''
-    cnt = 0
-    variables = {}
-    strings = {}
-    while ( index < count ):
-    
-        ch = tag[index]
-        index  += 1
-        
-        # parse mainly literal strings and variables
-        
-        # literal string
-        if ( '"' == ch or "'" == ch ):
-        
-            tok = parseString( tag, ch, index, count )
-            cnt += 1
-            id = "__##STR" + str(cnt) + "##__"
-            strings[ id ] = tok
-            out += id
-            index += len(tok)-1
-        
-        # variable
-        elif ( '$' == ch ):
-        
-            tok = parseVariable(tag, index, count)
-            if ( tok ):
-            
-                for tokv in tok:
-                    cnt += 1
-                    id = "__##VAR" + str(cnt) + "##__"
-                    variables[ id ] = tokv[ 0 ]
-                    strings.update( tokv[ 2 ] )
-                out += id
-                index += tokv[ 1 ]
-            
-            else:
-            
-                out += '$'
-            
-        
-        # rest, bypass
-        else:
-        
-            out += ch
-        
-    
-    return [out, variables, strings]
-
-    
-# static
-def doTags(tag):
-    global _G
-    
-    def tplfunc(m):
-        plugin = m.group(2) 
-        if plugin and plugin in _G.plugins: 
-            return 'Contemplate.plugin_' + plugin 
-        else: 
-            return 'Contemplate.' + m.group(1)
-    
-    # refined parsing
-    tag = parseTag( tag )
-    strings = tag[ 2 ]
-    variables = tag[ 1 ]
-    tag = tag[ 0 ]
-        
-    # fix literal data notation python-style
-    tag = tag.replace('true', 'True').replace('false', 'False').replace('null', 'None').replace(' && ', ' and ').replace(' || ', ' or ').replace(' ! ', ' not ')
-    
-    tag = re.sub(_G.regExps['controls'], doControlConstructs, tag)
-
-    tag = re.sub( _G.regExps['functions'], tplfunc, tag )
-    
-    tag = re.sub( _G.regExps['replacements'], r"' + str( \1 ) + '", tag )
-    
-    for (id,variable) in variables.items():  
-        tag = tag.replace( id+'__RAW__', variable[1] )
-        tag = tag.replace( id, variable[0] )
-    
-    for (id,string) in strings.items():  
-        tag = tag.replace( id, string )
-    
-    tag = tag.replace( "\t", _G.tplStart ).replace( "\v", padLines(_G.tplEnd) )
-    
-    return tag
 
 # static
 def split(s):
@@ -873,19 +784,98 @@ def split(s):
 # static
 def parse(tpl, withblocks=True):
     global _G
+    
+    def funcReplace(m):
+        plugin = m.group(2) 
+        if plugin and plugin in _G.plugins: 
+            return 'Contemplate.plugin_' + plugin 
+        else: 
+            return 'Contemplate.' + m.group(1)
+    
     parts = split( tpl )
     l = len(parts)
     isTag = False
-    out = ''
+    parsed = ''
+    
     for i in range(l):
         s = parts[i]
         
         if isTag:
             
-            s = re.sub( _G.regExps['specials'], " ", s ) # replace special chars
+            tag = "\t" + re.sub( _G.regExps['specials'], " ", s ) + "\v" # replace special chars
             
-            s = doTags( "\t" + s + "\v" ) # parse each template tag section accurately
+            # parse each template tag section accurately
+            # refined parsing
+            count = len( tag )
+            index = 0
+            ch = ''
+            out = ''
+            cnt = 0
+            variables = {}
+            strings = {}
+            while ( index < count ):
             
+                ch = tag[index]
+                index  += 1
+                
+                # parse mainly literal strings and variables
+                
+                # literal string
+                if ( '"' == ch or "'" == ch ):
+                
+                    tok = parseString( tag, ch, index, count )
+                    cnt += 1
+                    id = "__##STR" + str(cnt) + "##__"
+                    strings[ id ] = tok
+                    out += id
+                    index += len(tok)-1
+                
+                # variable
+                elif ( '$' == ch ):
+                
+                    tok = parseVariable(tag, index, count)
+                    if ( tok ):
+                    
+                        for tokv in tok:
+                            cnt += 1
+                            id = "__##VAR" + str(cnt) + "##__"
+                            variables[ id ] = tokv[ 0 ]
+                            strings.update( tokv[ 2 ] )
+                        out += id
+                        index += tokv[ 1 ]
+                    
+                    else:
+                    
+                        out += '$'
+                    
+                
+                # rest, bypass
+                else:
+                
+                    out += ch
+                
+            
+            tag = out
+                
+            # fix literal data notation python-style
+            tag = tag.replace('true', 'True').replace('false', 'False').replace('null', 'None').replace(' && ', ' and ').replace(' || ', ' or ').replace(' ! ', ' not ')
+            
+            tag = re.sub(_G.regExps['controls'], doControlConstructs, tag)
+
+            tag = re.sub( _G.regExps['functions'], funcReplace, tag )
+            
+            tag = re.sub( _G.regExps['replacements'], r"' + str( \1 ) + '", tag )
+            
+            for (id,variable) in variables.items():  
+                tag = tag.replace( id+'__RAW__', variable[1] )
+                tag = tag.replace( id, variable[0] )
+            
+            for (id,string) in strings.items():  
+                tag = tag.replace( id, string )
+            
+            tag = tag.replace( "\t", _G.tplStart ).replace( "\v", padLines(_G.tplEnd) )
+            
+            s = tag
             isTag = False
             
         else:
@@ -896,11 +886,11 @@ def parse(tpl, withblocks=True):
         
             isTag = True
         
-        out += s
+        parsed += s
     
-    if withblocks: return doBlocks(out)
+    if withblocks: return doBlocks(parsed)
     
-    return out.replace( "+ '' +", '+' ) # remove redundant code
+    return parsed.replace( "+ '' +", '+' ) # remove redundant code
 
 # static
 def getCachedTemplateName(id):

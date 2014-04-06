@@ -647,104 +647,6 @@
             return null;
         },
         
-        parseTag = function( tag ) {
-            var countl = tag.length,
-                index = 0,
-                ch = '',
-                out = '',
-                cnt = 0,
-                variables = {},
-                strings = {},
-                tok, id, v, tokv
-            ;
-            while ( index < countl )
-            {
-                ch = tag[index++];
-                
-                // parse mainly literal strings and variables
-                
-                // literal string
-                if ( '"' == ch || "'" == ch )
-                {
-                    tok = parseString( tag, ch, index, countl );
-                    cnt++;
-                    id = "__##STR"+cnt+"##__";
-                    strings[ id ] = tok;
-                    out += id;
-                    index += tok.length-1;
-                }
-                // variable
-                else if ( '$' == ch )
-                {
-                    tok = parseVariable(tag, index, countl);
-                    if ( tok )
-                    {
-                        for (v=0; v<tok.length; v++)
-                        {
-                            tokv = tok[ v ];
-                            cnt++;
-                            id = "__##VAR"+cnt+"##__";
-                            variables[ id ] = tokv[ 0 ];
-                            strings = self.merge( strings, tokv[ 2 ] );
-                        }
-                        out += id;
-                        index += tokv[ 1 ];
-                    }
-                    else
-                    {
-                        out += '$';
-                    }
-                }
-                // rest, bypass
-                else
-                {
-                    out += ch;
-                }
-            }
-            return [out, variables, strings];
-        },
-
-        doTags = function(tag) {
-            var strings, variables, id;
-            
-            // refined parsing
-            tag = parseTag( tag );
-            strings = tag[ 2 ]; 
-            variables = tag[ 1 ];
-            tag = tag[ 0 ];
-        
-            // fix literal data notation, not needed here
-            //tag = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), tag);
-        
-            tag = tag
-                    .replace( $__regExps['controls'], doControlConstructs )
-            
-                    .replace( $__regExps['functions'], function(m, func, plugin) {
-                        // allow custom plugins as template functions
-                        if ( plugin && $__plugins[ plugin ]/*self['plugin_' + plugin ]*/ )
-                            return 'Contemplate.plugin_' + plugin;
-                        return 'Contemplate.' + func; 
-                    })
-                    
-                    .replace( $__regExps['replacements'], "' + ( $1 ) + '" )
-                ;
-            
-            for (id in variables)  
-            {
-                tag = tag.split( id+'__RAW__' ).join( variables[id][1] );
-                tag = tag.split( id ).join( variables[id][0] );
-            }
-            
-            for (id in strings)  
-                tag = tag.split( id ).join( strings[id] );
-                
-            return tag
-                    .split( "\t" ).join( $__tplStart )
-                    
-                    .split( "\v" ).join( padLines($__tplEnd) )
-            ;
-        },
-        
         split = function(s) {
             var parts1, len, parts, i, tmp;
             parts1 = s.split( $__leftTplSep );
@@ -760,21 +662,114 @@
         },
     
         parse = function(tpl, withblocks) {
-            var parts, len, out, s, i, isTag;
+            var parts, len, parsed, s, i, isTag,
+                tag, strings, variables, id,
+                countl, index, ch, out, cnt, tok, v, tokv
+            ;
+            
+            var funcReplace = function(m, func, plugin) {
+                // allow custom plugins as template functions
+                if ( plugin && $__plugins[ plugin ]/*self['plugin_' + plugin ]*/ )
+                    return 'Contemplate.plugin_' + plugin;
+                return 'Contemplate.' + func; 
+            };
             
             parts = split( tpl );
             len = parts.length;
             isTag = false;
-            out = '';
+            parsed = '';
             for (i=0; i<len; i++)
             {
-                s = parts[i];
+                s = parts[ i ];
                 
                 if ( isTag )
                 {
-                    s = s.replace( $__regExps['specials'], " " ); // replace special chars
+                    tag = "\t" + s.replace( $__regExps['specials'], " " ) + "\v"; // replace special chars
                     
-                    s = doTags( "\t" + s + "\v" ); // parse each template tag section accurately
+                    // parse each template tag section accurately
+                    // refined parsing
+                    
+                    countl = tag.length;
+                    variables = {};
+                    strings = {};
+                    index = 0; 
+                    ch = ''; 
+                    out = ''; 
+                    cnt = 0;
+                    
+                    while ( index < countl )
+                    {
+                        ch = tag[ index++ ];
+                        
+                        // parse mainly literal strings and variables
+                        
+                        // literal string
+                        if ( '"' == ch || "'" == ch )
+                        {
+                            tok = parseString( tag, ch, index, countl );
+                            cnt++;
+                            id = "__##STR"+cnt+"##__";
+                            strings[ id ] = tok;
+                            out += id;
+                            index += tok.length-1;
+                        }
+                        // variable
+                        else if ( '$' == ch )
+                        {
+                            tok = parseVariable(tag, index, countl);
+                            if ( tok )
+                            {
+                                for (v=0; v<tok.length; v++)
+                                {
+                                    tokv = tok[ v ];
+                                    cnt++;
+                                    id = "__##VAR"+cnt+"##__";
+                                    variables[ id ] = tokv[ 0 ];
+                                    strings = self.merge( strings, tokv[ 2 ] );
+                                }
+                                out += id;
+                                index += tokv[ 1 ];
+                            }
+                            else
+                            {
+                                out += '$';
+                            }
+                        }
+                        // rest, bypass
+                        else
+                        {
+                            out += ch;
+                        }
+                    }
+                    
+                    tag = out;
+                
+                    // fix literal data notation, not needed here
+                    //tag = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), tag);
+                
+                    tag = tag
+                            .replace( $__regExps['controls'], doControlConstructs )
+                    
+                            .replace( $__regExps['functions'], funcReplace)
+                            
+                            .replace( $__regExps['replacements'], "' + ( $1 ) + '" )
+                        ;
+                    
+                    for (id in variables)  
+                    {
+                        tag = tag.split( id+'__RAW__' ).join( variables[id][1] );
+                        tag = tag.split( id ).join( variables[id][0] );
+                    }
+                    
+                    for (id in strings)  
+                        tag = tag.split( id ).join( strings[id] );
+                        
+                    s = tag
+                            .split( "\t" ).join( $__tplStart )
+                            
+                            .split( "\v" ).join( padLines($__tplEnd) )
+                    ;
+                    
                     
                     isTag = false;
                 }
@@ -789,14 +784,14 @@
                     isTag = true;
                 }
                 
-                out += s;
+                parsed += s;
             }
         
-            if ('undefined'==typeof(withblocks)) withblocks = true;
+            if ( 'undefined'==typeof(withblocks) ) withblocks = true;
             
-            if ( withblocks ) return doBlocks( out ); // render any blocks
+            if ( withblocks ) return doBlocks( parsed ); // render any blocks
             
-            return out.replace( "+ '' +", '+' ).replace( "+ '';", ';' ); // remove redundant code
+            return parsed.replace( "+ '' +", '+' ).replace( "+ '';", ';' ); // remove redundant code
         },
         
         getCachedTemplateName = function(id) { 

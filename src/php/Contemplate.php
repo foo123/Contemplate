@@ -1398,91 +1398,6 @@ _TPLRENDERCODE_;
         return null;
     }
     
-    private static function parseTag( $tag )
-    {
-        $count = strlen( $tag );
-        $index = 0;
-        $ch = '';
-        $out = '';
-        $cnt = 0;
-        $variables = array();
-        $strings = array();
-        while ( $index < $count )
-        {
-            $ch = $tag[$index++];
-            
-            // parse mainly literal strings and variables
-            
-            // literal string
-            if ( '"' == $ch || "'" == $ch )
-            {
-                $tok = self::parseString( $tag, $ch, $index, $count );
-                $cnt++;
-                $strings[ "__##STR$cnt##__" ] = $tok;
-                $out .= "__##STR$cnt##__";
-                $index += strlen($tok)-1;
-            }
-            // variable
-            elseif ( '$' == $ch )
-            {
-                $tok = self::parseVariable($tag, $index, $count);
-                if ( $tok )
-                {
-                    foreach ($tok as $tokv)
-                    {
-                        $cnt++;
-                        $variables[ "__##VAR$cnt##__" ] = $tokv[ 0 ];
-                        $strings = array_merge( $strings, $tokv[ 2 ] );
-                    }
-                    $out .= "__##VAR$cnt##__";
-                    $index += $tokv[ 1 ];
-                }
-                else
-                {
-                    $out .= '$';
-                }
-            }
-            // rest, bypass
-            else
-            {
-                $out .= $ch;
-            }
-        }
-        return array($out, $variables, $strings);
-    }
-
-    private static function doTags($tag) 
-    {
-        // refined parsing of strings and variables
-        $tag = self::parseTag( $tag );
-        $strings = $tag[ 2 ];
-        $variables = $tag[ 1 ];
-        $tag = $tag[ 0 ];
-        
-        // fix literal data notation
-        $tag = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), $tag);
-        
-        // directives and control constructs
-        $tag = preg_replace_callback( self::$__regExps['controls'], array(__CLASS__, 'doControlConstructs'), $tag );
-        
-        // functions
-        $tag = preg_replace( self::$__regExps['functions'], 'Contemplate::${1}', $tag );
-        
-        // other replacements
-        $tag = preg_replace( self::$__regExps['replacements'], '\' . ( $1 ) . \'', $tag );
-        
-        foreach($variables as $id=>$variable)
-        {
-            $tag = str_replace("{$id}__RAW__", $variable[1], $tag);
-            $tag = str_replace($id, $variable[0], $tag);
-        }
-        $tag = str_replace(array_keys($strings), array_values($strings), $tag);
-        
-        $tag = str_replace( array("\t", "\v"), array(self::$__tplStart, self::padLines( self::$__tplEnd )), $tag );
-        
-        return $tag;
-    }
-    
     private static function split($s)
     {
         $parts1 = explode( self::$__leftTplSep, $s );
@@ -1502,16 +1417,91 @@ _TPLRENDERCODE_;
         $parts = self::split($tpl);
         $len = count($parts);
         $isTag = false;
-        $out = '';
+        $parsed = '';
         for ($i=0; $i<$len; $i++)
         {
             $s = $parts[$i];
             
             if ( $isTag )
             {
-                $s = preg_replace( self::$__regExps['specials'], " ", $s ); // replace special chars
+                $tag = "\t" . preg_replace( self::$__regExps['specials'], " ", $s ) . "\v"; // replace special chars
                 
-                $s = self::doTags( "\t" . $s . "\v" );  // parse each template tag section accurately
+                // parse each template tag section accurately
+                // refined parsing of strings and variables
+                $count = strlen( $tag );
+                $index = 0;
+                $ch = '';
+                $out = '';
+                $cnt = 0;
+                $variables = array();
+                $strings = array();
+                while ( $index < $count )
+                {
+                    $ch = $tag[$index++];
+                    
+                    // parse mainly literal strings and variables
+                    
+                    // literal string
+                    if ( '"' == $ch || "'" == $ch )
+                    {
+                        $tok = self::parseString( $tag, $ch, $index, $count );
+                        $cnt++;
+                        $id = "__##STR$cnt##__";
+                        $strings[ $id ] = $tok;
+                        $out .= $id;
+                        $index += strlen($tok)-1;
+                    }
+                    // variable
+                    elseif ( '$' == $ch )
+                    {
+                        $tok = self::parseVariable($tag, $index, $count);
+                        if ( $tok )
+                        {
+                            foreach ($tok as $tokv)
+                            {
+                                $cnt++;
+                                $id = "__##VAR$cnt##__";
+                                $variables[ $id ] = $tokv[ 0 ];
+                                $strings = array_merge( $strings, $tokv[ 2 ] );
+                            }
+                            $out .= $id;
+                            $index += $tokv[ 1 ];
+                        }
+                        else
+                        {
+                            $out .= '$';
+                        }
+                    }
+                    // rest, bypass
+                    else
+                    {
+                        $out .= $ch;
+                    }
+                }
+                $tag = $out;
+                
+                // fix literal data notation
+                $tag = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), $tag);
+                
+                // directives and control constructs
+                $tag = preg_replace_callback( self::$__regExps['controls'], array(__CLASS__, 'doControlConstructs'), $tag );
+                
+                // functions
+                $tag = preg_replace( self::$__regExps['functions'], 'Contemplate::${1}', $tag );
+                
+                // other replacements
+                $tag = preg_replace( self::$__regExps['replacements'], '\' . ( $1 ) . \'', $tag );
+                
+                foreach($variables as $id=>$variable)
+                {
+                    $tag = str_replace("{$id}__RAW__", $variable[1], $tag);
+                    $tag = str_replace($id, $variable[0], $tag);
+                }
+                $tag = str_replace(array_keys($strings), array_values($strings), $tag);
+                
+                $tag = str_replace( array("\t", "\v"), array(self::$__tplStart, self::padLines( self::$__tplEnd )), $tag );
+                
+                $s  = $tag;
                 
                 $isTag = false;
             }
@@ -1524,12 +1514,12 @@ _TPLRENDERCODE_;
                 $isTag = true;
             }
             
-            $out .= $s;
+            $parsed .= $s;
         }
         
-        if ( $withblocks ) return self::doBlocks($out);
+        if ( $withblocks ) return self::doBlocks($parsed);
         
-        return str_replace( array(". '' .", ". '';"), array('.', ';'), $out ); // remove redundant code
+        return str_replace( array(". '' .", ". '';"), array('.', ';'), $parsed ); // remove redundant code
     }
     
     public static function getTemplateContents($id)

@@ -13,8 +13,27 @@
     
     <br /><br />
     
+    <strong>Test if variable is set</strong><br />
+    <% %if( %isset($foo) ) %>
+        $foo is set
+    <% %else() %>
+        $foo is NOT set
+    <% %endif() %>
+    <br />
+    <br />
+
     <strong>Set a new tpl variable and use it in a custom test plugin</strong><br />
     <% %set($foo, "123") %>
+    <br />
+    <br />
+    
+    <strong>Test if variable is set</strong><br />
+    <% %if( %isset($foo) ) %>
+        $foo is set
+    <% %else() %>
+        $foo is NOT set
+    <% %endif() %>
+    <br />
     
     <% %plugin_test($foo) %>
     

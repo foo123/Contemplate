@@ -44,7 +44,7 @@ There are a couple of other frameworks named also _contemplate_
 
 ###Rationale
 
-There are many templating engines out there, which are elegant, fast, multipurpose (eg. _smarty_ _mustache_  _twig_  _handlebars_  _jade_  _doT_ and so on..)
+There are many templating engines out there, which are elegant, fast, multipurpose (eg. _smarty_ _mustache_  _twig_  _swig_ _handlebars_  _jade_  _doT_ and so on..)
 
 Most of the sophisticated engines use a custom parser (and usually a full-fledged framework) to build the engine. 
 

@@ -65,7 +65,7 @@ var contemplate_grammar = {
                 "%extends", "%block", "%endblock", "%template", "%include",
                 "%if", "%elseif", "%else", "%endif", 
                 "%for", "%elsefor", "%endfor", "as", 
-                "%set", "%unset"
+                "%set", "%unset", "%isset"
             ],
                                   
             // template functions, plugins, etc..
@@ -76,7 +76,7 @@ var contemplate_grammar = {
                     "%addslashes", "%stripslashes",
                     "%sprintf", "%concat", "%ltrim", "%rtrim", "%trim", 
                     "%lowercase", "%uppercase", "%camelcase", "%snakecase", 
-                    "%count", "%has_key", "%now", "%time", "%date", 
+                    "%count", "%haskey", "%now", "%time", "%date", 
                     "%ldate", "%locale", "%l", "%pluralise", 
                     "%dq", "%n", "%s", "%f","%q"
                 ]

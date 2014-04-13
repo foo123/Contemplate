@@ -79,11 +79,11 @@ def __getTplClass__(Contemplate):
                                      
                             __p__ += 'odd'         
                                  
-                        __p__ += '">' + "\n" + '            <a href="/' + str( __instance__.data['user']["name"] ) + '">' + str( __instance__.data['user']['name'] ) + str( __instance__.data['user']['text'] ) + ' ' + str( Contemplate.n(__instance__.data['i']) + Contemplate.n(__instance__.data['j']) ) + '</a>: <strong>' + str( __instance__.data['user']["text"] ) + '</strong>' + "\n" + '        </div>' + "\n" + '        '         
-                        if (  Contemplate.has_key(__instance__.data['user'], "key1")  ):
+                        __p__ += '">' + "\n" + '            <a href="/' + str( __instance__.data['user']["name"] ) + '">' + str( __instance__.data['user']['name'] ) + '' + str( __instance__.data['user']['text'] ) + ' ' + str( Contemplate.n(__instance__.data['i']) + Contemplate.n(__instance__.data['j']) ) + '</a>: <strong>' + str( __instance__.data['user']["text"] ) + '</strong>' + "\n" + '        </div>' + "\n" + '        '         
+                        if (  Contemplate.haskey(__instance__.data['user'], "key1")  ):
                                      
                             __p__ += '' + "\n" + '            <div> User has key &quot;key1&quot; </div>' + "\n" + '        '         
-                        elif (  Contemplate.has_key(__instance__.data['user'], "key", "key1")  ):
+                        elif (  Contemplate.haskey(__instance__.data['user'], "key", "key1")  ):
                                      
                             __p__ += '' + "\n" + '            <div> User has key [&quot;key&quot;][&quot;key1&quot;] </div>' + "\n" + '        '         
                                  

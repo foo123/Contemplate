@@ -91,10 +91,10 @@ def __getTplClass__(Contemplate):
                 # tpl main render code starts here
                 
                 __instance__.data = Contemplate.data( data )
-                __p__ += '<!-- this is the base template -->' + "\n" + "\n" + '<strong>This is the base template</strong>' + "\n" + "\n" + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block1</strong><br />' + "\n" +  __instance__.renderBlock( 'Block1' )  
-                __p__ += '' + "\n" + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2</strong><br />' + "\n" +  __instance__.renderBlock( 'Block2' )  
-                __p__ += '' + "\n" + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block3</strong><br />' + "\n" +  __instance__.renderBlock( 'Block3' )  
-                __p__ += '' + "\n" + "\n" + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2 Again</strong><br />' + "\n" +  __instance__.renderBlock( 'Block2' )  
+                __p__ += '<!-- this is the base template -->' + "\n" + '' + "\n" + '<strong>This is the base template</strong>' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block1</strong><br />' + "\n" + '' +  __instance__.renderBlock( 'Block1' )  
+                __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2</strong><br />' + "\n" + '' +  __instance__.renderBlock( 'Block2' )  
+                __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block3</strong><br />' + "\n" + '' +  __instance__.renderBlock( 'Block3' )  
+                __p__ += '' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2 Again</strong><br />' + "\n" + '' +  __instance__.renderBlock( 'Block2' )  
                 __p__ += '' + "\n" + ''
                 
                 # tpl main render code ends here

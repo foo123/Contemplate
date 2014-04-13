@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.5.2
+#  @version 0.5.3
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -96,7 +96,7 @@ class _G:
     stack = None
     uuid = 0
 
-    NLRX = None
+    NEWLINE = None
 
     ALPHA = r'^[a-zA-Z_]'
     NUM = r'^[0-9]'
@@ -107,20 +107,21 @@ class _G:
         'specials' : None,
         'replacements' : None,
         'functions' : None,
-        'controls' : None
+        'controls' : None,
+        'controls2' : None
     }
 
     controlConstructs = [
         'include', 'template', 
         'extends', 'endblock', 'block',
         'elsefor', 'endfor', 'for',
-        'set', 'unset',
+        'set', 'unset', 'isset',
         'elseif', 'else', 'endif', 'if'
     ]
 
     funcs = [
         'htmlselect', 'htmltable',
-        'plugin_([a-zA-Z0-9_]+)', 'has_key',
+        'plugin_([a-zA-Z0-9_]+)', 'haskey',
         'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
         'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'addslashes', 'stripslashes',
         'tpl', 'uuid',
@@ -289,6 +290,10 @@ __{{CODE}}__
 # Control structures
 #
 
+# whether var is set
+def t_isset(varname):
+    return ' ( "' + varname + '__RAW__" in __instance__.data ) '
+        
 # set/create/update tpl var
 def t_set(args):
     global _G
@@ -491,12 +496,31 @@ def t_endblock(args=''):
 #
 
 # static
-def doControlConstructs(m):
+def split(s):
+    global _G
+    parts1 = s.split( _G.leftTplSep )
+    l = len(parts1)
+    parts = []
+    for i in range(l):
+        tmp = parts1[i].split( _G.rightTplSep )
+        parts.append ( tmp[0] )
+        if len(tmp) > 1: parts.append ( tmp[1] )
+    
+    return parts
+
+
+# static
+def parseControlConstructs(m):
     global _G
     ctrl = m.group(1) 
     args = m.group(2)
     
-    if ('set'==ctrl): return t_set(args)
+    # constructs in args, eg. isset
+    args = re.sub(_G.regExps['controls2'], parseControlConstructs, args)
+    
+    if ('isset'==ctrl): return t_isset(args)
+    
+    elif ('set'==ctrl): return t_set(args)
     
     elif ('unset'==ctrl): return t_unset(args)
     
@@ -527,7 +551,7 @@ def doControlConstructs(m):
     return m.group(0)
 
 # static
-def doBlocks(s):
+def parseBlocks(s):
     global _G
     blocks = {} 
     bl = len(_G.allblocks)
@@ -546,7 +570,7 @@ def doBlocks(s):
         code = s[pos1:pos2+len2]
         
         if len(code)>0:
-            code = code[len1:-len2].replace("+ '' +", '+')  # remove redundant code
+            code = code[len1:-len2] #.replace("+ '' +", '+')  # remove redundant code
             
             bout = _G.DOBLOCK.replace('__{{CODE}}__', code+"'")
             
@@ -564,7 +588,7 @@ def doBlocks(s):
             replace = (0 <= pos1)
             if replace: pos2 = s.find(delim2, pos1+len1)
         
-    return [ s.replace("+ '' +", '+'), blocks ]
+    return [ s, blocks ] #[ s.replace("+ '' +", '+'), blocks ]
 
 def parseString(s, q, i, l):
     string = q
@@ -577,6 +601,7 @@ def parseString(s, q, i, l):
         if ( q == ch and not escaped ):  break
         escaped = (not escaped and '\\' == ch)
     return string
+
 
 def parseVariable(s, i, l, pre='VARSTR'):
     global _G
@@ -767,20 +792,6 @@ def parseVariable(s, i, l, pre='VARSTR'):
     return None
 
 
-
-# static
-def split(s):
-    global _G
-    parts1 = s.split( _G.leftTplSep )
-    l = len(parts1)
-    parts = []
-    for i in range(l):
-        tmp = parts1[i].split( _G.rightTplSep )
-        parts.append ( tmp[0] )
-        if len(tmp) > 1: parts.append ( tmp[1] )
-    
-    return parts
-
 # static
 def parse(tpl, withblocks=True):
     global _G
@@ -860,7 +871,7 @@ def parse(tpl, withblocks=True):
             # fix literal data notation python-style
             tag = tag.replace('true', 'True').replace('false', 'False').replace('null', 'None').replace(' && ', ' and ').replace(' || ', ' or ').replace(' ! ', ' not ')
             
-            tag = re.sub(_G.regExps['controls'], doControlConstructs, tag)
+            tag = re.sub(_G.regExps['controls'], parseControlConstructs, tag)
 
             tag = re.sub( _G.regExps['functions'], funcReplace, tag )
             
@@ -888,9 +899,9 @@ def parse(tpl, withblocks=True):
         
         parsed += s
     
-    if withblocks: return doBlocks(parsed)
+    if withblocks: return parseBlocks(parsed)
     
-    return parsed.replace( "+ '' +", '+' ) # remove redundant code
+    return parsed #.replace( "+ '' +", '+' ) # remove redundant code
 
 # static
 def getCachedTemplateName(id):
@@ -1140,7 +1151,7 @@ def padLines(lines, level=None):
     if level >= 0:
         pad = _G.pad * level
         
-        lines = re.split(_G.NLRX, lines)
+        lines = re.split(_G.NEWLINE, lines)
         lenlines = len(lines)
         
         for i in range(lenlines):
@@ -1310,7 +1321,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.5.2"
+    VERSION = "0.5.3"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -1406,10 +1417,11 @@ class Contemplate:
         _G.regExps['replacements'] = re.compile(r'\t[ ]*(.*?)[ ]*\v')
         
         _G.regExps['controls'] = re.compile(r'\t[ ]*%(' + '|'.join(_G.controlConstructs) + ')[ ]*\((.*)\)')
+        _G.regExps['controls2'] = re.compile(r'%(' + '|'.join(_G.controlConstructs) + ')[ ]*\((.*)\)')
         
         _G.regExps['functions'] = re.compile(r'%(' + '|'.join(_G.funcs) + ')')
             
-        _G.NLRX = re.compile(r'\n\r|\r\n|\n|\r')
+        _G.NEWLINE = re.compile(r'\n\r|\r\n|\n|\r')
         
         _G.ALPHA = re.compile( _G.ALPHA )
         _G.NUM = re.compile( _G.NUM )
@@ -1571,7 +1583,7 @@ class Contemplate:
         return len(a)
     
     # check if (nested) keys exist in tpl variable
-    def has_key(v, *args):
+    def haskey(v, *args):
         if not v or not (isinstance(v, list) or isinstance(v, dict)): return False
         argslen = len(args)
         tmp = v

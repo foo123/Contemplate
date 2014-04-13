@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.5.2
+*  @version: 0.5.3
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -15,7 +15,7 @@ if (!class_exists('Contemplate'))
 
 class Contemplate
 {
-    const VERSION = "0.5.2";
+    const VERSION = "0.5.3";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -62,20 +62,21 @@ class Contemplate
         'specials' => null,
         'replacements' => null,
         'functions' => null,
-        'controls' => null
+        'controls' => null,
+        'controls2' => null
     );
     
     private static $__controlConstructs = array(
         'include', 'template', 
         'extends', 'endblock', 'block',
         'elsefor', 'endfor', 'for',
-        'set', 'unset',
+        'set', 'unset', 'isset',
         'elseif', 'else', 'endif', 'if'
     );
     
     private static $__funcs = array( 
         'htmlselect', 'htmltable',
-        'plugin_([a-zA-Z0-9_]+)', 'has_key',
+        'plugin_([a-zA-Z0-9_]+)', 'haskey', 
         'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
         'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'addslashes', 'stripslashes',
         'tpl', 'uuid',
@@ -412,6 +413,7 @@ _TPLRENDERCODE_;
         self::$__regExps[ 'replacements' ] = '/\\t[ ]*(.*?)[ ]*\\v/';
         
         self::$__regExps[ 'controls' ] = '/\\t[ ]*%(' . implode('|', self::$__controlConstructs) . ')\\b[ ]*\\((.*)\\)/';
+        self::$__regExps[ 'controls2' ] = '/%(' . implode('|', self::$__controlConstructs) . ')\\b[ ]*\\((.*)\\)/';
         
         self::$__regExps[ 'functions' ] = '/%(' . implode('|', self::$__funcs) . ')\\b/';
         
@@ -582,7 +584,7 @@ _TPLRENDERCODE_;
     }
     
     // check if (nested) keys exist in tpl variable
-    public static function has_key($v/*, key1, key2, etc.. */) 
+    public static function haskey($v/*, key1, key2, etc.. */) 
     {
         if (!$v || !is_array($v)) return false;
         $args = func_get_args();
@@ -910,6 +912,12 @@ _TPLRENDERCODE_;
     // Control structures
     //
     
+    // whether var is set
+    private static function t_isset($varname) 
+    {
+        return ' ( isset(' . $varname . ') ) ';
+    }
+        
     // set/create/update tpl var
     private static function t_set($args) 
     {
@@ -1116,15 +1124,34 @@ _TPLRENDERCODE_;
     //
     // auxilliary parsing methods
     //
-    private static function doControlConstructs($m)
+    private static function split($s)
+    {
+        $parts1 = explode( self::$__leftTplSep, $s );
+        $len = count( $parts1 );
+        $parts = array();
+        for ($i=0; $i<$len; $i++)
+        {
+            $tmp = explode( self::$__rightTplSep, $parts1[$i] );
+            $parts[] = $tmp[0];
+            if ( isset($tmp[1]) ) $parts[] = $tmp[1];
+        }
+        return $parts;
+    }
+    
+    private static function parseControlConstructs($m)
     {
         if (isset($m[1]))
         {
             $ctrl = $m[1];
             $args = isset($m[2]) ? $m[2] : '';
             
+            // constructs in args, eg. isset
+            $args = preg_replace_callback( self::$__regExps['controls2'], array(__CLASS__, 'parseControlConstructs'), $args );
+            
             switch($ctrl)
             {
+                case 'isset': return self::t_isset($args);  break;
+                
                 case 'set': return self::t_set($args);  break;
                 
                 case 'unset': return self::t_unset($args);  break;
@@ -1157,7 +1184,7 @@ _TPLRENDERCODE_;
         return $m[0];
     }
     
-    private static function doBlocks($s) 
+    private static function parseBlocks($s) 
     {
         $blocks = array(); 
         $bl = count(self::$__allblocks);
@@ -1179,7 +1206,7 @@ _TPLRENDERCODE_;
             
             if ( !empty($code) )
             {
-                $code = str_replace(array(". '' .", ". '';"), array('.', ';'), substr($code, $len1, -$len2)); // remove redundant code
+                $code = substr($code, $len1, -$len2); //str_replace(array(". '' .", ". '';"), array('.', ';'), substr($code, $len1, -$len2)); // remove redundant code
                 
                 $bout = str_replace('__{{CODE}}__', $code."';", self::$__DOBLOCK);
                 
@@ -1202,7 +1229,7 @@ _TPLRENDERCODE_;
             }
         }
         
-        return array(str_replace(array(". '' .", ". '';"), array('.', ';'), $s), $blocks);
+        return array($s/*str_replace(array(". '' .", ". '';"), array('.', ';'), $s)*/, $blocks);
     }
 
     private static function parseString($s, $q, $i, $l)
@@ -1398,20 +1425,6 @@ _TPLRENDERCODE_;
         return null;
     }
     
-    private static function split($s)
-    {
-        $parts1 = explode( self::$__leftTplSep, $s );
-        $len = count( $parts1 );
-        $parts = array();
-        for ($i=0; $i<$len; $i++)
-        {
-            $tmp = explode( self::$__rightTplSep, $parts1[$i] );
-            $parts[] = $tmp[0];
-            if ( isset($tmp[1]) ) $parts[] = $tmp[1];
-        }
-        return $parts;
-    }
-    
     private static function parse($tpl, $withblocks=true) 
     {
         $parts = self::split($tpl);
@@ -1484,7 +1497,7 @@ _TPLRENDERCODE_;
                 $tag = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), $tag);
                 
                 // directives and control constructs
-                $tag = preg_replace_callback( self::$__regExps['controls'], array(__CLASS__, 'doControlConstructs'), $tag );
+                $tag = preg_replace_callback( self::$__regExps['controls'], array(__CLASS__, 'parseControlConstructs'), $tag );
                 
                 // functions
                 $tag = preg_replace( self::$__regExps['functions'], 'Contemplate::${1}', $tag );
@@ -1517,9 +1530,9 @@ _TPLRENDERCODE_;
             $parsed .= $s;
         }
         
-        if ( $withblocks ) return self::doBlocks($parsed);
+        if ( $withblocks ) return self::parseBlocks($parsed);
         
-        return str_replace( array(". '' .", ". '';"), array('.', ';'), $parsed ); // remove redundant code
+        return $parsed; //str_replace( array(". '' .", ". '';"), array('.', ';'), $parsed ); // remove redundant code
     }
     
     public static function getTemplateContents($id)

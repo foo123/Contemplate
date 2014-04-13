@@ -4,7 +4,7 @@
 
 __Template Variables__
 
-Variables in a templates are referenced using **PHP-style Notation** with '$' sign. 
+Variables in a template are referenced using **PHP-style Notation** with '$' sign. 
 
 example:
 
@@ -55,6 +55,7 @@ example:
 
 __Template Directives / Control Constructs__
 
+* *%isset(var)*  CHECK whether a tpl variable *$var* is set
 * *%set(var, expressionOrValue)*  SET / UPDATE a tpl variable *$var* to given value or expression
 * *%unset(var)*  UNSET / DELETE tpl variable *$var*
 
@@ -114,7 +115,7 @@ __Template Functions / Plugins__
 * *%snakecase(val [,sep="_"])*   convert val to **snake_case** , based on **sep** separator
 
 * *%count(arrayOrObject)*  return number of items in arrayOrObject val
-* *%has_key(arrayOrObject, key1 [,key2, ..] )*  check whether array or object tplVar has the given (nested) keys
+* *%haskey(arrayOrObject, key1 [,key2, ..] )*  check whether array or object tplVar has the given (nested) keys
 * *%uuid(namespace)*  generate a uuid (universal unique identifier)
 
 * *%now()*   return current timestamp in seconds

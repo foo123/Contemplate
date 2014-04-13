@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.5.2
+*  @version: 0.5.3
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -28,24 +28,21 @@
     
     //"use strict";
     
-    var __version__ = "0.5.2";
+    var __version__ = "0.5.3";
     var self;
     
     // auxilliaries
     var OP = Object.prototype, AP = Array.prototype, FP = Function.prototype,
         _toString = FP.call.bind(OP.toString), _hasOwn = FP.call.bind(OP.hasOwnProperty), slice = FP.call.bind(AP.slice),
-        _isNode = typeof global !== "undefined" && _toString(global) == '[object global]',
-        isArray = function( o ) { return (_toString(o) === '[object Array]') || (o instanceof Array); },
+        isNode = "undefined" !== typeof global && '[object global]' == _toString(global),
+        isArray = function( o ) { return ('[object Array]' === _toString(o)) || (o instanceof Array); },
         
-        echo = ('undefined'!=typeof(console) && console.log) ? function(s) { console.log(s); } : function() {},
-        log = echo,
-        
-        _fs = (_isNode) ? require('fs') : null, 
-        fwrite = (_fs) ? _fs.writeFileSync : null,
-        fread =  (_fs) ? _fs.readFileSync : null,
-        fexists = (_fs) ? _fs.existsSync : null,
-        fstat = (_fs) ? _fs.statSync : null,
-        realpath = (_fs) ? _fs.realpathSync : null
+        _fs = isNode ? require('fs') : null, 
+        fwrite = _fs ? _fs.writeFileSync : null,
+        fread =  _fs ? _fs.readFileSync : null,
+        fexists = _fs ? _fs.existsSync : null,
+        fstat = _fs ? _fs.statSync : null,
+        realpath = _fs ? _fs.realpathSync : null
     ;
 
     // IE8- mostly
@@ -100,34 +97,35 @@
         
         $__leftTplSep = "<%", $__rightTplSep = "%>", $__tplStart = "", $__tplEnd = "", $__tplPrefixCode = "",
         
-        $__preserveLinesDefault = "' + \"\\n\" + '", $__preserveLines = '',  $__EOL = "\n", $__TEOL = (_isNode) ? require('os').EOL : "\n",
+        $__preserveLinesDefault = "' + \"\\n\" + '", $__preserveLines = '',  $__EOL = "\n", $__TEOL = (isNode) ? require('os').EOL : "\n",
         
         $__stack = null, $__level = 0, $__pad = "    ", $__idcnt = 0,
         $__loops = 0, $__ifs = 0, $__loopifs = 0, $__blockcnt = 0, $__blocks = [], $__allblocks = [], $__extends = null,
     
         $__uuid = 0,
         
-        UNDERLNRX = /[ -]/g, NLRX = /\n\r|\r\n|\n|\r/g,
+        UNDERLN = /[ -]/g, NEWLINE = /\n\r|\r\n|\n|\r/g,
         ALPHA = /^[a-zA-Z_]/, NUM = /^[0-9]/, ALPHANUM = /^[a-zA-Z0-9_]/i, SPACE = /^\s/,
         
         $__regExps = {
             'specials' : null,
             'replacements' : null,
             'functions' : null,
-            'controls' : null
+            'controls' : null,
+            'controls2' : null
         },
         
         $__controlConstructs = [
             'include', 'template', 
             'extends', 'endblock', 'block',
             'elsefor', 'endfor', 'for',
-            'set', 'unset',
+            'set', 'unset', 'isset',
             'elseif', 'else', 'endif', 'if'
         ],
         
         $__funcs = [ 
             'htmlselect', 'htmltable', 
-            'plugin_([a-zA-Z0-9_]+)', 'has_key',
+            'plugin_([a-zA-Z0-9_]+)', 'haskey', 
             'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
             'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'addslashes', 'stripslashes',
             'tpl', 'uuid',
@@ -147,7 +145,7 @@
                 // needs one more additional level due to array.length
                 level = (0===level) ? level : level+1;
                 var pad = new Array(level).join($__pad), i, l;
-                lines = lines.split(NLRX);
+                lines = lines.split(NEWLINE);
                 l = lines.length;
                 for (i=0; i<l; i++)
                 {
@@ -162,6 +160,11 @@
         // Control structures
         //
     
+        // whether var is set
+        t_isset = function(varname) {
+            return ' ( "undefined" !== typeof(' + varname + ') ) ';
+        },
+        
         // set/create/update tpl var
         t_set = function(args) {
             args = args.split(',');
@@ -363,12 +366,32 @@
         //
         // auxilliary parsing methods
         //
-        doControlConstructs = function(match, ctrl, args)  {
+        split = function(s) {
+            var parts1, len, parts, i, tmp;
+            parts1 = s.split( $__leftTplSep );
+            len = parts1.length;
+            parts = [];
+            for (i=0; i<len; i++)
+            {
+                tmp = parts1[i].split( $__rightTplSep );
+                parts.push ( tmp[0] );
+                if (tmp.length > 1) parts.push ( tmp[1] );
+            }
+            return parts;
+        },
+    
+        parseControlConstructs = function(match, ctrl, args)  {
             if ( ctrl )
             {
                 args = args || '';
+            
+                // constructs in args, eg. isset
+                args = args.replace( $__regExps['controls2'], parseControlConstructs );
+                
                 switch ( ctrl )
                 {
+                    case 'isset': return t_isset( args );  break;
+                    
                     case 'set': return t_set( args );  break;
                     
                     case 'unset': return t_unset( args );  break;
@@ -401,7 +424,7 @@
             return match;
         },
         
-        doBlocks = function(s) {
+        parseBlocks = function(s) {
             var blocks = {}, 
                 bl = $__allblocks.length, 
                 block, code, 
@@ -429,7 +452,7 @@
                 {
                     //s = s.split(code).join("__instance__.renderBlock( '" + block + "' ); ");
                     
-                    code = code.substring(len1, code.length-len2).replace("+ '' +", '+').replace("+ '';", ';'); // remove redundant code
+                    code = code.substring(len1, code.length-len2)/*.replace("+ '' +", '+').replace("+ '';", ';')*/; // remove redundant code
                     
                     bout = $__DOBLOCK().split( '__{{CODE}}__' ).join( padLines(code+"';", 0) );
                     
@@ -452,7 +475,7 @@
                 }
             }
             
-            return [s.replace( "+ '' +", '+' ).replace( "+ '';", ';' ), blocks];
+            return [s/*.replace( "+ '' +", '+' ).replace( "+ '';", ';' )*/, blocks];
         },
         
         parseString = function(s, q, i, l) {
@@ -647,20 +670,6 @@
             return null;
         },
         
-        split = function(s) {
-            var parts1, len, parts, i, tmp;
-            parts1 = s.split( $__leftTplSep );
-            len = parts1.length;
-            parts = [];
-            for (i=0; i<len; i++)
-            {
-                tmp = parts1[i].split( $__rightTplSep );
-                parts.push ( tmp[0] );
-                if (tmp.length > 1) parts.push ( tmp[1] );
-            }
-            return parts;
-        },
-    
         parse = function(tpl, withblocks) {
             var parts, len, parsed, s, i, isTag,
                 tag, strings, variables, id,
@@ -748,7 +757,7 @@
                     //tag = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), tag);
                 
                     tag = tag
-                            .replace( $__regExps['controls'], doControlConstructs )
+                            .replace( $__regExps['controls'], parseControlConstructs )
                     
                             .replace( $__regExps['functions'], funcReplace)
                             
@@ -789,17 +798,17 @@
         
             if ( 'undefined'==typeof(withblocks) ) withblocks = true;
             
-            if ( withblocks ) return doBlocks( parsed ); // render any blocks
+            if ( withblocks ) return parseBlocks( parsed ); // render any blocks
             
-            return parsed.replace( "+ '' +", '+' ).replace( "+ '';", ';' ); // remove redundant code
+            return parsed /*.replace( "+ '' +", '+' ).replace( "+ '';", ';' )*/; // remove redundant code
         },
         
         getCachedTemplateName = function(id) { 
-            return $__cacheDir + id.replace(UNDERLNRX, '_') + '_tpl.js'; 
+            return $__cacheDir + id.replace(UNDERLN, '_') + '_tpl.js'; 
         },
         
         getCachedTemplateClass = function(id) { 
-            return 'Contemplate_' + id.replace(UNDERLNRX, '_') + '_Cached'; 
+            return 'Contemplate_' + id.replace(UNDERLN, '_') + '_Cached'; 
         },
         
         createTemplateRenderFunction = function(id) {
@@ -903,7 +912,7 @@
                 return tpl;
             }
             
-            if ( !_isNode ) $__cacheMode = self.CACHE_TO_DISK_NONE;
+            if ( !isNode ) $__cacheMode = self.CACHE_TO_DISK_NONE;
             
             switch ( $__cacheMode )
             {
@@ -1323,6 +1332,7 @@
             $__regExps['replacements'] = new RegExp('\\t[ ]*(.*?)[ ]*\\v', 'g');
             
             $__regExps['controls'] = new RegExp('\\t[ ]*%('+$__controlConstructs.join('|')+')\\b[ ]*\\((.*)\\)', 'g');
+            $__regExps['controls2'] = new RegExp('%('+$__controlConstructs.join('|')+')\\b[ ]*\\((.*)\\)', 'g');
             
             $__regExps['functions'] = new RegExp('%('+$__funcs.join('|')+')\\b', 'g');
             
@@ -1401,7 +1411,7 @@
         },
         
         setCacheMode : function(mode) { 
-            $__cacheMode = (_isNode) ? mode : self.CACHE_TO_DISK_NONE; 
+            $__cacheMode = (isNode) ? mode : self.CACHE_TO_DISK_NONE; 
         },
         
         clearCache : function(all) { 
@@ -1458,15 +1468,13 @@
         },
         
         // basic url escaping
-        url : function(s) { 
-            return urlencode(s); 
-        },
+        url : urlencode,
         
         // count items in obj/array
         count : count,
         
-        // check if (nested) keys exist in tpl variable
-        has_key : function(v/*, key1, key2, etc.. */) {
+        // haskey, has_key, check if (nested) keys exist in tpl variable
+        haskey : function(v/*, key1, key2, etc.. */) {
             var to_string = _toString(v);
             if (!v || "[object Array]" != to_string && "[object Object]" != to_string) return false;
             var args = slice(arguments), argslen, i, tmp;
@@ -1810,7 +1818,7 @@
             else if ( $__templates[id] )
             {
                 // nodejs
-                if ( _isNode && _fs ) 
+                if ( isNode && _fs ) 
                 { 
                     return fread($__templates[id], { encoding: self.ENCODING }); 
                 }
@@ -2686,6 +2694,6 @@ function ajaxLoad(type, url, params)
     
     // export it
     // add it to global namespace to be available for sub-templates, same as browser
-    if ( _isNode ) global.Contemplate = self;
+    if ( isNode ) global.Contemplate = self;
     return self;
 });

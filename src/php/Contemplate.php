@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.5.3
+*  @version: 0.5.4
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -15,7 +15,7 @@ if (!class_exists('Contemplate'))
 
 class Contemplate
 {
-    const VERSION = "0.5.3";
+    const VERSION = "0.5.4";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -1145,40 +1145,81 @@ _TPLRENDERCODE_;
             $ctrl = $m[1];
             $args = isset($m[2]) ? $m[2] : '';
             
-            // constructs in args, eg. isset
-            $args = preg_replace_callback( self::$__regExps['controls2'], array(__CLASS__, 'parseControlConstructs'), $args );
-            
             switch($ctrl)
             {
-                case 'isset': return self::t_isset($args);  break;
+                case 'isset': 
+                    // constructs in args, eg. isset
+                    $args = preg_replace_callback( self::$__regExps['controls2'], array(__CLASS__, 'parseControlConstructs'), $args );
+                    return self::t_isset($args);  
+                    break;
                 
-                case 'set': return self::t_set($args);  break;
+                case 'set':  
+                    // constructs in args, eg. isset
+                    $args = preg_replace_callback( self::$__regExps['controls2'], array(__CLASS__, 'parseControlConstructs'), $args );
+                    return self::t_set($args);  
+                    break;
                 
-                case 'unset': return self::t_unset($args);  break;
+                case 'unset': 
+                    // constructs in args, eg. isset
+                    $args = preg_replace_callback( self::$__regExps['controls2'], array(__CLASS__, 'parseControlConstructs'), $args );
+                    return self::t_unset($args);  
+                    break;
                 
-                case 'if': return self::t_if($args);  break;
+                case 'if': 
+                    // constructs in args, eg. isset
+                    $args = preg_replace_callback( self::$__regExps['controls2'], array(__CLASS__, 'parseControlConstructs'), $args );
+                    return self::t_if($args);  
+                    break;
                 
-                case 'elseif': return self::t_elseif($args); break;
+                case 'elseif': 
+                    // constructs in args, eg. isset
+                    $args = preg_replace_callback( self::$__regExps['controls2'], array(__CLASS__, 'parseControlConstructs'), $args );
+                    return self::t_elseif($args); 
+                    break;
                 
-                case 'else': return self::t_else($args);  break;
+                case 'else': 
+                    return self::t_else($args);  
+                    break;
                 
-                case 'endif': return self::t_endif($args);  break;
+                case 'endif': 
+                    return self::t_endif($args);  
+                    break;
                 
-                case 'for': return self::t_for($args);  break;
+                case 'for': 
+                    // constructs in args, eg. isset
+                    $args = preg_replace_callback( self::$__regExps['controls2'], array(__CLASS__, 'parseControlConstructs'), $args );
+                    return self::t_for($args);  
+                    break;
                 
-                case 'elsefor': return self::t_elsefor($args); break;
+                case 'elsefor': 
+                    return self::t_elsefor($args); 
+                    break;
                 
-                case 'endfor': return self::t_endfor($args); break;
+                case 'endfor': 
+                    return self::t_endfor($args); 
+                    break;
                 
-                case 'template': return self::t_template($args); break;
+                case 'template': 
+                    // constructs in args, eg. isset
+                    $args = preg_replace_callback( self::$__regExps['controls2'], array(__CLASS__, 'parseControlConstructs'), $args );
+                    return self::t_template($args); 
+                    break;
                 
-                case 'extends': return self::t_extends($args); break;
+                case 'extends': 
+                    return self::t_extends($args); 
+                    break;
                 
-                case 'block': return self::t_block($args); break;
+                case 'block': 
+                    return self::t_block($args); 
+                    break;
                 
-                case 'endblock': return self::t_endblock($args); break;
+                case 'endblock': 
+                    return self::t_endblock($args); 
+                    break;
                 
-                case 'include': return self::t_include($args); break;
+                case 'include': 
+                    return self::t_include($args); 
+                    break;
             }
         }
         return $m[0];

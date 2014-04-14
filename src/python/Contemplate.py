@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.5.3
+#  @version 0.5.4
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -515,38 +515,64 @@ def parseControlConstructs(m):
     ctrl = m.group(1) 
     args = m.group(2)
     
-    # constructs in args, eg. isset
-    args = re.sub(_G.regExps['controls2'], parseControlConstructs, args)
+    if ('isset'==ctrl): 
+        # constructs in args, eg. isset
+        args = re.sub(_G.regExps['controls2'], parseControlConstructs, args)
+        return t_isset(args)
     
-    if ('isset'==ctrl): return t_isset(args)
+    elif ('set'==ctrl): 
+        # constructs in args, eg. isset
+        args = re.sub(_G.regExps['controls2'], parseControlConstructs, args)
+        return t_set(args)
     
-    elif ('set'==ctrl): return t_set(args)
+    elif ('unset'==ctrl): 
+        # constructs in args, eg. isset
+        args = re.sub(_G.regExps['controls2'], parseControlConstructs, args)
+        return t_unset(args)
     
-    elif ('unset'==ctrl): return t_unset(args)
+    elif ('if'==ctrl): 
+        # constructs in args, eg. isset
+        args = re.sub(_G.regExps['controls2'], parseControlConstructs, args)
+        return t_if(args)
     
-    elif ('if'==ctrl): return t_if(args)
+    elif ('elseif'==ctrl): 
+        # constructs in args, eg. isset
+        args = re.sub(_G.regExps['controls2'], parseControlConstructs, args)
+        return t_elseif(args)
     
-    elif ('elseif'==ctrl): return t_elseif(args)
+    elif ('else'==ctrl): 
+        return t_else(args)
     
-    elif ('else'==ctrl): return t_else(args)
+    elif ('endif'==ctrl): 
+        return t_endif(args)
     
-    elif ('endif'==ctrl): return t_endif(args)
+    elif ('for'==ctrl): 
+        # constructs in args, eg. isset
+        args = re.sub(_G.regExps['controls2'], parseControlConstructs, args)
+        return t_for(args)
     
-    elif ('for'==ctrl): return t_for(args)
+    elif ('elsefor'==ctrl): 
+        return t_elsefor(args)
     
-    elif ('elsefor'==ctrl): return t_elsefor(args)
+    elif ('endfor'==ctrl): 
+        return t_endfor(args)
     
-    elif ('endfor'==ctrl): return t_endfor(args)
+    elif ('template'==ctrl): 
+        # constructs in args, eg. isset
+        args = re.sub(_G.regExps['controls2'], parseControlConstructs, args)
+        return t_template(args)
     
-    elif ('template'==ctrl): return t_template(args)
+    elif ('extends'==ctrl): 
+        return t_extends(args)
     
-    elif ('extends'==ctrl): return t_extends(args)
+    elif ('block'==ctrl): 
+        return t_block(args)
     
-    elif ('block'==ctrl): return t_block(args)
+    elif ('endblock'==ctrl): 
+        return t_endblock(args)
     
-    elif ('endblock'==ctrl): return t_endblock(args)
-    
-    elif ('include'==ctrl): return t_include(args)
+    elif ('include'==ctrl): 
+        return t_include(args)
     
     return m.group(0)
 
@@ -1321,7 +1347,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.5.3"
+    VERSION = "0.5.4"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2

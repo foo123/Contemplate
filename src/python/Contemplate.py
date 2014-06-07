@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.5.4
+#  @version 0.6
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -285,6 +285,38 @@ __instance__.data = Contemplate.data( data )
 __{{CODE}}__
 """
 
+#def backupOptions( ):
+#    global _G
+#    optionsBackUp = [
+#        _G.cacheDir,
+#        _G.cacheMode,
+#        _G.leftTplSep,
+#        _G.rightTplSep,
+#        _G.preserveLines
+#    ]
+#    return optionsBackUp
+#
+#def restoreOptions( optionsBackUp ):
+#    global _G
+#    _G.cacheDir = optionsBackUp[ 0 ]
+#    _G.cacheMode = optionsBackUp[ 1 ]
+#    _G.leftTplSep = optionsBackUp[ 2 ]
+#    _G.rightTplSep = optionsBackUp[ 3 ]
+#    _G.preserveLines = optionsBackUp[ 4 ]
+    
+def getSeparators( text ):
+    global _G
+    # tpl separators are defined on 1st (non-empty) line of tpl content
+    lines = text.split( "\n" )
+    while  len(lines)>0 and 0 == len( lines[ 0 ].strip() ): lines.pop( 0 )
+    if len(lines):
+        seps = lines.pop( 0 ).strip( ).split( " " )
+        _G.leftTplSep = seps[ 0 ].strip( )
+        _G.rightTplSep = seps[ 1 ].strip( )
+    
+    text = "\n".join( lines )
+    return text
+    
 
 #
 # Control structures
@@ -448,7 +480,7 @@ def t_include(id):
     if id not in _G.partials:
         pushState()
         resetState()
-        _G.partials[id] = " " + parse(Contemplate.getTemplateContents(id), False) + "' " + _G.TEOL
+        _G.partials[id] = " " + parse(getSeparators( Contemplate.getTemplateContents(id) ), False) + "' " + _G.TEOL
         popState()
     
     return padLines( _G.partials[id] )
@@ -942,7 +974,7 @@ def createTemplateRenderFunction(id):
     global _G
     resetState()
     
-    blocks = parse(Contemplate.getTemplateContents(id))
+    blocks = parse(getSeparators( Contemplate.getTemplateContents(id) ))
     
     if _G.extends:
         func = _G.TFUNC1
@@ -967,7 +999,7 @@ def createCachedTemplate(id, filename, classname):
     global _G
     resetState()
     
-    blocks = parse(Contemplate.getTemplateContents(id))
+    blocks = parse(getSeparators( Contemplate.getTemplateContents(id) ))
     
     # tpl-defined blocks
     sblocks = ''
@@ -1347,7 +1379,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.5.4"
+    VERSION = "0.6"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -1578,9 +1610,10 @@ class Contemplate:
         # Figure out if we're getting a template, or if we need to
         # load the template - and be sure to cache the result.
         if refresh or not (id in _G.cache): 
-            _G.cache[id] = getCachedTemplate(id)
+            
+            _G.cache[ id ] = getCachedTemplate( id )
         
-        tpl = _G.cache[id]
+        tpl = _G.cache[ id ]
         
         # Provide some basic currying to the user
         if isinstance(data, dict): return str(tpl.render( data ))

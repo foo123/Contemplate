@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version 0.5.4
+*  @version 0.6
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -24,10 +24,10 @@ define('ABSPATH', dirname(__FILE__));
 // include the Contemplate Class
 include dirname(ABSPATH).'/src/php/Contemplate.php';
 
-$sepleft="<%";  $sepright="%>";
-
-// set the template separators
-Contemplate::setTemplateSeparators(array('left'=>$sepleft, 'right'=>$sepright));
+// set the template separators (deprecated)
+// template separators are defined on the very 1st line of the template
+//$sepleft="!%";  $sepright="%!";
+//Contemplate::setTemplateSeparators(array('left'=>$sepleft, 'right'=>$sepright));
 
 Contemplate::setLocaleStrings(array(
     "locale"=> "γλωσσική περιοχή"
@@ -61,7 +61,7 @@ Contemplate::add(array(
     'sub' => ABSPATH.'/_tpls/sub.tpl.html',
     'date' => ABSPATH.'/_tpls/date.tpl.html',
     // add an inline template
-    'inlinetpl' => array('<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>')
+    'inlinetpl' => array('<% %>' . "\n" . '<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>')
 ));
 
 /*
@@ -118,8 +118,8 @@ $main_template_data=array(
     'templates' => array(
         'sub' => Contemplate::getTemplateContents('sub'),
     ),
-    'sepleft' => $sepleft,
-    'sepright' => $sepright,
+    //'sepleft' => $sepleft,
+    //'sepright' => $sepright,
     'data_client' => json_encode($data),
     'render_server' => Contemplate::tpl('demo', $data),
     'render_inline' => Contemplate::tpl('inlinetpl', $listdata)

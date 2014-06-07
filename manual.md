@@ -1,8 +1,16 @@
 ###Manual - Keywords Reference
 
 
+__Template Separators__
+
+
+**IMPORTANT** As of version 0.6+ , template separators for Contemplate templates are defined by the template itself
+in he first non-empty line, separated by a space (see examples and tests)
+
+
 
 __Template Variables__
+
 
 Variables in a template are referenced using **PHP-style Notation** with '$' sign. 
 
@@ -32,6 +40,7 @@ $obj.key["key2"]  // this will also work
 
 __Literal Template Data__
 
+
 Literal object/array data are constructed in a template using **JavaScript Literal Object-style Notation** (similar to JSON)
 
 example:
@@ -42,6 +51,7 @@ example:
 { 
     "stringVar"     : "stringValue", 
     "numericVar"    : 123, 
+    "variableVar"    : $foo123, 
     "arrayVar"      : [
         0, 1, "astring", 3, 
         { "prop": 1 } 
@@ -54,6 +64,7 @@ example:
 
 
 __Template Directives / Control Constructs__
+
 
 * *%isset(var)*  CHECK whether a tpl variable *$var* is set
 * *%set(var, expressionOrValue)*  SET / UPDATE a tpl variable *$var* to given value or expression
@@ -96,6 +107,7 @@ this is exactly how the Contemplate::tpl($id, $data) (PHP), or Contemplate.tpl(i
 
 __Template Functions / Plugins__
 
+
 * *%n(val)*   convert val to integer
 * *%s(val)*   convert val to string
 * *%f(val)*   convert val to float
@@ -131,4 +143,4 @@ __Template Functions / Plugins__
 * *%html(val)*  html-escape val (htmlentities)
 * *%url(val)*  url-encode val (urlencode)
 
-* *%plugin_pluginName([val1, val2, ..])*  call a custom (user-defined) plugin called as a template function
+* *%plugin_pluginName([val1, val2, ..])*  call a custom (user-defined) plugin as a template function

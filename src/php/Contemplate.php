@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.5.4
+*  @version: 0.6
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -15,7 +15,7 @@ if (!class_exists('Contemplate'))
 
 class Contemplate
 {
-    const VERSION = "0.5.4";
+    const VERSION = "0.6";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -438,6 +438,28 @@ _TPLRENDERCODE_;
         }*/
         return '';
     }
+    /*
+    protected static function backupOptions( )
+    {
+        $optionsBackUp = array(
+            self::$__cacheDir,
+            self::$__cacheMode,
+            self::$__leftTplSep,
+            self::$__rightTplSep,
+            self::$__preserveLines
+        );
+        return $optionsBackUp;
+    }
+    
+    protected static function restoreOptions( $optionsBackUp )
+    {
+        self::$__cacheDir = $optionsBackUp[ 0 ];
+        self::$__cacheMode = $optionsBackUp[ 1 ];
+        self::$__leftTplSep = $optionsBackUp[ 2 ];
+        self::$__rightTplSep = $optionsBackUp[ 3 ];
+        self::$__preserveLines = $optionsBackUp[ 4 ];
+    }
+    */
     
     //
     // Main template static methods
@@ -551,10 +573,13 @@ _TPLRENDERCODE_;
     {
         // Figure out if we're getting a template, or if we need to
         // load the template - and be sure to cache the result.
-        if ( $refresh || !isset(self::$__cache[$id]) )  
-            self::$__cache[$id] = self::getCachedTemplate($id);
+        if ( $refresh || !isset(self::$__cache[ $id ]) ) 
+        {
+            // load/parse required tpl (and any associated tpl)
+            self::$__cache[ $id ] = self::getCachedTemplate( $id );
+        }
         
-        $tpl = self::$__cache[$id];
+        $tpl = self::$__cache[ $id ];
         
         // Provide some basic currying to the user
         if ( is_array( $data ) )  return $tpl->render( $data );
@@ -1074,7 +1099,7 @@ _TPLRENDERCODE_;
         {
             self::pushState();
             self::resetState();
-            self::$__partials[$id]=" " . self::parse(self::getTemplateContents($id), false) . "'; " . self::$__TEOL;
+            self::$__partials[$id]=" " . self::parse(self::getSeparators( self::getTemplateContents($id) ), false) . "'; " . self::$__TEOL;
             self::popState();
         }
         return self::padLines( self::$__partials[$id] );
@@ -1576,10 +1601,27 @@ _TPLRENDERCODE_;
         return $parsed; //str_replace( array(". '' .", ". '';"), array('.', ';'), $parsed ); // remove redundant code
     }
     
+    private static function getSeparators( $text )
+    {
+        // tpl separators are defined on 1st (non-empty) line of tpl content
+        $lines = explode( "\n", $text );
+        while ( count($lines)>0 && !strlen( trim( $lines[ 0 ] ) ) ) array_shift( $lines );
+        if ( count($lines)>0 )
+        {
+            $seps = explode( " ", trim( array_shift( $lines ) ) );
+            self::$__leftTplSep = trim( $seps[ 0 ] );
+            self::$__rightTplSep = trim( $seps[ 1 ] );
+        }
+        $text = implode("\n", $lines);
+        return $text;
+    }
+    
     public static function getTemplateContents($id)
     {
-        if ( isset(self::$__inlines[$id]) )  
+        if ( isset(self::$__inlines[$id]) ) 
+        {        
             return self::$__inlines[$id];
+        }
         
         elseif ( isset(self::$__templates[$id]) && is_file(self::$__templates[$id]) ) 
             return file_get_contents( self::$__templates[$id] );
@@ -1601,7 +1643,7 @@ _TPLRENDERCODE_;
     {
         self::resetState();
         
-        $blocks = self::parse(self::getTemplateContents($id));
+        $blocks = self::parse(self::getSeparators( self::getTemplateContents($id) ));
         
         if ( self::$__extends )
         {
@@ -1627,7 +1669,7 @@ _TPLRENDERCODE_;
     {
         self::resetState();
         
-        $blocks = self::parse(self::getTemplateContents($id));
+        $blocks = self::parse(self::getSeparators( self::getTemplateContents($id) ));
         
         // tpl-defined blocks
         $sblocks = '';
@@ -1688,7 +1730,7 @@ _TPLRENDERCODE_;
         return file_put_contents($filename, $class);
     }
     
-    private static function getCachedTemplate($id)
+    private static function getCachedTemplate($id, $options=array())
     {
         // inline templates saved only in-memory
         if ( isset(self::$__inlines[$id]) )
@@ -1700,7 +1742,7 @@ _TPLRENDERCODE_;
             $fns = self::createTemplateRenderFunction($id);
             $tpl->setRenderFunction( $fns[0] ); 
             $tpl->setBlocks( $fns[1] );
-            if ( self::$__extends ) $tpl->setParent( self::tpl(self::$__extends) );
+            if ( self::$__extends ) $tpl->setParent( self::tpl(self::$__extends, null, false, $options) );
             return $tpl;
         }
         

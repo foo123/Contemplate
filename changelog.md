@@ -1,6 +1,11 @@
 ###ChangeLog
 
-__0.5.3__
+__0.6__
+* define template separators in the 1st line of a template (each tpl can define its own separators)
+* micro edits/changes
+
+
+__0.5.3, 0.5.4__
 * add %isset directive
 * change %has_key template function to %haskey
 * template directives parsing edits (accomodate nested directives in arguments)

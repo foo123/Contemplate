@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version 0.5.4
+*  @version 0.6
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -27,10 +27,11 @@ require(path.join(__dirname, '../src/js/Contemplate.js'));
 // works inside Nodejs, deprecated, Node detected automatically
 //Contemplate.isNodeJs(true, fs);
 
-var $sepleft="<%", $sepright="%>";
 
-// set the template separators
-Contemplate.setTemplateSeparators({'left' : $sepleft, 'right' : $sepright});
+// set the template separators (deprecated)
+// template separators are defined on the very 1st line of the template
+//var $sepleft="<%", $sepright="%>";
+//Contemplate.setTemplateSeparators({'left' : $sepleft, 'right' : $sepright});
 
 Contemplate.setLocaleStrings({
     "locale": "γλωσσική περιοχή"
@@ -61,7 +62,7 @@ Contemplate.add({
     'sub' : path.join(__dirname, '/_tpls/sub.tpl.html'),
     'date' : path.join(__dirname, '/_tpls/date.tpl.html'),
     // add an inline template
-    'inlinetpl' : ['<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>']
+    'inlinetpl' : ['<% %>' + "\n" + '<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>']
 });
 /*
 // add an inline template
@@ -111,8 +112,8 @@ var
         'templates' : {
             'sub' : Contemplate.getTemplateContents('sub'),
         },
-        'sepleft' : $sepleft,
-        'sepright' : $sepright,
+        //'sepleft' : $sepleft,
+        //'sepright' : $sepright,
         'data_client' : JSON.stringify($data),
         'render_server' : Contemplate.tpl('demo', $data),
         'render_inline' : Contemplate.tpl('inlinetpl', $listdata)

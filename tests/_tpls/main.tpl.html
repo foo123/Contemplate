@@ -1,3 +1,4 @@
+<% %>
 <!DOCTYPE html>
 <html>
 
@@ -38,8 +39,6 @@
         In the CLIENT:
         <div id="results_client"></div>
         <script>
-            /* set the template separators */
-            Contemplate.setTemplateSeparators({"left": "<% $sepleft %>", "right": "<% $sepright %>"});
             Contemplate.setLocaleStrings({
                 "locale": "γλωσσική περιοχή"
             });
@@ -62,9 +61,7 @@
                 return '<pre>' + JSON.stringify(v, null, 4) + '</pre>';
             });
 
-            
-            var results = document.getElementById("results_client");
-            results.innerHTML = Contemplate.tpl('demo', <% $data_client %>);
+            document.getElementById("results_client").innerHTML = Contemplate.tpl('demo', <% $data_client %>);
         </script>
     
     </body>

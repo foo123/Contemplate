@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.5.4
+*  @version: 0.6
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -26,9 +26,9 @@
 
 }(this, 'Contemplate', function( undef ) {
     
-    //"use strict";
+    "use strict";
     
-    var __version__ = "0.5.4";
+    var __version__ = "0.6";
     var self;
     
     // auxilliaries
@@ -154,6 +154,46 @@
                 return lines.join($__TEOL);
             }
             return lines;
+        },
+        
+        getSeparators = function( text ) {
+            // tpl separators are defined on 1st (non-empty) line of tpl content
+            var lines = text.split( "\n" ), seps;
+            while ( lines.length && !trim( lines[ 0 ] ).length ) lines.shift( );
+            if ( lines.length )
+            {
+                seps = trim( lines.shift( ) ).split( " " );
+                $__leftTplSep = trim( seps[ 0 ] );
+                $__rightTplSep = trim( seps[ 1 ] );
+            }
+            text = lines.join( "\n" );
+            return text;
+        },
+    
+        getTemplateContents = function( id ) {
+            if ( $__inlines[id] )
+            {
+                return $__inlines[id];
+            }
+            else if ( $__templates[id] )
+            {
+                // nodejs
+                if ( isNode && _fs ) 
+                { 
+                    return fread($__templates[id], { encoding: self.ENCODING }); 
+                }
+                // client-side js and #id of DOM script-element given as template holder
+                else if ( '#'===$__templates[id].charAt(0) ) 
+                { 
+                    return window.document.getElementById($__templates[id].substring(1)).innerHTML; 
+                }
+                // client-side js and url given as template location
+                else 
+                { 
+                    return ajaxLoad('GET', $__templates[id]); 
+                }
+            }
+            return '';
         },
         
         //
@@ -321,7 +361,7 @@
             {
                 pushState();
                 resetState();
-                $__partials[id] = " " + parse(self.getTemplateContents(id), false) + "'; " + $__TEOL;
+                $__partials[id] = " " + parse( getSeparators( getTemplateContents( id ) ), false ) + "'; " + $__TEOL;
                 popState();
             }
             return padLines( $__partials[id] );
@@ -856,7 +896,7 @@
             
             resetState();
             
-            var blocks = parse( self.getTemplateContents(id) ), funcs = {}, b, func;
+            var blocks = parse( getSeparators( getTemplateContents( id ) ) ), funcs = {}, b, func;
             
             if ($__extends)
             {
@@ -881,7 +921,7 @@
             
             var  
                 funcs = {}, parentCode, renderCode, b, sblocks, bcode,
-                blocks = parse( self.getTemplateContents(id) )
+                blocks = parse( getSeparators( getTemplateContents( id ) ) )
                 ;
             
             // tpl-defined blocks
@@ -1036,6 +1076,27 @@
             $__loops = t[0]; $__ifs = t[1]; $__loopifs = t[2]; $__level = t[3];
             $__blockcnt = t[4]; $__blocks = t[5];  $__allblocks = t[6];  $__extends = t[7];
         },
+        
+        /*
+        backupOptions = function( ) {
+            var optionsBackUp = [
+                $__cacheDir,
+                $__cacheMode,
+                $__leftTplSep,
+                $__rightTplSep,
+                $__preserveLines
+            ];
+            return optionsBackUp;
+        },
+        
+        restoreOptions = function( optionsBackUp ) {
+            $__cacheDir = optionsBackUp[ 0 ];
+            $__cacheMode = optionsBackUp[ 1 ];
+            $__leftTplSep = optionsBackUp[ 2 ];
+            $__rightTplSep = optionsBackUp[ 3 ];
+            $__preserveLines = optionsBackUp[ 4 ];
+        },
+        */
         
         // generated cached tpl class code as a "heredoc" template (for Node cached templates)
         $__tplClassCode = function(NL){
@@ -1488,10 +1549,12 @@
         tpl : function(id, data, refresh) {
             // Figure out if we're getting a template, or if we need to
             // load the template - and be sure to cache the result.
-            if (refresh || !$__cache[id])  
-                $__cache[id] = getCachedTemplate(id);
+            if ( !!refresh || !$__cache[ id ] )
+            {
+                $__cache[ id ] = getCachedTemplate( id );
+            }
             
-            var tpl = $__cache[id];
+            var tpl = $__cache[ id ];
             
             // Provide some basic currying to the user
             if ( data && "object" == typeof(data) ) return tpl.render( data );
@@ -1851,31 +1914,7 @@
             return $o;
         },
         
-        getTemplateContents : function(id) {
-            if ( $__inlines[id] )
-            {
-                return $__inlines[id];
-            }
-            else if ( $__templates[id] )
-            {
-                // nodejs
-                if ( isNode && _fs ) 
-                { 
-                    return fread($__templates[id], { encoding: self.ENCODING }); 
-                }
-                // client-side js and #id of DOM script-element given as template holder
-                else if ( 0===$__templates[id].indexOf('#') ) 
-                { 
-                    return window.document.getElementById($__templates[id].substring(1)).innerHTML; 
-                }
-                // client-side js and url given as template location
-                else 
-                { 
-                    return ajaxLoad('GET', $__templates[id]); 
-                }
-            }
-            return '';
-        },
+        getTemplateContents : getTemplateContents,
         
         hasOwn : function(o, p) { 
             return o && _hasOwn(o, p); 
@@ -2086,7 +2125,7 @@ function get_html_translation_table (table, quote_style) {
   return hash_map;
 }
 function htmlentities (string, quote_style, charset, double_encode) {
-  var hash_map = this.get_html_translation_table('HTML_ENTITIES', quote_style),
+  var hash_map = get_html_translation_table('HTML_ENTITIES', quote_style),
     symbol = '';
   string = string == null ? '' : string + '';
 
@@ -2154,7 +2193,7 @@ function count (mixed_var, mode) {
     if (mixed_var.hasOwnProperty(key)) {
       cnt++;
       if (mode == 1 && mixed_var[key] && (mixed_var[key].constructor === Array || mixed_var[key].constructor === Object)) {
-        cnt += this.count(mixed_var[key], 1);
+        cnt += count(mixed_var[key], 1);
       }
     }
   }
@@ -2201,11 +2240,11 @@ function is_array (mixed_var) {
   }
 
   // BEGIN REDUNDANT
-  this.php_js = this.php_js || {};
-  this.php_js.ini = this.php_js.ini || {};
+  //this.php_js = this.php_js || {};
+  //this.php_js.ini = this.php_js.ini || {};
   // END REDUNDANT
 
-  ini = this.php_js.ini['phpjs.objectsAsArrays'];
+  ini = null; //this.php_js.ini['phpjs.objectsAsArrays'];
 
   return _isArray(mixed_var) ||
     // Allow returning true unless user has called
@@ -2488,7 +2527,7 @@ function time () {
   return Math.floor(new Date().getTime() / 1000);
 }
 function date (format, timestamp) {
-    var that = this,
+    var //that = this,
       jsdate,
       f,
       formatChr = /\\?([a-z])/gi,
@@ -2660,15 +2699,15 @@ function date (format, timestamp) {
       return jsdate / 1000 | 0;
     }
   };
-  this.date = function (format, timestamp) {
-    that = this;
+  var date = function (format, timestamp) {
+    //that = this;
     jsdate = (timestamp === undefined ? new Date() : // Not provided
       (timestamp instanceof Date) ? new Date(timestamp) : // JS Date()
       new Date(timestamp * 1000) // UNIX timestamp (auto-convert to int)
     );
     return format.replace(formatChr, formatChrCb);
   };
-  return this.date(format, timestamp);
+  return date(format, timestamp);
 }
 function _localized_date($locale, $format, $timestamp) 
 {

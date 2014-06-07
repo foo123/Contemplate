@@ -4,7 +4,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.5.4
+#  @version 0.6
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -49,11 +49,12 @@ PORT = 8001
 # do some tests
 import json
 
-sepleft="<%"  
-sepright="%>"
 
-# set the template separators
-Contemplate.setTemplateSeparators({'left':sepleft, 'right':sepright})
+# set the template separators (deprecated)
+# template separators are defined on the very 1st line of the template
+#sepleft="<%"  
+#sepright="%>"
+#Contemplate.setTemplateSeparators({'left':sepleft, 'right':sepright})
 
 Contemplate.setLocaleStrings({
     "locale": "γλωσσική περιοχή"
@@ -85,7 +86,7 @@ Contemplate.add({
     'sub' : './_tpls/sub.tpl.html',
     'date' : './_tpls/date.tpl.html',
     # add an inline template
-    'inlinetpl' : ['<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>']
+    'inlinetpl' : ['<% %>' + "\n" + '<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>']
 })
 
 ## add an inline template
@@ -132,8 +133,8 @@ main_template_data={
     'templates' : {
         'sub' : Contemplate.getTemplateContents('sub'),
     },
-    'sepleft' : sepleft,
-    'sepright' : sepright,
+    #'sepleft' : sepleft,
+    #'sepright' : sepright,
     'data_client' : json.dumps(data),
     'render_server' : Contemplate.tpl('demo', data),
     'render_inline' : Contemplate.tpl('inlinetpl', listdata)

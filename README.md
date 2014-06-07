@@ -34,7 +34,7 @@ There are a couple of other frameworks named also _contemplate_
 * [Online Example](http://foo123.github.com/examples/contemplate/)
 * [Rationale](#rationale)
 * [Features](#features)
-* [Keywords Reference](/manual.md)
+* [API Reference](/manual.md)
 * [Dependencies](#dependencies)
 * [Changelog](/changelog.md)
 * [Todo](#todo)

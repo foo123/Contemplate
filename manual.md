@@ -5,7 +5,7 @@ __Template Separators__
 
 
 **IMPORTANT** As of version 0.6+ , template separators for Contemplate templates are defined by the template itself
-in he first non-empty line, separated by a space (see examples and tests)
+in the first non-empty line, separated by a space (see examples and tests)
 
 
 

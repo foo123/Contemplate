@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.6
+*  @version: 0.6.1
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -28,7 +28,7 @@
     
     "use strict";
     
-    var __version__ = "0.6";
+    var __version__ = "0.6.1";
     var self;
     
     // auxilliaries
@@ -156,17 +156,27 @@
             return lines;
         },
         
-        getSeparators = function( text ) {
-            // tpl separators are defined on 1st (non-empty) line of tpl content
-            var lines = text.split( "\n" ), seps;
-            while ( lines.length && !trim( lines[ 0 ] ).length ) lines.shift( );
-            if ( lines.length )
+        getSeparators = function( text, separators ) {
+            var lines, seps;
+            if ( separators )
             {
-                seps = trim( lines.shift( ) ).split( " " );
+                seps = trim( separators ).split( " " );
                 $__leftTplSep = trim( seps[ 0 ] );
                 $__rightTplSep = trim( seps[ 1 ] );
             }
-            text = lines.join( "\n" );
+            else
+            {
+                // tpl separators are defined on 1st (non-empty) line of tpl content
+                lines = text.split( "\n" );
+                while ( lines.length && !trim( lines[ 0 ] ).length ) lines.shift( );
+                if ( lines.length )
+                {
+                    seps = trim( lines.shift( ) ).split( " " );
+                    $__leftTplSep = trim( seps[ 0 ] );
+                    $__rightTplSep = trim( seps[ 1 ] );
+                }
+                text = lines.join( "\n" );
+            }
             return text;
         },
     
@@ -892,11 +902,11 @@
             return 'Contemplate_' + id.replace(UNDERLN, '_') + '_Cached'; 
         },
         
-        createTemplateRenderFunction = function(id) {
+        createTemplateRenderFunction = function(id, seps) {
             
             resetState();
             
-            var blocks = parse( getSeparators( getTemplateContents( id ) ) ), funcs = {}, b, func;
+            var blocks = parse( getSeparators( getTemplateContents( id ), seps ) ), funcs = {}, b, func;
             
             if ($__extends)
             {
@@ -915,13 +925,13 @@
             return [new Function("__instance__", func), funcs];
         },
         
-        createCachedTemplate = function(id, filename, classname) {
+        createCachedTemplate = function(id, filename, classname, seps) {
             
             resetState();
             
             var  
                 funcs = {}, parentCode, renderCode, b, sblocks, bcode,
-                blocks = parse( getSeparators( getTemplateContents( id ) ) )
+                blocks = parse( getSeparators( getTemplateContents( id ), seps ) )
                 ;
             
             // tpl-defined blocks
@@ -981,13 +991,13 @@
             return setCachedTemplate(filename, classCode);
         },
         
-        getCachedTemplate = function(id) {
+        getCachedTemplate = function(id, seps) {
             
             // inline templates saved only in-memory
             if ( $__inlines[id] )
             {
                 // dynamic in-memory caching during page-request
-                var funcs = createTemplateRenderFunction(id), 
+                var funcs = createTemplateRenderFunction(id, seps), 
                     tpl = new ContemplateInstance(id, funcs[0]).setBlocks(funcs[1]);
                 if ($__extends) tpl.setParent( self.tpl($__extends) );
                 return tpl;
@@ -1003,7 +1013,7 @@
                         cachedTplClass = getCachedTemplateClass(id);
                     if ( !fexists(cachedTplFile) )
                     {
-                        createCachedTemplate(id, cachedTplFile, cachedTplClass);
+                        createCachedTemplate(id, cachedTplFile, cachedTplClass, seps);
                     }
                     if ( fexists(cachedTplFile) )
                     {
@@ -1021,7 +1031,7 @@
                     if ( !fexists(cachedTplFile) )
                     {
                         // if tpl not exist create it
-                        createCachedTemplate(id, cachedTplFile, cachedTplClass);
+                        createCachedTemplate(id, cachedTplFile, cachedTplClass, seps);
                     }
                     else
                     {
@@ -1045,7 +1055,7 @@
                 default:
                 
                     // dynamic in-memory caching during page-request
-                    var funcs = createTemplateRenderFunction(id), 
+                    var funcs = createTemplateRenderFunction(id, seps), 
                         tpl = new ContemplateInstance(id, funcs[0]).setBlocks(funcs[1]);
                     if ($__extends) tpl.setParent( self.tpl($__extends) );
                     return tpl;
@@ -1546,12 +1556,12 @@
         },
         
         // return the requested template (with optional data)
-        tpl : function(id, data, refresh) {
+        tpl : function(id, data, refresh, seps) {
             // Figure out if we're getting a template, or if we need to
             // load the template - and be sure to cache the result.
             if ( !!refresh || !$__cache[ id ] )
             {
-                $__cache[ id ] = getCachedTemplate( id );
+                $__cache[ id ] = getCachedTemplate( id, seps || null );
             }
             
             var tpl = $__cache[ id ];

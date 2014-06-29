@@ -4,8 +4,8 @@
 __Template Separators__
 
 
-**IMPORTANT** As of version 0.6+ , template separators for Contemplate templates are defined by the template itself
-in the first non-empty line, separated by a space (see examples and tests)
+**IMPORTANT** As of version 0.6.1+ , template separators for Contemplate templates are defined **inside** the template itself
+in the first non-empty line, separated by a space (see examples and tests). Optionally (for a single template) they can also be passed as **parameters** when calling the *Contemplate.tpl( tplID [, data, refresh, separators] )* method
 
 
 

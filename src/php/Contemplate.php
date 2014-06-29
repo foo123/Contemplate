@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.6
+*  @version: 0.6.1
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -15,7 +15,7 @@ if (!class_exists('Contemplate'))
 
 class Contemplate
 {
-    const VERSION = "0.6";
+    const VERSION = "0.6.1";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -569,14 +569,14 @@ _TPLRENDERCODE_;
     }
         
     // return the requested template (with optional data)
-    public static function tpl($id, $data=null, $refresh=false)
+    public static function tpl($id, $data=null, $refresh=false, $seps=null)
     {
         // Figure out if we're getting a template, or if we need to
         // load the template - and be sure to cache the result.
         if ( $refresh || !isset(self::$__cache[ $id ]) ) 
         {
             // load/parse required tpl (and any associated tpl)
-            self::$__cache[ $id ] = self::getCachedTemplate( $id );
+            self::$__cache[ $id ] = self::getCachedTemplate( $id, $seps );
         }
         
         $tpl = self::$__cache[ $id ];
@@ -1601,18 +1601,27 @@ _TPLRENDERCODE_;
         return $parsed; //str_replace( array(". '' .", ". '';"), array('.', ';'), $parsed ); // remove redundant code
     }
     
-    private static function getSeparators( $text )
+    private static function getSeparators( $text, $separators=null )
     {
-        // tpl separators are defined on 1st (non-empty) line of tpl content
-        $lines = explode( "\n", $text );
-        while ( count($lines)>0 && !strlen( trim( $lines[ 0 ] ) ) ) array_shift( $lines );
-        if ( count($lines)>0 )
+        if ( $separators )
         {
-            $seps = explode( " ", trim( array_shift( $lines ) ) );
+            $seps = explode( " ", trim( $separators ) );
             self::$__leftTplSep = trim( $seps[ 0 ] );
             self::$__rightTplSep = trim( $seps[ 1 ] );
         }
-        $text = implode("\n", $lines);
+        else
+        {
+            // tpl separators are defined on 1st (non-empty) line of tpl content
+            $lines = explode( "\n", $text );
+            while ( count($lines)>0 && !strlen( trim( $lines[ 0 ] ) ) ) array_shift( $lines );
+            if ( count($lines)>0 )
+            {
+                $seps = explode( " ", trim( array_shift( $lines ) ) );
+                self::$__leftTplSep = trim( $seps[ 0 ] );
+                self::$__rightTplSep = trim( $seps[ 1 ] );
+            }
+            $text = implode("\n", $lines);
+        }
         return $text;
     }
     
@@ -1639,11 +1648,11 @@ _TPLRENDERCODE_;
         return 'Contemplate_' . str_replace(array('-', ' '), '_', $id) . '_Cached';  
     }
     
-    private static function createTemplateRenderFunction($id)
+    private static function createTemplateRenderFunction($id, $seps=null)
     {
         self::resetState();
         
-        $blocks = self::parse(self::getSeparators( self::getTemplateContents($id) ));
+        $blocks = self::parse(self::getSeparators( self::getTemplateContents($id), $seps ));
         
         if ( self::$__extends )
         {
@@ -1665,11 +1674,11 @@ _TPLRENDERCODE_;
         return array($fn, $blockfns);
     }
     
-    private static function createCachedTemplate($id, $filename, $classname)
+    private static function createCachedTemplate($id, $filename, $classname, $seps=null)
     {
         self::resetState();
         
-        $blocks = self::parse(self::getSeparators( self::getTemplateContents($id) ));
+        $blocks = self::parse(self::getSeparators( self::getTemplateContents($id), $seps ));
         
         // tpl-defined blocks
         $sblocks = '';
@@ -1730,7 +1739,7 @@ _TPLRENDERCODE_;
         return file_put_contents($filename, $class);
     }
     
-    private static function getCachedTemplate($id, $options=array())
+    private static function getCachedTemplate($id, $seps=null)
     {
         // inline templates saved only in-memory
         if ( isset(self::$__inlines[$id]) )
@@ -1739,10 +1748,10 @@ _TPLRENDERCODE_;
             //return new Contemplate($id, self::createTemplateRenderFunction($id));
             $tpl = new Contemplate();
             $tpl->setId( $id );
-            $fns = self::createTemplateRenderFunction($id);
+            $fns = self::createTemplateRenderFunction($id, $seps);
             $tpl->setRenderFunction( $fns[0] ); 
             $tpl->setBlocks( $fns[1] );
-            if ( self::$__extends ) $tpl->setParent( self::tpl(self::$__extends, null, false, $options) );
+            if ( self::$__extends ) $tpl->setParent( self::tpl(self::$__extends, null, false) );
             return $tpl;
         }
         
@@ -1755,7 +1764,7 @@ _TPLRENDERCODE_;
                 if ( !is_file($cachedTplFile) )
                 {
                     // if not exist, create it
-                    self::createCachedTemplate($id, $cachedTplFile, $cachedTplClass);
+                    self::createCachedTemplate($id, $cachedTplFile, $cachedTplClass, $seps);
                 }
                 if (is_file($cachedTplFile))
                 {
@@ -1774,7 +1783,7 @@ _TPLRENDERCODE_;
                 if ( !is_file($cachedTplFile) || (filemtime($cachedTplFile) <= filemtime(self::$__templates[$id])) )
                 {
                     // if tpl not exist or is out-of-sync (re-)create it
-                    self::createCachedTemplate($id, $cachedTplFile, $cachedTplClass);
+                    self::createCachedTemplate($id, $cachedTplFile, $cachedTplClass, $seps);
                 }
                 if ( is_file($cachedTplFile) )
                 {
@@ -1793,7 +1802,7 @@ _TPLRENDERCODE_;
                 //return new Contemplate($id, self::createTemplateRenderFunction($id));
                 $tpl = new Contemplate();
                 $tpl->setId( $id );
-                $fns = self::createTemplateRenderFunction($id);
+                $fns = self::createTemplateRenderFunction($id, $seps);
                 $tpl->setRenderFunction( $fns[0] ); 
                 $tpl->setBlocks( $fns[1] );
                 if ( self::$__extends ) $tpl->setParent( self::tpl(self::$__extends) );

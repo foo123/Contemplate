@@ -1,5 +1,8 @@
 ###ChangeLog
 
+__0.6.1__
+* enable template separators to be defined **inside** a template or passed as **paramaters**
+
 __0.6__
 * define template separators in the 1st line of a template (each tpl can define its own separators)
 * micro edits/changes

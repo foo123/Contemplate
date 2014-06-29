@@ -4,7 +4,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.6
+#  @version 0.6.1
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -86,7 +86,7 @@ Contemplate.add({
     'sub' : './_tpls/sub.tpl.html',
     'date' : './_tpls/date.tpl.html',
     # add an inline template
-    'inlinetpl' : ['<% %>' + "\n" + '<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>']
+    'inlinetpl' : ['<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>']
 })
 
 ## add an inline template
@@ -137,7 +137,7 @@ main_template_data={
     #'sepright' : sepright,
     'data_client' : json.dumps(data),
     'render_server' : Contemplate.tpl('demo', data),
-    'render_inline' : Contemplate.tpl('inlinetpl', listdata)
+    'render_inline' : Contemplate.tpl('inlinetpl', listdata, False, '<% %>')
 }
 
 # a simple custom http server

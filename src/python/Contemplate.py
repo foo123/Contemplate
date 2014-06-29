@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.6
+#  @version 0.6.1
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -304,17 +304,22 @@ __{{CODE}}__
 #    _G.rightTplSep = optionsBackUp[ 3 ]
 #    _G.preserveLines = optionsBackUp[ 4 ]
     
-def getSeparators( text ):
+def getSeparators( text, separators=None ):
     global _G
-    # tpl separators are defined on 1st (non-empty) line of tpl content
-    lines = text.split( "\n" )
-    while  len(lines)>0 and 0 == len( lines[ 0 ].strip() ): lines.pop( 0 )
-    if len(lines):
-        seps = lines.pop( 0 ).strip( ).split( " " )
+    if separators:
+        seps = separators.strip( ).split( " " )
         _G.leftTplSep = seps[ 0 ].strip( )
         _G.rightTplSep = seps[ 1 ].strip( )
-    
-    text = "\n".join( lines )
+    else:
+        # tpl separators are defined on 1st (non-empty) line of tpl content
+        lines = text.split( "\n" )
+        while  len(lines)>0 and 0 == len( lines[ 0 ].strip() ): lines.pop( 0 )
+        if len(lines):
+            seps = lines.pop( 0 ).strip( ).split( " " )
+            _G.leftTplSep = seps[ 0 ].strip( )
+            _G.rightTplSep = seps[ 1 ].strip( )
+        
+        text = "\n".join( lines )
     return text
     
 
@@ -970,11 +975,11 @@ def getCachedTemplateClass(id):
     return 'Contemplate_' + id.replace('-', '_').replace(' ', '_') + '_Cached'
 
 # static
-def createTemplateRenderFunction(id):
+def createTemplateRenderFunction(id, seps=None):
     global _G
     resetState()
     
-    blocks = parse(getSeparators( Contemplate.getTemplateContents(id) ))
+    blocks = parse(getSeparators( Contemplate.getTemplateContents(id), seps ))
     
     if _G.extends:
         func = _G.TFUNC1
@@ -995,11 +1000,11 @@ def createTemplateRenderFunction(id):
     return [ fn, blockfns]
 
 # static
-def createCachedTemplate(id, filename, classname):
+def createCachedTemplate(id, filename, classname, seps=None):
     global _G
     resetState()
     
-    blocks = parse(getSeparators( Contemplate.getTemplateContents(id) ))
+    blocks = parse(getSeparators( Contemplate.getTemplateContents(id), seps ))
     
     # tpl-defined blocks
     sblocks = ''
@@ -1026,14 +1031,14 @@ def createCachedTemplate(id, filename, classname):
     return Contemplate.write(filename, classCode)
 
 # static
-def getCachedTemplate(id):
+def getCachedTemplate(id, seps=None):
     global _G
     # inline templates saved only in-memory
     if id in _G.inlines:
         # dynamic in-memory caching during page-request
         tpl = Contemplate()
         tpl.setId( id )
-        fns = createTemplateRenderFunction(id)
+        fns = createTemplateRenderFunction(id, seps)
         tpl.setRenderFunction( fns[0] )
         tpl.setBlocks( fns[1] )
         if _G.extends: tpl.setParent( Contemplate.tpl(_G.extends) )
@@ -1048,7 +1053,7 @@ def getCachedTemplate(id):
         cachedTplClass = getCachedTemplateClass(id)
         if not os.path.isfile(cachedTplPath):
             # if not exist, create it
-            createCachedTemplate(id, cachedTplPath, cachedTplClass)
+            createCachedTemplate(id, cachedTplPath, cachedTplClass, seps)
         if os.path.isfile(cachedTplPath):
             tpl = include(cachedTplFile, cachedTplClass)()
             tpl.setId( id )
@@ -1063,7 +1068,7 @@ def getCachedTemplate(id):
         cachedTplClass = getCachedTemplateClass(id)
         if not os.path.isfile(cachedTplPath) or (os.path.getmtime(cachedTplPath) <= os.path.getmtime(_G.templates[id])):
             # if tpl not exist or is out-of-sync (re-)create it
-            createCachedTemplate(id, cachedTplPath, cachedTplClass)
+            createCachedTemplate(id, cachedTplPath, cachedTplClass, seps)
         if os.path.isfile(cachedTplPath):
             tpl = include(cachedTplFile, cachedTplClass)()
             tpl.setId( id )
@@ -1075,7 +1080,7 @@ def getCachedTemplate(id):
         # dynamic in-memory caching during page-request
         tpl = Contemplate()
         tpl.setId( id )
-        fns = createTemplateRenderFunction(id)
+        fns = createTemplateRenderFunction(id, seps)
         tpl.setRenderFunction( fns[0] )
         tpl.setBlocks( fns[1] )
         if _G.extends: tpl.setParent( Contemplate.tpl(_G.extends) )
@@ -1379,7 +1384,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.6"
+    VERSION = "0.6.1"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -1605,13 +1610,13 @@ class Contemplate:
         
     # return the requested template (with optional data)
     # static
-    def tpl(id, data=None, refresh=False):
+    def tpl(id, data=None, refresh=False, seps=None):
         global _G
         # Figure out if we're getting a template, or if we need to
         # load the template - and be sure to cache the result.
         if refresh or not (id in _G.cache): 
             
-            _G.cache[ id ] = getCachedTemplate( id )
+            _G.cache[ id ] = getCachedTemplate( id, seps )
         
         tpl = _G.cache[ id ]
         

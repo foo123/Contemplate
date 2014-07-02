@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.6.1
+*  @version: 0.6.2
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -15,7 +15,7 @@ if (!class_exists('Contemplate'))
 
 class Contemplate
 {
-    const VERSION = "0.6.1";
+    const VERSION = "0.6.2";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -40,6 +40,7 @@ class Contemplate
     private static $__rightTplSep = "%>";
     private static $__preserveLinesDefault = "' . \"\\n\" . '";
     private static $__preserveLines = '';
+    private static $__escape = false;
     private static $__EOL = "\n";
     private static $__TEOL = PHP_EOL;
     private static $__tplStart = '';
@@ -569,14 +570,23 @@ _TPLRENDERCODE_;
     }
         
     // return the requested template (with optional data)
-    public static function tpl($id, $data=null, $refresh=false, $seps=null)
+    public static function tpl($id, $data=null, $options=array())
     {
+        $options = array_merge(array(
+            'refresh'=> false,
+            'separators'=> null,
+            'escape'=> false
+        ), (array)$options);
+        
+        if ( $options['escape'] ) self::$__escape = true;
+        else  self::$__escape = false;
+        
         // Figure out if we're getting a template, or if we need to
         // load the template - and be sure to cache the result.
-        if ( $refresh || !isset(self::$__cache[ $id ]) ) 
+        if ( $options['refresh'] || !isset(self::$__cache[ $id ]) ) 
         {
             // load/parse required tpl (and any associated tpl)
-            self::$__cache[ $id ] = self::getCachedTemplate( $id, $seps );
+            self::$__cache[ $id ] = self::getCachedTemplate( $id, $options['separators'] );
         }
         
         $tpl = self::$__cache[ $id ];
@@ -1250,6 +1260,43 @@ _TPLRENDERCODE_;
         return $m[0];
     }
     
+    private static function parseNestedBlocks($code, $blocks=null) 
+    {
+        $bl = $blocks ? count($blocks) : 0;
+        
+        if ( $bl > 0 )
+        {
+            while ($bl--)
+            {
+                $block = $blocks[ $bl ];
+                $delim1 = '__||' . $block . '||__'; 
+                $delim2 = '__||/' . $block . '||__'; 
+                
+                $len1 = strlen($delim1); 
+                $len2 = $len1+1; 
+                
+                $pos1 = strpos($code, $delim1, 0);
+                $pos2 = strpos($code, $delim2, $pos1+$len1);
+                
+                $replace = false !== $pos1;
+                while ($replace)
+                {
+                    // replace all occurances of the block on the current template, 
+                    // with the code found previously
+                    // in the 1st block definition
+                    $code = substr($code, 0, $pos1) .  
+                        "\$__instance__->renderBlock( '" . $block . "' ); " . 
+                        substr($code, $pos2+$len2)
+                    ;
+                    
+                    $replace = (false !== ($pos1 = strpos($code, $delim1, 0)));
+                    $pos2 = ($replace) ? strpos($code, $delim2, $pos1+$len1) : 0;
+                }
+            }
+        }
+        return $code;
+    }
+
     private static function parseBlocks($s) 
     {
         $blocks = array(); 
@@ -1257,7 +1304,7 @@ _TPLRENDERCODE_;
         
         while ($bl--)
         {
-            $block = array_pop(self::$__allblocks);
+            $block = self::$__allblocks[$bl]; //array_pop(self::$__allblocks);
             
             $delim1 = '__||' . $block . '||__'; 
             $delim2 = '__||/' . $block . '||__'; 
@@ -1272,14 +1319,14 @@ _TPLRENDERCODE_;
             
             if ( !empty($code) )
             {
-                $code = substr($code, $len1, -$len2); //str_replace(array(". '' .", ". '';"), array('.', ';'), substr($code, $len1, -$len2)); // remove redundant code
+                $code = self::parseNestedBlocks(substr($code, $len1, -$len2), self::$__allblocks); //str_replace(array(". '' .", ". '';"), array('.', ';'), substr($code, $len1, -$len2)); // remove redundant code
                 
                 $bout = str_replace('__{{CODE}}__', $code."';", self::$__DOBLOCK);
                 
                 $blocks[$block] = $bout;
             }
             
-            $replace = true;
+            $replace = false !== $pos1;
             while ($replace)
             {
                 // replace all occurances of the block on the current template, 
@@ -1294,7 +1341,7 @@ _TPLRENDERCODE_;
                 $pos2 = ($replace) ? strpos($s, $delim2, $pos1+$len1) : 0;
             }
         }
-        
+        self::$__allblocks = array();
         return array($s/*str_replace(array(". '' .", ". '';"), array('.', ';'), $s)*/, $blocks);
     }
 
@@ -1586,9 +1633,12 @@ _TPLRENDERCODE_;
             }
             else
             {
+                if ( self::$__escape )
+                    $s = str_replace( "\\", "\\\\", $s );  // escape escapes
+                
                 $s = str_replace( "'", "\\'", $s );  // escape single quotes accurately (used by parse function)
                 
-                $s = str_replace( "\n", self::$__preserveLines, $s ); // preserve lines
+                $s = preg_replace( "/[\n]/", self::$__preserveLines, $s ); // preserve lines
                 
                 $isTag = true;
             }

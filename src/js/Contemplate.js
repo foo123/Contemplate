@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.6.1
+*  @version: 0.6.2
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -28,7 +28,7 @@
     
     "use strict";
     
-    var __version__ = "0.6.1";
+    var __version__ = "0.6.2";
     var self;
     
     // auxilliaries
@@ -97,7 +97,7 @@
         
         $__leftTplSep = "<%", $__rightTplSep = "%>", $__tplStart = "", $__tplEnd = "", $__tplPrefixCode = "",
         
-        $__preserveLinesDefault = "' + \"\\n\" + '", $__preserveLines = '',  $__EOL = "\n", $__TEOL = (isNode) ? require('os').EOL : "\n",
+        $__preserveLinesDefault = "' + \"\\n\" + '", $__preserveLines = '',  $__EOL = "\n", $__TEOL = (isNode) ? require('os').EOL : "\n", $__escape = false,
         
         $__stack = null, $__level = 0, $__pad = "    ", $__idcnt = 0,
         $__loops = 0, $__ifs = 0, $__loopifs = 0, $__blockcnt = 0, $__blocks = [], $__allblocks = [], $__extends = null,
@@ -515,6 +515,45 @@
             return match;
         },
         
+        parseNestedBlocks = function(code, blocks) {
+            var bl = blocks ? blocks.length : 0, 
+                block, delim1, delim2, len1, len2, pos1, pos2,
+                replace
+            ;
+            
+            if ( bl > 0 )
+            {
+                while (bl--)
+                {
+                    block = blocks[ bl ];
+                    delim1 = '__||' + block + '||__'; 
+                    delim2 = '__||/' + block + '||__'; 
+                    
+                    len1 = delim1.length; 
+                    len2 = len1+1; 
+                    
+                    pos1 = code.indexOf(delim1, 0); 
+                    pos2 = code.indexOf(delim2, pos1+len1);
+                    
+                    replace = pos1 > -1;
+                    while (replace)
+                    {
+                        // replace all occurances of the block on the current template, 
+                        // with the code found previously
+                        // in the 1st block definition
+                        code = code.substr(0, pos1) +  
+                            "__instance__.renderBlock( '" + block + "' ); " +
+                            code.substr(pos2+len2)
+                        ;
+                        
+                        replace = ( -1 < (pos1 = code.indexOf(delim1, 0)) );
+                        pos2 = (replace) ? code.indexOf(delim2, pos1+len1) : 0;
+                    }
+                }
+            }
+            return code;
+        },
+        
         parseBlocks = function(s) {
             var blocks = {}, 
                 bl = $__allblocks.length, 
@@ -522,11 +561,11 @@
                 delim1, delim2, 
                 len1, len2, 
                 pos1, pos2, 
-                bout;
-                
+                bout, replace;
+            
             while (bl--)
             {
-                block = $__allblocks.pop();
+                block = $__allblocks[ bl ];
                 
                 delim1 = '__||' + block + '||__'; 
                 delim2 = '__||/' + block + '||__'; 
@@ -543,14 +582,14 @@
                 {
                     //s = s.split(code).join("__instance__.renderBlock( '" + block + "' ); ");
                     
-                    code = code.substring(len1, code.length-len2)/*.replace("+ '' +", '+').replace("+ '';", ';')*/; // remove redundant code
+                    code = parseNestedBlocks(code.substring(len1, code.length-len2)/*.replace("+ '' +", '+').replace("+ '';", ';')*/, $__allblocks); // remove redundant code
                     
                     bout = $__DOBLOCK().split( '__{{CODE}}__' ).join( padLines(code+"';", 0) );
                     
                     blocks[block] = bout;
                 }
                 
-                var replace = true;
+                replace = pos1 > -1;
                 while (replace)
                 {
                     // replace all occurances of the block on the current template, 
@@ -565,7 +604,7 @@
                     pos2 = (replace) ? s.indexOf(delim2, pos1+len1) : 0;
                 }
             }
-            
+            $__allblocks = [ ];
             return [s/*.replace( "+ '' +", '+' ).replace( "+ '';", ';' )*/, blocks];
         },
         
@@ -875,10 +914,13 @@
                 }
                 else
                 {
+                    if ( $__escape )
+                        s = s.split( "\\" ).join( "\\\\" ); // escape escapes
+                    
                     s = s
                         .split( "'" ).join( "\\'" )  // escape single quotes accurately (used by parse function)
                         
-                        .split( "\n" ).join( $__preserveLines ) // preserve lines
+                        .split( /*"\n"*/ /\n/ ).join( $__preserveLines ) // preserve lines
                     ;
                     
                     isTag = true;
@@ -1556,12 +1598,17 @@
         },
         
         // return the requested template (with optional data)
-        tpl : function(id, data, refresh, seps) {
+        tpl : function(id, data, options) {
+            options = options || {};
+            
+            if ( options.escape ) $__escape = true;
+            else  $__escape = false;
+            
             // Figure out if we're getting a template, or if we need to
             // load the template - and be sure to cache the result.
-            if ( !!refresh || !$__cache[ id ] )
+            if ( !!options.refresh || !$__cache[ id ] )
             {
-                $__cache[ id ] = getCachedTemplate( id, seps || null );
+                $__cache[ id ] = getCachedTemplate( id, options.separators || null );
             }
             
             var tpl = $__cache[ id ];

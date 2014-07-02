@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.6.1
+#  @version 0.6.2
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -76,6 +76,7 @@ class _G:
     rightTplSep = "%>"
     preserveLinesDefault = "' + \"\\n\" + '"
     preserveLines = ''
+    escape = False
     EOL = "\n"
     TEOL = os.linesep
     tplStart = ''
@@ -97,6 +98,7 @@ class _G:
     uuid = 0
 
     NEWLINE = None
+    NL = None
 
     ALPHA = r'^[a-zA-Z_]'
     NUM = r'^[0-9]'
@@ -614,13 +616,47 @@ def parseControlConstructs(m):
     return m.group(0)
 
 # static
+def parseNestedBlocks(code, blocks=None):
+    if blocks: bl = len(blocks)
+    else: bl = 0
+    
+    if bl > 0:
+        while bl>0:
+            bl -= 1
+            block = blocks[ bl ]
+            delim1 = '__||' + block + '||__'
+            delim2 = '__||/' + block + '||__'
+            
+            len1 = len(delim1)
+            len2 = len1+1
+            
+            pos1 = code.find(delim1, 0) 
+            pos2 = code.find(delim2, pos1+len1)
+            
+            replace = (0 <= pos1)
+            while replace:
+            
+                # replace all occurances of the block on the current template, 
+                # with the code found previously
+                # in the 1st block definition
+                code = code[0:pos1] + "__instance__.renderBlock( '" + block + "' ) " + code[pos2+len2:]
+                
+                
+                pos1 = code.find(delim1, 0)
+                replace = (0 <= pos1)
+                if replace: pos2 = code.find(delim2, pos1+len1)
+            
+        
+    return code
+
+# static
 def parseBlocks(s):
     global _G
     blocks = {} 
     bl = len(_G.allblocks)
     while bl:
         bl -= 1
-        block = _G.allblocks.pop()
+        block = _G.allblocks[bl] #_G.allblocks.pop()
         delim1 = '__||' + block + '||__' 
         delim2 = '__||/' + block + '||__'
         
@@ -633,13 +669,13 @@ def parseBlocks(s):
         code = s[pos1:pos2+len2]
         
         if len(code)>0:
-            code = code[len1:-len2] #.replace("+ '' +", '+')  # remove redundant code
+            code = parseNestedBlocks(code[len1:-len2], _G.allblocks) #.replace("+ '' +", '+')  # remove redundant code
             
             bout = _G.DOBLOCK.replace('__{{CODE}}__', code+"'")
             
             blocks[block] = bout
         
-        replace = True
+        replace = (0 <= pos1)
         while replace:
             # replace all occurances of the block on the current template, 
             # with the code found previously
@@ -650,7 +686,8 @@ def parseBlocks(s):
             pos1 = s.find(delim1, 0)
             replace = (0 <= pos1)
             if replace: pos2 = s.find(delim2, pos1+len1)
-        
+    
+    _G.allblocks = []    
     return [ s, blocks ] #[ s.replace("+ '' +", '+'), blocks ]
 
 def parseString(s, q, i, l):
@@ -954,10 +991,14 @@ def parse(tpl, withblocks=True):
             
         else:
             
+            if _G.escape:
+                s = s.replace( "\\", "\\\\" )  # escape escapes
+                
             s = s.replace( "'", "\\'" )  # escape single quotes accurately (used by parse function)
             
             s = s.replace( "\n", _G.preserveLines ) # preserve lines
-        
+            #s = re.sub(_G.NL, _G.preserveLines, s) # preserve lines
+            
             isTag = True
         
         parsed += s
@@ -1384,7 +1425,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.6.1"
+    VERSION = "0.6.2"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -1485,6 +1526,7 @@ class Contemplate:
         _G.regExps['functions'] = re.compile(r'%(' + '|'.join(_G.funcs) + ')')
             
         _G.NEWLINE = re.compile(r'\n\r|\r\n|\n|\r')
+        _G.NL = re.compile(r'\n')
         
         _G.ALPHA = re.compile( _G.ALPHA )
         _G.NUM = re.compile( _G.NUM )
@@ -1610,13 +1652,22 @@ class Contemplate:
         
     # return the requested template (with optional data)
     # static
-    def tpl(id, data=None, refresh=False, seps=None):
+    def tpl(id, data=None, options=None):
         global _G
+        if not options: options = {'refresh': False, 'separators': None, 'escape': False}
+        
+        if not ('escape' in options): options['escape'] = False
+        if not ('refresh' in options): options['refresh'] = False
+        if not ('separators' in options): options['separators'] = None
+        
+        if options['escape']: _G.escape = True
+        else: _G.escape = False
+        
         # Figure out if we're getting a template, or if we need to
         # load the template - and be sure to cache the result.
-        if refresh or not (id in _G.cache): 
+        if options['refresh'] or not (id in _G.cache): 
             
-            _G.cache[ id ] = getCachedTemplate( id, seps )
+            _G.cache[ id ] = getCachedTemplate( id, options['separators'] )
         
         tpl = _G.cache[ id ]
         

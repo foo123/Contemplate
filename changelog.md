@@ -1,5 +1,9 @@
 ###ChangeLog
 
+__0.6.2__
+* parse nested blocks
+* **escape** parse option, options syntax change (see manual)
+
 __0.6.1__
 * enable template separators to be defined **inside** a template or passed as **paramaters**
 

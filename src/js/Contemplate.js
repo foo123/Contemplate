@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.6.2
+*  @version: 0.6.3
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -28,7 +28,7 @@
     
     "use strict";
     
-    var __version__ = "0.6.2";
+    var __version__ = "0.6.3";
     var self;
     
     // auxilliaries
@@ -154,6 +154,27 @@
                 return lines.join($__TEOL);
             }
             return lines;
+        },
+        
+        merge = function( ) {
+            var args = slice( arguments );
+            if ( args.length < 1 ) return;
+            var merged = args.shift( ), i, k, o, l = args.length;
+            for (i=0; i<l; i++)
+            { 
+                o = args[ i ]; 
+                if ( o ) 
+                { 
+                    for (k in o) 
+                    { 
+                        if ( _hasOwn(o, k) ) 
+                        { 
+                            merged[ k ] = o[ k ]; 
+                        } 
+                    } 
+                } 
+            }
+            return merged;
         },
         
         getSeparators = function( text, separators ) {
@@ -1033,29 +1054,31 @@
             return setCachedTemplate(filename, classCode);
         },
         
-        getCachedTemplate = function(id, seps) {
+        getCachedTemplate = function(id, options) {
+            
+            options = options || {};
             
             // inline templates saved only in-memory
             if ( $__inlines[id] )
             {
                 // dynamic in-memory caching during page-request
-                var funcs = createTemplateRenderFunction(id, seps), 
+                var funcs = createTemplateRenderFunction(id, options.separators), 
                     tpl = new ContemplateInstance(id, funcs[0]).setBlocks(funcs[1]);
                 if ($__extends) tpl.setParent( self.tpl($__extends) );
                 return tpl;
             }
             
-            if ( !isNode ) $__cacheMode = self.CACHE_TO_DISK_NONE;
-            
-            switch ( $__cacheMode )
+            else
             {
-                case self.CACHE_TO_DISK_NOUPDATE:
+                if ( !isNode ) $__cacheMode = self.CACHE_TO_DISK_NONE;
                 
+                if ( true !== options.autoUpdate && self.CACHE_TO_DISK_NOUPDATE === $__cacheMode )
+                {
                     var cachedTplFile = getCachedTemplateName(id), 
                         cachedTplClass = getCachedTemplateClass(id);
                     if ( !fexists(cachedTplFile) )
                     {
-                        createCachedTemplate(id, cachedTplFile, cachedTplClass, seps);
+                        createCachedTemplate(id, cachedTplFile, cachedTplClass, options.separators);
                     }
                     if ( fexists(cachedTplFile) )
                     {
@@ -1064,16 +1087,16 @@
                         return tpl;
                     }
                     return null;
-                    break;
+                }
                 
-                case self.CACHE_TO_DISK_AUTOUPDATE:
-                
+                else if ( true === options.autoUpdate || self.CACHE_TO_DISK_AUTOUPDATE === $__cacheMode )
+                {    
                     var cachedTplFile = getCachedTemplateName(id), 
                         cachedTplClass = getCachedTemplateClass(id);
                     if ( !fexists(cachedTplFile) )
                     {
                         // if tpl not exist create it
-                        createCachedTemplate(id, cachedTplFile, cachedTplClass, seps);
+                        createCachedTemplate(id, cachedTplFile, cachedTplClass, options.separators);
                     }
                     else
                     {
@@ -1081,7 +1104,7 @@
                         if ( stat.mtime.getTime() <= stat2.mtime.getTime() )
                         {
                             // is out-of-sync re-create it
-                            createCachedTemplate(id, cachedTplFile, cachedTplClass);
+                            createCachedTemplate(id, cachedTplFile, cachedTplClass, options.separators);
                         }
                     }
                     if ( fexists(cachedTplFile) )
@@ -1091,17 +1114,16 @@
                         return tpl;
                     }
                     return null;
-                    break;
-                    
-                case self.CACHE_TO_DISK_NONE:
-                default:
-                
+                }
+                        
+                else
+                {    
                     // dynamic in-memory caching during page-request
-                    var funcs = createTemplateRenderFunction(id, seps), 
+                    var funcs = createTemplateRenderFunction(id, options.separators), 
                         tpl = new ContemplateInstance(id, funcs[0]).setBlocks(funcs[1]);
                     if ($__extends) tpl.setParent( self.tpl($__extends) );
                     return tpl;
-                    break;
+                }
             }
             return null;
         },
@@ -1574,8 +1596,8 @@
         },
         
         // add templates manually
-        add : function(tpls) { 
-            if ( tpls )
+        add : function(tpls, tplStr) { 
+            if ( "object" == typeof(tpls) )
             {
                 for (var tplID in tpls)
                 {
@@ -1590,16 +1612,33 @@
                 }
                 $__templates = self.merge($__templates, tpls);  
             }
+            else if ( tpls && tplStr )
+            {
+                $__templates[ tpls ] = tplStr; 
+            }
         },
     
         // add inline templates manually
-        addInline : function(tpls) { 
-            $__inlines = self.merge($__inlines, tpls);  
+        addInline : function(tpls, tplStr) { 
+            if ( "object" == typeof(tpls) )
+            {
+                $__inlines = self.merge($__inlines, tpls);
+            }
+            else if ( tpls && tplStr )
+            {
+                $__inlines[ tpls ] = tplStr; 
+            }
         },
         
         // return the requested template (with optional data)
         tpl : function(id, data, options) {
-            options = options || {};
+            
+            options = merge({
+                'autoUpdate': false,
+                'refresh': false,
+                'escape': false,
+                'separators': null
+            }, options);
             
             if ( options.escape ) $__escape = true;
             else  $__escape = false;
@@ -1608,7 +1647,7 @@
             // load the template - and be sure to cache the result.
             if ( !!options.refresh || !$__cache[ id ] )
             {
-                $__cache[ id ] = getCachedTemplate( id, options.separators || null );
+                $__cache[ id ] = getCachedTemplate( id, options );
             }
             
             var tpl = $__cache[ id ];
@@ -1977,26 +2016,7 @@
             return o && _hasOwn(o, p); 
         },
         
-        merge : function() {
-            var args = slice(arguments);
-            if (args.length<1) return;
-            var merged = args.shift(), i, k, o, l = args.length;
-            for (i=0; i<l; i++)
-            { 
-                o = args[i]; 
-                if (o) 
-                { 
-                    for (k in o) 
-                    { 
-                        if (_hasOwn(o, k)) 
-                        { 
-                            merged[k] = o[k]; 
-                        } 
-                    } 
-                } 
-            }
-            return merged;
-        },
+        merge : merge,
         
         data : function(o) {
             if (isArray(o)) return o.slice();

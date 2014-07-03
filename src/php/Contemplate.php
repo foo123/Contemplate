@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.6.2
+*  @version: 0.6.3
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -15,7 +15,7 @@ if (!class_exists('Contemplate'))
 
 class Contemplate
 {
-    const VERSION = "0.6.2";
+    const VERSION = "0.6.3";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -544,7 +544,7 @@ _TPLRENDERCODE_;
     }
     
     // add templates manually
-    public static function add($tpls) 
+    public static function add($tpls, $tplStr=null) 
     { 
         if ( is_array($tpls) )
         {
@@ -561,21 +561,33 @@ _TPLRENDERCODE_;
             }
             self::$__templates = self::merge(self::$__templates, $tpls); 
         }
+        elseif ( $tpls && $tplStr )
+        {
+            self::$__templates[ $tpls ] = $tplStr;
+        }
     }
     
     // add inline templates manually
-    public static function addInline($tpls) 
+    public static function addInline($tpls, $tplStr=null) 
     { 
-        self::$__inlines = self::merge(self::$__inlines, $tpls);  
+        if ( is_array($tpls) )
+        {
+            self::$__inlines = self::merge(self::$__inlines, $tpls);
+        }
+        elseif ( $tpls && $tplStr )
+        {
+            self::$__inlines[ $tpls ] = $tplStr;
+        }
     }
         
     // return the requested template (with optional data)
     public static function tpl($id, $data=null, $options=array())
     {
         $options = array_merge(array(
+            'autoUpdate'=> false,
             'refresh'=> false,
-            'separators'=> null,
-            'escape'=> false
+            'escape'=> false,
+            'separators'=> null
         ), (array)$options);
         
         if ( $options['escape'] ) self::$__escape = true;
@@ -586,7 +598,7 @@ _TPLRENDERCODE_;
         if ( $options['refresh'] || !isset(self::$__cache[ $id ]) ) 
         {
             // load/parse required tpl (and any associated tpl)
-            self::$__cache[ $id ] = self::getCachedTemplate( $id, $options['separators'] );
+            self::$__cache[ $id ] = self::getCachedTemplate( $id, $options );
         }
         
         $tpl = self::$__cache[ $id ];
@@ -1789,8 +1801,10 @@ _TPLRENDERCODE_;
         return file_put_contents($filename, $class);
     }
     
-    private static function getCachedTemplate($id, $seps=null)
+    private static function getCachedTemplate($id, $options=array())
     {
+        $options = (array)$options;
+        
         // inline templates saved only in-memory
         if ( isset(self::$__inlines[$id]) )
         {
@@ -1798,23 +1812,23 @@ _TPLRENDERCODE_;
             //return new Contemplate($id, self::createTemplateRenderFunction($id));
             $tpl = new Contemplate();
             $tpl->setId( $id );
-            $fns = self::createTemplateRenderFunction($id, $seps);
+            $fns = self::createTemplateRenderFunction($id, $options['separators']);
             $tpl->setRenderFunction( $fns[0] ); 
             $tpl->setBlocks( $fns[1] );
             if ( self::$__extends ) $tpl->setParent( self::tpl(self::$__extends, null, false) );
             return $tpl;
         }
         
-        switch ( self::$__cacheMode )
+        else
         {
-            case self::CACHE_TO_DISK_NOUPDATE:
-            
+            if ( true !== $options['autoUpdate'] && self::CACHE_TO_DISK_NOUPDATE === self::$__cacheMode )
+            {
                 $cachedTplFile = self::getCachedTemplateName($id);
                 $cachedTplClass = self::getCachedTemplateClass($id);
                 if ( !is_file($cachedTplFile) )
                 {
                     // if not exist, create it
-                    self::createCachedTemplate($id, $cachedTplFile, $cachedTplClass, $seps);
+                    self::createCachedTemplate($id, $cachedTplFile, $cachedTplClass, $options['separators']);
                 }
                 if (is_file($cachedTplFile))
                 {
@@ -1824,16 +1838,16 @@ _TPLRENDERCODE_;
                     return $tpl;
                 }
                 return null;
-                break;
+            }
             
-            case self::CACHE_TO_DISK_AUTOUPDATE:
-            
+            elseif ( true === $options['autoUpdate'] || self::CACHE_TO_DISK_AUTOUPDATE === self::$__cacheMode )
+            {
                 $cachedTplFile = self::getCachedTemplateName($id);
                 $cachedTplClass = self::getCachedTemplateClass($id);
                 if ( !is_file($cachedTplFile) || (filemtime($cachedTplFile) <= filemtime(self::$__templates[$id])) )
                 {
                     // if tpl not exist or is out-of-sync (re-)create it
-                    self::createCachedTemplate($id, $cachedTplFile, $cachedTplClass, $seps);
+                    self::createCachedTemplate($id, $cachedTplFile, $cachedTplClass, $options['separators']);
                 }
                 if ( is_file($cachedTplFile) )
                 {
@@ -1843,21 +1857,20 @@ _TPLRENDERCODE_;
                     return $tpl;
                 }
                 return null;
-                break;
+            }
             
-            case self::CACHE_TO_DISK_NONE:
-            default:
-            
+            else
+            {
                 // dynamic in-memory caching during page-request
                 //return new Contemplate($id, self::createTemplateRenderFunction($id));
                 $tpl = new Contemplate();
                 $tpl->setId( $id );
-                $fns = self::createTemplateRenderFunction($id, $seps);
+                $fns = self::createTemplateRenderFunction($id, $options['separators']);
                 $tpl->setRenderFunction( $fns[0] ); 
                 $tpl->setBlocks( $fns[1] );
                 if ( self::$__extends ) $tpl->setParent( self::tpl(self::$__extends) );
                 return $tpl;
-                break;
+            }
         }
         
         return null;

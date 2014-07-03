@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.6.2
+#  @version 0.6.3
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -533,6 +533,20 @@ def t_endblock(args=''):
 #
 # auxilliary parsing methods
 #
+
+# static
+def merge(m, *args): 
+    numargs = len(args)
+    if numargs < 1: return m
+    
+    merged = m
+    
+    for arg in args:
+        # http://www.php2python.com/wiki/function.array-merge/
+        merged = ODict(merged)
+        merged.update(arg)
+    
+    return merged
 
 # static
 def split(s):
@@ -1072,14 +1086,14 @@ def createCachedTemplate(id, filename, classname, seps=None):
     return Contemplate.write(filename, classCode)
 
 # static
-def getCachedTemplate(id, seps=None):
+def getCachedTemplate(id, options=dict()):
     global _G
     # inline templates saved only in-memory
     if id in _G.inlines:
         # dynamic in-memory caching during page-request
         tpl = Contemplate()
         tpl.setId( id )
-        fns = createTemplateRenderFunction(id, seps)
+        fns = createTemplateRenderFunction(id, options['separators'])
         tpl.setRenderFunction( fns[0] )
         tpl.setBlocks( fns[1] )
         if _G.extends: tpl.setParent( Contemplate.tpl(_G.extends) )
@@ -1087,14 +1101,14 @@ def getCachedTemplate(id, seps=None):
     
     CM = _G.cacheMode
     
-    if CM == Contemplate.CACHE_TO_DISK_NOUPDATE:
+    if True != options['autoUpdate'] and CM == Contemplate.CACHE_TO_DISK_NOUPDATE:
     
         cachedTplFile = getCachedTemplateName(id)
         cachedTplPath = os.path.join(_G.cacheDir, cachedTplFile)
         cachedTplClass = getCachedTemplateClass(id)
         if not os.path.isfile(cachedTplPath):
             # if not exist, create it
-            createCachedTemplate(id, cachedTplPath, cachedTplClass, seps)
+            createCachedTemplate(id, cachedTplPath, cachedTplClass, options['separators'])
         if os.path.isfile(cachedTplPath):
             tpl = include(cachedTplFile, cachedTplClass)()
             tpl.setId( id )
@@ -1102,14 +1116,14 @@ def getCachedTemplate(id, seps=None):
         return None
 
     
-    elif CM == Contemplate.CACHE_TO_DISK_AUTOUPDATE:
+    elif True == options['autoUpdate'] or CM == Contemplate.CACHE_TO_DISK_AUTOUPDATE:
     
         cachedTplFile = getCachedTemplateName(id)
         cachedTplPath = os.path.join(_G.cacheDir, cachedTplFile)
         cachedTplClass = getCachedTemplateClass(id)
         if not os.path.isfile(cachedTplPath) or (os.path.getmtime(cachedTplPath) <= os.path.getmtime(_G.templates[id])):
             # if tpl not exist or is out-of-sync (re-)create it
-            createCachedTemplate(id, cachedTplPath, cachedTplClass, seps)
+            createCachedTemplate(id, cachedTplPath, cachedTplClass, options['separators'])
         if os.path.isfile(cachedTplPath):
             tpl = include(cachedTplFile, cachedTplClass)()
             tpl.setId( id )
@@ -1121,7 +1135,7 @@ def getCachedTemplate(id, seps=None):
         # dynamic in-memory caching during page-request
         tpl = Contemplate()
         tpl.setId( id )
-        fns = createTemplateRenderFunction(id, seps)
+        fns = createTemplateRenderFunction(id, options['separators'])
         tpl.setRenderFunction( fns[0] )
         tpl.setBlocks( fns[1] )
         if _G.extends: tpl.setParent( Contemplate.tpl(_G.extends) )
@@ -1425,7 +1439,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.6.2"
+    VERSION = "0.6.3"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -1630,35 +1644,46 @@ class Contemplate:
     
     # add templates manually
     # static
-    def add(tpls):
+    def add(tpls, tplStr=None):
         global _G
-        _inlines = {}
-        for tplID in tpls:
-            if isinstance(tpls[ tplID ], (list, tuple)):
-                # unified way to add tpls both as reference and inline
-                # inline tpl, passed as array
-                if len( tpls[ tplID ][ 0 ] ):
-                    _G.inlines[ tplID ] = tpls[ tplID ][ 0 ]
-                _inlines[ tplID ] = True
-                
-        for tplID in _inlines: del tpls[ tplID ]
-        _G.templates = Contemplate.merge(_G.templates, tpls)
+        
+        if isinstance(tpls, dict):
+            _inlines = {}
+            for tplID in tpls:
+                if isinstance(tpls[ tplID ], (list, tuple)):
+                    # unified way to add tpls both as reference and inline
+                    # inline tpl, passed as array
+                    if len( tpls[ tplID ][ 0 ] ):
+                        _G.inlines[ tplID ] = tpls[ tplID ][ 0 ]
+                    _inlines[ tplID ] = True
+                    
+            for tplID in _inlines: del tpls[ tplID ]
+            _G.templates = Contemplate.merge(_G.templates, tpls)
+        elif tpls and tplStr:
+            _G.templates[tpls] = tplStr
     
     # add inline templates manually
     # static
-    def addInline(tpls):
+    def addInline(tpls, tplStr=None):
         global _G
-        _G.inlines = Contemplate.merge(_G.inlines, tpls)
+        
+        if isinstance(tpls, dict):
+            _G.inlines = Contemplate.merge(_G.inlines, tpls)
+        elif tpls and tplStr:
+            _G.inlines[tpls] = tplStr
         
     # return the requested template (with optional data)
     # static
     def tpl(id, data=None, options=None):
         global _G
-        if not options: options = {'refresh': False, 'separators': None, 'escape': False}
         
-        if not ('escape' in options): options['escape'] = False
-        if not ('refresh' in options): options['refresh'] = False
-        if not ('separators' in options): options['separators'] = None
+        if not options: options = {}
+        options = merge({
+            'autoUpdate': False, 
+            'refresh': False, 
+            'escape': False,
+            'separators': None
+        }, options)
         
         if options['escape']: _G.escape = True
         else: _G.escape = False
@@ -1667,7 +1692,7 @@ class Contemplate:
         # load the template - and be sure to cache the result.
         if options['refresh'] or not (id in _G.cache): 
             
-            _G.cache[ id ] = getCachedTemplate( id, options['separators'] )
+            _G.cache[ id ] = getCachedTemplate( id, options )
         
         tpl = _G.cache[ id ]
         

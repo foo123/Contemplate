@@ -1,5 +1,9 @@
 ###ChangeLog
 
+__0.6.3__
+* add more options (e.g 'autoUpdate') per single template
+* fix some typos
+
 __0.6.2__
 * parse nested blocks
 * **escape** parse option, options syntax change (see manual)

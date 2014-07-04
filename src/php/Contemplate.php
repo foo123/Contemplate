@@ -40,7 +40,7 @@ class Contemplate
     private static $__rightTplSep = "%>";
     private static $__preserveLinesDefault = "' . \"\\n\" . '";
     private static $__preserveLines = '';
-    private static $__escape = false;
+    private static $__escape = true;
     private static $__EOL = "\n";
     private static $__TEOL = PHP_EOL;
     private static $__tplStart = '';
@@ -586,12 +586,12 @@ _TPLRENDERCODE_;
         $options = array_merge(array(
             'autoUpdate'=> false,
             'refresh'=> false,
-            'escape'=> false,
+            'escape'=> true,
             'separators'=> null
         ), (array)$options);
         
-        if ( $options['escape'] ) self::$__escape = true;
-        else  self::$__escape = false;
+        if ( false === $options['escape'] ) self::$__escape = false;
+        else  self::$__escape = true;
         
         // Figure out if we're getting a template, or if we need to
         // load the template - and be sure to cache the result.

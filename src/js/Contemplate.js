@@ -97,7 +97,7 @@
         
         $__leftTplSep = "<%", $__rightTplSep = "%>", $__tplStart = "", $__tplEnd = "", $__tplPrefixCode = "",
         
-        $__preserveLinesDefault = "' + \"\\n\" + '", $__preserveLines = '',  $__EOL = "\n", $__TEOL = (isNode) ? require('os').EOL : "\n", $__escape = false,
+        $__preserveLinesDefault = "' + \"\\n\" + '", $__preserveLines = '',  $__EOL = "\n", $__TEOL = (isNode) ? require('os').EOL : "\n", $__escape = true,
         
         $__stack = null, $__level = 0, $__pad = "    ", $__idcnt = 0,
         $__loops = 0, $__ifs = 0, $__loopifs = 0, $__blockcnt = 0, $__blocks = [], $__allblocks = [], $__extends = null,
@@ -1636,12 +1636,12 @@
             options = merge({
                 'autoUpdate': false,
                 'refresh': false,
-                'escape': false,
+                'escape': true,
                 'separators': null
             }, options);
             
-            if ( options.escape ) $__escape = true;
-            else  $__escape = false;
+            if ( false === options.escape ) $__escape = false;
+            else  $__escape = true;
             
             // Figure out if we're getting a template, or if we need to
             // load the template - and be sure to cache the result.

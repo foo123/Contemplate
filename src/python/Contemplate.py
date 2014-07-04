@@ -76,7 +76,7 @@ class _G:
     rightTplSep = "%>"
     preserveLinesDefault = "' + \"\\n\" + '"
     preserveLines = ''
-    escape = False
+    escape = True
     EOL = "\n"
     TEOL = os.linesep
     tplStart = ''
@@ -1685,8 +1685,8 @@ class Contemplate:
             'separators': None
         }, options)
         
-        if options['escape']: _G.escape = True
-        else: _G.escape = False
+        if False == options['escape']: _G.escape = False
+        else: _G.escape = True
         
         # Figure out if we're getting a template, or if we need to
         # load the template - and be sure to cache the result.

@@ -1286,23 +1286,36 @@ _TPLRENDERCODE_;
                 
                 $len1 = strlen($delim1); 
                 $len2 = $len1+1; 
+                $len = strlen($code);
                 
-                $pos1 = strpos($code, $delim1, 0);
-                $pos2 = strpos($code, $delim2, $pos1+$len1);
-                
-                $replace = false !== $pos1;
-                while ($replace)
+                if ( $pos1+$len1 <= $len )
                 {
-                    // replace all occurances of the block on the current template, 
-                    // with the code found previously
-                    // in the 1st block definition
-                    $code = substr($code, 0, $pos1) .  
-                        "\$__instance__->renderBlock( '" . $block . "' ); " . 
-                        substr($code, $pos2+$len2)
-                    ;
+                    $pos1 = strpos($code, $delim1, 0);
+                    $pos2 = strpos($code, $delim2, $pos1+$len1);
                     
-                    $replace = (false !== ($pos1 = strpos($code, $delim1, 0)));
-                    $pos2 = ($replace) ? strpos($code, $delim2, $pos1+$len1) : 0;
+                    $replace = false !== $pos1;
+                    while ($replace)
+                    {
+                        // replace all occurances of the block on the current template, 
+                        // with the code found previously
+                        // in the 1st block definition
+                        $code = substr($code, 0, $pos1) .  
+                            "\$__instance__->renderBlock( '" . $block . "' ); " . 
+                            substr($code, $pos2+$len2)
+                        ;
+                        
+                        $len = strlen($code);
+                        
+                        if ( $pos1+$len1 <= $len )
+                        {
+                            $replace = (false !== ($pos1 = strpos($code, $delim1, 0)));
+                            $pos2 = ($replace) ? strpos($code, $delim2, $pos1+$len1) : 0;
+                        }
+                        else
+                        {
+                            $replace = false;
+                        }
+                    }
                 }
             }
         }
@@ -1323,34 +1336,47 @@ _TPLRENDERCODE_;
             
             $len1 = strlen($delim1); 
             $len2 = $len1+1; 
+            $len = strlen($s);
             
-            $pos1 = strpos($s, $delim1, 0);
-            $pos2 = strpos($s, $delim2, $pos1+$len1);
-            
-            $code = substr($s, $pos1, $pos2-$pos1+$len2);
-            
-            if ( !empty($code) )
+            if ( $pos1+$len1 <= $len )
             {
-                $code = self::parseNestedBlocks(substr($code, $len1, -$len2), self::$__allblocks); //str_replace(array(". '' .", ". '';"), array('.', ';'), substr($code, $len1, -$len2)); // remove redundant code
+                $pos1 = strpos($s, $delim1, 0);
+                $pos2 = strpos($s, $delim2, $pos1+$len1);
                 
-                $bout = str_replace('__{{CODE}}__', $code."';", self::$__DOBLOCK);
+                $code = substr($s, $pos1, $pos2-$pos1+$len2);
                 
-                $blocks[$block] = $bout;
-            }
-            
-            $replace = false !== $pos1;
-            while ($replace)
-            {
-                // replace all occurances of the block on the current template, 
-                // with the code found previously
-                // in the 1st block definition
-                $s = substr($s, 0, $pos1) .  
-                    "\$__instance__->renderBlock( '" . $block . "' ); " . 
-                    substr($s, $pos2+$len2)
-                ;
+                if ( !empty($code) )
+                {
+                    $code = self::parseNestedBlocks(substr($code, $len1, -$len2), self::$__allblocks); //str_replace(array(". '' .", ". '';"), array('.', ';'), substr($code, $len1, -$len2)); // remove redundant code
+                    
+                    $bout = str_replace('__{{CODE}}__', $code."';", self::$__DOBLOCK);
+                    
+                    $blocks[$block] = $bout;
+                }
                 
-                $replace = (false !== ($pos1 = strpos($s, $delim1, 0)));
-                $pos2 = ($replace) ? strpos($s, $delim2, $pos1+$len1) : 0;
+                $replace = false !== $pos1;
+                while ($replace)
+                {
+                    // replace all occurances of the block on the current template, 
+                    // with the code found previously
+                    // in the 1st block definition
+                    $s = substr($s, 0, $pos1) .  
+                        "\$__instance__->renderBlock( '" . $block . "' ); " . 
+                        substr($s, $pos2+$len2)
+                    ;
+                    
+                    $len = strlen($s);
+                    
+                    if ( $pos1+$len1 <= $len )
+                    {
+                        $replace = (false !== ($pos1 = strpos($s, $delim1, 0)));
+                        $pos2 = ($replace) ? strpos($s, $delim2, $pos1+$len1) : 0;
+                    }
+                    else
+                    {
+                        $replace = false;
+                    }
+                }
             }
         }
         self::$__allblocks = array();

@@ -28,29 +28,38 @@ final class Contemplate_base_Cached extends Contemplate
     /* tpl block render method for block 'Block3' */
     private function _blockfn_Block3($__instance__) 
     { 
+        
         $__p__ = '';
          
         $__p__ .= 'Base template Block3';
         return $__p__;
+        
     }
+    
     
     /* tpl block render method for block 'Block2' */
     private function _blockfn_Block2($__instance__) 
     { 
+        
         $__p__ = '';
          
         $__p__ .= 'Base template Block2';
         return $__p__;
+        
     }
+    
     
     /* tpl block render method for block 'Block1' */
     private function _blockfn_Block1($__instance__) 
     { 
+        
         $__p__ = '';
          
         $__p__ .= 'Base template Block1';
         return $__p__;
+        
     }
+    
     /* tpl-defined blocks render code ends here */
     
     /* render a tpl block method */
@@ -80,12 +89,14 @@ final class Contemplate_base_Cached extends Contemplate
         else
         {
             /* tpl main render code starts here */
-            $__instance__->data = Contemplate::data( $data ); 
+            
+            $__instance__->data = Contemplate::data( $data );
             $__p__ .= '<!-- this is the base template -->' . "\n" . '' . "\n" . '<strong>This is the base template</strong>' . "\n" . '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block1</strong><br />' . "\n" . '' . $__instance__->renderBlock( 'Block1' );  
             $__p__ .= '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block2</strong><br />' . "\n" . '' . $__instance__->renderBlock( 'Block2' );  
             $__p__ .= '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block3</strong><br />' . "\n" . '' . $__instance__->renderBlock( 'Block3' );  
             $__p__ .= '' . "\n" . '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block2 Again</strong><br />' . "\n" . '' . $__instance__->renderBlock( 'Block2' );  
             $__p__ .= '' . "\n" . '';
+            
             /* tpl main render code ends here */
         }
         $this->data = null;

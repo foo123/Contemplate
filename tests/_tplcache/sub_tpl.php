@@ -53,7 +53,8 @@ final class Contemplate_sub_Cached extends Contemplate
         else
         {
             /* tpl main render code starts here */
-            $__instance__->data = Contemplate::data( $data ); 
+            
+            $__instance__->data = Contemplate::data( $data );
             $__p__ .= '<div>' . "\n" . '    <br />' . "\n" . '    <strong>Number of Items:' . ( Contemplate::count($__instance__->data['users'][$__instance__->data['i']]) ) . '</strong>' . "\n" . '    <br />' . "\n" . '    ';
             $_loopObj3 = $__instance__->data['users'][$__instance__->data['i']];
             if ( !empty($_loopObj3) )
@@ -61,12 +62,13 @@ final class Contemplate_sub_Cached extends Contemplate
                 foreach ( $_loopObj3 as $j=>$user )
                 {
                     $__instance__->data['j'] = $j;
-                    $__instance__->data['user'] = $user;         
+                    $__instance__->data['user'] = $user;
+                     
                     $__p__ .= '' . "\n" . '        <div id=\'' . ( $__instance__->data['user']["id"] ) . '\' class="';        
                     if ( 0 == ($__instance__->data['j'] % 2) )
                     {
                                  
-                        $__p__ .= 'even';                
+                        $__p__ .= 'even';        
                     }
                     elseif ( 1 == ($__instance__->data['j'] % 2) )
                     {
@@ -78,7 +80,7 @@ final class Contemplate_sub_Cached extends Contemplate
                     if (  Contemplate::haskey($__instance__->data['user'], "key1")  )
                     {
                                  
-                        $__p__ .= '' . "\n" . '            <div> User has key &quot;key1&quot; </div>' . "\n" . '        ';                
+                        $__p__ .= '' . "\n" . '            <div> User has key &quot;key1&quot; </div>' . "\n" . '        ';        
                     }
                     elseif (  Contemplate::haskey($__instance__->data['user'], "key", "key1")  )
                     {
@@ -96,6 +98,7 @@ final class Contemplate_sub_Cached extends Contemplate
             }
              
             $__p__ .= '' . "\n" . '</div>' . "\n" . '';
+            
             /* tpl main render code ends here */
         }
         $this->data = null;

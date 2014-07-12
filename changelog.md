@@ -1,12 +1,17 @@
 ###ChangeLog
 
+__0.6.4__
+* make faster and more precise (internal) template parsing/rendering
+* php fix nestedBlocks parsing issue
+* minor edits/updates
+
 __0.6.3__
 * add more options (e.g 'autoUpdate') per single template
 * fix some typos
 
 __0.6.2__
 * parse nested blocks
-* **escape** parse option, options syntax change (see manual)
+* **escape** parse option (true by default), options syntax change (see manual)
 
 __0.6.1__
 * enable template separators to be defined **inside** a template or passed as **paramaters**

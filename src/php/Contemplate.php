@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.6.3
+*  @version: 0.6.4
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -15,7 +15,7 @@ if (!class_exists('Contemplate'))
 
 class Contemplate
 {
-    const VERSION = "0.6.3";
+    const VERSION = "0.6.4";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -88,50 +88,6 @@ class Contemplate
     
     private static $__plugins = array();
     
-    // generated tpl class code as a heredoc template
-    private static $__tplClassCode = '';
-    
-    // generated tpl block method code as a heredoc template
-    private static $__tplBlockCode = '';
-    
-    // generated IF code
-    private static $__IF = '';
-    
-    // generated ELSEIF code
-    private static $__ELSEIF = '';
-
-    // generated ELSE code
-    private static $__ELSE = '';
-    
-    // generated ENDIF code
-    private static $__ENDIF = '';
-    
-    // generated FOR code
-    private static $__FOR = '';
-    
-    // generated ELSEFOR code
-    private static $__ELSEFOR = '';
-    
-    // generated ENDFOR code
-    private static $__ENDFOR1 = '';
-    
-    // generated ENDFOR code
-    private static $__ENDFOR2 = '';
-    
-    // generated block code snippet
-    private static $__DOBLOCK = '';
-
-    // generated dynamic render code
-    private static $__TFUNC1 = '';
-
-    // generated dynamic render code
-    private static $__TFUNC2 = '';
-
-    private static $__RCODE1 = '';
-    
-    private static $__RCODE2 = '';
-    
-    
     //
     //
     // instance properties (when no caching is used)
@@ -145,7 +101,7 @@ class Contemplate
     //
     //  Instance template methods
     //
-    public function __construct($id=null, $renderFunc=null)
+    public function __construct( $id=null, $renderFunc=null )
     {
         $this->id = null; 
         $this->data = null; 
@@ -159,13 +115,13 @@ class Contemplate
         }
     }
     
-    public function setId($id=null) 
+    public function setId( $id=null ) 
     { 
         if ( $id ) $this->id = $id; 
         return $this; 
     }
     
-    public function setParent($parent) 
+    public function setParent( $parent ) 
     { 
         if ( $parent )
         {
@@ -177,20 +133,20 @@ class Contemplate
         return $this; 
     }
     
-    public function setBlocks($blocks) 
+    public function setBlocks( $blocks ) 
     { 
         if ( !$this->_blocks ) $this->_blocks = array(); 
         $this->_blocks = self::merge( $this->_blocks, $blocks ); 
         return $this; 
     }
     
-    public function setRenderFunction($renderFunc=null) 
+    public function setRenderFunction( $renderFunc=null ) 
     { 
         if ( $renderFunc ) $this->_renderFunction = $renderFunc; 
         return $this; 
     }
     
-    public function renderBlock($block, $__instance__=null)
+    public function renderBlock( $block, $__instance__=null )
     {
         if ( !$__instance__ ) $__instance__ = $this;
         
@@ -207,7 +163,7 @@ class Contemplate
         return '';
     }
     
-    public function render($data, $__instance__=null) 
+    public function render( $data, $__instance__=null ) 
     {
         $__p__ = ''; 
         if ( !$__instance__ ) $__instance__ = $this;
@@ -232,181 +188,11 @@ class Contemplate
     //
     //
     
-    public static function init()
+    public static function init( )
     {
         if ( self::$__isInited ) return;
         
         self::$__stack = array();
-        
-        self::$__tplClassCode = <<<_T0_
-__{{PREFIX_CODE}}__
-/* Contemplate cached template '__{{ID}}__' */
-if (!class_exists('__{{CLASSNAME}}__'))
-{
-final class __{{CLASSNAME}}__ extends Contemplate
-{    
-    /* constructor */
-    public function __construct(\$id=null, \$__=null)
-    {
-        /* initialize internal vars */
-        \$this->id = null; 
-        \$this->data = null;
-        \$this->_renderFunction = null;
-        \$this->_parent = null;
-        \$this->_blocks = null;
-        
-        \$this->id = \$id;
-        
-        /* parent tpl assign code starts here */
-__{{PARENTCODE}}__
-        /* parent tpl assign code ends here */
-    }    
-    
-    /* tpl-defined blocks render code starts here */
-__{{BLOCKS}}__
-    /* tpl-defined blocks render code ends here */
-    
-    /* render a tpl block method */
-    public function renderBlock(\$block, \$__instance__=null)
-    {
-        if ( !\$__instance__ ) \$__instance__ = \$this;
-        
-        \$method = '_blockfn_' . \$block;
-        
-        if ( method_exists(\$this, \$method) ) return \$this->{\$method}(\$__instance__);
-        
-        elseif ( \$this->_parent ) return \$this->_parent->renderBlock(\$block, \$__instance__);
-        
-        return '';
-    }
-    
-    /* tpl render method */
-    public function render(\$data, \$__instance__=null)
-    {
-        \$__p__ = '';
-        if ( !\$__instance__ ) \$__instance__ = \$this;
-        
-        if ( \$this->_parent )
-        {
-            \$__p__ = \$this->_parent->render(\$data, \$__instance__);
-        }
-        else
-        {
-            /* tpl main render code starts here */
-__{{RENDERCODE}}__
-            /* tpl main render code ends here */
-        }
-        \$this->data = null;
-        return \$__p__;
-    }
-}
-}
-_T0_;
-    
-        // generated tpl block method code as a heredoc template
-        self::$__tplBlockCode = <<<_T1_
-
-/* tpl block render method for block '__{{BLOCK}}__' */
-private function __{{BLOCKMETHOD}}__(\$__instance__) 
-{ 
-__{{BLOCKMETHODCODE}}__
-}
-_T1_;
-    
-        // generated IF code
-        self::$__IF = <<<_T2_
-
-if ( __{{COND}}__ )
-{
-
-_T2_;
-    
-        // generated ELSEIF code
-        self::$__ELSEIF = <<<_T3_
-        
-}
-elseif ( __{{COND}}__ )
-{
-
-_T3_;
-
-        // generated ELSE code
-        self::$__ELSE = <<<_T4_
-        
-}
-else
-{
-
-_T4_;
-    
-        // generated ENDIF code
-        self::$__ENDIF = <<<_T5_
-        
-}
-
-_T5_;
-    
-        // generated FOR code
-        self::$__FOR = <<<_T6_
-
-__{{O}}__ = __{{FOR_EXPR_O}}__;
-if ( !empty(__{{O}}__) )
-{
-    foreach ( __{{O}}__ as __{{K}}__=>__{{V}}__ )
-    {
-        __{{ASSIGN1}}__
-        __{{ASSIGN2}}__
-_T6_;
-    
-        // generated ELSEFOR code
-        self::$__ELSEFOR = <<<_T7_
-        
-    }
-}
-else
-{    
-    
-_T7_;
-    
-        // generated ENDFOR code
-        self::$__ENDFOR1 = <<<_T8_
-            
-    }
-}
-
-_T8_;
-    
-        // generated ENDFOR code
-        self::$__ENDFOR2 = <<<_T9_
-        
-}
-
-_T9_;
-    
-        // generated block code snippet
-        self::$__DOBLOCK = <<<_DO_BLOCK_
-\$__p__ = '';
-__{{CODE}}__
-return \$__p__;
-_DO_BLOCK_;
-
-    
-        // generated dynamic render code
-        self::$__TFUNC1 = "return '';";
-
-        // generated dynamic render code
-        self::$__TFUNC2 = <<<_TPL_FUNC_
-\$__p__ = '';  
-__{{CODE}}__
-return \$__p__;
-_TPL_FUNC_;
-
-        self::$__RCODE1 = "\$__p__ = '';";
-    
-        self::$__RCODE2 = <<<_TPLRENDERCODE_
-\$__instance__->data = Contemplate::data( \$data ); 
-__{{CODE}}__
-_TPLRENDERCODE_;
         
         // pre-compute the needed regular expressions
         self::$__regExps[ 'specials' ] = '/[\\n\\r\\v\\t]/';
@@ -427,7 +213,7 @@ _TPLRENDERCODE_;
     }
     
     // http://www.blainesch.com/403/dynamically-adding-methods-to-classes-and-objects-in-php/
-    public static function __callstatic($method, $params=array()) 
+    public static function __callstatic( $method, $params=array() ) 
     {
         if ( isset( self::$__plugins[ $method ] ) && is_callable( self::$__plugins[ $method ] ) ) 
         {
@@ -439,57 +225,35 @@ _TPLRENDERCODE_;
         }*/
         return '';
     }
-    /*
-    protected static function backupOptions( )
-    {
-        $optionsBackUp = array(
-            self::$__cacheDir,
-            self::$__cacheMode,
-            self::$__leftTplSep,
-            self::$__rightTplSep,
-            self::$__preserveLines
-        );
-        return $optionsBackUp;
-    }
-    
-    protected static function restoreOptions( $optionsBackUp )
-    {
-        self::$__cacheDir = $optionsBackUp[ 0 ];
-        self::$__cacheMode = $optionsBackUp[ 1 ];
-        self::$__leftTplSep = $optionsBackUp[ 2 ];
-        self::$__rightTplSep = $optionsBackUp[ 3 ];
-        self::$__preserveLines = $optionsBackUp[ 4 ];
-    }
-    */
     
     //
     // Main template static methods
     //
     
     // add custom plugins as template functions
-    public static function addPlugin($name, $handler) 
+    public static function addPlugin( $name, $handler ) 
     {
         self::$__plugins[ "plugin_$name" ] = $handler;
     }
     
     // custom php code to add to start of template (eg custom access checks etc..)
-    public static function setPrefixCode($preCode=null)
+    public static function setPrefixCode( $preCode=null )
     {
         if ( $preCode )
             self::$__tplPrefixCode = (string)$preCode;
     }
     
-    public static function setLocaleStrings($l) 
+    public static function setLocaleStrings( $l ) 
     { 
         self::$__locale = self::merge(self::$__locale, $l); 
     }
     
-    public static function clearLocaleStrings() 
+    public static function clearLocaleStrings( ) 
     { 
         self::$__locale = array(); 
     }
     
-    public static function setPlurals($plurals) 
+    public static function setPlurals( $plurals ) 
     { 
         if ( is_array($plurals) )
         {
@@ -505,12 +269,12 @@ _TPLRENDERCODE_;
         }
     }
     
-    public static function clearPlurals() 
+    public static function clearPlurals( ) 
     { 
         self::$__plurals = array(); 
     }
     
-    public static function setTemplateSeparators($seps=null)
+    public static function setTemplateSeparators( $seps=null )
     {
         if (is_array($seps))
         {
@@ -519,32 +283,32 @@ _TPLRENDERCODE_;
         }
     }
     
-    public static function setPreserveLines($bool=true) 
+    public static function setPreserveLines( $enable=true ) 
     { 
-        if ( $bool )  
+        if ( $enable )  
             self::$__preserveLines = self::$__preserveLinesDefault;  
         else 
             self::$__preserveLines = ''; 
     }
     
-    public static function setCacheDir($dir) 
+    public static function setCacheDir( $dir ) 
     {  
         self::$__cacheDir = rtrim($dir,'/').'/'; 
     }
     
-    public static function setCacheMode($mode) 
+    public static function setCacheMode( $mode ) 
     { 
         self::$__cacheMode = $mode; 
     }
     
-    public static function clearCache($all=false) 
+    public static function clearCache( $all=false ) 
     { 
         self::$__cache = array(); 
         if ( $all ) self::$__partials = array(); 
     }
     
     // add templates manually
-    public static function add($tpls, $tplStr=null) 
+    public static function add( $tpls, $tplStr=null ) 
     { 
         if ( is_array($tpls) )
         {
@@ -568,7 +332,7 @@ _TPLRENDERCODE_;
     }
     
     // add inline templates manually
-    public static function addInline($tpls, $tplStr=null) 
+    public static function addInline( $tpls, $tplStr=null ) 
     { 
         if ( is_array($tpls) )
         {
@@ -581,7 +345,7 @@ _TPLRENDERCODE_;
     }
         
     // return the requested template (with optional data)
-    public static function tpl($id, $data=null, $options=array())
+    public static function tpl( $id, $data=null, $options=array() )
     {
         $options = array_merge(array(
             'autoUpdate'=> false,
@@ -613,25 +377,25 @@ _TPLRENDERCODE_;
     //
     
     // basic html escaping
-    public static function html($s) 
+    public static function html( $s ) 
     { 
         return htmlentities($s, ENT_COMPAT, 'UTF-8'); 
     }
     
     // basic url escaping
-    public static function url($s) 
+    public static function url( $s ) 
     { 
         return urlencode($s); 
     }
     
     // count items in array
-    public static function count($a) 
+    public static function count( $a ) 
     { 
         return count($a); 
     }
     
     // check if (nested) keys exist in tpl variable
-    public static function haskey($v/*, key1, key2, etc.. */) 
+    public static function haskey( $v/*, key1, key2, etc.. */ ) 
     {
         if (!$v || !is_array($v)) return false;
         $args = func_get_args();
@@ -647,92 +411,92 @@ _TPLRENDERCODE_;
     }
         
     // quote
-    public static function q($e) 
+    public static function q( $e ) 
     { 
         return "'" . $e . "'"; 
     }
     
     // double quote
-    public static function dq($e) 
+    public static function dq( $e ) 
     { 
         return '"' . $e . '"'; 
     }
     
     // to String
-    public static function s($e) 
+    public static function s( $e ) 
     { 
         return strval($e); 
     }
     
     // to Integer
-    public static function n($e) 
+    public static function n( $e ) 
     { 
         return intval($e); 
     }
     
     // to Float
-    public static function f($e) 
+    public static function f( $e ) 
     { 
         return floatval($e); 
     }
     
-    public static function addslashes($s)
+    public static function addslashes( $s )
     {
         return addslashes($s);
     }
     
-    public static function stripslashes($s)
+    public static function stripslashes( $s )
     {
         return stripslashes($s);
     }
     
     // Concatenate strings/vars
-    public static function concat() 
+    public static function concat( ) 
     { 
         $args = func_get_args(); 
         return implode('', $args); 
     }
     
     // Trim strings in templates
-    public static function trim($s, $charlist=null) 
+    public static function trim( $s, $charlist=null ) 
     { 
         if ( $charlist ) return trim($s, $charlist); 
         else return trim($s); 
     }
     
-    public static function ltrim($s, $charlist=null) 
+    public static function ltrim( $s, $charlist=null ) 
     { 
         if ( $charlist ) return ltrim($s, $charlist); 
         else return ltrim($s); 
     }
     
-    public static function rtrim($s, $charlist=null) 
+    public static function rtrim( $s, $charlist=null ) 
     { 
         if ( $charlist ) return rtrim($s, $charlist); 
         else return rtrim($s); 
     }
     
-    public static function ucfirst($s)
+    public static function ucfirst( $s )
     {
         return ucfirst($s);
     }
     
-    public static function lcfirst($s)
+    public static function lcfirst( $s )
     {
         return lcfirst($s);
     }
     
-    public static function lowercase($s)
+    public static function lowercase( $s )
     {
         return strtolower($s);
     }
     
-    public static function uppercase($s)
+    public static function uppercase( $s )
     {
         return strtoupper($s);
     }
     
-    public static function camelcase($s, $sep="_", $capitalizeFirst=false)
+    public static function camelcase( $s, $sep="_", $capitalizeFirst=false )
     {
         if ( $capitalizeFirst )
             return implode("", array_map("ucfirst", explode($sep, $s))); 
@@ -740,13 +504,13 @@ _TPLRENDERCODE_;
             return lcfirst( implode("", array_map("ucfirst", explode($sep, $s))) );
     }
     
-    public static function snakecase($s, $sep="_")
+    public static function snakecase( $s, $sep="_" )
     {
         return strtolower( preg_replace( '/([A-Z])/', $sep . '$1', $s ) );
     }
     
     // Sprintf in templates
-    public static function sprintf() 
+    public static function sprintf( ) 
     { 
         $args = func_get_args(); 
         $format = array_shift($args); 
@@ -758,40 +522,40 @@ _TPLRENDERCODE_;
     //
     
     // current time in seconds
-    public static function time() 
+    public static function time( ) 
     { 
         return time(); 
     }
-    public static function now() 
+    public static function now( ) 
     { 
         return time(); 
     }
     
     // formatted date
-    public static function date($format, $time=false) 
+    public static function date( $format, $time=false ) 
     { 
         if (false===$time) $time=time(); 
         return date($format, $time); 
     }
     
     // localized formatted date
-    public static function ldate($format, $time=false) 
+    public static function ldate( $format, $time=false ) 
     { 
         if (false===$time) $time=time(); 
         return self::_localized_date(self::$__locale, $format, $time);  
     }
     
     // locale
-    public static function locale($e) 
+    public static function locale( $e ) 
     { 
         return ( isset(self::$__locale[$e]) ) ? self::$__locale[$e] : $e; 
     }
-    public static function l($e) 
+    public static function l( $e ) 
     { 
         return self::locale($e); 
     }
     // pluralise
-    public static function pluralise($singular, $count) 
+    public static function pluralise( $singular, $count ) 
     { 
         if ( isset(self::$__plurals[$singular]) )
             return 1 != $count ? self::$__plurals[$singular] : $singular;
@@ -799,7 +563,7 @@ _TPLRENDERCODE_;
     }
     
     // generate a uuid
-    public static function uuid($namespace='UUID') 
+    public static function uuid( $namespace='UUID' ) 
     {
         return implode('_', array($namespace, ++self::$__uuid, time()));
     }
@@ -809,7 +573,7 @@ _TPLRENDERCODE_;
     //
     
     // html table
-    public static function htmltable($data, $options=array())
+    public static function htmltable( $data, $options=array() )
     {
         $data=(array)$data;
         $options=(array)$options;
@@ -885,7 +649,7 @@ _TPLRENDERCODE_;
     }
     
     // html select
-    public static function htmlselect($data, $options=array())
+    public static function htmlselect( $data, $options=array() )
     {
         $data=(array)$data;
         $options=(array)$options;
@@ -960,13 +724,13 @@ _TPLRENDERCODE_;
     //
     
     // whether var is set
-    private static function t_isset($varname) 
+    private static function t_isset( $varname ) 
     {
         return ' ( isset(' . $varname . ') ) ';
     }
         
     // set/create/update tpl var
-    private static function t_set($args) 
+    private static function t_set( $args ) 
     {
         $args = explode(',', $args);
         $varname = trim( array_shift($args) );
@@ -975,7 +739,7 @@ _TPLRENDERCODE_;
     }
     
     // unset/remove/delete tpl var
-    private static function t_unset($varname=null) 
+    private static function t_unset( $varname=null ) 
     {
         if ( $varname && strlen($varname) )
         {
@@ -986,12 +750,14 @@ _TPLRENDERCODE_;
     }
         
     // if
-    private static function t_if($cond='false') 
+    private static function t_if( $cond='false' ) 
     {  
         self::$__ifs++;  
         
         $out = "';";
-        $out1 = str_replace( '__{{COND}}__', $cond, self::$__IF );
+        $out1 = self::TT_IF(array(
+                'IFCOND'=> $cond
+            ));
         $out .= self::padLines($out1);
         self::$__level++;
         
@@ -999,10 +765,12 @@ _TPLRENDERCODE_;
     }
     
     // elseif    
-    private static function t_elseif($cond='false') 
+    private static function t_elseif( $cond='false' ) 
     { 
         $out = "';";
-        $out1 = str_replace( '__{{COND}}__', $cond, self::$__ELSEIF );
+        $out1 = self::TT_ELSEIF(array(
+                'ELIFCOND'=> $cond
+            ));
 
         self::$__level--;
         $out .= self::padLines($out1);
@@ -1012,10 +780,10 @@ _TPLRENDERCODE_;
     }
     
     // else
-    private static function t_else() 
+    private static function t_else( ) 
     { 
         $out = "';";
-        $out1 = self::$__ELSE;
+        $out1 = self::TT_ELSE( );
         
         self::$__level--;
         $out .= self::padLines($out1);
@@ -1025,12 +793,12 @@ _TPLRENDERCODE_;
     }
     
     // endif
-    private static function t_endif() 
+    private static function t_endif( ) 
     { 
         self::$__ifs--;  
         
         $out = "';";
-        $out1 = self::$__ENDIF;
+        $out1 = self::TT_ENDIF( );
         
         self::$__level--;
         $out .= self::padLines($out1);
@@ -1039,7 +807,7 @@ _TPLRENDERCODE_;
     }
     
     // for, foreach
-    private static function t_for($for_expr) 
+    private static function t_for( $for_expr ) 
     {
         static $id = 0;
         
@@ -1052,21 +820,14 @@ _TPLRENDERCODE_;
         $o = '$_loopObj' . (++$id);
 
         $out = "';";
-        $out1 = str_replace(array(
-            '__{{FOR_EXPR_O}}__',
-            '__{{O}}__', 
-            '__{{K}}__', 
-            '__{{V}}__', 
-            '__{{ASSIGN1}}__', 
-            '__{{ASSIGN2}}__'
-        ), array(
-            $exprO,
-            $o, 
-            '$'.$k,
-            '$'.$v,
-            "\$__instance__->data['$k'] = \${$k};",
-            "\$__instance__->data['$v'] = \${$v};"
-        ), self::$__FOR);
+        $out1 = self::TT_FOR(array(
+                'FOR_EXPR_O'=> $exprO,
+                'O'=> $o, 
+                'K'=> '$'.$k, 
+                'V'=> '$'.$v, 
+                'ASSIGN1'=> "\$__instance__->data['$k'] = \${$k};", 
+                'ASSIGN2'=> "\$__instance__->data['$v'] = \${$v};"
+            ));
         
         $out .= self::padLines($out1);
         self::$__level+=2;
@@ -1075,12 +836,12 @@ _TPLRENDERCODE_;
     }
     
     // elsefor
-    private static function t_elsefor() 
+    private static function t_elsefor( ) 
     { 
         /* else attached to  for loop */ 
         self::$__loopifs--;  
         $out = "';";
-        $out1 = self::$__ELSEFOR;
+        $out1 = self::TT_ELSEFOR( );
         
         self::$__level+=-2;
         $out .= self::padLines($out1);
@@ -1090,14 +851,14 @@ _TPLRENDERCODE_;
     }
     
     // endfor
-    private static function t_endfor() 
+    private static function t_endfor( ) 
     {
         $out = "';";
         if ( self::$__loopifs==self::$__loops ) 
         { 
             self::$__loops--; self::$__loopifs--;  
             
-            $out1 = self::$__ENDFOR1;
+            $out1 = self::TT_ENDFOR( null, 1 );
             
             self::$__level+=-2;
             $out .= self::padLines($out1);
@@ -1105,7 +866,7 @@ _TPLRENDERCODE_;
             return $out;
         }
         self::$__loops--;  
-        $out1 = self::$__ENDFOR2;
+        $out1 = self::TT_ENDFOR( null, 2 );
         
         self::$__level+=-1;
         $out .= self::padLines($out1);
@@ -1114,7 +875,7 @@ _TPLRENDERCODE_;
     }
     
     // include file
-    private static function t_include($id) 
+    private static function t_include( $id ) 
     { 
         /* cache it */ 
         if ( !isset(self::$__partials[$id]) )
@@ -1128,7 +889,7 @@ _TPLRENDERCODE_;
     }
     
     // include template
-    private static function t_template($args)
+    private static function t_template( $args )
     {
         $args = explode(',', $args); 
         $id = trim(array_shift($args));
@@ -1137,14 +898,14 @@ _TPLRENDERCODE_;
     }
     
     // extend another template
-    private static function t_extends($tpl) 
+    private static function t_extends( $tpl ) 
     { 
         self::$__extends = $tpl; 
         return "'; " . self::$__TEOL; 
     }
     
     // define (overridable) block
-    private static function t_block($block) 
+    private static function t_block( $block ) 
     { 
         $block = trim($block);
         if ( !in_array($block, self::$__allblocks) )
@@ -1158,7 +919,7 @@ _TPLRENDERCODE_;
     }
     
     // end define (overridable) block
-    private static function t_endblock() 
+    private static function t_endblock( ) 
     { 
         if ( self::$__blockcnt ) 
         {
@@ -1171,21 +932,21 @@ _TPLRENDERCODE_;
     //
     // auxilliary parsing methods
     //
-    private static function split($s)
+    private static function split( $s, $leftTplSep, $rightTplSep )
     {
-        $parts1 = explode( self::$__leftTplSep, $s );
+        $parts1 = explode( $leftTplSep, $s );
         $len = count( $parts1 );
         $parts = array();
         for ($i=0; $i<$len; $i++)
         {
-            $tmp = explode( self::$__rightTplSep, $parts1[$i] );
+            $tmp = explode( $rightTplSep, $parts1[$i] );
             $parts[] = $tmp[0];
             if ( isset($tmp[1]) ) $parts[] = $tmp[1];
         }
         return $parts;
     }
     
-    private static function parseControlConstructs($m)
+    private static function parseControlConstructs( $m )
     {
         if (isset($m[1]))
         {
@@ -1272,7 +1033,7 @@ _TPLRENDERCODE_;
         return $m[0];
     }
     
-    private static function parseNestedBlocks($code, $blocks=null) 
+    private static function parseNestedBlocks( $code, $blocks=null ) 
     {
         $bl = $blocks ? count($blocks) : 0;
         
@@ -1322,7 +1083,7 @@ _TPLRENDERCODE_;
         return $code;
     }
 
-    private static function parseBlocks($s) 
+    private static function parseBlocks( $s ) 
     {
         $blocks = array(); 
         $bl = count(self::$__allblocks);
@@ -1349,7 +1110,9 @@ _TPLRENDERCODE_;
                 {
                     $code = self::parseNestedBlocks(substr($code, $len1, -$len2), self::$__allblocks); //str_replace(array(". '' .", ". '';"), array('.', ';'), substr($code, $len1, -$len2)); // remove redundant code
                     
-                    $bout = str_replace('__{{CODE}}__', $code."';", self::$__DOBLOCK);
+                    $bout = self::TT_BLOCK(array(
+                                'BLOCKCODE'=> $code."';"
+                            ));
                     
                     $blocks[$block] = $bout;
                 }
@@ -1383,7 +1146,7 @@ _TPLRENDERCODE_;
         return array($s/*str_replace(array(". '' .", ". '';"), array('.', ';'), $s)*/, $blocks);
     }
 
-    private static function parseString($s, $q, $i, $l)
+    private static function parseString( $s, $q, $i, $l )
     {
         $string = $q;
         $escaped = false;
@@ -1398,7 +1161,7 @@ _TPLRENDERCODE_;
         return $string;
     }
     
-    private static function parseVariable($s, $i, $l, $pre='VARSTR')
+    private static function parseVariable( $s, $i, $l, $pre='VARSTR' )
     {
         if ( preg_match(self::$ALPHA, $s[$i], $m) )
         {
@@ -1576,9 +1339,9 @@ _TPLRENDERCODE_;
         return null;
     }
     
-    private static function parse($tpl, $withblocks=true) 
+    private static function parse( $tpl, $withblocks=true ) 
     {
-        $parts = self::split($tpl);
+        $parts = self::split($tpl, self::$__leftTplSep, self::$__rightTplSep);
         $len = count($parts);
         $isTag = false;
         $parsed = '';
@@ -1684,7 +1447,7 @@ _TPLRENDERCODE_;
             $parsed .= $s;
         }
         
-        if ( $withblocks ) return self::parseBlocks($parsed);
+        if ( false !== $withblocks ) return self::parseBlocks($parsed);
         
         return $parsed; //str_replace( array(". '' .", ". '';"), array('.', ';'), $parsed ); // remove redundant code
     }
@@ -1713,7 +1476,7 @@ _TPLRENDERCODE_;
         return $text;
     }
     
-    public static function getTemplateContents($id)
+    public static function getTemplateContents( $id )
     {
         if ( isset(self::$__inlines[$id]) ) 
         {        
@@ -1726,17 +1489,17 @@ _TPLRENDERCODE_;
         return '';
     }
     
-    private static function getCachedTemplateName($id) 
+    private static function getCachedTemplateName( $id ) 
     { 
         return self::$__cacheDir . str_replace(array('-', ' '), '_', $id) . '_tpl.php'; 
     }
     
-    private static function getCachedTemplateClass($id) 
+    private static function getCachedTemplateClass( $id ) 
     { 
         return 'Contemplate_' . str_replace(array('-', ' '), '_', $id) . '_Cached';  
     }
     
-    private static function createTemplateRenderFunction($id, $seps=null)
+    private static function createTemplateRenderFunction( $id, $seps=null )
     {
         self::resetState();
         
@@ -1744,11 +1507,13 @@ _TPLRENDERCODE_;
         
         if ( self::$__extends )
         {
-            $func = self::$__TFUNC1;
+            $func = self::TT_FUNC( null, 1 );
         }
         else
         {
-            $func = str_replace( '__{{CODE}}__', "\$__p__ .= '" . $blocks[0] . "';", self::$__TFUNC2 );
+            $func = self::TT_FUNC(array(
+                        'FCODE'=> "\$__p__ .= '" . $blocks[0] . "';"
+                    ), 2);
         }
         
         $fn = create_function('$__instance__', $func);
@@ -1762,7 +1527,7 @@ _TPLRENDERCODE_;
         return array($fn, $blockfns);
     }
     
-    private static function createCachedTemplate($id, $filename, $classname, $seps=null)
+    private static function createCachedTemplate( $id, $filename, $classname, $seps=null )
     {
         self::resetState();
         
@@ -1772,30 +1537,25 @@ _TPLRENDERCODE_;
         $sblocks = '';
         foreach ($blocks[1] as $b=>$bc)
         {
-            $sblocks .= self::$__TEOL . str_replace(
-                array(
-                    '__{{BLOCK}}__',
-                    '__{{BLOCKMETHOD}}__',
-                    '__{{BLOCKMETHODCODE}}__'
-                ),
-                array(
-                    $b,
-                    "_blockfn_$b",
-                    self::padLines($bc, 1)
-                ),
-                self::$__tplBlockCode);
+            $sblocks .= self::$__TEOL . self::TT_BlockCode(array(
+                            'BLOCKNAME'=> $b,
+                            'BLOCKMETHODNAME'=> "_blockfn_$b",
+                            'BLOCKMETHODCODE'=> self::padLines($bc, 1)
+                        ));
         }
         
         // tpl render code
         if (self::$__extends)
         {
             $parentCode = "\$this->setParent( '".self::$__extends."' );";
-            $renderCode = self::$__RCODE1;
+            $renderCode = self::TT_RCODE( null, 1 );
         }
         else
         {
             $parentCode = '';
-            $renderCode = str_replace( '__{{CODE}}__', "\$__p__ .= '" . $blocks[0] . "';", self::$__RCODE2 );
+            $renderCode = self::TT_RCODE(array(
+                            'RCODE'=> "\$__p__ .= '" . $blocks[0] . "';"
+                        ), 2);
         }
         
         if ( self::$__tplPrefixCode )
@@ -1804,30 +1564,20 @@ _TPLRENDERCODE_;
             $prefixCode = '';
             
         // generate tpl class
-        $class = '<?php ' .self::$__TEOL . str_replace(
-                    array(
-                        '__{{PREFIX_CODE}}__',
-                        '__{{ID}}__',
-                        '__{{CLASSNAME}}__',
-                        '__{{PARENTCODE}}__',
-                        '__{{BLOCKS}}__',
-                        '__{{RENDERCODE}}__'
-                    ),
-                    array(
-                        $prefixCode,
-                        $id,
-                        $classname,
-                        self::padLines($parentCode, 2),
-                        self::padLines($sblocks, 1),
-                        self::padLines($renderCode, 3)
-                    ),
-                    self::$__tplClassCode);
+        $class = '<?php ' .self::$__TEOL . self::TT_ClassCode(array(
+                                'PREFIXCODE'=> $prefixCode,
+                                'TPLID'=> $id,
+                                'CLASSNAME'=> $classname,
+                                'PARENTCODE'=> self::padLines($parentCode, 2),
+                                'BLOCKS'=> self::padLines($sblocks, 1),
+                                'RENDERCODE'=> self::padLines($renderCode, 3)
+                            ));
         
         //return self::setCachedTemplate($filename, $class);
         return file_put_contents($filename, $class);
     }
     
-    private static function getCachedTemplate($id, $options=array())
+    private static function getCachedTemplate( $id, $options=array() )
     {
         $options = (array)$options;
         
@@ -1902,26 +1652,27 @@ _TPLRENDERCODE_;
         return null;
     }
     
-    private static function setCachedTemplate($filename, $tplContents) 
+    private static function setCachedTemplate( $filename, $tplContents ) 
     { 
         return file_put_contents($filename, $tplContents); 
     }
     
-    private static function resetState() 
+    private static function resetState( ) 
     {
         // reset state
         self::$__loops = 0; self::$__ifs = 0; self::$__loopifs = 0; self::$__level = 0;
         self::$__blockcnt = 0; self::$__blocks = array();  self::$__allblocks = array();  self::$__extends = null;
+        //self::$__escape = true;
     }
     
-    private static function pushState() 
+    private static function pushState( ) 
     {
         // push state
         array_push(self::$__stack, array(self::$__loops, self::$__ifs, self::$__loopifs, self::$__level,
         self::$__blockcnt, self::$__blocks,  self::$__allblocks,  self::$__extends));
     }
     
-    private static function popState() 
+    private static function popState( ) 
     {
         // pop state
         $t = array_pop(self::$__stack);
@@ -1929,7 +1680,7 @@ _TPLRENDERCODE_;
         self::$__blockcnt = $t[4]; self::$__blocks = $t[5];  self::$__allblocks = $t[6];  self::$__extends = $t[7];
     }
     
-    private static function _localized_date($locale, $format, $timestamp) 
+    private static function _localized_date( $locale, $format, $timestamp ) 
     {
         $txt_words = array("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sun", "Mon", "Tues", "Wednes", "Thurs", "Fri", "Satur", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec");
         
@@ -1949,9 +1700,9 @@ _TPLRENDERCODE_;
         return $date;
     }
     
-    private static function padLines($lines, $level=null)
+    private static function padLines( $lines, $level=null )
     {
-        if (null === $level)  $level = self::$__level;
+        if ( null === $level )  $level = self::$__level;
         
         $NLRX = '/\n\r|\r\n|\n|\r/';
         
@@ -1970,6 +1721,242 @@ _TPLRENDERCODE_;
         }
         
         return $lines;
+    }
+    
+    private static function j( ) /* joinLines */
+    {
+        $args = func_get_args( );
+        return implode(self::$__TEOL, $args);
+    }
+    
+    // generated cached tpl class code as a heredoc template
+    private static function TT_ClassCode( $r=null, $t = 1 )
+    {
+        return implode("", array(
+            $r['PREFIXCODE'],
+            self::j(""
+            ,"/* Contemplate cached template '"), $r['TPLID'], self::j("' */"
+            ,"if (!class_exists('"), $r['CLASSNAME'], self::j("'))"
+            ,"{"
+            ,"final class "), $r['CLASSNAME'], self::j(" extends Contemplate"
+            ,"{    "
+            ,"    /* constructor */"
+            ,"    public function __construct(\$id=null, \$__=null)"
+            ,"    {"
+            ,"        /* initialize internal vars */"
+            ,"        \$this->id = null; "
+            ,"        \$this->data = null;"
+            ,"        \$this->_renderFunction = null;"
+            ,"        \$this->_parent = null;"
+            ,"        \$this->_blocks = null;"
+            ,"        "
+            ,"        \$this->id = \$id;"
+            ,"        "
+            ,"        /* parent tpl assign code starts here */"
+            ,""), $r['PARENTCODE'], self::j(""
+            ,"        /* parent tpl assign code ends here */"
+            ,"    }    "
+            ,"    "
+            ,"    /* tpl-defined blocks render code starts here */"
+            ,""), $r['BLOCKS'], self::j(""
+            ,"    /* tpl-defined blocks render code ends here */"
+            ,"    "
+            ,"    /* render a tpl block method */"
+            ,"    public function renderBlock(\$block, \$__instance__=null)"
+            ,"    {"
+            ,"        if ( !\$__instance__ ) \$__instance__ = \$this;"
+            ,"        "
+            ,"        \$method = '_blockfn_' . \$block;"
+            ,"        "
+            ,"        if ( method_exists(\$this, \$method) ) return \$this->{\$method}(\$__instance__);"
+            ,"        "
+            ,"        elseif ( \$this->_parent ) return \$this->_parent->renderBlock(\$block, \$__instance__);"
+            ,"        "
+            ,"        return '';"
+            ,"    }"
+            ,"    "
+            ,"    /* tpl render method */"
+            ,"    public function render(\$data, \$__instance__=null)"
+            ,"    {"
+            ,"        \$__p__ = '';"
+            ,"        if ( !\$__instance__ ) \$__instance__ = \$this;"
+            ,"        "
+            ,"        if ( \$this->_parent )"
+            ,"        {"
+            ,"            \$__p__ = \$this->_parent->render(\$data, \$__instance__);"
+            ,"        }"
+            ,"        else"
+            ,"        {"
+            ,"            /* tpl main render code starts here */"
+            ,""), $r['RENDERCODE'], self::j(""
+            ,"            /* tpl main render code ends here */"
+            ,"        }"
+            ,"        \$this->data = null;"
+            ,"        return \$__p__;"
+            ,"    }"
+            ,"}"
+            ,"}"
+            ,"")
+        ));
+    }
+    
+    // generated tpl block method code as a heredoc template
+    private static function TT_BlockCode( $r=null, $t = 1 )
+    {
+        return implode("", array(
+            self::j(""
+            ,"/* tpl block render method for block '"), $r['BLOCKNAME'], self::j("' */"
+            ,"private function "), $r['BLOCKMETHODNAME'], self::j("(\$__instance__) "
+            ,"{ "
+            ,""), $r['BLOCKMETHODCODE'], self::j(""
+            ,"}"
+            ,"")
+        ));
+    }
+    
+    // generated IF code
+    private static function TT_IF( $r=null, $t = 1 )
+    {
+        return implode("", array(
+            self::j(""
+            ,"if ( "), $r['IFCOND'], self::j(" )"
+            ,"{"
+            ,"")
+        ));
+    }
+    
+    // generated ELSEIF code
+    private static function TT_ELSEIF( $r=null, $t = 1 )
+    {
+        return implode("", array(
+            self::j(""
+            ,"}"
+            ,"elseif ( "), $r['ELIFCOND'], self::j(" )"
+            ,"{"
+            ,"")
+        ));
+    }
+
+    // generated ELSE code
+    private static function TT_ELSE( $r=null, $t = 1 ) 
+    {
+        return <<<_T4_
+        
+}
+else
+{
+
+_T4_;
+    }
+    
+    // generated ENDIF code
+    private static function TT_ENDIF( $r=null, $t = 1 )
+    {
+        return <<<_T5_
+        
+}
+
+_T5_;
+    }
+    
+    // generated FOR code
+    private static function TT_FOR( $r=null, $t = 1 )
+    {
+        return implode("", array(
+            self::j(""
+            ,""), $r['O'], " = ", $r['FOR_EXPR_O'], self::j(";"
+            ,"if ( !empty("), $r['O'], self::j(") )"
+            ,"{"
+            ,"    foreach ( "), $r['O'], " as ", $r['K'], "=>", $r['V'], self::j(" )"
+            ,"    {"
+            ,"        "), $r['ASSIGN1'], self::j(""
+            ,"        "), $r['ASSIGN2'], self::j(""
+            ,"")
+        ));
+    }
+    
+    // generated ELSEFOR code
+    private static function TT_ELSEFOR( $r=null, $t = 1 )
+    {
+        return <<<_T7_
+        
+    }
+}
+else
+{    
+    
+_T7_;
+    }
+    
+    // generated ENDFOR code
+    private static function TT_ENDFOR( $r=null, $t = 1 ) 
+    {
+        if ( 1 === $t )
+        {
+            return <<<_T8_
+            
+    }
+}
+
+_T8_;
+        }
+        else
+        {
+            return <<<_T9_
+        
+}
+
+_T9_;
+        }
+    }
+    
+    // generated block code snippet
+    private static function TT_BLOCK( $r=null, $t = 1 )
+    {
+        return implode("", array(
+            self::j(""
+            ,"\$__p__ = '';"
+            ,""), $r['BLOCKCODE'], self::j(""
+            ,"return \$__p__;"
+            ,"")
+        ));
+    }
+
+    
+    // generated dynamic render code
+    private static function TT_FUNC( $r=null, $t = 1 )
+    {
+        if ( 1 === $t )
+        {
+            return "return '';";
+        }
+        else
+        {
+            return implode("", array(
+                self::j(""
+                ,"\$__p__ = '';"  
+                ,""), $r['FCODE'], self::j(""
+                ,"return \$__p__;"
+                ,"")
+            ));
+        }
+    }
+
+    private static function TT_RCODE( $r=null, $t = 1 )
+    {
+        if ( 1 === $t )
+        {
+            return "\$__p__ = '';";
+        }
+        else
+        {
+            return implode("", array(
+                self::j(""
+                ,"\$__instance__->data = Contemplate::data( \$data );" 
+                ,""), $r['RCODE'], self::j(""
+                ,"")
+            ));
+        }
     }
     
     public static function data($d)

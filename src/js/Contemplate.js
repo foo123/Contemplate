@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.6.3
+*  @version: 0.6.4
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -28,13 +28,13 @@
     
     "use strict";
     
-    var __version__ = "0.6.3";
+    var __version__ = "0.6.4";
     var self;
     
     // auxilliaries
     var OP = Object.prototype, AP = Array.prototype, FP = Function.prototype,
         _toString = FP.call.bind(OP.toString), _hasOwn = FP.call.bind(OP.hasOwnProperty), slice = FP.call.bind(AP.slice),
-        isNode = "undefined" !== typeof global && '[object global]' == _toString(global),
+        isNode = "undefined" !== typeof(global) && '[object global]' == _toString(global),
         isArray = function( o ) { return ('[object Array]' === _toString(o)) || (o instanceof Array); },
         
         _fs = isNode ? require('fs') : null, 
@@ -42,47 +42,60 @@
         fread =  _fs ? _fs.readFileSync : null,
         fexists = _fs ? _fs.existsSync : null,
         fstat = _fs ? _fs.statSync : null,
-        realpath = _fs ? _fs.realpathSync : null
+        realpath = _fs ? _fs.realpathSync : null,
+        fwriteAsync = _fs ? _fs.writeFile : null,
+        freadAsync =  _fs ? _fs.readFile : null,
+        fexistsAsync = _fs ? _fs.exists : null,
+        fstatAsync = _fs ? _fs.stat : null,
+        realpathAsync = _fs ? _fs.realpath : null,
+        
+        //
+        // basic ajax functions
+        //
+        /*
+        ajaxRequest = function(type, url, params, callback) {
+            var xmlhttp;
+            if (window.XMLHttpRequest) // code for IE7+, Firefox, Chrome, Opera, Safari
+                xmlhttp = new XMLHttpRequest();
+            else // code for IE6, IE5
+                xmlhttp = new ActiveXObject("Microsoft.XMLHTTP"); // or ActiveXObject("Msxml2.XMLHTTP"); ??
+            
+            xmlhttp.onreadystatechange = function() {
+                if (callback && xmlhttp.readyState == 4) callback(xmlhttp.responseText, xmlhttp.status, xmlhttp);
+            };
+            
+            xmlhttp.open(type, url, true);
+            xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+            xmlhttp.send(params);
+        },
+        */
+        ajaxLoad = function(type, url, params, asyncCB) {
+            var xmlhttp;
+            if (window.XMLHttpRequest) // code for IE7+, Firefox, Chrome, Opera, Safari
+                xmlhttp = new XMLHttpRequest();
+            else // code for IE6, IE5
+                xmlhttp = new ActiveXObject("Microsoft.XMLHTTP"); // or ActiveXObject("Msxml2.XMLHTTP"); ??
+            
+            if ( asyncCB )
+            {
+                xmlhttp.onload = function( ) {
+                    if ( 200 === xmlhttp.status ) asyncCB( xmlhttp.responseText );
+                    else asyncCB( '' );
+                };
+                xmlhttp.open(type, url, true);  // 'true' makes the request asynchronous
+                xmlhttp.send(params);
+                return '';
+            }
+            else
+            {
+                xmlhttp.open(type, url, false);  // 'false' makes the request synchronous
+                xmlhttp.send(params);
+                if ( 200 === xmlhttp.status ) return xmlhttp.responseText;
+                return '';
+            }
+        }
     ;
 
-    // IE8- mostly
-    if ( !AP.indexOf ) 
-    {
-        var Abs = Math.abs;
-        
-        AP.indexOf = function (searchElement , fromIndex) {
-            var i,
-                pivot = (fromIndex) ? fromIndex : 0,
-                length;
-
-            if ( !this ) 
-            {
-                throw new TypeError();
-            }
-
-            length = this.length;
-
-            if (length === 0 || pivot >= length)
-            {
-                return -1;
-            }
-
-            if (pivot < 0) 
-            {
-                pivot = length - Abs(pivot);
-            }
-
-            for (i = pivot; i < length; i++) 
-            {
-                if (this[i] === searchElement) 
-                {
-                    return i;
-                }
-            }
-            return -1;
-        };
-    }
-    
     /////////////////////////////////////////////////////////////////////////////////////
     //
     //  Contemplate Engine Main Class
@@ -93,7 +106,7 @@
     var 
         $__isInited = false,  $__locale = {}, $__plurals = {},
         
-        $__cacheMode = 0, $__cacheDir = './', $__cache = {}, $__templates = {}, $__partials = {}, $__inlines = {},
+        $__async = false, $__cacheMode = 0, $__cacheDir = './', $__cache = {}, $__templates = {}, $__partials = {}, $__inlines = {},
         
         $__leftTplSep = "<%", $__rightTplSep = "%>", $__tplStart = "", $__tplEnd = "", $__tplPrefixCode = "",
         
@@ -136,11 +149,35 @@
         
         $__plugins = { },
         
+        resetState = function() {
+            // reset state
+            $__loops = 0; $__ifs = 0; $__loopifs = 0; $__level = 0;
+            $__blockcnt = 0; $__blocks = [];  $__allblocks = [];  $__extends = null;
+            //$__escape = true;
+        },
+        
+        pushState = function() {
+            // push state
+            $__stack.push([$__loops, $__ifs, $__loopifs, $__level,
+            $__blockcnt, $__blocks,  $__allblocks,  $__extends]);
+        },
+        
+        popState = function() {
+            // pop state
+            var t = $__stack.pop();
+            $__loops = t[0]; $__ifs = t[1]; $__loopifs = t[2]; $__level = t[3];
+            $__blockcnt = t[4]; $__blocks = t[5];  $__allblocks = t[6];  $__extends = t[7];
+        },
+        
+        joinLines = function( ) {
+            return slice( arguments ).join( $__TEOL );
+        },
+        
         // pad lines to generate formatted code
         padLines = function(lines, level) {
-            if ("undefined"==typeof(level)) level = $__level;
+            if ( arguments.length < 2 ) level = $__level;
             
-            if (level>=0)
+            if ( level >= 0 )
             {
                 // needs one more additional level due to array.length
                 level = (0===level) ? level : level+1;
@@ -151,7 +188,7 @@
                 {
                     lines[i] = pad + lines[i];
                 }
-                return lines.join($__TEOL);
+                return lines.join( $__TEOL );
             }
             return lines;
         },
@@ -201,27 +238,70 @@
             return text;
         },
     
-        getTemplateContents = function( id ) {
+        getTemplateContents = function( id, asyncCB ) {
             if ( $__inlines[id] )
             {
-                return $__inlines[id];
+                if ( $__async && asyncCB )
+                {
+                    // async
+                    asyncCB( $__inlines[id] );
+                    return '';
+                }
+                else
+                {
+                    // sync
+                    return $__inlines[id];
+                }
             }
             else if ( $__templates[id] )
             {
                 // nodejs
                 if ( isNode && _fs ) 
                 { 
-                    return fread($__templates[id], { encoding: self.ENCODING }); 
+                    if ( $__async && asyncCB )
+                    {
+                        // async
+                        freadAsync($__templates[id], { encoding: self.ENCODING }, function(err, data){
+                            if ( err ) asyncCB( '' );
+                            else asyncCB( data );
+                        }); 
+                        return '';
+                    }
+                    else
+                    {
+                        // sync
+                        return fread($__templates[id], { encoding: self.ENCODING }); 
+                    }
                 }
                 // client-side js and #id of DOM script-element given as template holder
                 else if ( '#'===$__templates[id].charAt(0) ) 
                 { 
-                    return window.document.getElementById($__templates[id].substring(1)).innerHTML; 
+                    if ( $__async && asyncCB )
+                    {
+                        // async
+                        asyncCB( window.document.getElementById($__templates[id].substring(1)).innerHTML || '' );
+                        return '';
+                    }
+                    else
+                    {
+                        // sync
+                        return window.document.getElementById($__templates[id].substring(1)).innerHTML || ''; 
+                    }
                 }
                 // client-side js and url given as template location
                 else 
                 { 
-                    return ajaxLoad('GET', $__templates[id]); 
+                    if ( $__async && asyncCB )
+                    {
+                        // async
+                        ajaxLoad('GET', $__templates[id], null, asyncCB); 
+                        return '';
+                    }
+                    else
+                    {
+                        // sync
+                        return ajaxLoad('GET', $__templates[id]); 
+                    }
                 }
             }
             return '';
@@ -260,7 +340,9 @@
             
             $__ifs++; 
             out = "';";
-            out1 = $__IF().split( '__{{COND}}__' ).join( cond );
+            out1 = TT_IF({
+                    'IFCOND': cond
+                });
             
             out += padLines(out1);
             $__level++;
@@ -273,7 +355,9 @@
             var out, out1;
             
             out = "';";
-            out1 = $__ELSEIF().split( '__{{COND}}__' ).join( cond );
+            out1 = TT_ELSEIF({
+                    'ELIFCOND': cond
+                });
 
             $__level--;
             out += padLines(out1);
@@ -287,7 +371,7 @@
             var out, out1;
             
             out = "';";
-            out1 = $__ELSE();
+            out1 = TT_ELSE( );
             
             $__level--;
             out += padLines(out1);
@@ -302,7 +386,7 @@
             
             $__ifs--; 
             out = "';";
-            out1 = $__ENDIF();
+            out1 = TT_ENDIF( );
             
             $__level--;
             out += padLines(out1);
@@ -312,7 +396,7 @@
         
         // for, foreach
         t_for = function(for_expr) {
-            var out, out1;
+            var out;
             
             $__loops++;  $__loopifs++;
             
@@ -322,22 +406,18 @@
                 kv = for_expr[1].split('=>'), 
                 k = trim(kv[0]) + '__RAW__', 
                 v = trim(kv[1]) + '__RAW__',
-                o = '_loopObj' + (++$__idcnt),
-                forReplace = {
-                    '__{{FOR_EXPR_O}}__' : exprO,
-                    '__{{O}}__' : o,
-                    '__{{K}}__' : k, 
-                    '__{{V}}__' : v, 
-                    '__{{ASSIGN1}}__' : "var "+v+" = "+o+"["+k+"];",
-                    '__{{ASSIGN2}}__' : "__instance__.data['"+k+"'] = "+k+"; __instance__.data['"+v+"'] = "+v+";"
-                }
+                o = '_loopObj' + (++$__idcnt)
             ;
             
             out = "';";
-            out1 = $__FOR();
-            for (var k in forReplace) out1 = out1.split( k ).join( forReplace[k] );
-            
-            out += padLines(out1);
+            out += padLines(TT_FOR({
+                'FOR_EXPR_O': exprO,
+                'O': o,
+                'K': k,
+                'V': v,
+                'ASSIGN1': "var "+v+" = "+o+"["+k+"];",
+                'ASSIGN2': "__instance__.data['"+k+"'] = "+k+"; __instance__.data['"+v+"'] = "+v+";"
+            }));
             
             $__level+=3;
             
@@ -351,7 +431,7 @@
             /* else attached to  for loop */ 
             $__loopifs--;  
             out = "';";
-            out1 = $__ELSEFOR();
+            out1 = TT_ELSEFOR( );
             
             $__level+=-3;
             out += padLines(out1);
@@ -369,7 +449,7 @@
             if ( $__loopifs == $__loops ) 
             { 
                 $__loops--; $__loopifs--;  
-                out1 = $__ENDFOR1();
+                out1 = TT_ENDFOR( null, 1 );
                 $__level+=-3;
                 out += padLines(out1);
                 
@@ -377,7 +457,7 @@
             }
             
             $__loops--; 
-            out1 = $__ENDFOR2();
+            out1 = TT_ENDFOR( null, 2 );
             
             $__level+=-1;
             out += padLines(out1);
@@ -386,16 +466,41 @@
         },
         
         // include file
-        t_include = function(id) {
-            // cache it
-            if ( !$__partials[id] )
+        t_include = function(id/*, asyncCB*/) {
+            /*
+            // async
+            if ( asyncCB )
             {
-                pushState();
-                resetState();
-                $__partials[id] = " " + parse( getSeparators( getTemplateContents( id ) ), false ) + "'; " + $__TEOL;
-                popState();
+                // cache it
+                if ( !$__partials[id] )
+                {
+                    getTemplateContents( id, function( text ) {
+                        pushState();
+                        resetState();
+                        $__partials[id] = " " + parse( getSeparators( text ), false ) + "'; " + $__TEOL;
+                        popState();
+                        asyncCB( padLines( $__partials[id] ) );
+                    });
+                }
+                else
+                {
+                    asyncCB( padLines( $__partials[id] ) );
+                }
+                return '';
             }
-            return padLines( $__partials[id] );
+            // sync
+            else
+            {*/
+                // cache it
+                if ( !$__partials[id] )
+                {
+                    pushState();
+                    resetState();
+                    $__partials[id] = " " + parse( getSeparators( getTemplateContents( id ) ), false ) + "'; " + $__TEOL;
+                    popState();
+                }
+                return padLines( $__partials[id] );
+            /*}*/
         },
         
         // include template
@@ -437,14 +542,14 @@
         //
         // auxilliary parsing methods
         //
-        split = function(s) {
+        split = function(s, leftTplSep, rightTplSep) {
             var parts1, len, parts, i, tmp;
-            parts1 = s.split( $__leftTplSep );
+            parts1 = s.split( leftTplSep );
             len = parts1.length;
             parts = [];
             for (i=0; i<len; i++)
             {
-                tmp = parts1[i].split( $__rightTplSep );
+                tmp = parts1[i].split( rightTplSep );
                 parts.push ( tmp[0] );
                 if (tmp.length > 1) parts.push ( tmp[1] );
             }
@@ -605,7 +710,9 @@
                     
                     code = parseNestedBlocks(code.substring(len1, code.length-len2)/*.replace("+ '' +", '+').replace("+ '';", ';')*/, $__allblocks); // remove redundant code
                     
-                    bout = $__DOBLOCK().split( '__{{CODE}}__' ).join( padLines(code+"';", 0) );
+                    bout = TT_BLOCK({
+                            'BLOCKCODE': padLines(code+"';", 0)
+                        });
                     
                     blocks[block] = bout;
                 }
@@ -821,20 +928,20 @@
             return null;
         },
         
+        funcReplace = function(m, func, plugin) {
+            // allow custom plugins as template functions
+            if ( plugin && $__plugins[ plugin ]/*self['plugin_' + plugin ]*/ )
+                return 'Contemplate.plugin_' + plugin;
+            return 'Contemplate.' + func; 
+        },
+            
         parse = function(tpl, withblocks) {
             var parts, len, parsed, s, i, isTag,
                 tag, strings, variables, id,
                 countl, index, ch, out, cnt, tok, v, tokv
             ;
             
-            var funcReplace = function(m, func, plugin) {
-                // allow custom plugins as template functions
-                if ( plugin && $__plugins[ plugin ]/*self['plugin_' + plugin ]*/ )
-                    return 'Contemplate.plugin_' + plugin;
-                return 'Contemplate.' + func; 
-            };
-            
-            parts = split( tpl );
+            parts = split( tpl, $__leftTplSep, $__rightTplSep );
             len = parts.length;
             isTag = false;
             parsed = '';
@@ -950,9 +1057,7 @@
                 parsed += s;
             }
         
-            if ( 'undefined'==typeof(withblocks) ) withblocks = true;
-            
-            if ( withblocks ) return parseBlocks( parsed ); // render any blocks
+            if ( false !== withblocks ) return parseBlocks( parsed ); // render any blocks
             
             return parsed /*.replace( "+ '' +", '+' ).replace( "+ '';", ';' )*/; // remove redundant code
         },
@@ -973,13 +1078,15 @@
             
             if ($__extends)
             {
-                func = $__FUNC1;
+                func = TT_FUNC( null, 1 );
             }
             else
             {
                 // Introduce the data as local variables using with(){}
                // Convert the template into pure JavaScript
-                func = $__FUNC2().split( '__{{CODE}}__' ).join( padLines("__p__ += '" + blocks[0] + "';", 0) );
+                func = TT_FUNC({
+                            'FCODE': padLines("__p__ += '" + blocks[0] + "';", 0)
+                        }, 2);
             }
             
             // defined blocks
@@ -1001,11 +1108,11 @@
             sblocks = [];
             for ( b in blocks[1] ) 
             {
-                bcode = $__TEOL + $__tplBlockCode()
-                            .split( '__{{BLOCK}}__' ).join( b )
-                            .split( '__{{BLOCKMETHOD}}__' ).join( b )
-                            .split( '__{{BLOCKMETHODCODE}}__' ).join( padLines(blocks[1][b], 1) )
-                        ;
+                bcode = $__TEOL + TT_BlockCode({
+                                    'BLOCKNAME': b,
+                                    'BLOCKMETHODNAME': b,
+                                    'BLOCKMETHODCODE': padLines(blocks[1][b], 1)
+                                });
                 sblocks.push( bcode );
             }
             if ( sblocks.length )
@@ -1027,12 +1134,14 @@
             if ($__extends) 
             {
                 parentCode = "this.setParent( '" + $__extends + "' );";
-                renderCode = $__RCODE1;
+                renderCode = TT_RCODE( null, 1 );
             }
             else
             {
                 parentCode = '';
-                renderCode = $__RCODE2().split( '__{{CODE}}__' ).join( padLines("__p__ += '" + blocks[0] + "';", 0) );
+                renderCode = TT_RCODE({
+                                'RCODE': padLines("__p__ += '" + blocks[0] + "';", 0)
+                            }, 2);
             }
             
             var prefixCode;
@@ -1042,14 +1151,14 @@
                 prefixCode = '';
             
           // generate tpl class
-            var classCode = $__tplClassCode()
-                                .split( '__{{PREFIX_CODE}}__' ).join( prefixCode )
-                                .split( '__{{ID}}__' ).join( id )
-                                .split( '__{{CLASSNAME}}__' ).join( classname )
-                                .split( '__{{PARENTCODE}}__' ).join( padLines(parentCode, 2) )
-                                .split( '__{{BLOCKS}}__' ).join( padLines(sblocks, 2) )
-                                .split( '__{{RENDERCODE}}__' ).join( padLines(renderCode, 4) )
-                            ;
+            var classCode = TT_ClassCode({
+                                'CLASSNAME': classname,
+                                'TPLID': id,
+                                'PREFIXCODE': prefixCode,
+                                'PARENTCODE': padLines(parentCode, 2),
+                                'BLOCKS': padLines(sblocks, 2),
+                                'RENDERCODE': padLines(renderCode, 4)
+                            });
             
             return setCachedTemplate(filename, classCode);
         },
@@ -1128,283 +1237,259 @@
             return null;
         },
         
-        setCachedTemplate = function(filename, tplContents) { 
+        setCachedTemplate = function(filename, tplContents, asyncCB) { 
+            if ( asyncCB )
+            {
+                fwriteAsync(filename, tplContents, { encoding: self.ENCODING }, function(err) {
+                    asyncCB( !err );
+                });
+                return;
+            }
             return fwrite(filename, tplContents, { encoding: self.ENCODING }); 
         },
         
-        resetState = function() {
-            // reset state
-            $__loops = 0; $__ifs = 0; $__loopifs = 0; $__level = 0;
-            $__blockcnt = 0; $__blocks = [];  $__allblocks = [];  $__extends = null;
-        },
-        
-        pushState = function() {
-            // push state
-            $__stack.push([$__loops, $__ifs, $__loopifs, $__level,
-            $__blockcnt, $__blocks,  $__allblocks,  $__extends]);
-        },
-        
-        popState = function() {
-            // pop state
-            var t = $__stack.pop();
-            $__loops = t[0]; $__ifs = t[1]; $__loopifs = t[2]; $__level = t[3];
-            $__blockcnt = t[4]; $__blocks = t[5];  $__allblocks = t[6];  $__extends = t[7];
-        },
-        
-        /*
-        backupOptions = function( ) {
-            var optionsBackUp = [
-                $__cacheDir,
-                $__cacheMode,
-                $__leftTplSep,
-                $__rightTplSep,
-                $__preserveLines
-            ];
-            return optionsBackUp;
-        },
-        
-        restoreOptions = function( optionsBackUp ) {
-            $__cacheDir = optionsBackUp[ 0 ];
-            $__cacheMode = optionsBackUp[ 1 ];
-            $__leftTplSep = optionsBackUp[ 2 ];
-            $__rightTplSep = optionsBackUp[ 3 ];
-            $__preserveLines = optionsBackUp[ 4 ];
-        },
-        */
-        
         // generated cached tpl class code as a "heredoc" template (for Node cached templates)
-        $__tplClassCode = function(NL){
-                    NL = NL || $__TEOL;
-                    return [
-"__{{PREFIX_CODE}}__"
-,"!function (root, moduleName, moduleDefinition) {"
-,""
-,"    //"
-,"    // export the module"
-,""    
-,"    // node, CommonJS, etc.."
-,"    if ( 'object' == typeof(module) && module.exports ) module.exports = moduleDefinition();"
-,""    
-,"    // AMD, etc.."
-,"    else if ( 'function' == typeof(define) && define.amd ) define( moduleDefinition );"
-,""    
-,"    // browser, etc.."
-,"    else root[ moduleName ] = moduleDefinition();"
-,""
-,""
-,"}(this, '__{{CLASSNAME}}__', function( ) {"
-,"   /* Contemplate cached template '__{{ID}}__' */"
-,"   /* quasi extends main Contemplate class */"
-,"   "
-,"   /* This is NOT used, Contemplate is accessible globally */"
-,"   /* var self = require('Contemplate'); */"
-,"   "
-,"   /* constructor */"
-,"   function __{{CLASSNAME}}__(id)"
-,"   {"
-,"       /* initialize internal vars */"
-,"       var _parent = null, _blocks = null;"
-,"       "
-,"       this.id = id;"
-,"       this.data = null;"
-,"       "
-,"       "
-,"       /* tpl-defined blocks render code starts here */"
-,"__{{BLOCKS}}__"
-,"       /* tpl-defined blocks render code ends here */"
-,"       "
-,"       /* template methods */"
-,"       "
-,"       this.setId = function(id) {"
-,"           if ( id ) this.id = id;"
-,"           return this;"
-,"       };"
-,"       "
-,"       this.setParent = function(parent) {"
-,"           if ( parent )"
-,"           {"
-,"               if ( parent.substr )"
-,"                   _parent = Contemplate.tpl( parent );"
-,"               else"
-,"                   _parent = parent;"
-,"           }"
-,"           return this;"
-,"       };"
-,"       "
-,"       /* render a tpl block method */"
-,"       this.renderBlock = function(block, __instance__) {"
-,"           if ( !__instance__ ) __instance__ = this;"
-,"           if ( _blocks && _blocks[block] ) return _blocks[block](__instance__);"
-,"           else if ( _parent ) return _parent.renderBlock(block, __instance__);"
-,"           return '';"
-,"       };"
-,"       "
-,"       /* tpl render method */"
-,"       this.render = function(data, __instance__) {"
-,"           if ( !__instance__ ) __instance__ = this;"
-,"           var __p__ = '';"
-,"           if ( _parent )"
-,"           {"
-,"               __p__ = _parent.render(data, __instance__);"
-,"           }"
-,"           else"
-,"           {"
-,"               /* tpl main render code starts here */"
-,"__{{RENDERCODE}}__"
-,"               /* tpl main render code ends here */"
-,"           }"
-,"           this.data = null;"
-,"           return __p__;"
-,"       };"
-,"       "
-,"       /* parent tpl assign code starts here */"
-,"__{{PARENTCODE}}__"
-,"       /* parent tpl assign code ends here */"
-,"   };"
-,"   "
-,"   "
-,"    // export it"
-,"    return __{{CLASSNAME}}__;"
-,"});"
-,""
-].join(NL);
-},   
+        TT_ClassCode = function( r, t ) {
+            var j = joinLines;
+            return [
+                r['PREFIXCODE']
+                ,j(""
+                ,"!function (root, moduleName, moduleDefinition) {"
+                ,""
+                ,"    //"
+                ,"    // export the module"
+                ,""    
+                ,"    // node, CommonJS, etc.."
+                ,"    if ( 'object' == typeof(module) && module.exports ) module.exports = moduleDefinition();"
+                ,""    
+                ,"    // AMD, etc.."
+                ,"    else if ( 'function' == typeof(define) && define.amd ) define( moduleDefinition );"
+                ,""    
+                ,"    // browser, etc.."
+                ,"    else root[ moduleName ] = moduleDefinition();"
+                ,""
+                ,""
+                ,"}(this, '"), r['CLASSNAME'], j("', function( ) {"
+                ,"   /* Contemplate cached template '"), r['TPLID'], j("' */"
+                ,"   /* quasi extends main Contemplate class */"
+                ,"   "
+                ,"   /* This is NOT used, Contemplate is accessible globally */"
+                ,"   /* var self = require('Contemplate'); */"
+                ,"   "
+                ,"   /* constructor */"
+                ,"   function "), r['CLASSNAME'], j("(id)"
+                ,"   {"
+                ,"       /* initialize internal vars */"
+                ,"       var _parent = null, _blocks = null;"
+                ,"       "
+                ,"       this.id = id;"
+                ,"       this.data = null;"
+                ,"       "
+                ,"       "
+                ,"       /* tpl-defined blocks render code starts here */"
+                ,""), r['BLOCKS'], j(""
+                ,"       /* tpl-defined blocks render code ends here */"
+                ,"       "
+                ,"       /* template methods */"
+                ,"       "
+                ,"       this.setId = function(id) {"
+                ,"           if ( id ) this.id = id;"
+                ,"           return this;"
+                ,"       };"
+                ,"       "
+                ,"       this.setParent = function(parent) {"
+                ,"           if ( parent )"
+                ,"           {"
+                ,"               if ( parent.substr )"
+                ,"                   _parent = Contemplate.tpl( parent );"
+                ,"               else"
+                ,"                   _parent = parent;"
+                ,"           }"
+                ,"           return this;"
+                ,"       };"
+                ,"       "
+                ,"       /* render a tpl block method */"
+                ,"       this.renderBlock = function(block, __instance__) {"
+                ,"           if ( !__instance__ ) __instance__ = this;"
+                ,"           if ( _blocks && _blocks[block] ) return _blocks[block](__instance__);"
+                ,"           else if ( _parent ) return _parent.renderBlock(block, __instance__);"
+                ,"           return '';"
+                ,"       };"
+                ,"       "
+                ,"       /* tpl render method */"
+                ,"       this.render = function(data, __instance__) {"
+                ,"           if ( !__instance__ ) __instance__ = this;"
+                ,"           var __p__ = '';"
+                ,"           if ( _parent )"
+                ,"           {"
+                ,"               __p__ = _parent.render(data, __instance__);"
+                ,"           }"
+                ,"           else"
+                ,"           {"
+                ,"               /* tpl main render code starts here */"
+                ,""), r['RENDERCODE'], j(""
+                ,"               /* tpl main render code ends here */"
+                ,"           }"
+                ,"           this.data = null;"
+                ,"           return __p__;"
+                ,"       };"
+                ,"       "
+                ,"       /* parent tpl assign code starts here */"
+                ,""), r['PARENTCODE'], j(""
+                ,"       /* parent tpl assign code ends here */"
+                ,"   };"
+                ,"   "
+                ,"   "
+                ,"    // export it"
+                ,"    return "), r['CLASSNAME'], j(";"
+                ,"});"
+                ,"")
+            ].join( "" );
+        },   
     
         // generated cached tpl block method code as a "heredoc" template (for Node cached templates)
-        $__tplBlockCode = function(NL){ 
-                    NL = NL || $__TEOL;
-                    return [""
-,"/* tpl block render method for block '__{{BLOCK}}__' */"
-,"'__{{BLOCKMETHOD}}__': function(__instance__) {"
-,"__{{BLOCKMETHODCODE}}__"
-,"}"
-,""
-].join(NL);
-},
+        TT_BlockCode = function( r, t ) { 
+            var j = joinLines;
+            return [
+                j(""
+                ,"/* tpl block render method for block '"), r['BLOCKNAME'], j("' */"
+                ,"'"), r['BLOCKMETHODNAME'], j("': function(__instance__) {"
+                ,""), r['BLOCKMETHODCODE'], j(""
+                ,"}"
+                ,"")
+            ].join( "" );
+        },
 
-        $__DOBLOCK = function(NL){
-                    NL = NL || $__TEOL;
-                    return [""
-,"var __p__ = '';"
-,"__{{CODE}}__"
-,"return __p__;"
-,""
-].join(NL);
-},
+        TT_BLOCK = function( r, t ) {
+            var j = joinLines;
+            return [
+                j(""
+                ,"var __p__ = '';"
+                ,""), r['BLOCKCODE'], j(""
+                ,"return __p__;"
+                ,"")
+            ].join( "" );
+        },
 
-        $__IF = function(NL){
-                    NL = NL || $__TEOL;
-                    return [""
-,"if ( __{{COND}}__ )"
-,"{"
-,""
-,""
-].join(NL);
-},
+        TT_IF = function( r, t ) {
+            var j = joinLines;
+            return [
+                j(""
+                ,"if ( "), r['IFCOND'], j(" )"
+                ,"{"
+                ,"")
+            ].join( "" );
+        },
     
-        $__ELSEIF = function(NL){
-                    NL = NL || $__TEOL;
-                    return [""
-,"}"
-,"else if ( __{{COND}}__ )"
-,"{"
-,""
-,""
-].join(NL);
-},
+        TT_ELSEIF = function( r, t ) {
+            var j = joinLines;
+            return [
+                j(""
+                ,"}"
+                ,"else if ( "), r['ELIFCOND'], j(" )"
+                ,"{"
+                ,"")
+            ].join( "" );
+        },
     
-        $__ELSE = function(NL){
-                    NL = NL || $__TEOL;
-                    return [""
-,"}"
-,"else"
-,"{"
-,""
-,""
-].join(NL);
-},
+        TT_ELSE = function( r, t ) {
+            var j = joinLines;
+            return j(""
+                ,"}"
+                ,"else"
+                ,"{"
+                ,"");
+        },
     
-        $__ENDIF = function(NL){
-                    NL = NL || $__TEOL;
-                    return [""
-,"}"
-,""
-,""
-].join(NL);
-},
+        TT_ENDIF = function( r, t ) {
+            var j = joinLines;
+            return j(""
+                ,"}"
+                ,"");
+        },
     
-        $__FOR = function(NL){
-                    NL = NL || $__TEOL;
-                    return [""
-,"var __{{O}}__ = __{{FOR_EXPR_O}}__;"
-,"if ( __{{O}}__ && Object.keys(__{{O}}__).length )"
-,"{"
-,"   var __{{K}}__;"
-,"   for ( __{{K}}__ in __{{O}}__ )"
-,"   {"
-,"       if ( Contemplate.hasOwn(__{{O}}__, __{{K}}__) )"
-,"       {"
-,"          __{{ASSIGN1}}__"
-,"          __{{ASSIGN2}}__"
-,"       "
-,""
-].join(NL);
-},
+        TT_FOR = function( r, t ) {
+            var j = joinLines;
+            return [
+                j(""
+                ,"var "), r['O'], " = ", r['FOR_EXPR_O'], j(";"
+                ,"if ( "), r['O'], " && Object.keys(", r['O'], j(").length )"
+                ,"{"
+                ,"   var "), r['K'], j(";"
+                ,"   for ( "), r['K'], " in ", r['O'], j(" )"
+                ,"   {"
+                ,"       if ( Contemplate.hasOwn("), r['O'], ", ", r['K'], j(") )"
+                ,"       {"
+                ,"          "), r['ASSIGN1'], j(""
+                ,"          "), r['ASSIGN2'], j(""
+                ,"       "
+                ,"")
+            ].join( "" );
+        },
     
-        $__ELSEFOR = function(NL){
-                    NL = NL || $__TEOL;
-                    return [""
-,"       }"
-,"   }"
-,"}"
-,"else"
-,"{  "
-,"    "
-,""
-].join(NL);
-},
+        TT_ELSEFOR = function( r, t ) {
+            var j = joinLines;
+            return j(""
+                ,"       }"
+                ,"   }"
+                ,"}"
+                ,"else"
+                ,"{  "
+                ,"");
+        },
     
-        $__ENDFOR1 = function(NL){
-                    NL = NL || $__TEOL;
-                    return [""
-,"       }"
-,"   }"
-,"}"
-,""
-,""
-].join(NL);
-},
+        TT_ENDFOR = function( r, t ){
+            var j = joinLines;
+            if ( 1 === t )
+            {
+                return j(""
+                    ,"       }"
+                    ,"   }"
+                    ,"}"
+                    ,"");
+            }
+            else
+            {
+                return j(""
+                    ,"}"
+                    ,"");
+            }
+        },
     
-        $__ENDFOR2 = function(NL){
-                    NL = NL || $__TEOL;
-                    return [""
-,"}"
-,""
-,""
-].join(NL);
-},
-    
-        $__FUNC1 = "return '';",
+        TT_FUNC = function( r, t ) { 
+            var j = joinLines;
+            if ( 1 === t )
+            {
+                return "return '';"; 
+            }
+            else
+            {
+                return [
+                    j(""
+                    ,"var __p__ = '';"
+                    ,""), r['FCODE'], j(""
+                    ,"return __p__;"
+                    ,"")
+                ].join( "" );
+            }
+        },
         
-        $__FUNC2 = function(NL){
-                    NL = NL || $__TEOL;
-                    return [""
-,"var __p__ = '';"
-,"__{{CODE}}__"
-,"return __p__;"
-,""
-].join(NL);
-},
-        $__RCODE1 = "__p__ = '';",
-        
-        $__RCODE2 = function(NL){
-                    NL = NL || $__TEOL;
-                    return [""
-,"__instance__.data = Contemplate.data( data );"
-,"__{{CODE}}__"
-,""
-].join(NL);
-}
+        TT_RCODE = function( r, t ) { 
+            var j = joinLines;
+            if ( 1 === t )
+            {
+                return "__p__ = '';"; 
+            }
+            else
+            {
+                return [
+                    j(""
+                    ,"__instance__.data = Contemplate.data( data );"
+                    ,""), r['RCODE'], j(""
+                    ,"")
+                ].join( "" );
+            }
+        }
     ;
     
     
@@ -1489,18 +1574,18 @@
     self = {
 
         // constants
-        VERSION : __version__,
+        VERSION: __version__,
         
-        CACHE_TO_DISK_NONE : 0,
-        CACHE_TO_DISK_AUTOUPDATE : 2,
-        CACHE_TO_DISK_NOUPDATE : 4,
+        CACHE_TO_DISK_NONE: 0,
+        CACHE_TO_DISK_AUTOUPDATE: 2,
+        CACHE_TO_DISK_NOUPDATE: 4,
         
-        ENCODING : 'utf8',
+        ENCODING: 'utf8',
         
-        init : function() {
-            if ($__isInited) return;
+        init: function( ) {
+            if ( $__isInited ) return;
             
-            $__stack = [];
+            $__stack = [ ];
             
             // pre-compute the needed regular expressions
             $__regExps['specials'] = new RegExp('[\\n\\r\\v\\t]', 'g');
@@ -1525,7 +1610,7 @@
         //
         
         // add custom plugins as template functions
-        addPlugin : function(name, handler) {
+        addPlugin: function( name, handler ) {
             if ( name && handler )
             {
                 $__plugins[ name ] = true;
@@ -1533,20 +1618,19 @@
             }
         },
     
-        setPrefixCode : function(preCode) {
-            if ( preCode )
-                $__tplPrefixCode = '' + preCode;
+        setPrefixCode: function( preCode ) {
+            if ( preCode ) $__tplPrefixCode = '' + preCode;
         },
     
-        setLocaleStrings : function(l) { 
+        setLocaleStrings: function( l ) { 
             $__locale = self.merge($__locale, l); 
         },
         
-        clearLocaleStrings : function() { 
-            $__locale = {}; 
+        clearLocaleStrings: function( ) { 
+            $__locale = { }; 
         },
         
-        setPlurals : function(plurals) { 
+        setPlurals: function( plurals ) { 
             if ( plurals )
             {
                 for (var singular in plurals)
@@ -1561,42 +1645,43 @@
             }
         },
         
-        clearPlurals : function() { 
-            $__plurals = {}; 
+        clearPlurals: function( ) { 
+            $__plurals = { }; 
         },
         
-        setTemplateSeparators : function(seps) {
-            if (seps)
+        setTemplateSeparators: function( seps ) {
+            if ( seps )
             {
-                if (seps['left'])  $__leftTplSep = ''+seps['left'];
-                if (seps['right']) $__rightTplSep = ''+seps['right'];
+                if ( seps['left'] )  $__leftTplSep = ''+seps['left'];
+                if ( seps['right'] ) $__rightTplSep = ''+seps['right'];
             }
         },
         
-        setPreserveLines : function(bool) { 
-            if ( 'undefined'==typeof(bool) ) bool = true; 
-            
-            if ( bool ) 
-                $__preserveLines = $__preserveLinesDefault; 
-            else 
-                $__preserveLines = ''; 
+        setPreserveLines: function( enable ) { 
+            if ( arguments.length < 1 ) enable = true; 
+            if ( !!enable ) $__preserveLines = $__preserveLinesDefault; 
+            else $__preserveLines = ''; 
         },
         
-        setCacheDir : function(dir) { 
+        setCacheDir: function( dir ) { 
             $__cacheDir = rtrim(dir, '/') + '/';  
         },
         
-        setCacheMode : function(mode) { 
-            $__cacheMode = (isNode) ? mode : self.CACHE_TO_DISK_NONE; 
+        setCacheMode: function( mode ) { 
+            $__cacheMode = ( isNode ) ? mode : self.CACHE_TO_DISK_NONE; 
         },
         
-        clearCache : function(all) { 
-            $__cache = {}; 
-            if ( all ) $__partials = {}; 
+        setSyncMode: function( bool ) { 
+            $__async = !bool; 
+        },
+        
+        clearCache: function( all ) { 
+            $__cache = { }; 
+            if ( all ) $__partials = { }; 
         },
         
         // add templates manually
-        add : function(tpls, tplStr) { 
+        add: function( tpls, tplStr ) { 
             if ( "object" == typeof(tpls) )
             {
                 for (var tplID in tpls)
@@ -1619,7 +1704,7 @@
         },
     
         // add inline templates manually
-        addInline : function(tpls, tplStr) { 
+        addInline: function( tpls, tplStr ) { 
             if ( "object" == typeof(tpls) )
             {
                 $__inlines = self.merge($__inlines, tpls);
@@ -1631,8 +1716,7 @@
         },
         
         // return the requested template (with optional data)
-        tpl : function(id, data, options) {
-            
+        tpl: function( id, data, options ) {
             options = merge({
                 'autoUpdate': false,
                 'refresh': false,
@@ -1663,22 +1747,22 @@
         //
         
         // basic html escaping
-        html : function(s) { 
+        html: function( s ) { 
             return htmlentities(s, 'ENT_COMPAT', 'UTF-8'); 
         },
         
         // basic url escaping
-        url : urlencode,
+        url: urlencode,
         
         // count items in obj/array
-        count : count,
+        count: count,
         
         // haskey, has_key, check if (nested) keys exist in tpl variable
-        haskey : function(v/*, key1, key2, etc.. */) {
-            var to_string = _toString(v);
+        haskey: function( v/*, key1, key2, etc.. */ ) {
+            var to_string = _toString( v );
             if (!v || "[object Array]" != to_string && "[object Object]" != to_string) return false;
-            var args = slice(arguments), argslen, i, tmp;
-            args.shift();
+            var args = slice( arguments ), argslen, i, tmp;
+            args.shift( );
             argslen = args.length;
             tmp = v;
             for (i=0; i<argslen; i++)
@@ -1690,31 +1774,31 @@
         },
         
         // quote
-        q : function(e) { 
+        q: function( e ) { 
             return "'" + e + "'"; 
         },
         
         // double quote
-        dq : function(e) { 
+        dq: function( e) { 
             return '"' + e + '"';  
         },
         
         // to String
-        s : function(e) { 
+        s: function( e ) { 
             return (String)(''+e); 
         },
         
         // to Integer
-        n : function(e) { 
+        n: function( e ) { 
             return parseInt(e, 10); 
         },
         
         // to Float
-        f : function(e) { 
+        f: function( e ) { 
             return parseFloat(e, 10); 
         },
         
-        addslashes : function(str) {
+        addslashes: function( str ) {
             // http://kevin.vanzonneveld.net
             // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
             // +   improved by: Ates Goral (http://magnetiq.com)
@@ -1729,7 +1813,7 @@
             return (str + '').replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0');
         },
         
-        stripslashes : function(str) {
+        stripslashes: function( str ) {
             // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
             // +   improved by: Ates Goral (http://magnetiq.com)
             // +      fixed by: Mick@el
@@ -1756,40 +1840,40 @@
         },
         
         // Concatenate strings/vars
-        concat : function() { 
-            return slice(arguments).join(''); 
+        concat: function( ) { 
+            return slice( arguments ).join(''); 
         },
         
         // Trim strings in templates
-        trim : trim,
-        ltrim : ltrim,
-        rtrim : rtrim,
+        trim: trim,
+        ltrim: ltrim,
+        rtrim: rtrim,
         
-        ucfirst : function(s) {
-            return s[0].toUpperCase() + s.substr(1);//.toLowerCase();
+        ucfirst: function( s ) {
+            return s[0].toUpperCase( ) + s.substr(1);//.toLowerCase();
         },
-        lcfirst : function(s) {
-            return s[0].toLowerCase() + s.substr(1);//.toUpperCase();
+        lcfirst: function( s ) {
+            return s[0].toLowerCase( ) + s.substr(1);//.toUpperCase();
         },
-        lowercase : function(s) {
-            return s.toLowerCase();
+        lowercase: function( s ) {
+            return s.toLowerCase( );
         },
-        uppercase : function(s) {
-            return s.toUpperCase();
+        uppercase: function( s ) {
+            return s.toUpperCase( );
         },
-        camelcase : function(s, sep, capitalizeFirst) {
+        camelcase: function( s, sep, capitalizeFirst ) {
             sep = sep || "_";
             if ( capitalizeFirst )
                 return s.split( sep ).map( self.ucfirst ).join( "" );
             else
                 return self.lcfirst( s.split( sep ).map( self.ucfirst ).join( "" ) );
         },
-        snakecase : function(s, sep) {
+        snakecase: function( s, sep ) {
             sep = sep || "_";
-            return s.replace( /([A-Z])/g, sep + '$1' ).toLowerCase();
+            return s.replace( /([A-Z])/g, sep + '$1' ).toLowerCase( );
         },
         // Sprintf in templates
-        sprintf : sprintf,
+        sprintf: sprintf,
         
         //
         //  Localization functions
@@ -1797,34 +1881,34 @@
         
         // current time in seconds
         // time, now
-        time : time,
+        time: time,
         
         // formatted date
-        date : function($format, $time) { 
+        date: function( $format, $time ) { 
             if (!$time) $time = time(); 
             return date($format, $time); 
         },
         
         // localized formatted date
-        ldate : function($format, $time) { 
+        ldate: function( $format, $time ) { 
             if (!$time) $time = time(); 
             return _localized_date($__locale, $format, $time); 
         },
         
         // locale
         // locale, l
-        locale : function(e) { 
+        locale: function( e ) { 
             return (_hasOwn($__locale, e)) ? $__locale[e] : e; 
         },
         // pluralise
-        pluralise : function(singular, count) {
+        pluralise: function( singular, count ) {
             if ($__plurals[singular])
                 return 1 !== count ? $__plurals[singular] : singular;
             return singular;
         },
         
         // generate a uuid
-        uuid : function(namespace) {
+        uuid: function( namespace ) {
             return [namespace||'UUID', ++$__uuid, time()].join('_');
         },
         
@@ -1833,7 +1917,7 @@
         //
         
         // html table
-        htmltable : function($data, $options) {
+        htmltable: function( $data, $options ) {
             // clone data to avoid mess-ups
             $data = self.merge({}, $data);
             $options = self.merge({}, $options || {});
@@ -1922,7 +2006,7 @@
         },
         
         // html select
-        htmlselect : function($data, $options) {
+        htmlselect: function( $data, $options ) {
             // clone data to avoid mess-ups
             $data = self.merge({}, $data);
             $options = self.merge({}, $options || {});
@@ -2010,15 +2094,15 @@
             return $o;
         },
         
-        getTemplateContents : getTemplateContents,
+        getTemplateContents: getTemplateContents,
         
-        hasOwn : function(o, p) { 
+        hasOwn: function( o, p ) { 
             return o && _hasOwn(o, p); 
         },
         
-        merge : merge,
+        merge: merge,
         
-        data : function(o) {
+        data: function( o ) {
             if (isArray(o)) return o.slice();
             var c = {} /*self.merge({}, o)*/, key, newkey;
             // clone the data and
@@ -2048,9 +2132,6 @@
 
 
 
-
-
-    
 /////////////////////////////////////////////////////////////////////////
 //
 //   PHP functions adapted from phpjs project
@@ -2802,43 +2883,6 @@ function _localized_date($locale, $format, $timestamp)
     return $date;
 }
 
-//
-// basic ajax functions
-//
-function ajaxRequest(type, url, params, callback) 
-{
-    var xmlhttp;
-    if (window.XMLHttpRequest) // code for IE7+, Firefox, Chrome, Opera, Safari
-        xmlhttp = new XMLHttpRequest();
-    else // code for IE6, IE5
-        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP"); // or ActiveXObject("Msxml2.XMLHTTP"); ??
-    
-    xmlhttp.onreadystatechange = function() {
-        if (callback && xmlhttp.readyState == 4) callback(xmlhttp.responseText, xmlhttp.status, xmlhttp);
-    };
-    
-    xmlhttp.open(type, url, true);
-    xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-    xmlhttp.send(params);
-}
-function ajaxLoad(type, url, params) 
-{
-    var xmlhttp;
-    if (window.XMLHttpRequest) // code for IE7+, Firefox, Chrome, Opera, Safari
-        xmlhttp = new XMLHttpRequest();
-    else // code for IE6, IE5
-        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP"); // or ActiveXObject("Msxml2.XMLHTTP"); ??
-    
-    xmlhttp.open(type, url, false);  // 'false' makes the request synchronous
-    xmlhttp.send(params);
-
-    if (xmlhttp.status === 200)    return xmlhttp.responseText;
-    return '';
-}
-    
-    
-    
-    
     
     //
     //

@@ -90,32 +90,26 @@
                             __p__ += '' + "\n" + '        <div id=\'' + ( __instance__.data['user']["id"] ) + '\' class="';            
                             if ( 0 == (__instance__.data['j'] % 2) )
                             {
-                            
                                              
                                 __p__ += 'even';            
                             }
                             else if ( 1 == (__instance__.data['j'] % 2) )
                             {
-                            
                                              
                                 __p__ += 'odd';            
                             }
-                            
                                          
                             __p__ += '">' + "\n" + '            <a href="/' + ( __instance__.data['user']["name"] ) + '">' + ( __instance__.data['user']['name'] ) + '' + ( __instance__.data['user']['text'] ) + ' ' + ( Contemplate.n(__instance__.data['i']) + Contemplate.n(__instance__.data['j']) ) + '</a>: <strong>' + ( __instance__.data['user']["text"] ) + '</strong>' + "\n" + '        </div>' + "\n" + '        ';            
                             if (  Contemplate.haskey(__instance__.data['user'], "key1")  )
                             {
-                            
                                              
                                 __p__ += '' + "\n" + '            <div> User has key &quot;key1&quot; </div>' + "\n" + '        ';            
                             }
                             else if (  Contemplate.haskey(__instance__.data['user'], "key", "key1")  )
                             {
-                            
                                              
                                 __p__ += '' + "\n" + '            <div> User has key [&quot;key&quot;][&quot;key1&quot;] </div>' + "\n" + '        ';            
                             }
-                            
                                          
                             __p__ += '' + "\n" + '    ';
                        }
@@ -123,11 +117,9 @@
                 }
                 else
                 {  
-                    
                      
                     __p__ += '' + "\n" + '        <div class="none">' + ( Contemplate.l("No Users") ) + '</div>' + "\n" + '    ';
                 }
-                
                  
                 __p__ += '' + "\n" + '</div>' + "\n" + '';
                 

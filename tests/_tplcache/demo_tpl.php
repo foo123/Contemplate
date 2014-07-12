@@ -28,6 +28,7 @@ final class Contemplate_demo_Cached extends Contemplate
     /* tpl block render method for block 'Block3' */
     private function _blockfn_Block3($__instance__) 
     { 
+        
         $__p__ = '';
          
         $__p__ .= '' . "\n" . '' . "\n" . '    <strong>Block3 is overriden by the demo template</strong>' . "\n" . '' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>Functions</strong><br />' . "\n" . '    <ul>' . "\n" . '    <li>trim(__FOO__, _) = ' . ( Contemplate::trim("__FOO__", "_") ) . '</li>' . "\n" . '    <li>trim(  FOO  ) = ' . ( Contemplate::trim("  FOO  ") ) . '</li>' . "\n" . '    <li>lowercase(FOO) = ' . ( Contemplate::lowercase("FOO") ) . '</li>' . "\n" . '    <li>lowercase(fOo) = ' . ( Contemplate::lowercase("fOo") ) . '</li>' . "\n" . '    <li>uppercase(foo) = ' . ( Contemplate::uppercase("foo") ) . '</li>' . "\n" . '    <li>uppercase(FoO) = ' . ( Contemplate::uppercase("FoO") ) . '</li>' . "\n" . '    <li>camelcase(camel_case, _) = ' . ( Contemplate::camelcase("camel_case", "_") ) . '</li>' . "\n" . '    <li>camelcase(camelCase) = ' . ( Contemplate::camelcase("camelCase") ) . '</li>' . "\n" . '    <li>snakecase(snakeCase, _) = ' . ( Contemplate::snakecase("snakeCase", "_") ) . '</li>' . "\n" . '    <li>snakecase(snake_case) = ' . ( Contemplate::snakecase("snake_case") ) . '</li>' . "\n" . '    <li>l(locale) = ' . ( Contemplate::l("locale") ) . '</li>' . "\n" . '    <li>locale(locale) = ' . ( Contemplate::locale("locale") ) . '</li>' . "\n" . '    <li>pluralise(item, 1) = ' . ( Contemplate::pluralise("item", 1) ) . '</li>' . "\n" . '    <li>pluralise(item, 2) = ' . ( Contemplate::pluralise("item", 2) ) . '</li>' . "\n" . '    <li>sprintf("%02d : %02d : %02d", 2, 0, 12) = ' . ( Contemplate::sprintf("%02d : %02d : %02d", 2, 0, 12) ) . '</li>' . "\n" . '    <li>addslashes("this string\'s s\\"s s\\\\"s s\\\\\\"s") = ' . ( Contemplate::addslashes("this string's s\'s s\\'s s\\\'s") ) . '</li>' . "\n" . '    <li>stripslashes("this string\'s s\\"s s\\\\"s s\\\\\\"s") = ' . ( Contemplate::stripslashes("this string's s\'s s\\'s s\\\'s") ) . '</li>' . "\n" . '    <li>uuid(namespace) = ' . ( Contemplate::uuid("namespace") ) . '</li>' . "\n" . '    </ul>' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    ';
@@ -37,7 +38,8 @@ final class Contemplate_demo_Cached extends Contemplate
             foreach ( $_loopObj2 as $i=>$usergroup )
             {
                 $__instance__->data['i'] = $i;
-                $__instance__->data['usergroup'] = $usergroup;         
+                $__instance__->data['usergroup'] = $usergroup;
+                 
                 $__p__ .= '' . "\n" . '        <!-- call a (sub-)template -->' . "\n" . '        ' . Contemplate::tpl( "sub",  array("i" => $__instance__->data['i'], "users" => $__instance__->data['users']) ); 
                  
                 $__p__ .= '' . "\n" . '    ';            
@@ -46,11 +48,14 @@ final class Contemplate_demo_Cached extends Contemplate
          
         $__p__ .= '' . "\n" . '' . "\n" . '';
         return $__p__;
+        
     }
+    
     
     /* tpl block render method for block 'Block2' */
     private function _blockfn_Block2($__instance__) 
     { 
+        
         $__p__ = '';
          
         $__p__ .= '' . "\n" . '' . "\n" . '    <strong>Block2 is overriden by the demo template</strong>' . "\n" . '' . "\n" . '    <br /><br />' . "\n" . '' . "\n" . '    <strong>A table</strong><br />' . "\n" . '    ' . ( Contemplate::htmltable($__instance__->data['table_data'], $__instance__->data['table_options']) ) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>Test if variable is set</strong><br />' . "\n" . '    ';
@@ -87,7 +92,8 @@ final class Contemplate_demo_Cached extends Contemplate
             foreach ( $_loopObj1 as $index=>$value )
             {
                 $__instance__->data['index'] = $index;
-                $__instance__->data['value'] = $value;         
+                $__instance__->data['value'] = $value;
+                 
                 $__p__ .= '' . "\n" . '        [' . ( $__instance__->data['index'] ) . '] = <strong>' . ( $__instance__->data['value'] ) . '</strong><br /> ' . "\n" . '    ';            
             }
         }
@@ -96,7 +102,9 @@ final class Contemplate_demo_Cached extends Contemplate
          
         $__p__ .= '' . "\n" . '' . "\n" . '';
         return $__p__;
+        
     }
+    
     /* tpl-defined blocks render code ends here */
     
     /* render a tpl block method */

@@ -239,27 +239,27 @@ def TT_ClassCode( r=None, t=1 ):
         ,"        # tpl-defined blocks render code ends here"
         ,""
         ,"        # render a tpl block method"
-        ,"        def renderBlock(self, block, __instance__=None):"
-        ,"            if ( not __instance__ ): __instance__ = self"
+        ,"        def renderBlock(self, block, __i__=None):"
+        ,"            if ( not __i__ ): __i__ = self"
         ,""
         ,"            method = '_blockfn_' + block"
         ,""
         ,"            if (hasattr(self, method) and callable(getattr(self, method))):"
-        ,"                return getattr(self, method)(__instance__)"
+        ,"                return getattr(self, method)(__i__)"
         ,""
         ,"            elif self._parent is not None:"
-        ,"                return self._parent.renderBlock(block, __instance__)"
+        ,"                return self._parent.renderBlock(block, __i__)"
         ,""
         ,"            return ''"
         ,"            "
         ,"        "
         ,"        # tpl render method"
-        ,"        def render(self, data, __instance__=None):"
+        ,"        def render(self, data, __i__=None):"
         ,"            __p__ = ''"
-        ,"            if ( not __instance__ ): __instance__ = self"
+        ,"            if ( not __i__ ): __i__ = self"
         ,""
         ,"            if self._parent is not None:"
-        ,"                __p__ = self._parent.render(data, __instance__)"
+        ,"                __p__ = self._parent.render(data, __i__)"
         ,""
         ,"            else:"
         ,"                # tpl main render code starts here"
@@ -281,7 +281,7 @@ def TT_BlockCode( r=None, t=1 ):
     return "".join([
         j(""
         ,"# tpl block render method for block '"), r['BLOCKNAME'], j("'"
-        ,"def "), r['BLOCKMETHODNAME'], j("(self, __instance__):"
+        ,"def "), r['BLOCKMETHODNAME'], j("(self, __i__):"
         ,""), r['BLOCKMETHODCODE'], j(""
         ,"")
     ])
@@ -320,12 +320,12 @@ def TT_ENDIF( r=None, t=1 ):
 def TT_FOR( r=None, t=1 ):
     return "".join([
         j(""
-        ,""), r['O'], " = ", r['FOR_EXPR_O'], j(""
-        ,"if ( len("), r['O'], j(") > 0  ):"
+        ,""), r['_O'], " = ", r['O'], j(""
+        ,"if ( len("), r['_O'], j(") > 0  ):"
         ,"    # be able to use both key/value in loop"
         ,"    "), r['ASSIGN11'], j(""
         ,"    "), r['ASSIGN12'], j(""
-        ,"    for "), r['K'], ",", r['V'], " in ", r['LoopO'], j(" :"
+        ,"    for "), r['_K'], ",", r['_V'], " in ", r['_O2'], j(":"
         ,"        "), r['ASSIGN21'], j(""
         ,"        "), r['ASSIGN22'], j(""
         ,"")
@@ -377,7 +377,7 @@ def TT_RCODE( r=None, t=1 ):
     else:
         return "".join([
             j(""
-            ,"__instance__.data = Contemplate.data( data )"
+            ,"__i__.data = Contemplate.data( data )"
             ,""), r['RCODE'], j(""
             ,"")
         ])
@@ -408,7 +408,7 @@ def getSeparators( text, separators=None ):
 
 # whether var is set
 def t_isset( varname ):
-    return ' ( "' + varname + '__RAW__" in __instance__.data ) '
+    return ' ( "' + varname + '__RAW__" in __i__.data ) '
         
 # set/create/update tpl var
 def t_set( args ):
@@ -423,7 +423,7 @@ def t_unset( varname=None ):
     global _G
     if varname:
         varname = str(varname).strip()
-        return "';" + _G.TEOL + padLines( 'if ( "'+varname+'__RAW__" in __instance__.data ): del ' + varname ) + _G.TEOL
+        return "';" + _G.TEOL + padLines( 'if ( "'+varname+'__RAW__" in __i__.data ): del ' + varname ) + _G.TEOL
     return "'; " + _G.TEOL
     
 # if
@@ -490,28 +490,30 @@ def t_for( for_expr ):
     _G.loops += 1  
     _G.loopifs += 1
     for_expr = for_expr.split(' as ')
-    exprO = for_expr[0].strip()
+    o = for_expr[0].strip()
     kv = for_expr[1].split('=>')
     k = kv[0].strip() + '__RAW__'
     v = kv[1].strip() + '__RAW__'
     
     _G.id += 1
-    loopo = '_loopObj' + str(_G.id)
+    _o = '_O' + str(_G.id)
     _G.id += 1
-    o = '_loopObj' + str(_G.id)
+    _k = '_K' + str(_G.id)
+    _G.id += 1
+    _v = '_V' + str(_G.id)
+    _G.id += 1
+    _o2 = '_O' + str(_G.id)
     
     out = "' "
     
     out += padLines(TT_FOR({
-        'FOR_EXPR_O': exprO,
-        'O': o,
-        'K': k,
-        'V': v,
-        'LoopO': loopo,
-        'ASSIGN11': 'if isinstance('+o+', list): '+loopo+' = enumerate('+o+')',
-        'ASSIGN12': 'else: '+loopo+' = '+o+'.items()',
-        'ASSIGN21': '__instance__.data[\''+k+'\'] = '+k+'',
-        'ASSIGN22': '__instance__.data[\''+v+'\'] = '+v+''
+        'O': o, '_O': _o, '_O2': _o2,
+        'K': k, '_K': _k,
+        'V': v, '_V': _v,
+        'ASSIGN11': 'if isinstance('+_o+', list): '+_o2+' = enumerate('+_o+')',
+        'ASSIGN12': 'else: '+_o2+' = '+_o+'.items()',
+        'ASSIGN21': '__i__.data[\''+k+'\'] = '+_k+'',
+        'ASSIGN22': '__i__.data[\''+v+'\'] = '+_v+''
     }))
     
     _G.level += 2
@@ -731,7 +733,7 @@ def parseNestedBlocks( code, blocks=None ):
                 # replace all occurances of the block on the current template, 
                 # with the code found previously
                 # in the 1st block definition
-                code = code[0:pos1] + "__instance__.renderBlock( '" + block + "' ) " + code[pos2+len2:]
+                code = code[0:pos1] + "__i__.renderBlock( '" + block + "' ) " + code[pos2+len2:]
                 
                 
                 pos1 = code.find(delim1, 0)
@@ -774,7 +776,7 @@ def parseBlocks( s ):
             # replace all occurances of the block on the current template, 
             # with the code found previously
             # in the 1st block definition
-            s = s[0:pos1] + "__instance__.renderBlock( '" + block + "' ) " + s[pos2+len2:]
+            s = s[0:pos1] + "__i__.renderBlock( '" + block + "' ) " + s[pos2+len2:]
             
             
             pos1 = s.find(delim1, 0)
@@ -819,7 +821,7 @@ def parseVariable( s, i, l, pre='VARSTR' ):
         
         variable_raw = variable
         # transform into tpl variable
-        variable = "__instance__.data['" + variable + "']"
+        variable = "__i__.data['" + variable + "']"
         _len = len(variable_raw)
         
         # extra space
@@ -1127,12 +1129,12 @@ def createTemplateRenderFunction( id, seps=None ):
     _G.funcId += 1
     
     funcName = '_contemplateFn' + str(_G.funcId)
-    fn = createFunction(funcName, '__instance__=None', padLines(func, 1), {'Contemplate': Contemplate})
+    fn = createFunction(funcName, '__i__=None', padLines(func, 1), {'Contemplate': Contemplate})
     
     blockfns = {}
     for b,bc in blocks[1].items():
         funcName = '_contemplateBlockFn_' + b + '_' + str(_G.funcId)
-        blockfns[b] = createFunction(funcName, '__instance__=None', padLines(bc, 1), {'Contemplate': Contemplate})
+        blockfns[b] = createFunction(funcName, '__i__=None', padLines(bc, 1), {'Contemplate': Contemplate})
     
     return [ fn, blockfns]
 
@@ -1529,31 +1531,31 @@ class Contemplate:
         
         return self
     
-    def renderBlock( self, block, __instance__=None ):
-        if ( not __instance__ ): __instance__ = self
+    def renderBlock( self, block, __i__=None ):
+        if ( not __i__ ): __i__ = self
         
         if (self._blocks is not None) and (block in self._blocks):
             blockfunc = self._blocks[block]
-            return blockfunc( __instance__ )
+            return blockfunc( __i__ )
         
         elif self._parent is not None:
-            return self._parent.renderBlock(block, __instance__)
+            return self._parent.renderBlock(block, __i__)
         
         return ''
         
     
-    def render( self, data, __instance__=None ):
+    def render( self, data, __i__=None ):
         __p__ = ''
-        if ( not __instance__ ): __instance__ = self
+        if ( not __i__ ): __i__ = self
         
         if self._parent is not None:  
-            __p__ = self._parent.render(data, __instance__)
+            __p__ = self._parent.render(data, __i__)
         
         elif self._renderFunction is not None: 
             # dynamic function
-            __instance__.data = Contemplate.data( data )
+            __i__.data = Contemplate.data( data )
             renderFunction = self._renderFunction
-            __p__ = renderFunction( __instance__ )
+            __p__ = renderFunction( __i__ )
         
         self.data = None
         return __p__

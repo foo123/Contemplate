@@ -27,62 +27,62 @@ final class Contemplate_sub_Cached extends Contemplate
     /* tpl-defined blocks render code ends here */
     
     /* render a tpl block method */
-    public function renderBlock($block, $__instance__=null)
+    public function renderBlock($block, $__i__=null)
     {
-        if ( !$__instance__ ) $__instance__ = $this;
+        if ( !$__i__ ) $__i__ = $this;
         
         $method = '_blockfn_' . $block;
         
-        if ( method_exists($this, $method) ) return $this->{$method}($__instance__);
+        if ( method_exists($this, $method) ) return $this->{$method}($__i__);
         
-        elseif ( $this->_parent ) return $this->_parent->renderBlock($block, $__instance__);
+        elseif ( $this->_parent ) return $this->_parent->renderBlock($block, $__i__);
         
         return '';
     }
     
     /* tpl render method */
-    public function render($data, $__instance__=null)
+    public function render($data, $__i__=null)
     {
         $__p__ = '';
-        if ( !$__instance__ ) $__instance__ = $this;
+        if ( !$__i__ ) $__i__ = $this;
         
         if ( $this->_parent )
         {
-            $__p__ = $this->_parent->render($data, $__instance__);
+            $__p__ = $this->_parent->render($data, $__i__);
         }
         else
         {
             /* tpl main render code starts here */
             
-            $__instance__->data = Contemplate::data( $data );
-            $__p__ .= '<div>' . "\n" . '    <br />' . "\n" . '    <strong>Number of Items:' . ( Contemplate::count($__instance__->data['users'][$__instance__->data['i']]) ) . '</strong>' . "\n" . '    <br />' . "\n" . '    ';
-            $_loopObj3 = $__instance__->data['users'][$__instance__->data['i']];
-            if ( !empty($_loopObj3) )
+            $__i__->data = Contemplate::data( $data );
+            $__p__ .= '<div>' . "\n" . '    <br />' . "\n" . '    <strong>Number of Items:' . ( Contemplate::count($__i__->data['users'][$__i__->data['i']]) ) . '</strong>' . "\n" . '    <br />' . "\n" . '    ';
+            $_O7 = $__i__->data['users'][$__i__->data['i']];
+            if ( !empty($_O7) )
             {
-                foreach ( $_loopObj3 as $j=>$user )
+                foreach ( $_O7 as $_K8=>$_V9 )
                 {
-                    $__instance__->data['j'] = $j;
-                    $__instance__->data['user'] = $user;
+                    $__i__->data['j'] = $_K8;
+                    $__i__->data['user'] = $_V9;
                      
-                    $__p__ .= '' . "\n" . '        <div id=\'' . ( $__instance__->data['user']["id"] ) . '\' class="';        
-                    if ( 0 == ($__instance__->data['j'] % 2) )
+                    $__p__ .= '' . "\n" . '        <div id=\'' . ( $__i__->data['user']["id"] ) . '\' class="';        
+                    if ( 0 == ($__i__->data['j'] % 2) )
                     {
                                  
                         $__p__ .= 'even';        
                     }
-                    elseif ( 1 == ($__instance__->data['j'] % 2) )
+                    elseif ( 1 == ($__i__->data['j'] % 2) )
                     {
                                  
                         $__p__ .= 'odd';                
                     }
                              
-                    $__p__ .= '">' . "\n" . '            <a href="/' . ( $__instance__->data['user']["name"] ) . '">' . ( $__instance__->data['user']['name'] ) . '' . ( $__instance__->data['user']['text'] ) . ' ' . ( Contemplate::n($__instance__->data['i']) + Contemplate::n($__instance__->data['j']) ) . '</a>: <strong>' . ( $__instance__->data['user']["text"] ) . '</strong>' . "\n" . '        </div>' . "\n" . '        ';        
-                    if (  Contemplate::haskey($__instance__->data['user'], "key1")  )
+                    $__p__ .= '">' . "\n" . '            <a href="/' . ( $__i__->data['user']["name"] ) . '">' . ( $__i__->data['user']['name'] ) . '' . ( $__i__->data['user']['text'] ) . ' ' . ( Contemplate::n($__i__->data['i']) + Contemplate::n($__i__->data['j']) ) . '</a>: <strong>' . ( $__i__->data['user']["text"] ) . '</strong>' . "\n" . '        </div>' . "\n" . '        ';        
+                    if (  Contemplate::haskey($__i__->data['user'], "key1")  )
                     {
                                  
                         $__p__ .= '' . "\n" . '            <div> User has key &quot;key1&quot; </div>' . "\n" . '        ';        
                     }
-                    elseif (  Contemplate::haskey($__instance__->data['user'], "key", "key1")  )
+                    elseif (  Contemplate::haskey($__i__->data['user'], "key", "key1")  )
                     {
                                  
                         $__p__ .= '' . "\n" . '            <div> User has key [&quot;key&quot;][&quot;key1&quot;] </div>' . "\n" . '        ';                

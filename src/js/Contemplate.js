@@ -53,7 +53,7 @@
         // basic ajax functions
         //
         /*
-        ajaxRequest = function(type, url, params, callback) {
+        ajaxRequest = function( type, url, params, callback ) {
             var xmlhttp;
             if (window.XMLHttpRequest) // code for IE7+, Firefox, Chrome, Opera, Safari
                 xmlhttp = new XMLHttpRequest();
@@ -69,7 +69,7 @@
             xmlhttp.send(params);
         },
         */
-        ajaxLoad = function(type, url, params, asyncCB) {
+        ajaxLoad = function( type, url, params, asyncCB ) {
             var xmlhttp;
             if (window.XMLHttpRequest) // code for IE7+, Firefox, Chrome, Opera, Safari
                 xmlhttp = new XMLHttpRequest();
@@ -149,20 +149,20 @@
         
         $__plugins = { },
         
-        resetState = function() {
+        resetState = function( ) {
             // reset state
             $__loops = 0; $__ifs = 0; $__loopifs = 0; $__level = 0;
             $__blockcnt = 0; $__blocks = [];  $__allblocks = [];  $__extends = null;
             //$__escape = true;
         },
         
-        pushState = function() {
+        pushState = function( ) {
             // push state
             $__stack.push([$__loops, $__ifs, $__loopifs, $__level,
             $__blockcnt, $__blocks,  $__allblocks,  $__extends]);
         },
         
-        popState = function() {
+        popState = function( ) {
             // pop state
             var t = $__stack.pop();
             $__loops = t[0]; $__ifs = t[1]; $__loopifs = t[2]; $__level = t[3];
@@ -174,7 +174,7 @@
         },
         
         // pad lines to generate formatted code
-        padLines = function(lines, level) {
+        padLines = function( lines, level ) {
             if ( arguments.length < 2 ) level = $__level;
             
             if ( level >= 0 )
@@ -312,12 +312,12 @@
         //
     
         // whether var is set
-        t_isset = function(varname) {
+        t_isset = function( varname ) {
             return ' ( "undefined" !== typeof(' + varname + ') ) ';
         },
         
         // set/create/update tpl var
-        t_set = function(args) {
+        t_set = function( args ) {
             args = args.split(',');
             var varname = trim( args.shift() );
             var expr = trim(args.join(','));
@@ -325,7 +325,7 @@
         },
         
         // unset/remove/delete tpl var
-        t_unset = function(varname) {
+        t_unset = function( varname ) {
             if ( varname && varname.length )
             {
                 varname = trim( varname );
@@ -335,7 +335,7 @@
         },
         
         // if
-        t_if = function(cond) { 
+        t_if = function( cond ) { 
             var out, out1;
             
             $__ifs++; 
@@ -351,7 +351,7 @@
         },
         
         // elseif
-        t_elseif = function(cond) { 
+        t_elseif = function( cond ) { 
             var out, out1;
             
             out = "';";
@@ -367,7 +367,7 @@
         },
         
         // else
-        t_else = function() { 
+        t_else = function( ) { 
             var out, out1;
             
             out = "';";
@@ -381,7 +381,7 @@
         },
         
         // endif
-        t_endif = function() { 
+        t_endif = function( ) { 
             var out, out1;
             
             $__ifs--; 
@@ -395,28 +395,29 @@
         },
         
         // for, foreach
-        t_for = function(for_expr) {
+        t_for = function( for_expr ) {
             var out;
             
             $__loops++;  $__loopifs++;
             
             for_expr = for_expr.split(' as ');
             
-            var exprO = trim(for_expr[0]), 
+            var o = trim(for_expr[0]), 
                 kv = for_expr[1].split('=>'), 
                 k = trim(kv[0]) + '__RAW__', 
                 v = trim(kv[1]) + '__RAW__',
-                o = '_loopObj' + (++$__idcnt)
+                _o = '_O' + (++$__idcnt),
+                _k = '_K' + (++$__idcnt),
+                _v = '_V' + (++$__idcnt)
             ;
             
             out = "';";
             out += padLines(TT_FOR({
-                'FOR_EXPR_O': exprO,
-                'O': o,
-                'K': k,
-                'V': v,
-                'ASSIGN1': "var "+v+" = "+o+"["+k+"];",
-                'ASSIGN2': "__instance__.data['"+k+"'] = "+k+"; __instance__.data['"+v+"'] = "+v+";"
+                'O': o, '_O': _o,
+                'K': k, '_K': _k,
+                'V': v, '_V': _v,
+                'ASSIGN1': "var "+_v+" = "+_o+"["+_k+"];",
+                'ASSIGN2': "__i__.data['"+k+"'] = "+_k+"; __i__.data['"+v+"'] = "+_v+";"
             }));
             
             $__level+=3;
@@ -425,7 +426,7 @@
         },
         
         // elsefor
-        t_elsefor = function() { 
+        t_elsefor = function( ) { 
             var out, out1;
             
             /* else attached to  for loop */ 
@@ -441,7 +442,7 @@
         },
         
         // endfor
-        t_endfor = function() {
+        t_endfor = function( ) {
             var out, out1;
             
             out = "';";
@@ -466,7 +467,7 @@
         },
         
         // include file
-        t_include = function(id/*, asyncCB*/) {
+        t_include = function( id/*, asyncCB*/ ) {
             /*
             // async
             if ( asyncCB )
@@ -504,7 +505,7 @@
         },
         
         // include template
-        t_template = function(args) {
+        t_template = function( args ) {
             args = args.split(',');
             var id = trim( args.shift() );
             var obj = args.join(',');
@@ -512,13 +513,13 @@
         },
         
         // extend another template
-        t_extends = function(tpl) { 
+        t_extends = function( tpl ) { 
             $__extends = tpl; 
             return "'; " + $__TEOL; 
         },
         
         // define (overridable) block
-        t_block = function(block) { 
+        t_block = function( block ) { 
             block = trim(block);
             if ( 0>$__allblocks.indexOf(block) )
             {
@@ -530,7 +531,7 @@
         },
         
         // end define (overridable) block
-        t_endblock = function() { 
+        t_endblock = function( ) { 
             if ($__blockcnt) 
             {
                 $__blockcnt--; 
@@ -542,7 +543,7 @@
         //
         // auxilliary parsing methods
         //
-        split = function(s, leftTplSep, rightTplSep) {
+        split = function( s, leftTplSep, rightTplSep ) {
             var parts1, len, parts, i, tmp;
             parts1 = s.split( leftTplSep );
             len = parts1.length;
@@ -556,7 +557,7 @@
             return parts;
         },
     
-        parseControlConstructs = function(match, ctrl, args)  {
+        parseControlConstructs = function( match, ctrl, args )  {
             if ( ctrl )
             {
                 args = args || '';
@@ -641,7 +642,7 @@
             return match;
         },
         
-        parseNestedBlocks = function(code, blocks) {
+        parseNestedBlocks = function( code, blocks ) {
             var bl = blocks ? blocks.length : 0, 
                 block, delim1, delim2, len1, len2, pos1, pos2,
                 replace
@@ -668,7 +669,7 @@
                         // with the code found previously
                         // in the 1st block definition
                         code = code.substr(0, pos1) +  
-                            "__instance__.renderBlock( '" + block + "' ); " +
+                            "__i__.renderBlock( '" + block + "' ); " +
                             code.substr(pos2+len2)
                         ;
                         
@@ -680,7 +681,7 @@
             return code;
         },
         
-        parseBlocks = function(s) {
+        parseBlocks = function( s ) {
             var blocks = {}, 
                 bl = $__allblocks.length, 
                 block, code, 
@@ -706,7 +707,7 @@
                 
                 if ( code.length )
                 {
-                    //s = s.split(code).join("__instance__.renderBlock( '" + block + "' ); ");
+                    //s = s.split(code).join("__i__.renderBlock( '" + block + "' ); ");
                     
                     code = parseNestedBlocks(code.substring(len1, code.length-len2)/*.replace("+ '' +", '+').replace("+ '';", ';')*/, $__allblocks); // remove redundant code
                     
@@ -724,7 +725,7 @@
                     // with the code found previously
                     // in the 1st block definition
                     s = s.substr(0, pos1) +  
-                        "__instance__.renderBlock( '" + block + "' ); " +
+                        "__i__.renderBlock( '" + block + "' ); " +
                         s.substr(pos2+len2)
                     ;
                     
@@ -736,7 +737,7 @@
             return [s/*.replace( "+ '' +", '+' ).replace( "+ '';", ';' )*/, blocks];
         },
         
-        parseString = function(s, q, i, l) {
+        parseString = function( s, q, i, l ) {
             var string = q, escaped = false, ch = '';
             while ( i < l )
             {
@@ -748,7 +749,7 @@
             return string;
         },
         
-        parseVariable = function(s, i, l, pre)  {
+        parseVariable = function( s, i, l, pre )  {
             pre = pre || 'VARSTR';
             if ( ALPHA.test(s[i]) )
             {
@@ -767,7 +768,7 @@
                 
                 variable_raw = variable;
                 // transform into tpl variable
-                variable = "__instance__.data['" + variable + "']";
+                variable = "__i__.data['" + variable + "']";
                 len = variable_raw.length;
                 
                 // extra space
@@ -928,14 +929,14 @@
             return null;
         },
         
-        funcReplace = function(m, func, plugin) {
+        funcReplace = function( m, func, plugin ) {
             // allow custom plugins as template functions
             if ( plugin && $__plugins[ plugin ]/*self['plugin_' + plugin ]*/ )
                 return 'Contemplate.plugin_' + plugin;
             return 'Contemplate.' + func; 
         },
             
-        parse = function(tpl, withblocks) {
+        parse = function( tpl, withblocks ) {
             var parts, len, parsed, s, i, isTag,
                 tag, strings, variables, id,
                 countl, index, ch, out, cnt, tok, v, tokv
@@ -1062,15 +1063,15 @@
             return parsed /*.replace( "+ '' +", '+' ).replace( "+ '';", ';' )*/; // remove redundant code
         },
         
-        getCachedTemplateName = function(id) { 
+        getCachedTemplateName = function( id ) { 
             return $__cacheDir + id.replace(UNDERLN, '_') + '_tpl.js'; 
         },
         
-        getCachedTemplateClass = function(id) { 
+        getCachedTemplateClass = function( id ) { 
             return 'Contemplate_' + id.replace(UNDERLN, '_') + '_Cached'; 
         },
         
-        createTemplateRenderFunction = function(id, seps) {
+        createTemplateRenderFunction = function( id, seps ) {
             
             resetState();
             
@@ -1090,12 +1091,12 @@
             }
             
             // defined blocks
-            for (b in blocks[1]) funcs[b] = new Function("__instance__", blocks[1][b]);
+            for (b in blocks[1]) funcs[b] = new Function("__i__", blocks[1][b]);
             
-            return [new Function("__instance__", func), funcs];
+            return [new Function("__i__", func), funcs];
         },
         
-        createCachedTemplate = function(id, filename, classname, seps) {
+        createCachedTemplate = function( id, filename, classname, seps ) {
             
             resetState();
             
@@ -1163,7 +1164,7 @@
             return setCachedTemplate(filename, classCode);
         },
         
-        getCachedTemplate = function(id, options) {
+        getCachedTemplate = function( id, options ) {
             
             options = options || {};
             
@@ -1237,7 +1238,7 @@
             return null;
         },
         
-        setCachedTemplate = function(filename, tplContents, asyncCB) { 
+        setCachedTemplate = function( filename, tplContents, asyncCB ) { 
             if ( asyncCB )
             {
                 fwriteAsync(filename, tplContents, { encoding: self.ENCODING }, function(err) {
@@ -1270,6 +1271,7 @@
                 ,""
                 ,""
                 ,"}(this, '"), r['CLASSNAME'], j("', function( ) {"
+                ,"   \"use strict\";"
                 ,"   /* Contemplate cached template '"), r['TPLID'], j("' */"
                 ,"   /* quasi extends main Contemplate class */"
                 ,"   "
@@ -1309,20 +1311,20 @@
                 ,"       };"
                 ,"       "
                 ,"       /* render a tpl block method */"
-                ,"       this.renderBlock = function(block, __instance__) {"
-                ,"           if ( !__instance__ ) __instance__ = this;"
-                ,"           if ( _blocks && _blocks[block] ) return _blocks[block](__instance__);"
-                ,"           else if ( _parent ) return _parent.renderBlock(block, __instance__);"
+                ,"       this.renderBlock = function(block, __i__) {"
+                ,"           if ( !__i__ ) __i__ = this;"
+                ,"           if ( _blocks && _blocks[block] ) return _blocks[block](__i__);"
+                ,"           else if ( _parent ) return _parent.renderBlock(block, __i__);"
                 ,"           return '';"
                 ,"       };"
                 ,"       "
                 ,"       /* tpl render method */"
-                ,"       this.render = function(data, __instance__) {"
-                ,"           if ( !__instance__ ) __instance__ = this;"
+                ,"       this.render = function(data, __i__) {"
+                ,"           if ( !__i__ ) __i__ = this;"
                 ,"           var __p__ = '';"
                 ,"           if ( _parent )"
                 ,"           {"
-                ,"               __p__ = _parent.render(data, __instance__);"
+                ,"               __p__ = _parent.render(data, __i__);"
                 ,"           }"
                 ,"           else"
                 ,"           {"
@@ -1353,7 +1355,7 @@
             return [
                 j(""
                 ,"/* tpl block render method for block '"), r['BLOCKNAME'], j("' */"
-                ,"'"), r['BLOCKMETHODNAME'], j("': function(__instance__) {"
+                ,"'"), r['BLOCKMETHODNAME'], j("': function(__i__) {"
                 ,""), r['BLOCKMETHODCODE'], j(""
                 ,"}"
                 ,"")
@@ -1412,13 +1414,13 @@
             var j = joinLines;
             return [
                 j(""
-                ,"var "), r['O'], " = ", r['FOR_EXPR_O'], j(";"
-                ,"if ( "), r['O'], " && Object.keys(", r['O'], j(").length )"
+                ,"var "), r['_O'], " = ", r['O'], j(";"
+                ,"if ( "), r['_O'], " && Object.keys(", r['_O'], j(").length )"
                 ,"{"
-                ,"   var "), r['K'], j(";"
-                ,"   for ( "), r['K'], " in ", r['O'], j(" )"
+                ,"   var "), r['_K'], j(";"
+                ,"   for ( "), r['_K'], " in ", r['_O'], j(" )"
                 ,"   {"
-                ,"       if ( Contemplate.hasOwn("), r['O'], ", ", r['K'], j(") )"
+                ,"       if ( Contemplate.hasOwn("), r['_O'], ", ", r['_K'], j(") )"
                 ,"       {"
                 ,"          "), r['ASSIGN1'], j(""
                 ,"          "), r['ASSIGN2'], j(""
@@ -1484,7 +1486,7 @@
             {
                 return [
                     j(""
-                    ,"__instance__.data = Contemplate.data( data );"
+                    ,"__i__.data = Contemplate.data( data );"
                     ,""), r['RCODE'], j(""
                     ,"")
                 ].join( "" );
@@ -1501,7 +1503,7 @@
     //
     //  Instance template method(s) (for in-memory only templates)
     //
-    var ContemplateInstance = function(id, renderFunc) {
+    var ContemplateInstance = function( id, renderFunc ) {
         // private vars
         var _renderFunction = null, _parent = null, _blocks = null;
         
@@ -1520,7 +1522,7 @@
             return this; 
         };
         
-        this.setParent = function(parent) { 
+        this.setParent = function( parent ) { 
             if ( parent )
             {
                 if ( parent.substr )
@@ -1531,39 +1533,39 @@
             return this;
         };
         
-        this.setRenderFunction = function(renderfunc) { 
+        this.setRenderFunction = function( renderfunc ) { 
             _renderFunction = renderfunc; 
             return this; 
         };
         
-        this.setBlocks = function(blocks) { 
+        this.setBlocks = function( blocks ) { 
             if ( !_blocks ) _blocks = {}; 
             _blocks = Contemplate.merge(_blocks, blocks); 
             return this; 
         };
         
-        this.renderBlock = function(block, __instance__) {
-            if ( !__instance__ ) __instance__ = this;
+        this.renderBlock = function( block, __i__ ) {
+            if ( !__i__ ) __i__ = this;
             
-            if ( _blocks && _blocks[block] ) return _blocks[block](__instance__);
-            else if ( _parent ) return _parent.renderBlock(block, __instance__);
+            if ( _blocks && _blocks[block] ) return _blocks[block](__i__);
+            else if ( _parent ) return _parent.renderBlock(block, __i__);
             
             return '';
         };
         
-        this.render = function(data, __instance__) {
+        this.render = function( data, __i__ ) {
             var __p__ = '';
             
-            if ( !__instance__ ) __instance__ = this;
+            if ( !__i__ ) __i__ = this;
             
             if ( _parent ) 
             {
-                __p__ = _parent.render(data, __instance__);
+                __p__ = _parent.render(data, __i__);
             }
             else if ( _renderFunction )  
             {
-                __instance__.data = Contemplate.data( data ); 
-                __p__ = _renderFunction(__instance__);
+                __i__.data = Contemplate.data( data ); 
+                __p__ = _renderFunction(__i__);
             }
             
             this.data = null;

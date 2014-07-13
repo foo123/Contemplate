@@ -146,38 +146,38 @@ class Contemplate
         return $this; 
     }
     
-    public function renderBlock( $block, $__instance__=null )
+    public function renderBlock( $block, $__i__=null )
     {
-        if ( !$__instance__ ) $__instance__ = $this;
+        if ( !$__i__ ) $__i__ = $this;
         
         if ( $this->_blocks && isset($this->_blocks[$block]) ) 
         {
             $blockfunc = $this->_blocks[$block]; 
-            return $blockfunc( $__instance__ );
+            return $blockfunc( $__i__ );
         }
         elseif ( $this->_parent ) 
         {
-            return $this->_parent->renderBlock($block, $__instance__);
+            return $this->_parent->renderBlock($block, $__i__);
         }
         
         return '';
     }
     
-    public function render( $data, $__instance__=null ) 
+    public function render( $data, $__i__=null ) 
     {
         $__p__ = ''; 
-        if ( !$__instance__ ) $__instance__ = $this;
+        if ( !$__i__ ) $__i__ = $this;
         
         if ( $this->_parent ) 
         { 
-            $__p__ = $this->_parent->render($data, $__instance__); 
+            $__p__ = $this->_parent->render($data, $__i__); 
         }
         elseif ( $this->_renderFunction )
         {
             /* dynamic function */
-            $__instance__->data = self::data( $data ); 
+            $__i__->data = self::data( $data ); 
             $renderFunction = $this->_renderFunction;  
-            $__p__ = $renderFunction( $__instance__ );
+            $__p__ = $renderFunction( $__i__ );
         }
         
         $this->data = null;
@@ -813,20 +813,21 @@ class Contemplate
         
         self::$__loops++;  self::$__loopifs++;
         $for_expr = explode(' as ', $for_expr); 
-        $exprO = trim($for_expr[0]); 
+        $o = trim($for_expr[0]); 
         $kv = explode('=>', $for_expr[1]); 
         $k = trim($kv[0]) . '__RAW__'; 
         $v = trim($kv[1]) . '__RAW__'; 
-        $o = '$_loopObj' . (++$id);
+        $_o = '$_O' . (++$id);
+        $_k = '$_K' . (++$id);
+        $_v = '$_V' . (++$id);
 
         $out = "';";
         $out1 = self::TT_FOR(array(
-                'FOR_EXPR_O'=> $exprO,
-                'O'=> $o, 
-                'K'=> '$'.$k, 
-                'V'=> '$'.$v, 
-                'ASSIGN1'=> "\$__instance__->data['$k'] = \${$k};", 
-                'ASSIGN2'=> "\$__instance__->data['$v'] = \${$v};"
+                'O'=> $o, '_O'=> $_o, 
+                'K'=> '$'.$k, '_K'=> $_k,
+                'V'=> '$'.$v, '_V'=> $_v,
+                'ASSIGN1'=> "\$__i__->data['$k'] = $_k;", 
+                'ASSIGN2'=> "\$__i__->data['$v'] = $_v;"
             ));
         
         $out .= self::padLines($out1);
@@ -1061,7 +1062,7 @@ class Contemplate
                         // with the code found previously
                         // in the 1st block definition
                         $code = substr($code, 0, $pos1) .  
-                            "\$__instance__->renderBlock( '" . $block . "' ); " . 
+                            "\$__i__->renderBlock( '" . $block . "' ); " . 
                             substr($code, $pos2+$len2)
                         ;
                         
@@ -1124,7 +1125,7 @@ class Contemplate
                     // with the code found previously
                     // in the 1st block definition
                     $s = substr($s, 0, $pos1) .  
-                        "\$__instance__->renderBlock( '" . $block . "' ); " . 
+                        "\$__i__->renderBlock( '" . $block . "' ); " . 
                         substr($s, $pos2+$len2)
                     ;
                     
@@ -1178,7 +1179,7 @@ class Contemplate
             
             $variable_raw = $variable;
             // transform into tpl variable
-            $variable = "\$__instance__->data['" . $variable . "']";
+            $variable = "\$__i__->data['" . $variable . "']";
             $len = strlen($variable_raw);
             
             // extra space
@@ -1516,12 +1517,12 @@ class Contemplate
                     ), 2);
         }
         
-        $fn = create_function('$__instance__', $func);
+        $fn = create_function('$__i__', $func);
         
         $blockfns = array();  
         foreach ($blocks[1] as $b=>$bc) 
         {
-            $blockfns[$b] = create_function('$__instance__', $bc);
+            $blockfns[$b] = create_function('$__i__', $bc);
         }
         
         return array($fn, $blockfns);
@@ -1762,28 +1763,28 @@ class Contemplate
             ,"    /* tpl-defined blocks render code ends here */"
             ,"    "
             ,"    /* render a tpl block method */"
-            ,"    public function renderBlock(\$block, \$__instance__=null)"
+            ,"    public function renderBlock(\$block, \$__i__=null)"
             ,"    {"
-            ,"        if ( !\$__instance__ ) \$__instance__ = \$this;"
+            ,"        if ( !\$__i__ ) \$__i__ = \$this;"
             ,"        "
             ,"        \$method = '_blockfn_' . \$block;"
             ,"        "
-            ,"        if ( method_exists(\$this, \$method) ) return \$this->{\$method}(\$__instance__);"
+            ,"        if ( method_exists(\$this, \$method) ) return \$this->{\$method}(\$__i__);"
             ,"        "
-            ,"        elseif ( \$this->_parent ) return \$this->_parent->renderBlock(\$block, \$__instance__);"
+            ,"        elseif ( \$this->_parent ) return \$this->_parent->renderBlock(\$block, \$__i__);"
             ,"        "
             ,"        return '';"
             ,"    }"
             ,"    "
             ,"    /* tpl render method */"
-            ,"    public function render(\$data, \$__instance__=null)"
+            ,"    public function render(\$data, \$__i__=null)"
             ,"    {"
             ,"        \$__p__ = '';"
-            ,"        if ( !\$__instance__ ) \$__instance__ = \$this;"
+            ,"        if ( !\$__i__ ) \$__i__ = \$this;"
             ,"        "
             ,"        if ( \$this->_parent )"
             ,"        {"
-            ,"            \$__p__ = \$this->_parent->render(\$data, \$__instance__);"
+            ,"            \$__p__ = \$this->_parent->render(\$data, \$__i__);"
             ,"        }"
             ,"        else"
             ,"        {"
@@ -1806,7 +1807,7 @@ class Contemplate
         return implode("", array(
             self::j(""
             ,"/* tpl block render method for block '"), $r['BLOCKNAME'], self::j("' */"
-            ,"private function "), $r['BLOCKMETHODNAME'], self::j("(\$__instance__) "
+            ,"private function "), $r['BLOCKMETHODNAME'], self::j("(\$__i__) "
             ,"{ "
             ,""), $r['BLOCKMETHODCODE'], self::j(""
             ,"}"
@@ -1864,10 +1865,10 @@ _T5_;
     {
         return implode("", array(
             self::j(""
-            ,""), $r['O'], " = ", $r['FOR_EXPR_O'], self::j(";"
-            ,"if ( !empty("), $r['O'], self::j(") )"
+            ,""), $r['_O'], " = ", $r['O'], self::j(";"
+            ,"if ( !empty("), $r['_O'], self::j(") )"
             ,"{"
-            ,"    foreach ( "), $r['O'], " as ", $r['K'], "=>", $r['V'], self::j(" )"
+            ,"    foreach ( "), $r['_O'], " as ", $r['_K'], "=>", $r['_V'], self::j(" )"
             ,"    {"
             ,"        "), $r['ASSIGN1'], self::j(""
             ,"        "), $r['ASSIGN2'], self::j(""
@@ -1952,7 +1953,7 @@ _T9_;
         {
             return implode("", array(
                 self::j(""
-                ,"\$__instance__->data = Contemplate::data( \$data );" 
+                ,"\$__i__->data = Contemplate::data( \$data );" 
                 ,""), $r['RCODE'], self::j(""
                 ,"")
             ));

@@ -15,6 +15,7 @@
 
 
 }(this, 'Contemplate_base_Cached', function( ) {
+   "use strict";
    /* Contemplate cached template 'base' */
    /* quasi extends main Contemplate class */
    
@@ -37,7 +38,7 @@
             
             
             /* tpl block render method for block 'Block3' */
-            'Block3': function(__instance__) {
+            'Block3': function(__i__) {
                 
                 var __p__ = '';
                  
@@ -49,7 +50,7 @@
             
             
             /* tpl block render method for block 'Block2' */
-            'Block2': function(__instance__) {
+            'Block2': function(__i__) {
                 
                 var __p__ = '';
                  
@@ -61,7 +62,7 @@
             
             
             /* tpl block render method for block 'Block1' */
-            'Block1': function(__instance__) {
+            'Block1': function(__i__) {
                 
                 var __p__ = '';
                  
@@ -93,30 +94,30 @@
        };
        
        /* render a tpl block method */
-       this.renderBlock = function(block, __instance__) {
-           if ( !__instance__ ) __instance__ = this;
-           if ( _blocks && _blocks[block] ) return _blocks[block](__instance__);
-           else if ( _parent ) return _parent.renderBlock(block, __instance__);
+       this.renderBlock = function(block, __i__) {
+           if ( !__i__ ) __i__ = this;
+           if ( _blocks && _blocks[block] ) return _blocks[block](__i__);
+           else if ( _parent ) return _parent.renderBlock(block, __i__);
            return '';
        };
        
        /* tpl render method */
-       this.render = function(data, __instance__) {
-           if ( !__instance__ ) __instance__ = this;
+       this.render = function(data, __i__) {
+           if ( !__i__ ) __i__ = this;
            var __p__ = '';
            if ( _parent )
            {
-               __p__ = _parent.render(data, __instance__);
+               __p__ = _parent.render(data, __i__);
            }
            else
            {
                /* tpl main render code starts here */
                 
-                __instance__.data = Contemplate.data( data );
-                __p__ += '<!-- this is the base template -->' + "\n" + '' + "\n" + '<strong>This is the base template</strong>' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block1</strong><br />' + "\n" + '' +  __instance__.renderBlock( 'Block1' );  
-                __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2</strong><br />' + "\n" + '' +  __instance__.renderBlock( 'Block2' );  
-                __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block3</strong><br />' + "\n" + '' +  __instance__.renderBlock( 'Block3' );  
-                __p__ += '' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2 Again</strong><br />' + "\n" + '' +  __instance__.renderBlock( 'Block2' );  
+                __i__.data = Contemplate.data( data );
+                __p__ += '<!-- this is the base template -->' + "\n" + '' + "\n" + '<strong>This is the base template</strong>' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block1</strong><br />' + "\n" + '' +  __i__.renderBlock( 'Block1' );  
+                __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2</strong><br />' + "\n" + '' +  __i__.renderBlock( 'Block2' );  
+                __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block3</strong><br />' + "\n" + '' +  __i__.renderBlock( 'Block3' );  
+                __p__ += '' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2 Again</strong><br />' + "\n" + '' +  __i__.renderBlock( 'Block2' );  
                 __p__ += '' + "\n" + '';
                 
                /* tpl main render code ends here */

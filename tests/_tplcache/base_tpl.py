@@ -34,7 +34,7 @@ def __getTplClass__(Contemplate):
         
         
         # tpl block render method for block 'Block3'
-        def _blockfn_Block3(self, __instance__):
+        def _blockfn_Block3(self, __i__):
             
             __p__ = ''
              
@@ -44,7 +44,7 @@ def __getTplClass__(Contemplate):
         
         
         # tpl block render method for block 'Block2'
-        def _blockfn_Block2(self, __instance__):
+        def _blockfn_Block2(self, __i__):
             
             __p__ = ''
              
@@ -54,7 +54,7 @@ def __getTplClass__(Contemplate):
         
         
         # tpl block render method for block 'Block1'
-        def _blockfn_Block1(self, __instance__):
+        def _blockfn_Block1(self, __i__):
             
             __p__ = ''
              
@@ -65,36 +65,36 @@ def __getTplClass__(Contemplate):
         # tpl-defined blocks render code ends here
 
         # render a tpl block method
-        def renderBlock(self, block, __instance__=None):
-            if ( not __instance__ ): __instance__ = self
+        def renderBlock(self, block, __i__=None):
+            if ( not __i__ ): __i__ = self
 
             method = '_blockfn_' + block
 
             if (hasattr(self, method) and callable(getattr(self, method))):
-                return getattr(self, method)(__instance__)
+                return getattr(self, method)(__i__)
 
             elif self._parent is not None:
-                return self._parent.renderBlock(block, __instance__)
+                return self._parent.renderBlock(block, __i__)
 
             return ''
             
         
         # tpl render method
-        def render(self, data, __instance__=None):
+        def render(self, data, __i__=None):
             __p__ = ''
-            if ( not __instance__ ): __instance__ = self
+            if ( not __i__ ): __i__ = self
 
             if self._parent is not None:
-                __p__ = self._parent.render(data, __instance__)
+                __p__ = self._parent.render(data, __i__)
 
             else:
                 # tpl main render code starts here
                 
-                __instance__.data = Contemplate.data( data )
-                __p__ += '<!-- this is the base template -->' + "\n" + '' + "\n" + '<strong>This is the base template</strong>' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block1</strong><br />' + "\n" + '' +  __instance__.renderBlock( 'Block1' )  
-                __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2</strong><br />' + "\n" + '' +  __instance__.renderBlock( 'Block2' )  
-                __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block3</strong><br />' + "\n" + '' +  __instance__.renderBlock( 'Block3' )  
-                __p__ += '' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2 Again</strong><br />' + "\n" + '' +  __instance__.renderBlock( 'Block2' )  
+                __i__.data = Contemplate.data( data )
+                __p__ += '<!-- this is the base template -->' + "\n" + '' + "\n" + '<strong>This is the base template</strong>' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block1</strong><br />' + "\n" + '' +  __i__.renderBlock( 'Block1' )  
+                __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2</strong><br />' + "\n" + '' +  __i__.renderBlock( 'Block2' )  
+                __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block3</strong><br />' + "\n" + '' +  __i__.renderBlock( 'Block3' )  
+                __p__ += '' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2 Again</strong><br />' + "\n" + '' +  __i__.renderBlock( 'Block2' )  
                 __p__ += '' + "\n" + ''
                 
                 # tpl main render code ends here

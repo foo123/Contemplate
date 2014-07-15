@@ -104,6 +104,8 @@ syntax, yet work the same in all the engine's implementations.
 
 * __Template Inheritance__ , templates can *extend/inherit other templates* using __extends__ directive and *override blocks* using __block__ , __endblock__ directives (see examples)
 
+* __Nested Blocks__ , *template blocks* can be nested and repeated in multiple ways
+
 * __Custom Plugins__ , can be used as template functions to enhance/extend the engine functionality
 
 

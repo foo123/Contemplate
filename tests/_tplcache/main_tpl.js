@@ -16,11 +16,9 @@
 
 }(this, 'Contemplate_main_Cached', function( ) {
    "use strict";
+   return function( Contemplate ) {
    /* Contemplate cached template 'main' */
    /* quasi extends main Contemplate class */
-   
-   /* This is NOT used, Contemplate is accessible globally */
-   /* var self = require('Contemplate'); */
    
    /* constructor */
    function Contemplate_main_Cached(id)
@@ -91,4 +89,5 @@
    
     // export it
     return Contemplate_main_Cached;
+    };
 });

@@ -2,8 +2,9 @@
 
 __0.6.4__
 * make faster and more precise (internal) template parsing/rendering
-* php fix nestedBlocks parsing issue
-* minor edits/updates
+* make faster and more precise blocks and nested block parsing
+* Contemplate for Node.js is **not** global anymore
+* refactor/optimize
 
 __0.6.3__
 * add more options (e.g 'autoUpdate') per single template

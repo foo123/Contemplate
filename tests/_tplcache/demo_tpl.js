@@ -16,11 +16,9 @@
 
 }(this, 'Contemplate_demo_Cached', function( ) {
    "use strict";
+   return function( Contemplate ) {
    /* Contemplate cached template 'demo' */
    /* quasi extends main Contemplate class */
-   
-   /* This is NOT used, Contemplate is accessible globally */
-   /* var self = require('Contemplate'); */
    
    /* constructor */
    function Contemplate_demo_Cached(id)
@@ -75,7 +73,7 @@
                 var __p__ = '';
                  
                 __p__ += '' + "\n" + '' + "\n" + '    <strong>Block2 is overriden by the demo template</strong>' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '' + "\n" + '    <strong>A table</strong><br />' + "\n" + '    ' + ( Contemplate.htmltable(__i__.data['table_data'], __i__.data['table_options']) ) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>Test if variable is set</strong><br />' + "\n" + '    ';
-                if (   ( "undefined" !== typeof(__i__.data['foo']) )   )
+                if (   ("undefined" !== typeof(__i__.data['foo']))   )
                 {
                      
                     __p__ += '' + "\n" + '        $foo is set' + "\n" + '    ';
@@ -90,7 +88,7 @@
                 __i__.data['foo'] = ("123");
                  
                 __p__ += '' + "\n" + '    <br />' + "\n" + '    <br />' + "\n" + '    ' + "\n" + '    <strong>Test if variable is set</strong><br />' + "\n" + '    ';
-                if (   ( "undefined" !== typeof(__i__.data['foo']) )   )
+                if (   ("undefined" !== typeof(__i__.data['foo']))   )
                 {
                      
                     __p__ += '' + "\n" + '        $foo is set' + "\n" + '    ';
@@ -122,6 +120,18 @@
                 __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A select box</strong><br />' + "\n" + '    ' + ( Contemplate.htmlselect(__i__.data['select_data'], __i__.data['select_options']) ) + '' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A table with alternative format</strong><br />' + "\n" + '    ' + ( Contemplate.htmltable(__i__.data['table_data'], {"header" : true}) ) + '' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A select box with alternative format</strong><br />' + "\n" + '    ' + ( Contemplate.htmlselect(__i__.data['select_data'], {             "optgroups" : ["group1", "group2", "group3"],             "selected" : 3,             "multiple" : false,             "style" : "width:200px;",             "foo123" : ":,=>"         }) ) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    <!-- include a (sub-)template file -->' + "\n" + '     <!-- print a localized date php-style -->' + "\n" + '<strong>A (localized) date, PHP-style</strong><br />' + "\n" + '' + ( Contemplate.ldate("M, d", Contemplate.now()) ) + '' + "\n" + ''; 
                  
                 __p__ += '' + "\n" + '' + "\n" + '';
+                return __p__;
+                
+            }
+            ,
+            
+            
+            /* tpl block render method for block 'Block12' */
+            'Block12': function(__i__) {
+                
+                var __p__ = '';
+                 
+                __p__ += 'Demo template nested Block12';
                 return __p__;
                 
             }
@@ -182,4 +192,5 @@
    
     // export it
     return Contemplate_demo_Cached;
+    };
 });

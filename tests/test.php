@@ -24,11 +24,6 @@ define('ABSPATH', dirname(__FILE__));
 // include the Contemplate Class
 include dirname(ABSPATH).'/src/php/Contemplate.php';
 
-// set the template separators (deprecated)
-// template separators are defined on the very 1st line of the template
-//$sepleft="!%";  $sepright="%!";
-//Contemplate::setTemplateSeparators(array('left'=>$sepleft, 'right'=>$sepright));
-
 Contemplate::setLocaleStrings(array(
     "locale"=> "γλωσσική περιοχή"
 ));

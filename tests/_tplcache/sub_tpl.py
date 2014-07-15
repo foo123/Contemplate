@@ -67,7 +67,7 @@ def __getTplClass__(Contemplate):
                     # be able to use both key/value in loop
                     if isinstance(_O1, list): _O4 = enumerate(_O1)
                     else: _O4 = _O1.items()
-                    for _K2,_V3 in _O4 :
+                    for _K2,_V3 in _O4:
                         __i__.data['j'] = _K2
                         __i__.data['user'] = _V3
                          

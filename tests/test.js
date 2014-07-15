@@ -19,19 +19,10 @@ var http = require('http'), httpPort = 1337,
     path = require('path'), fs = require('fs'),
     Exists = fs.exists, //path.exists,
     Read = fs.readFile,
-    echo = console.log;
+    echo = console.log,
+    Contemplate = require(path.join(__dirname, '../src/js/Contemplate.js'))
+;
 
-// it is globally-scoped as in browser: global.Contemplate
-require(path.join(__dirname, '../src/js/Contemplate.js'));
-
-// works inside Nodejs, deprecated, Node detected automatically
-//Contemplate.isNodeJs(true, fs);
-
-
-// set the template separators (deprecated)
-// template separators are defined on the very 1st line of the template
-//var $sepleft="<%", $sepright="%>";
-//Contemplate.setTemplateSeparators({'left' : $sepleft, 'right' : $sepright});
 
 Contemplate.setLocaleStrings({
     "locale": "γλωσσική περιοχή"

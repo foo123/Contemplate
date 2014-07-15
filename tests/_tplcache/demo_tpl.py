@@ -44,7 +44,7 @@ def __getTplClass__(Contemplate):
                 # be able to use both key/value in loop
                 if isinstance(_O1, list): _O4 = enumerate(_O1)
                 else: _O4 = _O1.items()
-                for _K2,_V3 in _O4 :
+                for _K2,_V3 in _O4:
                     __i__.data['i'] = _K2
                     __i__.data['usergroup'] = _V3
                      
@@ -52,7 +52,7 @@ def __getTplClass__(Contemplate):
                      
                     __p__ += '' + "\n" + '    ' 
              
-            __p__ += '' + "\n" + '' + "\n" + ''
+            __p__ += '' + "\n" + '' + "\n" + '';
             return __p__
             
         
@@ -63,7 +63,7 @@ def __getTplClass__(Contemplate):
             __p__ = ''
              
             __p__ += '' + "\n" + '' + "\n" + '    <strong>Block2 is overriden by the demo template</strong>' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '' + "\n" + '    <strong>A table</strong><br />' + "\n" + '    ' + str( Contemplate.htmltable(__i__.data['table_data'], __i__.data['table_options']) ) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>Test if variable is set</strong><br />' + "\n" + '    ' 
-            if (   ( "foo" in __i__.data )   ):
+            if (   ("foo" in __i__.data)   ):
                  
                 __p__ += '' + "\n" + '        $foo is set' + "\n" + '    ' 
             else:
@@ -74,7 +74,7 @@ def __getTplClass__(Contemplate):
             __i__.data['foo'] = ("123")
              
             __p__ += '' + "\n" + '    <br />' + "\n" + '    <br />' + "\n" + '    ' + "\n" + '    <strong>Test if variable is set</strong><br />' + "\n" + '    ' 
-            if (   ( "foo" in __i__.data )   ):
+            if (   ("foo" in __i__.data)   ):
                  
                 __p__ += '' + "\n" + '        $foo is set' + "\n" + '    ' 
             else:
@@ -87,7 +87,7 @@ def __getTplClass__(Contemplate):
                 # be able to use both key/value in loop
                 if isinstance(_O1, list): _O4 = enumerate(_O1)
                 else: _O4 = _O1.items()
-                for _K2,_V3 in _O4 :
+                for _K2,_V3 in _O4:
                     __i__.data['index'] = _K2
                     __i__.data['value'] = _V3
                      
@@ -95,7 +95,17 @@ def __getTplClass__(Contemplate):
              
             __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A select box</strong><br />' + "\n" + '    ' + str( Contemplate.htmlselect(__i__.data['select_data'], __i__.data['select_options']) ) + '' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A table with alternative format</strong><br />' + "\n" + '    ' + str( Contemplate.htmltable(__i__.data['table_data'], {"header" : True}) ) + '' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A select box with alternative format</strong><br />' + "\n" + '    ' + str( Contemplate.htmlselect(__i__.data['select_data'], {             "optgroups" : ["group1", "group2", "group3"],             "selected" : 3,             "multiple" : False,             "style" : "width:200px;",             "foo123" : ":,=>"         }) ) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    <!-- include a (sub-)template file -->' + "\n" + '     <!-- print a localized date php-style -->' + "\n" + '<strong>A (localized) date, PHP-style</strong><br />' + "\n" + '' + str( Contemplate.ldate("M, d", Contemplate.now()) ) + '' + "\n" + '' 
              
-            __p__ += '' + "\n" + '' + "\n" + ''
+            __p__ += '' + "\n" + '' + "\n" + '';
+            return __p__
+            
+        
+        
+        # tpl block render method for block 'Block12'
+        def _blockfn_Block12(self, __i__):
+            
+            __p__ = ''
+             
+            __p__ += 'Demo template nested Block12';
             return __p__
             
         

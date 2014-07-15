@@ -49,13 +49,39 @@ final class Contemplate_base_Cached extends Contemplate
     }
     
     
+    /* tpl block render method for block 'Block12' */
+    private function _blockfn_Block12($__i__) 
+    { 
+        
+        $__p__ = '';
+         
+        $__p__ .= 'Base template nested Block12';
+        return $__p__;
+        
+    }
+    
+    
+    /* tpl block render method for block 'Block11' */
+    private function _blockfn_Block11($__i__) 
+    { 
+        
+        $__p__ = '';
+         
+        $__p__ .= 'Base template nested Block11';
+        return $__p__;
+        
+    }
+    
+    
     /* tpl block render method for block 'Block1' */
     private function _blockfn_Block1($__i__) 
     { 
         
         $__p__ = '';
          
-        $__p__ .= 'Base template Block1';
+        $__p__ .= '' . "\n" . 'Base template Block1' . "\n" . '<br /><br />' . "\n" . '' .  $__i__->renderBlock( 'Block11' ); 
+        $__p__ .= '' . "\n" . '<br /><br />' . "\n" . '' .  $__i__->renderBlock( 'Block12' ); 
+        $__p__ .= '' . "\n" . '<br /><br />' . "\n" . '';
         return $__p__;
         
     }
@@ -91,10 +117,10 @@ final class Contemplate_base_Cached extends Contemplate
             /* tpl main render code starts here */
             
             $__i__->data = Contemplate::data( $data );
-            $__p__ .= '<!-- this is the base template -->' . "\n" . '' . "\n" . '<strong>This is the base template</strong>' . "\n" . '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block1</strong><br />' . "\n" . '' . $__i__->renderBlock( 'Block1' );  
-            $__p__ .= '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block2</strong><br />' . "\n" . '' . $__i__->renderBlock( 'Block2' );  
-            $__p__ .= '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block3</strong><br />' . "\n" . '' . $__i__->renderBlock( 'Block3' );  
-            $__p__ .= '' . "\n" . '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block2 Again</strong><br />' . "\n" . '' . $__i__->renderBlock( 'Block2' );  
+            $__p__ .= '<!-- this is the base template -->' . "\n" . '' . "\n" . '<strong>This is the base template</strong>' . "\n" . '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block1</strong><br />' . "\n" . '' .  $__i__->renderBlock( 'Block1' ); 
+            $__p__ .= '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block2</strong><br />' . "\n" . '' .  $__i__->renderBlock( 'Block2' ); 
+            $__p__ .= '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block3</strong><br />' . "\n" . '' .  $__i__->renderBlock( 'Block3' ); 
+            $__p__ .= '' . "\n" . '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block2 Again</strong><br />' . "\n" . '' .  $__i__->renderBlock( 'Block2' ); 
             $__p__ .= '' . "\n" . '';
             
             /* tpl main render code ends here */

@@ -42,7 +42,7 @@ final class Contemplate_demo_Cached extends Contemplate
                  
                 $__p__ .= '' . "\n" . '        <!-- call a (sub-)template -->' . "\n" . '        ' . Contemplate::tpl( "sub",  array("i" => $__i__->data['i'], "users" => $__i__->data['users']) ); 
                  
-                $__p__ .= '' . "\n" . '    ';            
+                $__p__ .= '' . "\n" . '    ';
             }
         }
          
@@ -59,30 +59,30 @@ final class Contemplate_demo_Cached extends Contemplate
         $__p__ = '';
          
         $__p__ .= '' . "\n" . '' . "\n" . '    <strong>Block2 is overriden by the demo template</strong>' . "\n" . '' . "\n" . '    <br /><br />' . "\n" . '' . "\n" . '    <strong>A table</strong><br />' . "\n" . '    ' . ( Contemplate::htmltable($__i__->data['table_data'], $__i__->data['table_options']) ) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>Test if variable is set</strong><br />' . "\n" . '    ';
-        if (   ( isset($__i__->data['foo']) )   )
+        if (   (isset($__i__->data['foo']))   )
         {
              
-            $__p__ .= '' . "\n" . '        $foo is set' . "\n" . '    ';        
+            $__p__ .= '' . "\n" . '        $foo is set' . "\n" . '    ';
         }
         else
         {
              
-            $__p__ .= '' . "\n" . '        $foo is NOT set' . "\n" . '    ';        
+            $__p__ .= '' . "\n" . '        $foo is NOT set' . "\n" . '    ';
         }
          
         $__p__ .= '' . "\n" . '    <br />' . "\n" . '    <br />' . "\n" . '' . "\n" . '    <strong>Set a new tpl variable and use it in a custom test plugin</strong><br />' . "\n" . '    ';
         $__i__->data['foo'] = ( "123" );
          
         $__p__ .= '' . "\n" . '    <br />' . "\n" . '    <br />' . "\n" . '    ' . "\n" . '    <strong>Test if variable is set</strong><br />' . "\n" . '    ';
-        if (   ( isset($__i__->data['foo']) )   )
+        if (   (isset($__i__->data['foo']))   )
         {
              
-            $__p__ .= '' . "\n" . '        $foo is set' . "\n" . '    ';        
+            $__p__ .= '' . "\n" . '        $foo is set' . "\n" . '    ';
         }
         else
         {
              
-            $__p__ .= '' . "\n" . '        $foo is NOT set' . "\n" . '    ';        
+            $__p__ .= '' . "\n" . '        $foo is NOT set' . "\n" . '    ';
         }
          
         $__p__ .= '' . "\n" . '    <br />' . "\n" . '    ' . "\n" . '    ' . ( Contemplate::plugin_test($__i__->data['foo']) ) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <!-- use contemplate literal data with template function, in this case a print test plugin -->' . "\n" . '    <strong>use literal data with template function, in this case a print plugin</strong><br />' . "\n" . '    ' . ( Contemplate::plugin_print(array(          "stringVar"     => "stringValue",          "numericVar"    => 123,          "arrayVar"      => array(             0, 1, "astring", 3,              array( "prop"=> 1 )          )      )) ) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>use literal data in loop</strong><br />' . "\n" . '    ';
@@ -94,13 +94,25 @@ final class Contemplate_demo_Cached extends Contemplate
                 $__i__->data['index'] = $_K2;
                 $__i__->data['value'] = $_V3;
                  
-                $__p__ .= '' . "\n" . '        [' . ( $__i__->data['index'] ) . '] = <strong>' . ( $__i__->data['value'] ) . '</strong><br /> ' . "\n" . '    ';            
+                $__p__ .= '' . "\n" . '        [' . ( $__i__->data['index'] ) . '] = <strong>' . ( $__i__->data['value'] ) . '</strong><br /> ' . "\n" . '    ';
             }
         }
          
         $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>A select box</strong><br />' . "\n" . '    ' . ( Contemplate::htmlselect($__i__->data['select_data'], $__i__->data['select_options']) ) . '' . "\n" . '' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>A table with alternative format</strong><br />' . "\n" . '    ' . ( Contemplate::htmltable($__i__->data['table_data'], array("header" => true)) ) . '' . "\n" . '' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>A select box with alternative format</strong><br />' . "\n" . '    ' . ( Contemplate::htmlselect($__i__->data['select_data'], array(             "optgroups" => array("group1", "group2", "group3"),             "selected" => 3,             "multiple" => false,             "style" => "width:200px;",             "foo123" => ":,=>"         )) ) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    <!-- include a (sub-)template file -->' . "\n" . '     <!-- print a localized date php-style -->' . "\n" . '<strong>A (localized) date, PHP-style</strong><br />' . "\n" . '' . ( Contemplate::ldate("M, d", Contemplate::now()) ) . '' . "\n" . ''; 
          
         $__p__ .= '' . "\n" . '' . "\n" . '';
+        return $__p__;
+        
+    }
+    
+    
+    /* tpl block render method for block 'Block12' */
+    private function _blockfn_Block12($__i__) 
+    { 
+        
+        $__p__ = '';
+         
+        $__p__ .= 'Demo template nested Block12';
         return $__p__;
         
     }

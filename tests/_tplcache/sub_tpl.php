@@ -73,7 +73,7 @@ final class Contemplate_sub_Cached extends Contemplate
                     elseif ( 1 == ($__i__->data['j'] % 2) )
                     {
                                  
-                        $__p__ .= 'odd';                
+                        $__p__ .= 'odd';        
                     }
                              
                     $__p__ .= '">' . "\n" . '            <a href="/' . ( $__i__->data['user']["name"] ) . '">' . ( $__i__->data['user']['name'] ) . '' . ( $__i__->data['user']['text'] ) . ' ' . ( Contemplate::n($__i__->data['i']) + Contemplate::n($__i__->data['j']) ) . '</a>: <strong>' . ( $__i__->data['user']["text"] ) . '</strong>' . "\n" . '        </div>' . "\n" . '        ';        
@@ -85,16 +85,16 @@ final class Contemplate_sub_Cached extends Contemplate
                     elseif (  Contemplate::haskey($__i__->data['user'], "key", "key1")  )
                     {
                                  
-                        $__p__ .= '' . "\n" . '            <div> User has key [&quot;key&quot;][&quot;key1&quot;] </div>' . "\n" . '        ';                
+                        $__p__ .= '' . "\n" . '            <div> User has key [&quot;key&quot;][&quot;key1&quot;] </div>' . "\n" . '        ';        
                     }
                              
-                    $__p__ .= '' . "\n" . '    ';        
+                    $__p__ .= '' . "\n" . '    ';
                 }
             }
             else
-            {    
-                     
-                $__p__ .= '' . "\n" . '        <div class="none">' . ( Contemplate::l("No Users") ) . '</div>' . "\n" . '    ';        
+            {
+                 
+                $__p__ .= '' . "\n" . '        <div class="none">' . ( Contemplate::l("No Users") ) . '</div>' . "\n" . '    ';
             }
              
             $__p__ .= '' . "\n" . '</div>' . "\n" . '';

@@ -52,9 +52,12 @@ class Contemplate
     private static $__loops = 0;
     private static $__ifs = 0;
     private static $__loopifs = 0;
-    private static $__blocks = array();
-    private static $__allblocks = array();
-    private static $__blockcnt = 0;
+    private static $__allblocks = null;
+    private static $__allblockscnt = null;
+    private static $__openblocks = null;
+    private static $__startblock = null; 
+    private static $__endblock = null; 
+    private static $__blockptr = -1;
     private static $__extends = null;
     private static $__stack = null;
     private static $__uuid = 0;
@@ -726,7 +729,7 @@ class Contemplate
     // whether var is set
     private static function t_isset( $varname ) 
     {
-        return ' ( isset(' . $varname . ') ) ';
+        return ' (isset(' . $varname . ')) ';
     }
         
     // set/create/update tpl var
@@ -744,7 +747,7 @@ class Contemplate
         if ( $varname && strlen($varname) )
         {
             $varname = trim( $varname );
-            return "';" . self::$__TEOL . self::padLines( "if ( isset($varname) ) unset( $varname );" ) . self::$__TEOL;
+            return "';" . self::$__TEOL . self::padLines( "if (isset($varname)) unset( $varname );" ) . self::$__TEOL;
         }
         return "'; " . self::$__TEOL; 
     }
@@ -752,13 +755,10 @@ class Contemplate
     // if
     private static function t_if( $cond='false' ) 
     {  
-        self::$__ifs++;  
-        
-        $out = "';";
-        $out1 = self::TT_IF(array(
+        $out = "';" . self::padLines( self::TT_IF(array(
                 'IFCOND'=> $cond
-            ));
-        $out .= self::padLines($out1);
+            )) );
+        self::$__ifs++;  
         self::$__level++;
         
         return $out;
@@ -767,13 +767,10 @@ class Contemplate
     // elseif    
     private static function t_elseif( $cond='false' ) 
     { 
-        $out = "';";
-        $out1 = self::TT_ELSEIF(array(
-                'ELIFCOND'=> $cond
-            ));
-
         self::$__level--;
-        $out .= self::padLines($out1);
+        $out = "';" . self::padLines( self::TT_ELSEIF(array(
+                'ELIFCOND'=> $cond
+            )) );
         self::$__level++;
         
         return $out;
@@ -782,11 +779,8 @@ class Contemplate
     // else
     private static function t_else( ) 
     { 
-        $out = "';";
-        $out1 = self::TT_ELSE( );
-        
         self::$__level--;
-        $out .= self::padLines($out1);
+        $out = "';" . self::padLines( self::TT_ELSE( ) );
         self::$__level++;
         
         return $out;
@@ -796,12 +790,8 @@ class Contemplate
     private static function t_endif( ) 
     { 
         self::$__ifs--;  
-        
-        $out = "';";
-        $out1 = self::TT_ENDIF( );
-        
         self::$__level--;
-        $out .= self::padLines($out1);
+        $out = "';" . self::padLines( self::TT_ENDIF( ) );
         
         return $out;
     }
@@ -811,7 +801,6 @@ class Contemplate
     {
         static $id = 0;
         
-        self::$__loops++;  self::$__loopifs++;
         $for_expr = explode(' as ', $for_expr); 
         $o = trim($for_expr[0]); 
         $kv = explode('=>', $for_expr[1]); 
@@ -821,16 +810,14 @@ class Contemplate
         $_k = '$_K' . (++$id);
         $_v = '$_V' . (++$id);
 
-        $out = "';";
-        $out1 = self::TT_FOR(array(
+        $out = "';" . self::padLines( self::TT_FOR(array(
                 'O'=> $o, '_O'=> $_o, 
                 'K'=> '$'.$k, '_K'=> $_k,
                 'V'=> '$'.$v, '_V'=> $_v,
                 'ASSIGN1'=> "\$__i__->data['$k'] = $_k;", 
                 'ASSIGN2'=> "\$__i__->data['$v'] = $_v;"
-            ));
-        
-        $out .= self::padLines($out1);
+            )) );
+        self::$__loops++;  self::$__loopifs++;
         self::$__level+=2;
         
         return $out;
@@ -841,11 +828,8 @@ class Contemplate
     { 
         /* else attached to  for loop */ 
         self::$__loopifs--;  
-        $out = "';";
-        $out1 = self::TT_ELSEFOR( );
-        
         self::$__level+=-2;
-        $out .= self::padLines($out1);
+        $out = "';" . self::padLines( self::TT_ELSEFOR( ) );
         self::$__level+=1;
         
         return $out;
@@ -854,24 +838,18 @@ class Contemplate
     // endfor
     private static function t_endfor( ) 
     {
-        $out = "';";
-        if ( self::$__loopifs==self::$__loops ) 
+        if ( self::$__loopifs == self::$__loops ) 
         { 
             self::$__loops--; self::$__loopifs--;  
-            
-            $out1 = self::TT_ENDFOR( null, 1 );
-            
             self::$__level+=-2;
-            $out .= self::padLines($out1);
-            
-            return $out;
+            $out = "';" . self::padLines( self::TT_ENDFOR( null, 1 ) );
         }
-        self::$__loops--;  
-        $out1 = self::TT_ENDFOR( null, 2 );
-        
-        self::$__level+=-1;
-        $out .= self::padLines($out1);
-        
+        else
+        {
+            self::$__loops--;  
+            self::$__level+=-1;
+            $out = "';" . self::padLines( self::TT_ENDFOR( null, 2 ) );
+        }
         return $out;
     }
     
@@ -901,31 +879,33 @@ class Contemplate
     // extend another template
     private static function t_extends( $tpl ) 
     { 
-        self::$__extends = $tpl; 
+        self::$__extends = trim( $tpl );
         return "'; " . self::$__TEOL; 
     }
     
     // define (overridable) block
     private static function t_block( $block ) 
     { 
-        $block = trim($block);
-        if ( !in_array($block, self::$__allblocks) )
-        {
-            self::$__allblocks[] = $block; 
-        }
-        
-        self::$__blockcnt++; 
-        array_push(self::$__blocks, $block); 
-        return "' . __||" . $block . "||__";  
+        $block = trim( $block );
+        array_push(self::$__allblocks, array($block, -1, -1, 0, self::$__openblocks[ 0 ][ 1 ]));
+        self::$__allblockscnt[ $block ] = isset(self::$__allblockscnt[ $block ]) ? (self::$__allblockscnt[ $block ]+1) : 1;
+        self::$__blockptr = count(self::$__allblocks);
+        array_unshift(self::$__openblocks, array($block, self::$__blockptr-1));
+        self::$__startblock = $block;
+        self::$__endblock = null;
+        return "' .  __||" . $block . "||__";  
     }
     
     // end define (overridable) block
     private static function t_endblock( ) 
     { 
-        if ( self::$__blockcnt ) 
+        if ( 1 < count(self::$__openblocks) ) 
         {
-            self::$__blockcnt--; 
-            return "__||/" . array_pop(self::$__blocks) . "||__";
+            $block = array_shift(self::$__openblocks);
+            self::$__endblock = $block[0];
+            self::$__blockptr = $block[1]+1;
+            self::$__startblock = null;
+            return "__||/" . $block[0] . "||__";
         }  
         return '';  
     }
@@ -1034,56 +1014,6 @@ class Contemplate
         return $m[0];
     }
     
-    private static function parseNestedBlocks( $code, $blocks=null ) 
-    {
-        $bl = $blocks ? count($blocks) : 0;
-        
-        if ( $bl > 0 )
-        {
-            while ($bl--)
-            {
-                $block = $blocks[ $bl ];
-                $delim1 = '__||' . $block . '||__'; 
-                $delim2 = '__||/' . $block . '||__'; 
-                
-                $len1 = strlen($delim1); 
-                $len2 = $len1+1; 
-                $len = strlen($code);
-                
-                if ( $pos1+$len1 <= $len )
-                {
-                    $pos1 = strpos($code, $delim1, 0);
-                    $pos2 = strpos($code, $delim2, $pos1+$len1);
-                    
-                    $replace = false !== $pos1;
-                    while ($replace)
-                    {
-                        // replace all occurances of the block on the current template, 
-                        // with the code found previously
-                        // in the 1st block definition
-                        $code = substr($code, 0, $pos1) .  
-                            "\$__i__->renderBlock( '" . $block . "' ); " . 
-                            substr($code, $pos2+$len2)
-                        ;
-                        
-                        $len = strlen($code);
-                        
-                        if ( $pos1+$len1 <= $len )
-                        {
-                            $replace = (false !== ($pos1 = strpos($code, $delim1, 0)));
-                            $pos2 = ($replace) ? strpos($code, $delim2, $pos1+$len1) : 0;
-                        }
-                        else
-                        {
-                            $replace = false;
-                        }
-                    }
-                }
-            }
-        }
-        return $code;
-    }
-
     private static function parseBlocks( $s ) 
     {
         $blocks = array(); 
@@ -1091,60 +1021,46 @@ class Contemplate
         
         while ($bl--)
         {
-            $block = self::$__allblocks[$bl]; //array_pop(self::$__allblocks);
+            $delims = self::$__allblocks[ $bl ];
             
-            $delim1 = '__||' . $block . '||__'; 
-            $delim2 = '__||/' . $block . '||__'; 
+            $block = $delims[ 0 ];
+            $pos1 = $delims[ 1 ];
+            $pos2 = $delims[ 2 ];
+            $off = $delims[ 3 ];
+            $containerblock = $delims[ 4 ];
+            $tag = "__||" . $block . "||__";
+            $rep = "\$__i__->renderBlock( '" . $block . "' ); ";
+            $tl = strlen($tag); $rl = strlen($rep);
             
-            $len1 = strlen($delim1); 
-            $len2 = $len1+1; 
-            $len = strlen($s);
-            
-            if ( $pos1+$len1 <= $len )
+            if ( -1 < $containerblock )
             {
-                $pos1 = strpos($s, $delim1, 0);
-                $pos2 = strpos($s, $delim2, $pos1+$len1);
-                
-                $code = substr($s, $pos1, $pos2-$pos1+$len2);
-                
-                if ( !empty($code) )
-                {
-                    $code = self::parseNestedBlocks(substr($code, $len1, -$len2), self::$__allblocks); //str_replace(array(". '' .", ". '';"), array('.', ';'), substr($code, $len1, -$len2)); // remove redundant code
-                    
-                    $bout = self::TT_BLOCK(array(
-                                'BLOCKCODE'=> $code."';"
-                            ));
-                    
-                    $blocks[$block] = $bout;
-                }
-                
-                $replace = false !== $pos1;
-                while ($replace)
-                {
-                    // replace all occurances of the block on the current template, 
-                    // with the code found previously
-                    // in the 1st block definition
-                    $s = substr($s, 0, $pos1) .  
-                        "\$__i__->renderBlock( '" . $block . "' ); " . 
-                        substr($s, $pos2+$len2)
-                    ;
-                    
-                    $len = strlen($s);
-                    
-                    if ( $pos1+$len1 <= $len )
-                    {
-                        $replace = (false !== ($pos1 = strpos($s, $delim1, 0)));
-                        $pos2 = ($replace) ? strpos($s, $delim2, $pos1+$len1) : 0;
-                    }
-                    else
-                    {
-                        $replace = false;
-                    }
-                }
+                // adjust the ending position of the container block (if nested)
+                // to compensate for the replacements in this (nested) block
+                self::$__allblocks[ $containerblock ][ 3 ] += $rl - ($pos2-$pos1+1);
             }
+            // adjust the ending position of this block (if nested)
+            // to compensate for the replacements of any (nested) block(s)
+            $pos2 += $off;
+            
+            if ( 1 === self::$__allblockscnt[ $block ] )
+            {
+                // 1st occurance, block definition
+                $blocks[ $block ] = self::TT_BLOCK(array(
+                        'BLOCKCODE'=> substr($s, $pos1+$tl, $pos2-$tl-1-$pos1-$tl) ."';"
+                    ));
+            }
+            /*
+                function strSlice($str, $start, $end) {
+                    $end = $end - $start;
+                    return substr($str, $start, $end);
+                }
+            */
+            $s = substr($s, 0, $pos1) . $rep . substr($s, $pos2+1);
+            if ( 1 <= self::$__allblockscnt[ $block ] ) self::$__allblockscnt[ $block ]--;
         }
-        self::$__allblocks = array();
-        return array($s/*str_replace(array(". '' .", ". '';"), array('.', ';'), $s)*/, $blocks);
+        self::$__allblocks = null; self::$__allblockscnt = null; self::$__openblocks = null;
+        
+        return array($s, $blocks);
     }
 
     private static function parseString( $s, $q, $i, $l )
@@ -1411,6 +1327,7 @@ class Contemplate
                 // fix literal data notation
                 $tag = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), $tag);
                 
+                self::$__startblock = null;  self::$__endblock = null; self::$__blockptr = -1;
                 // directives and control constructs
                 $tag = preg_replace_callback( self::$__regExps['controls'], array(__CLASS__, 'parseControlConstructs'), $tag );
                 
@@ -1431,6 +1348,17 @@ class Contemplate
                 
                 $s  = $tag;
                 
+                if ( self::$__startblock )
+                {
+                    self::$__startblock = "__||".self::$__startblock."||__";
+                    self::$__allblocks[ self::$__blockptr-1 ][ 1 ] = strlen($parsed) + strpos($tag, self::$__startblock);
+                }
+                elseif ( self::$__endblock )
+                {
+                    self::$__endblock = "__||/".self::$__endblock."||__";
+                    self::$__allblocks[ self::$__blockptr-1 ][ 2 ] = strlen($parsed) + strpos($tag, self::$__endblock) + strlen(self::$__endblock);
+                }
+                    
                 $isTag = false;
             }
             else
@@ -1450,7 +1378,7 @@ class Contemplate
         
         if ( false !== $withblocks ) return self::parseBlocks($parsed);
         
-        return $parsed; //str_replace( array(". '' .", ". '';"), array('.', ';'), $parsed ); // remove redundant code
+        return $parsed;
     }
     
     private static function getSeparators( $text, $separators=null )
@@ -1662,7 +1590,8 @@ class Contemplate
     {
         // reset state
         self::$__loops = 0; self::$__ifs = 0; self::$__loopifs = 0; self::$__level = 0;
-        self::$__blockcnt = 0; self::$__blocks = array();  self::$__allblocks = array();  self::$__extends = null;
+        self::$__allblocks = array(); self::$__allblockscnt = array(); self::$__openblocks = array(array(null, -1));  
+        self::$__extends = null;
         //self::$__escape = true;
     }
     
@@ -1670,7 +1599,7 @@ class Contemplate
     {
         // push state
         array_push(self::$__stack, array(self::$__loops, self::$__ifs, self::$__loopifs, self::$__level,
-        self::$__blockcnt, self::$__blocks,  self::$__allblocks,  self::$__extends));
+        self::$__allblocks, self::$__allblockscnt, self::$__openblocks,  self::$__extends));
     }
     
     private static function popState( ) 
@@ -1678,7 +1607,8 @@ class Contemplate
         // pop state
         $t = array_pop(self::$__stack);
         self::$__loops = $t[0]; self::$__ifs = $t[1]; self::$__loopifs = $t[2]; self::$__level = $t[3];
-        self::$__blockcnt = $t[4]; self::$__blocks = $t[5];  self::$__allblocks = $t[6];  self::$__extends = $t[7];
+        self::$__allblocks = $t[4]; self::$__allblockscnt = $t[5]; self::$__openblocks = $t[6];
+        self::$__extends = $t[7];
     }
     
     private static function _localized_date( $locale, $format, $timestamp ) 
@@ -1841,23 +1771,19 @@ class Contemplate
     // generated ELSE code
     private static function TT_ELSE( $r=null, $t = 1 ) 
     {
-        return <<<_T4_
-        
-}
-else
-{
-
-_T4_;
+        return self::j(""
+            ,"}"
+            ,"else"
+            ,"{"
+            ,"");
     }
     
     // generated ENDIF code
     private static function TT_ENDIF( $r=null, $t = 1 )
     {
-        return <<<_T5_
-        
-}
-
-_T5_;
+        return self::j(""
+            ,"}"
+            ,"");
     }
     
     // generated FOR code
@@ -1879,14 +1805,12 @@ _T5_;
     // generated ELSEFOR code
     private static function TT_ELSEFOR( $r=null, $t = 1 )
     {
-        return <<<_T7_
-        
-    }
-}
-else
-{    
-    
-_T7_;
+        return self::j(""
+            ,"    }"
+            ,"}"
+            ,"else"
+            ,"{"
+            ,"");
     }
     
     // generated ENDFOR code
@@ -1894,21 +1818,17 @@ _T7_;
     {
         if ( 1 === $t )
         {
-            return <<<_T8_
-            
-    }
-}
-
-_T8_;
+            return self::j(""
+                ,"    }"
+                ,"}"
+                ,"");
         }
         else
         {
-            return <<<_T9_
-        
-}
-
-_T9_;
-        }
+            return self::j(""
+                ,"}"
+                ,"");
+            }
     }
     
     // generated block code snippet

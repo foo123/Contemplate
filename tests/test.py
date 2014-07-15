@@ -50,12 +50,6 @@ PORT = 8001
 import json
 
 
-# set the template separators (deprecated)
-# template separators are defined on the very 1st line of the template
-#sepleft="<%"  
-#sepright="%>"
-#Contemplate.setTemplateSeparators({'left':sepleft, 'right':sepright})
-
 Contemplate.setLocaleStrings({
     "locale": "γλωσσική περιοχή"
 })

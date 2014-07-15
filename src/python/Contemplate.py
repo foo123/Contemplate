@@ -88,9 +88,14 @@ class _G:
     loops = 0
     ifs = 0
     loopifs = 0
-    blocks = []
-    allblocks = []
-    blockcnt = 0
+    
+    allblocks = None 
+    allblockscnt = None  
+    openblocks = None
+    startblock = None 
+    endblock = None 
+    blockptr = -1
+    
     extends = None
     id = 0
     funcId = 0
@@ -143,9 +148,11 @@ def resetState( ):
     _G.loops = 0 
     _G.ifs = 0 
     _G.loopifs = 0
-    _G.blockcnt = 0 
-    _G.blocks = []  
-    _G.allblocks = [] 
+    
+    _G.allblocks = []
+    _G.allblockscnt = {}
+    _G.openblocks = [[None, -1]]
+    
     _G.extends = None
     _G.level = 0
     _G.id = 0
@@ -157,7 +164,7 @@ def pushState( ):
     # push state
     global _G
     _G.stack.append([_G.loops, _G.ifs, _G.loopifs, _G.level,
-    _G.blockcnt, _G.blocks,  _G.allblocks,  _G.extends])
+    _G.allblocks, _G.allblockscnt, _G.openblocks,  _G.extends])
 
 
 # static
@@ -169,9 +176,11 @@ def popState( ):
     _G.ifs = t[1] 
     _G.loopifs = t[2] 
     _G.level = t[3]
-    _G.blockcnt = t[4] 
-    _G.blocks = t[5]  
-    _G.allblocks = t[6]  
+    
+    _G.allblocks = t[4]
+    _G.allblockscnt = t[5]
+    _G.openblocks = t[6]
+    
     _G.extends = t[7]
 
 
@@ -196,7 +205,7 @@ def padLines( lines, level=None ):
 
 def j(*args): # joinLines
     global _G
-    return _G.TEOL.join( args )
+    return str(_G.TEOL).join( args )
     
             
 # generated tpl class code as a heredoc template
@@ -306,14 +315,13 @@ def TT_ELSEIF( r=None, t=1 ):
 
 # generated ELSE code
 def TT_ELSE( r=None, t=1 ):
-    return """
-else:
-"""
+    return j(""
+        ,"else:"
+        ,"")
     
 # generated ENDIF code
 def TT_ENDIF( r=None, t=1 ):
-    return """
-"""
+    return j("","")
     
 # a = [51,27,13,56]   dict(enumerate(a))
 # generated FOR code
@@ -333,18 +341,16 @@ def TT_FOR( r=None, t=1 ):
     
 # generated ELSEFOR code
 def TT_ELSEFOR( r=None, t=1 ):
-    return """
-else:
-"""
+    return j(""
+        ,"else:"
+        ,"")
     
 # generated ENDFOR code
 def TT_ENDFOR( r=None, t=1 ):
     if 1 == t:
-        return """
-"""
+        return j("","")
     else:
-        return """
-"""
+        return j("","")
     
 # generated block code snippet
 def TT_BLOCK( r=None, t=1 ):
@@ -408,7 +414,7 @@ def getSeparators( text, separators=None ):
 
 # whether var is set
 def t_isset( varname ):
-    return ' ( "' + varname + '__RAW__" in __i__.data ) '
+    return ' ("' + varname + '__RAW__" in __i__.data) '
         
 # set/create/update tpl var
 def t_set( args ):
@@ -423,20 +429,17 @@ def t_unset( varname=None ):
     global _G
     if varname:
         varname = str(varname).strip()
-        return "';" + _G.TEOL + padLines( 'if ( "'+varname+'__RAW__" in __i__.data ): del ' + varname ) + _G.TEOL
+        return "';" + _G.TEOL + padLines( 'if ("'+varname+'__RAW__" in __i__.data): del ' + varname ) + _G.TEOL
     return "'; " + _G.TEOL
     
 # if
 # static
 def t_if( cond='False' ):
     global _G
-    _G.ifs += 1
-    
-    out = "' "
-    out1 = TT_IF({
+    out = "' " + padLines( TT_IF({
             'IFCOND': cond
-        })
-    out += padLines(out1)
+        }) )
+    _G.ifs += 1
     _G.level += 1
     
     return out
@@ -445,13 +448,10 @@ def t_if( cond='False' ):
 # static
 def t_elseif( cond='False' ):
     global _G
-    out = "' "
-    out1 = TT_ELSEIF({
-            'ELIFCOND': cond
-        })
-
     _G.level -= 1
-    out += padLines(out1)
+    out = "' " + padLines( TT_ELSEIF({
+            'ELIFCOND': cond
+        }) )
     _G.level += 1
     
     return out
@@ -460,11 +460,8 @@ def t_elseif( cond='False' ):
 # static
 def t_else( args='' ):
     global _G
-    out = "' "
-    out1 = TT_ELSE( )
-    
     _G.level -= 1
-    out += padLines(out1)
+    out = "' " + padLines( TT_ELSE( ) )
     _G.level += 1
     
     return out
@@ -474,12 +471,8 @@ def t_else( args='' ):
 def t_endif( args='' ):
     global _G
     _G.ifs -= 1
-    
-    out = "' "
-    out1 = TT_ENDIF( )
-    
     _G.level -= 1
-    out += padLines(out1)
+    out = "' " + padLines( TT_ENDIF( ) )
     
     return out
     
@@ -487,8 +480,6 @@ def t_endif( args='' ):
 # static
 def t_for( for_expr ):
     global _G
-    _G.loops += 1  
-    _G.loopifs += 1
     for_expr = for_expr.split(' as ')
     o = for_expr[0].strip()
     kv = for_expr[1].split('=>')
@@ -504,9 +495,7 @@ def t_for( for_expr ):
     _G.id += 1
     _o2 = '_O' + str(_G.id)
     
-    out = "' "
-    
-    out += padLines(TT_FOR({
+    out = "' " + padLines( TT_FOR({
         'O': o, '_O': _o, '_O2': _o2,
         'K': k, '_K': _k,
         'V': v, '_V': _v,
@@ -514,8 +503,9 @@ def t_for( for_expr ):
         'ASSIGN12': 'else: '+_o2+' = '+_o+'.items()',
         'ASSIGN21': '__i__.data[\''+k+'\'] = '+_k+'',
         'ASSIGN22': '__i__.data[\''+v+'\'] = '+_v+''
-    }))
-    
+    }) )
+    _G.loops += 1  
+    _G.loopifs += 1
     _G.level += 2
     
     return out
@@ -526,11 +516,8 @@ def t_elsefor( args='' ):
     # else attached to  for loop
     global _G
     _G.loopifs -= 1
-    out = "' "
-    out1 = TT_ELSEFOR( )
-    
     _G.level += -2
-    out += padLines(out1)
+    out = "' " + padLines( TT_ELSEFOR( ) )
     _G.level += 1
     
     return out
@@ -539,23 +526,15 @@ def t_elsefor( args='' ):
 # static
 def t_endfor( args='' ):
     global _G
-    out = "' "
     if _G.loopifs == _G.loops:
         _G.loops -= 1 
         _G.loopifs -= 1
-        
-        out1 = TT_ENDFOR( None, 1 )
-        
         _G.level += -2
-        out += padLines(out1)
-        
-        return out
-    
-    _G.loops -= 1
-    out1 = TT_ENDFOR( None, 2 )
-    
-    _G.level += -1
-    out += padLines(out1)
+        out = "' " + padLines( TT_ENDFOR( None, 1 ) )
+    else:
+        _G.loops -= 1
+        _G.level += -1
+        out = "' " + padLines( TT_ENDFOR( None, 2 ) )
     
     return out
 
@@ -585,28 +564,33 @@ def t_template( args ):
 # static
 def t_extends( tpl ):
     global _G
-    _G.extends = tpl
+    _G.extends = tpl.strip( )
     return "' " + _G.TEOL
     
 # define (overridable) block
 # static
 def t_block( block ):
     global _G
-    block = block.strip()
-    if block not in _G.allblocks:
-        _G.allblocks.append(block)
-    
-    _G.blockcnt += 1
-    _G.blocks.append(block)
-    return "' +  __||" + block + "||__"  
+    block = block.strip( )
+    _G.allblocks.append( [block, -1, -1, 0, _G.openblocks[ 0 ][ 1 ]] )
+    if block in _G.allblockscnt: _G.allblockscnt[ block ] += 1
+    else: _G.allblockscnt[ block ] = 1
+    _G.blockptr = len( _G.allblocks )
+    _G.openblocks[:0] = [[block, _G.blockptr-1]]
+    _G.startblock = block
+    _G.endblock = None
+    return "' +  __||" + block + "||__"
     
 # end define (overridable) block
 # static
 def t_endblock( args='' ):
     global _G
-    if _G.blockcnt>0:
-        _G.blockcnt -= 1
-        return "__||/" + _G.blocks.pop() + "||__"
+    if  1 < len(_G.openblocks):
+        block = _G.openblocks.pop( 0 )
+        _G.endblock = block[ 0 ]
+        _G.blockptr = block[ 1 ]+1
+        _G.startblock = None
+        return "__||/" + block[0] + "||__"
     return ''
 
 
@@ -709,82 +693,51 @@ def parseControlConstructs( m ):
     
     return m.group(0)
 
-# static
-def parseNestedBlocks( code, blocks=None ):
-    if blocks: bl = len(blocks)
-    else: bl = 0
-    
-    if bl > 0:
-        while bl>0:
-            bl -= 1
-            block = blocks[ bl ]
-            delim1 = '__||' + block + '||__'
-            delim2 = '__||/' + block + '||__'
-            
-            len1 = len(delim1)
-            len2 = len1+1
-            
-            pos1 = code.find(delim1, 0) 
-            pos2 = code.find(delim2, pos1+len1)
-            
-            replace = (0 <= pos1)
-            while replace:
-            
-                # replace all occurances of the block on the current template, 
-                # with the code found previously
-                # in the 1st block definition
-                code = code[0:pos1] + "__i__.renderBlock( '" + block + "' ) " + code[pos2+len2:]
-                
-                
-                pos1 = code.find(delim1, 0)
-                replace = (0 <= pos1)
-                if replace: pos2 = code.find(delim2, pos1+len1)
-            
-        
-    return code
 
 # static
 def parseBlocks( s ):
     global _G
     blocks = {} 
     bl = len(_G.allblocks)
+    
     while bl:
         bl -= 1
-        block = _G.allblocks[bl] #_G.allblocks.pop()
-        delim1 = '__||' + block + '||__' 
-        delim2 = '__||/' + block + '||__'
+        delims = _G.allblocks[ bl ]
         
-        len1 = len(delim1) 
-        len2 = len1+1 
+        block = delims[ 0 ]
+        pos1 = delims[ 1 ]
+        pos2 = delims[ 2 ]
+        off = delims[ 3 ]
+        containerblock = delims[ 4 ]
+        tag = "__||" + block + "||__"
+        rep = "__i__.renderBlock( '" + block + "' ) "
+        tl = len(tag) 
+        rl = len(rep)
         
-        pos1 = s.find(delim1, 0) 
-        pos2 = s.find(delim2, pos1+len1)
+        if -1 < containerblock:
+            # adjust the ending position of the container block (if nested)
+            # to compensate for the replacements in this (nested) block
+            _G.allblocks[ containerblock ][ 3 ] += rl - (pos2-pos1+1)
         
-        code = s[pos1:pos2+len2]
+        # adjust the ending position of this block (if nested)
+        # to compensate for the replacements of any (nested) block(s)
+        pos2 += off
         
-        if len(code)>0:
-            code = parseNestedBlocks(code[len1:-len2], _G.allblocks) #.replace("+ '' +", '+')  # remove redundant code
-            
-            bout = TT_BLOCK({
-                        'BLOCKCODE': code+"'"
-                    })
-            
-            blocks[block] = bout
+        if 1 == _G.allblockscnt[ block ]:
         
-        replace = (0 <= pos1)
-        while replace:
-            # replace all occurances of the block on the current template, 
-            # with the code found previously
-            # in the 1st block definition
-            s = s[0:pos1] + "__i__.renderBlock( '" + block + "' ) " + s[pos2+len2:]
-            
-            
-            pos1 = s.find(delim1, 0)
-            replace = (0 <= pos1)
-            if replace: pos2 = s.find(delim2, pos1+len1)
+            # 1st occurance, block definition
+            blocks[ block ] = TT_BLOCK({
+                    'BLOCKCODE': s[pos1+tl:pos2-tl-1] + "';"
+                })
+        
+        s = s[0:pos1] + rep + s[pos2+1:]
+        if 1 <= _G.allblockscnt[ block ]: _G.allblockscnt[ block ] -= 1
     
-    _G.allblocks = []    
-    return [ s, blocks ] #[ s.replace("+ '' +", '+'), blocks ]
+    _G.allblocks = None 
+    _G.allblockscnt = None 
+    _G.openblocks = None
+    
+    return [ s, blocks ]
 
 def parseString( s, q, i, l ):
     string = q
@@ -1067,6 +1020,9 @@ def parse( tpl, withblocks=True ):
             # fix literal data notation python-style
             tag = tag.replace('true', 'True').replace('false', 'False').replace('null', 'None').replace(' && ', ' and ').replace(' || ', ' or ').replace(' ! ', ' not ')
             
+            _G.startblock = None  
+            _G.endblock = None 
+            _G.blockptr = -1
             tag = re.sub(_G.regExps['controls'], parseControlConstructs, tag)
 
             tag = re.sub( _G.regExps['functions'], funcReplace, tag )
@@ -1083,6 +1039,14 @@ def parse( tpl, withblocks=True ):
             tag = tag.replace( "\t", _G.tplStart ).replace( "\v", padLines(_G.tplEnd) )
             
             s = tag
+            
+            if _G.startblock:
+                _G.startblock = "__||"+_G.startblock+"||__"
+                _G.allblocks[ _G.blockptr-1 ][ 1 ] = len(parsed) + tag.find( _G.startblock )
+            elif _G.endblock:
+                _G.endblock = "__||/"+_G.endblock+"||__"
+                _G.allblocks[ _G.blockptr-1 ][ 2 ] = len(parsed) + tag.find( _G.endblock ) + len(_G.endblock)
+                    
             isTag = False
             
         else:
@@ -1101,7 +1065,7 @@ def parse( tpl, withblocks=True ):
     
     if False != withblocks: return parseBlocks(parsed)
     
-    return parsed #.replace( "+ '' +", '+' ) # remove redundant code
+    return parsed
 
 # static
 def getCachedTemplateName( id ):

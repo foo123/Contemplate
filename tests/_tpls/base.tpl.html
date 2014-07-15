@@ -6,7 +6,14 @@
 
 <br /><br /><br /><br />
 <strong>This is Block1</strong><br />
-<% %block(Block1) %>Base template Block1<% %endblock() %>
+<% %block(Block1) %>
+Base template Block1
+<br /><br />
+<% %block(Block11) %>Base template nested Block11<% %endblock() %>
+<br /><br />
+<% %block(Block12) %>Base template nested Block12<% %endblock() %>
+<br /><br />
+<% %endblock() %>
 
 <br /><br /><br /><br />
 <strong>This is Block2</strong><br />

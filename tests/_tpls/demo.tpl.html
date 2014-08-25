@@ -1,0 +1,148 @@
+<% %>
+<!-- extends/inherits the base template -->
+<% %extends(base) %>
+
+
+<% %block(Block12) %>Demo template nested Block12<% %endblock() %>
+
+<% %block(Block2) %>
+
+    <strong>Block2 is overriden by the demo template</strong>
+
+    <br /><br />
+
+    <strong>A table</strong><br />
+    <% %htmltable($table_data, $table_options) %>
+    
+    <br /><br />
+    
+    <strong>Test if variable is set</strong><br />
+    <% %if( %isset($foo) ) %>
+        $foo is set
+    <% %else() %>
+        $foo is NOT set
+    <% %endif() %>
+    <br />
+    <br />
+
+    <strong>Set a new tpl variable and use it in a custom test plugin</strong><br />
+    <% %set($foo, "123") %>
+    <br />
+    <br />
+    
+    <strong>Test if variable is set</strong><br />
+    <% %if( %isset($foo) ) %>
+        $foo is set
+    <% %else() %>
+        $foo is NOT set
+    <% %endif() %>
+    <br />
+    
+    <% %plugin_test($foo) %>
+    
+    <br /><br />
+    
+    <!-- use contemplate literal data with template function, in this case a print test plugin -->
+    <strong>use literal data with template function, in this case a print plugin</strong><br />
+    <% %plugin_print({ 
+        "stringVar"     : "stringValue", 
+        "numericVar"    : 123, 
+        "arrayVar"      : [
+            0, 1, "astring", 3, 
+            { "prop": 1 } 
+        ] 
+    }) %>
+    
+    <br /><br />
+    
+    <strong>use literal array data in associative loop</strong><br />
+    <% %for(["a", "b", "c"] as $index=>$value) %>
+        [<% $index %>] = <strong><% $value %></strong><br /> 
+    <% %endfor() %>
+    
+    <br /><br />
+    
+    <strong>use literal array data in non-associative loop</strong><br />
+    <% %for(["a", "b", "c"] as $value2) %>
+        <strong><% $value2 %></strong><br /> 
+    <% %endfor() %>
+    
+    <br /><br />
+    
+    <strong>use literal object data in associative loop</strong><br />
+    <% %for({"k1":"a", "k2":"b", "k3":"c"} as $index3=>$value3) %>
+        [<% $index3 %>] = <strong><% $value3 %></strong><br /> 
+    <% %endfor() %>
+    
+    <br /><br />
+    
+    <strong>use literal object data in non-associative loop</strong><br />
+    <% %for({"k1":"a", "k2":"b", "k3":"c"} as $value4) %>
+        <strong><% $value4 %></strong><br /> 
+    <% %endfor() %>
+    
+    <br /><br />
+    
+    <strong>A select box</strong><br />
+    <% %htmlselect($select_data, $select_options) %>
+
+    <br /><br />
+    
+    <strong>A table with alternative format</strong><br />
+    <% %htmltable($table_data, {"header" : true}) %>
+
+    <br /><br />
+    
+    <strong>A select box with alternative format</strong><br />
+    <% %htmlselect($select_data, {
+            "optgroups" : ["group1", "group2", "group3"],
+            "selected" : 3,
+            "multiple" : false,
+            "style" : "width:200px;",
+            "foo123" : ":,=>"
+        }) %>
+    
+    <br /><br />
+    <!-- include a (sub-)template file -->
+    <% %include(date) %>
+
+<% %endblock() %>
+
+<% %block(Block3) %>
+
+    <strong>Block3 is overriden by the demo template</strong>
+
+    <br /><br />
+    
+    <strong>Functions</strong><br />
+    <ul>
+    <li>trim(__FOO__, _) = <% %trim("__FOO__", "_") %></li>
+    <li>trim(  FOO  ) = <% %trim("  FOO  ") %></li>
+    <li>lowercase(FOO) = <% %lowercase("FOO") %></li>
+    <li>lowercase(fOo) = <% %lowercase("fOo") %></li>
+    <li>uppercase(foo) = <% %uppercase("foo") %></li>
+    <li>uppercase(FoO) = <% %uppercase("FoO") %></li>
+    <li>camelcase(camel_case, _) = <% %camelcase("camel_case", "_") %></li>
+    <li>camelcase(camelCase) = <% %camelcase("camelCase") %></li>
+    <li>snakecase(snakeCase, _) = <% %snakecase("snakeCase", "_") %></li>
+    <li>snakecase(snake_case) = <% %snakecase("snake_case") %></li>
+    <li>l(locale) = <% %l("locale") %></li>
+    <li>locale(locale) = <% %locale("locale") %></li>
+    <li>pluralise(item, 1) = <% %pluralise("item", 1) %></li>
+    <li>pluralise(item, 2) = <% %pluralise("item", 2) %></li>
+    <li>sprintf("%02d : %02d : %02d", 2, 0, 12) = <% %sprintf("%02d : %02d : %02d", 2, 0, 12) %></li>
+    <li>addslashes("this string's s\"s s\\"s s\\\"s") = <% %addslashes("this string's s\'s s\\'s s\\\'s") %></li>
+    <li>stripslashes("this string's s\"s s\\"s s\\\"s") = <% %stripslashes("this string's s\'s s\\'s s\\\'s") %></li>
+    <li>uuid(namespace) = <% %uuid("namespace") %></li>
+    </ul>
+    
+    <br /><br />
+    
+    <% %for($users as $i=>$usergroup) %>
+        <!-- call a (sub-)template -->
+        <% %template(sub, {"i" : $i, "users" : $users}) %>
+    <% %endfor() %>
+
+<% %endblock() %>
+
+<% %block(Block2) %><% %endblock() %>

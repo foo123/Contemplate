@@ -42,6 +42,7 @@ There are a couple of other frameworks named also _contemplate_
 * [Dependencies](#dependencies)
 * [Changelog](/changelog.md)
 * [Todo](#todo)
+* [Performance](#performance)
 * [Tests](#tests)
 * [Examples/Screenshots](#screenshots)
 
@@ -130,6 +131,16 @@ syntax, yet work the same in all the engine's implementations.
 * add Contemplate implementations for Perl, Java, Scala
 * transform Contemplate (for PHP) into a PHP C-extension, Contemplate (for node) into standalone executable (eg. https://github.com/crcn/nexe)
 * keep-up with php, node, browsers, python updates
+
+
+###Performance
+
+Contemplate engine (for JavaScript, 0.6.5) performance tests and comparison on [jsperf here](http://jsperf.com/js-template-engines-performance/94)
+
+**Good news** Contemplate is 2nd place on Firefox and 3rd (or close) place on Opera, IE
+**Not so Good news** Contemplate is average to slower on Chrome
+
+![Contemplate jsperf](/screenshots/jsperf-2014-08.png)
 
 
 ###Tests

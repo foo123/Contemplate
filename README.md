@@ -135,6 +135,14 @@ syntax, yet work the same in all the engine's implementations.
 
 ###Performance
 
+Contemplate engine (for JavaScript, 0.6.6) new performance tests and comparison on [jsperf here](http://jsperf.com/js-template-engines-performance/95) (see changelog for 0.6.6)
+
+**Good news** Contemplate is (consistently) 2nd place (near 1st place) on all browsers.
+
+![Contemplate jsperf](/screenshots/jsperf-2014-08-2.png)
+
+
+
 Contemplate engine (for JavaScript, 0.6.5) performance tests and comparison on [jsperf here](http://jsperf.com/js-template-engines-performance/94)
 
 **Good news** Contemplate is 2nd place on Firefox and 3rd (or close) place on Opera, IE

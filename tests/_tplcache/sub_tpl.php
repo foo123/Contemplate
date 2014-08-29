@@ -54,7 +54,7 @@ final class Contemplate_sub_Cached extends Contemplate
         {
             /* tpl main render code starts here */
             
-            $__i__->d = Contemplate::data( $data );
+            $__i__->d = $data;
             $__p__ .= '<div>' . "\n" . '    <br />' . "\n" . '    <strong>Number of Items:' . ( Contemplate::count($__i__->d['users'][$__i__->d['i']]) ) . '</strong>' . "\n" . '    <br />' . "\n" . '    ';
             $_O14 = $__i__->d['users'][$__i__->d['i']];
             if (!empty($_O14))

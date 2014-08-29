@@ -60,7 +60,7 @@ def __getTplClass__(Contemplate):
             else:
                 # tpl main render code starts here
                 
-                __i__.d = Contemplate.data( data )
+                __i__.d = data
                 __p__ += '<div>' + "\n" + '    <br />' + "\n" + '    <strong>Number of Items:' + str( Contemplate.count(__i__.d['users'][__i__.d['i']]) ) + '</strong>' + "\n" + '    <br />' + "\n" + '    ' 
                 _O1 = Contemplate.items(__i__.d['users'][__i__.d['i']])
                 if (_O1):

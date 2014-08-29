@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.6.5
+*  @version: 0.6.6
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -24,17 +24,19 @@
     else root[ moduleName ] = moduleDefinition();
 
 
-}(this, 'Contemplate', function( undef ) {
+}(this.self || this, 'Contemplate', function( undef ) {
     
     "use strict";
     
-    var __version__ = "0.6.5", self,
+    var __version__ = "0.6.6", self,
     
         // auxilliaries
-        OP = Object.prototype, AP = Array.prototype, FP = Function.prototype,
+        Obj = Object, Arr = Array, Str = String, Func = Function, 
+        Keys = Obj.keys, parse_int = parseInt, parse_float = parseFloat,
+        OP = Obj.prototype, AP = Arr.prototype, FP = Func.prototype,
         _toString = FP.call.bind(OP.toString), _hasOwn = FP.call.bind(OP.hasOwnProperty), slice = FP.call.bind(AP.slice),
         isNode = "undefined" !== typeof(global) && '[object global]' === _toString(global),
-        isArray = function( o ) { return ('[object Array]' === _toString(o)) || (o instanceof Array); },
+        isArray = function( o ) { return (o instanceof Arr) || ('[object Array]' === _toString(o)); },
         
         _fs = isNode ? require('fs') : null, 
         fwrite = _fs ? _fs.writeFileSync : null,
@@ -170,7 +172,7 @@
             {
                 // needs one more additional level due to array.length
                 level = (0===level) ? level : level+1;
-                var pad = new Array(level).join($__pad), i, l;
+                var pad = new Arr(level).join($__pad), i, l;
                 lines = lines.split(NEWLINE);
                 l = lines.length;
                 for (i=0; i<l; i++)
@@ -319,7 +321,7 @@
             if ( varname && varname.length )
             {
                 varname = trim( varname );
-                return "';" + $__TEOL + padLines( 'if ("undefined" !== typeof (' + varname + ')) delete ' + varname + ';' ) + $__TEOL;
+                return "';" + $__TEOL + padLines( 'if ("undefined" !== typeof(' + varname + ')) delete ' + varname + ';' ) + $__TEOL;
             }
             return "'; " + $__TEOL; 
         },
@@ -378,17 +380,19 @@
             {
                 var k = trim(kv[0]) + '__RAW__',
                     v = trim(kv[1]) + '__RAW__',
+                    _oK = '_OK' + (++$__idcnt),
                     _k = '_K' + (++$__idcnt),
+                    _l = '_L' + (++$__idcnt),
                     _v = '_V' + (++$__idcnt)
                 ;
                 out = "';" + padLines(TT_FOR({
-                    'O': o, '_O': _o,
-                    'K': k, '_K': _k,
+                    'O': o, '_O': _o, '_OK': _oK,
+                    'K': k, '_K': _k, '_L': _l,
                     'V': v, '_V': _v,
-                    'ASSIGN1': "__i__.d['"+k+"'] = "+_k+"; __i__.d['"+v+"'] = "+_v+" = "+_o+"["+_k+"];"
+                    'ASSIGN1': "__i__.d['"+k+"'] = "+_oK+"["+_k+"]; __i__.d['"+v+"'] = "+_v+" = "+_o+"["+_oK+"["+_k+"]];"
                 }, 2));
                 $__forType = 2;
-                $__level+=3;
+                $__level+=2;
             }
             else
             {
@@ -418,7 +422,7 @@
             if ( 2 === $__forType )
             {
                 $__loopifs--;  
-                $__level+=-3;
+                $__level+=-2;
                 out = "';" + padLines( TT_ELSEFOR( null, 2 ) );
                 $__level+=1;
             }
@@ -441,7 +445,7 @@
                 if ( 2 === $__forType )
                 {
                     $__loops--; $__loopifs--;  
-                    $__level+=-3;
+                    $__level+=-2;
                     out = "';" + padLines( TT_ENDFOR( null, 3 ) );
                 }
                 else
@@ -1049,9 +1053,9 @@
             }
             
             // defined blocks
-            for (b in blocks[1]) funcs[b] = new Function("Contemplate,__i__", blocks[1][b]);
+            for (b in blocks[1]) funcs[b] = new Func("Contemplate,__i__", blocks[1][b]);
             
-            return [new Function("Contemplate,__i__", func), funcs];
+            return [new Func("Contemplate,__i__", func), funcs];
         },
         
         createCachedTemplate = function( id, filename, classname, seps ) {
@@ -1233,6 +1237,8 @@
                 ,"    /* Contemplate cached template '"), r['TPLID'], j("' */"
                 ,"    /* quasi extends main Contemplate class */"
                 ,"    "
+                ,"    var Contemplate_tpl = Contemplate.tpl;"
+                ,"    "
                 ,"    /* constructor */"
                 ,"    function "), r['CLASSNAME'], j("(id)"
                 ,"    {"
@@ -1256,7 +1262,7 @@
                 ,"        "
                 ,"        this.extend = function(tpl) {"
                 ,"            if ( tpl && tpl.substr )"
-                ,"                _extends = Contemplate.tpl( tpl );"
+                ,"                _extends = Contemplate_tpl( tpl );"
                 ,"            else"
                 ,"                _extends = tpl;"
                 ,"            return this;"
@@ -1369,16 +1375,14 @@
             {
                 return [
                     j(""
-                    ,"var "), r['_O'], " = ", r['O'], j(";"
-                    ,"if ("), r['_O'], " && Object.keys(", r['_O'], j(").length)"
+                    ,"var "), r['_O'], " = ", r['O'], ", ", r['_OK'], " = Contemplate.keys(", r['_O'], j(");"
+                    ,"if ("), r['_OK'], " && ", r['_OK'], j(".length)"
                     ,"{"
-                    ,"    var "), r['_K'], ", ", r['_V'], j(";"
-                    ,"    for ("), r['_K'], " in ", r['_O'], j(")"
+                    ,"    var "), r['_K'], ", ", r['_V'], ", ", r['_L'], " = ", r['_OK'], ".length", j(";"
+                    ,"    for ("), r['_K'], "=0; ", r['_K'], "<", r['_L'], "; ", r['_K'], j("++)"
                     ,"    {"
-                    ,"        if (Contemplate.hasOwn("), r['_O'], ", ", r['_K'], j("))"
-                    ,"        {"
-                    ,"            "), r['ASSIGN1'], j(""
-                    ,"            "
+                    ,"        "), r['ASSIGN1'], j(""
+                    ,"        "
                     ,"")
                 ].join( "" );
             }
@@ -1404,7 +1408,6 @@
             if ( 2 === t )
             {
                 return j(""
-                    ,"        }"
                     ,"    }"
                     ,"}"
                     ,"else"
@@ -1427,7 +1430,6 @@
             if ( 3 === t )
             {
                 return j(""
-                    ,"        }"
                     ,"    }"
                     ,"}"
                     ,"");
@@ -1475,7 +1477,7 @@
             {
                 return [
                     j(""
-                    ,"__i__.d = Contemplate.data( data );"
+                    ,"__i__.d = data;"
                     ,""), r['RCODE'], j(""
                     ,"")
                 ].join( "" );
@@ -1493,6 +1495,9 @@
         //
         //  Instance template method(s) (for in-memory only templates)
         //
+        var Contemplate_tpl = Contemplate.tpl,
+            Contemplate_merge = Contemplate.merge
+        ;
         var ContemplateInstance = function( id, renderFunc ) {
             // private vars
             var _renderFunction = null, _extends = null, _blocks = null;
@@ -1514,7 +1519,7 @@
             
             this.extend = function( tpl ) { 
                 if ( tpl && tpl.substr )
-                    _extends = Contemplate.tpl( tpl );
+                    _extends = Contemplate_tpl( tpl );
                 else
                     _extends = tpl;
                 return this;
@@ -1527,7 +1532,7 @@
             
             this.setBlocks = function( blocks ) { 
                 if ( !_blocks ) _blocks = {}; 
-                _blocks = Contemplate.merge(_blocks, blocks); 
+                _blocks = Contemplate_merge(_blocks, blocks); 
                 return this; 
             };
             
@@ -1551,7 +1556,7 @@
                 }
                 else if ( _renderFunction )  
                 {
-                    __i__.d = Contemplate.data( data ); 
+                    __i__.d = data; 
                     __p__ = _renderFunction(Contemplate, __i__);
                 }
                 
@@ -1776,17 +1781,17 @@
         
         // to String
         s: function( e ) { 
-            return (String)(''+e); 
+            return Str(e); 
         },
         
         // to Integer
         n: function( e ) { 
-            return parseInt(e, 10); 
+            return parse_int(e, 10); 
         },
         
         // to Float
         f: function( e ) { 
-            return parseFloat(e, 10); 
+            return parse_float(e, 10); 
         },
         
         addslashes: function( str ) {
@@ -1961,7 +1966,7 @@
                     $colvals=self.values($col) || [];
                     for ($j=0, $l=$colvals.length; $j<$l; $j++)
                     {
-                        if (!$rows[$j]) $rows[$j]=new Array($l);
+                        if (!$rows[$j]) $rows[$j]=new Arr($l);
                         $rows[$j][$i]=$colvals[$j];
                     }
                 }
@@ -2092,13 +2097,13 @@
         },
         
         keys: function( o ) {
-            return o ? Object.keys( o ) : null;
+            return o ? Keys( o ) : null;
         },
         
         values: function( o ) { 
             if ( o )
             {
-                if ( o instanceof Array ) 
+                if ( o instanceof Arr ) 
                 {
                     return o;
                 }

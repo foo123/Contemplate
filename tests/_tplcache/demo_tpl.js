@@ -20,6 +20,8 @@
     /* Contemplate cached template 'demo' */
     /* quasi extends main Contemplate class */
     
+    var Contemplate_tpl = Contemplate.tpl;
+    
     /* constructor */
     function Contemplate_demo_Cached(id)
     {
@@ -41,21 +43,18 @@
                 var __p__ = '';
                  
                 __p__ += '' + "\n" + '' + "\n" + '    <strong>Block3 is overriden by the demo template</strong>' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>Functions</strong><br />' + "\n" + '    <ul>' + "\n" + '    <li>trim(__FOO__, _) = ' + ( Contemplate.trim("__FOO__", "_") ) + '</li>' + "\n" + '    <li>trim(  FOO  ) = ' + ( Contemplate.trim("  FOO  ") ) + '</li>' + "\n" + '    <li>lowercase(FOO) = ' + ( Contemplate.lowercase("FOO") ) + '</li>' + "\n" + '    <li>lowercase(fOo) = ' + ( Contemplate.lowercase("fOo") ) + '</li>' + "\n" + '    <li>uppercase(foo) = ' + ( Contemplate.uppercase("foo") ) + '</li>' + "\n" + '    <li>uppercase(FoO) = ' + ( Contemplate.uppercase("FoO") ) + '</li>' + "\n" + '    <li>camelcase(camel_case, _) = ' + ( Contemplate.camelcase("camel_case", "_") ) + '</li>' + "\n" + '    <li>camelcase(camelCase) = ' + ( Contemplate.camelcase("camelCase") ) + '</li>' + "\n" + '    <li>snakecase(snakeCase, _) = ' + ( Contemplate.snakecase("snakeCase", "_") ) + '</li>' + "\n" + '    <li>snakecase(snake_case) = ' + ( Contemplate.snakecase("snake_case") ) + '</li>' + "\n" + '    <li>l(locale) = ' + ( Contemplate.l("locale") ) + '</li>' + "\n" + '    <li>locale(locale) = ' + ( Contemplate.locale("locale") ) + '</li>' + "\n" + '    <li>pluralise(item, 1) = ' + ( Contemplate.pluralise("item", 1) ) + '</li>' + "\n" + '    <li>pluralise(item, 2) = ' + ( Contemplate.pluralise("item", 2) ) + '</li>' + "\n" + '    <li>sprintf("%02d : %02d : %02d", 2, 0, 12) = ' + ( Contemplate.sprintf("%02d : %02d : %02d", 2, 0, 12) ) + '</li>' + "\n" + '    <li>addslashes("this string\'s s\\"s s\\\\"s s\\\\\\"s") = ' + ( Contemplate.addslashes("this string's s\'s s\\'s s\\\'s") ) + '</li>' + "\n" + '    <li>stripslashes("this string\'s s\\"s s\\\\"s s\\\\\\"s") = ' + ( Contemplate.stripslashes("this string's s\'s s\\'s s\\\'s") ) + '</li>' + "\n" + '    <li>uuid(namespace) = ' + ( Contemplate.uuid("namespace") ) + '</li>' + "\n" + '    </ul>' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    ';
-                var _O15 = __i__.d['users'];
-                if (_O15 && Object.keys(_O15).length)
+                var _O19 = __i__.d['users'], _OK20 = Contemplate.keys(_O19);
+                if (_OK20 && _OK20.length)
                 {
-                    var _K16, _V17;
-                    for (_K16 in _O15)
+                    var _K21, _V23, _L22 = _OK20.length;
+                    for (_K21=0; _K21<_L22; _K21++)
                     {
-                        if (Contemplate.hasOwn(_O15, _K16))
-                        {
-                            __i__.d['i'] = _K16; __i__.d['usergroup'] = _V17 = _O15[_K16];
-                            
-                             
-                            __p__ += '' + "\n" + '        <!-- call a (sub-)template -->' + "\n" + '        ' + Contemplate.tpl( "sub",  {"i" : __i__.d['i'], "users" : __i__.d['users']} ); 
-                             
-                            __p__ += '' + "\n" + '    ';
-                        }
+                        __i__.d['i'] = _OK20[_K21]; __i__.d['usergroup'] = _V23 = _O19[_OK20[_K21]];
+                        
+                         
+                        __p__ += '' + "\n" + '        <!-- call a (sub-)template -->' + "\n" + '        ' + Contemplate.tpl( "sub",  {"i" : __i__.d['i'], "users" : __i__.d['users']} ); 
+                         
+                        __p__ += '' + "\n" + '    ';
                     }
                 }
                  
@@ -99,30 +98,27 @@
                 }
                  
                 __p__ += '' + "\n" + '    <br />' + "\n" + '    ' + "\n" + '    ' + ( Contemplate.plugin_test(__i__.d['foo']) ) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <!-- use contemplate literal data with template function, in this case a print test plugin -->' + "\n" + '    <strong>use literal data with template function, in this case a print plugin</strong><br />' + "\n" + '    ' + ( Contemplate.plugin_print({          "stringVar"     : "stringValue",          "numericVar"    : 123,          "arrayVar"      : [             0, 1, "astring", 3,              { "prop": 1 }          ]      }) ) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal array data in associative loop</strong><br />' + "\n" + '    ';
-                var _O1 = ["a", "b", "c"];
-                if (_O1 && Object.keys(_O1).length)
+                var _O1 = ["a", "b", "c"], _OK2 = Contemplate.keys(_O1);
+                if (_OK2 && _OK2.length)
                 {
-                    var _K2, _V3;
-                    for (_K2 in _O1)
+                    var _K3, _V5, _L4 = _OK2.length;
+                    for (_K3=0; _K3<_L4; _K3++)
                     {
-                        if (Contemplate.hasOwn(_O1, _K2))
-                        {
-                            __i__.d['index'] = _K2; __i__.d['value'] = _V3 = _O1[_K2];
-                            
-                             
-                            __p__ += '' + "\n" + '        [' + ( __i__.d['index'] ) + '] = <strong>' + ( __i__.d['value'] ) + '</strong><br /> ' + "\n" + '    ';
-                        }
+                        __i__.d['index'] = _OK2[_K3]; __i__.d['value'] = _V5 = _O1[_OK2[_K3]];
+                        
+                         
+                        __p__ += '' + "\n" + '        [' + ( __i__.d['index'] ) + '] = <strong>' + ( __i__.d['value'] ) + '</strong><br /> ' + "\n" + '    ';
                     }
                 }
                  
                 __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal array data in non-associative loop</strong><br />' + "\n" + '    ';
-                var _O4 = Contemplate.values(["a", "b", "c"]);
-                if (_O4 && _O4.length)
+                var _O6 = Contemplate.values(["a", "b", "c"]);
+                if (_O6 && _O6.length)
                 {
-                    var _K5, _V7, _L6 = _O4.length;
-                    for (_K5=0; _K5<_L6; _K5++)
+                    var _K7, _V9, _L8 = _O6.length;
+                    for (_K7=0; _K7<_L8; _K7++)
                     {
-                        __i__.d['value2'] = _V7 = _O4[_K5];
+                        __i__.d['value2'] = _V9 = _O6[_K7];
                         
                          
                         __p__ += '' + "\n" + '        <strong>' + ( __i__.d['value2'] ) + '</strong><br /> ' + "\n" + '    ';
@@ -130,30 +126,27 @@
                 }
                  
                 __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal object data in associative loop</strong><br />' + "\n" + '    ';
-                var _O8 = {"k1":"a", "k2":"b", "k3":"c"};
-                if (_O8 && Object.keys(_O8).length)
+                var _O10 = {"k1":"a", "k2":"b", "k3":"c"}, _OK11 = Contemplate.keys(_O10);
+                if (_OK11 && _OK11.length)
                 {
-                    var _K9, _V10;
-                    for (_K9 in _O8)
+                    var _K12, _V14, _L13 = _OK11.length;
+                    for (_K12=0; _K12<_L13; _K12++)
                     {
-                        if (Contemplate.hasOwn(_O8, _K9))
-                        {
-                            __i__.d['index3'] = _K9; __i__.d['value3'] = _V10 = _O8[_K9];
-                            
-                             
-                            __p__ += '' + "\n" + '        [' + ( __i__.d['index3'] ) + '] = <strong>' + ( __i__.d['value3'] ) + '</strong><br /> ' + "\n" + '    ';
-                        }
+                        __i__.d['index3'] = _OK11[_K12]; __i__.d['value3'] = _V14 = _O10[_OK11[_K12]];
+                        
+                         
+                        __p__ += '' + "\n" + '        [' + ( __i__.d['index3'] ) + '] = <strong>' + ( __i__.d['value3'] ) + '</strong><br /> ' + "\n" + '    ';
                     }
                 }
                  
                 __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal object data in non-associative loop</strong><br />' + "\n" + '    ';
-                var _O11 = Contemplate.values({"k1":"a", "k2":"b", "k3":"c"});
-                if (_O11 && _O11.length)
+                var _O15 = Contemplate.values({"k1":"a", "k2":"b", "k3":"c"});
+                if (_O15 && _O15.length)
                 {
-                    var _K12, _V14, _L13 = _O11.length;
-                    for (_K12=0; _K12<_L13; _K12++)
+                    var _K16, _V18, _L17 = _O15.length;
+                    for (_K16=0; _K16<_L17; _K16++)
                     {
-                        __i__.d['value4'] = _V14 = _O11[_K12];
+                        __i__.d['value4'] = _V18 = _O15[_K16];
                         
                          
                         __p__ += '' + "\n" + '        <strong>' + ( __i__.d['value4'] ) + '</strong><br /> ' + "\n" + '    ';
@@ -192,7 +185,7 @@
         
         this.extend = function(tpl) {
             if ( tpl && tpl.substr )
-                _extends = Contemplate.tpl( tpl );
+                _extends = Contemplate_tpl( tpl );
             else
                 _extends = tpl;
             return this;

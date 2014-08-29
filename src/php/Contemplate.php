@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.6.5
+*  @version: 0.6.6
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -15,7 +15,7 @@ if (!class_exists('Contemplate'))
 
 class Contemplate
 {
-    const VERSION = "0.6.5";
+    const VERSION = "0.6.6";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -175,7 +175,7 @@ class Contemplate
         elseif ( $this->_renderFunction )
         {
             /* dynamic function */
-            $__i__->d = self::data( $data ); 
+            $__i__->d = $data; 
             $renderFunction = $this->_renderFunction;  
             $__p__ = $renderFunction( $__i__ );
         }
@@ -1901,7 +1901,7 @@ class Contemplate
         {
             return implode("", array(
                 self::j(""
-                ,"\$__i__->d = Contemplate::data( \$data );" 
+                ,"\$__i__->d = \$data;" 
                 ,""), $r['RCODE'], self::j(""
                 ,"")
             ));

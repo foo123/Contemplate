@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.6.5
+#  @version 0.6.6
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -390,7 +390,7 @@ def TT_RCODE( r=None, t=1 ):
     else:
         return "".join([
             j(""
-            ,"__i__.d = Contemplate.data( data )"
+            ,"__i__.d = data"
             ,""), r['RCODE'], j(""
             ,"")
         ])
@@ -1469,7 +1469,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.6.5"
+    VERSION = "0.6.6"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -1538,7 +1538,7 @@ class Contemplate:
         
         elif self._renderFunction is not None: 
             # dynamic function
-            __i__.d = Contemplate.data( data )
+            __i__.d = data
             renderFunction = self._renderFunction
             __p__ = renderFunction( __i__ )
         

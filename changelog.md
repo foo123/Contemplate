@@ -1,5 +1,10 @@
 ###ChangeLog
 
+__0.6.6__
+* remove render data initialisation/copy/isolation code from inside tpl.render methods (makes rendering a lot faster), user can copy data (once) using Contemplate.data method if needed as needed
+* minor edits/optimizations (e.g in loops)
+
+
 __0.6.5__
 * enable associative and non-associative **for** loops (see examples) i.e *for(o as k=>v)* *for(o as v)*
 * minor edits/optimizations

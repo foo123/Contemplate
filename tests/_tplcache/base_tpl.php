@@ -116,7 +116,7 @@ final class Contemplate_base_Cached extends Contemplate
         {
             /* tpl main render code starts here */
             
-            $__i__->d = Contemplate::data( $data );
+            $__i__->d = $data;
             $__p__ .= '<!-- this is the base template -->' . "\n" . '' . "\n" . '<strong>This is the base template</strong>' . "\n" . '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block1</strong><br />' . "\n" . '' .  $__i__->renderBlock( 'Block1' ); 
             $__p__ .= '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block2</strong><br />' . "\n" . '' .  $__i__->renderBlock( 'Block2' ); 
             $__p__ .= '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block3</strong><br />' . "\n" . '' .  $__i__->renderBlock( 'Block3' ); 

@@ -20,6 +20,8 @@
     /* Contemplate cached template 'sub' */
     /* quasi extends main Contemplate class */
     
+    var Contemplate_tpl = Contemplate.tpl;
+    
     /* constructor */
     function Contemplate_sub_Cached(id)
     {
@@ -43,7 +45,7 @@
         
         this.extend = function(tpl) {
             if ( tpl && tpl.substr )
-                _extends = Contemplate.tpl( tpl );
+                _extends = Contemplate_tpl( tpl );
             else
                 _extends = tpl;
             return this;
@@ -69,45 +71,42 @@
             {
                 /* tpl main render code starts here */
                 
-                __i__.d = Contemplate.data( data );
+                __i__.d = data;
                 __p__ += '<div>' + "\n" + '    <br />' + "\n" + '    <strong>Number of Items:' + ( Contemplate.count(__i__.d['users'][__i__.d['i']]) ) + '</strong>' + "\n" + '    <br />' + "\n" + '    ';
-                var _O18 = __i__.d['users'][__i__.d['i']];
-                if (_O18 && Object.keys(_O18).length)
+                var _O24 = __i__.d['users'][__i__.d['i']], _OK25 = Contemplate.keys(_O24);
+                if (_OK25 && _OK25.length)
                 {
-                    var _K19, _V20;
-                    for (_K19 in _O18)
+                    var _K26, _V28, _L27 = _OK25.length;
+                    for (_K26=0; _K26<_L27; _K26++)
                     {
-                        if (Contemplate.hasOwn(_O18, _K19))
+                        __i__.d['j'] = _OK25[_K26]; __i__.d['user'] = _V28 = _O24[_OK25[_K26]];
+                        
+                         
+                        __p__ += '' + "\n" + '        <div id=\'' + ( __i__.d['user']["id"] ) + '\' class="';        
+                        if ( 0 == (__i__.d['j'] % 2) )
                         {
-                            __i__.d['j'] = _K19; __i__.d['user'] = _V20 = _O18[_K19];
-                            
-                             
-                            __p__ += '' + "\n" + '        <div id=\'' + ( __i__.d['user']["id"] ) + '\' class="';            
-                            if ( 0 == (__i__.d['j'] % 2) )
-                            {
-                                             
-                                __p__ += 'even';            
-                            }
-                            else if ( 1 == (__i__.d['j'] % 2) )
-                            {
-                                             
-                                __p__ += 'odd';            
-                            }
-                                         
-                            __p__ += '">' + "\n" + '            <a href="/' + ( __i__.d['user']["name"] ) + '">' + ( __i__.d['user']['name'] ) + '' + ( __i__.d['user']['text'] ) + ' ' + ( Contemplate.n(__i__.d['i']) + Contemplate.n(__i__.d['j']) ) + '</a>: <strong>' + ( __i__.d['user']["text"] ) + '</strong>' + "\n" + '        </div>' + "\n" + '        ';            
-                            if (  Contemplate.haskey(__i__.d['user'], "key1")  )
-                            {
-                                             
-                                __p__ += '' + "\n" + '            <div> User has key &quot;key1&quot; </div>' + "\n" + '        ';            
-                            }
-                            else if (  Contemplate.haskey(__i__.d['user'], "key", "key1")  )
-                            {
-                                             
-                                __p__ += '' + "\n" + '            <div> User has key [&quot;key&quot;][&quot;key1&quot;] </div>' + "\n" + '        ';            
-                            }
-                                         
-                            __p__ += '' + "\n" + '    ';
+                                     
+                            __p__ += 'even';        
                         }
+                        else if ( 1 == (__i__.d['j'] % 2) )
+                        {
+                                     
+                            __p__ += 'odd';        
+                        }
+                                 
+                        __p__ += '">' + "\n" + '            <a href="/' + ( __i__.d['user']["name"] ) + '">' + ( __i__.d['user']['name'] ) + '' + ( __i__.d['user']['text'] ) + ' ' + ( Contemplate.n(__i__.d['i']) + Contemplate.n(__i__.d['j']) ) + '</a>: <strong>' + ( __i__.d['user']["text"] ) + '</strong>' + "\n" + '        </div>' + "\n" + '        ';        
+                        if (  Contemplate.haskey(__i__.d['user'], "key1")  )
+                        {
+                                     
+                            __p__ += '' + "\n" + '            <div> User has key &quot;key1&quot; </div>' + "\n" + '        ';        
+                        }
+                        else if (  Contemplate.haskey(__i__.d['user'], "key", "key1")  )
+                        {
+                                     
+                            __p__ += '' + "\n" + '            <div> User has key [&quot;key&quot;][&quot;key1&quot;] </div>' + "\n" + '        ';        
+                        }
+                                 
+                        __p__ += '' + "\n" + '    ';
                     }
                 }
                 else

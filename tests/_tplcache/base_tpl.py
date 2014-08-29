@@ -37,6 +37,7 @@ def __getTplClass__(Contemplate):
         def _blockfn_Block1(self, __i__):
             
             __p__ = ''
+            data = __i__.d
              
             __p__ += '' + "\n" + 'Base template Block1' + "\n" + '<br /><br />' + "\n" + '' +  __i__.renderBlock( 'Block11' ) 
             __p__ += '' + "\n" + '<br /><br />' + "\n" + '' +  __i__.renderBlock( 'Block12' ) 
@@ -49,6 +50,7 @@ def __getTplClass__(Contemplate):
         def _blockfn_Block3(self, __i__):
             
             __p__ = ''
+            data = __i__.d
              
             __p__ += 'Base template Block3';
             return __p__
@@ -59,6 +61,7 @@ def __getTplClass__(Contemplate):
         def _blockfn_Block2(self, __i__):
             
             __p__ = ''
+            data = __i__.d
              
             __p__ += 'Base template Block2';
             return __p__
@@ -69,6 +72,7 @@ def __getTplClass__(Contemplate):
         def _blockfn_Block11(self, __i__):
             
             __p__ = ''
+            data = __i__.d
              
             __p__ += 'Base template nested Block11';
             return __p__
@@ -79,6 +83,7 @@ def __getTplClass__(Contemplate):
         def _blockfn_Block12(self, __i__):
             
             __p__ = ''
+            data = __i__.d
              
             __p__ += 'Base template nested Block12';
             return __p__

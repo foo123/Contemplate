@@ -40,7 +40,7 @@
             /* tpl block render method for block 'Block3' */
             'Block3': function(__i__) {
                 
-                var __p__ = '';
+                var __p__ = '', data = __i__.d;
                  
                 __p__ += 'Base template Block3';
                 return __p__;
@@ -52,7 +52,7 @@
             /* tpl block render method for block 'Block2' */
             'Block2': function(__i__) {
                 
-                var __p__ = '';
+                var __p__ = '', data = __i__.d;
                  
                 __p__ += 'Base template Block2';
                 return __p__;
@@ -64,7 +64,7 @@
             /* tpl block render method for block 'Block12' */
             'Block12': function(__i__) {
                 
-                var __p__ = '';
+                var __p__ = '', data = __i__.d;
                  
                 __p__ += 'Base template nested Block12';
                 return __p__;
@@ -76,7 +76,7 @@
             /* tpl block render method for block 'Block11' */
             'Block11': function(__i__) {
                 
-                var __p__ = '';
+                var __p__ = '', data = __i__.d;
                  
                 __p__ += 'Base template nested Block11';
                 return __p__;
@@ -88,7 +88,7 @@
             /* tpl block render method for block 'Block1' */
             'Block1': function(__i__) {
                 
-                var __p__ = '';
+                var __p__ = '', data = __i__.d;
                  
                 __p__ += '' + "\n" + 'Base template Block1' + "\n" + '<br /><br />' + "\n" + '' +  __i__.renderBlock( 'Block11' ); 
                 __p__ += '' + "\n" + '<br /><br />' + "\n" + '' +  __i__.renderBlock( 'Block12' ); 

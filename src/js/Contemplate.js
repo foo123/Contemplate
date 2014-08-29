@@ -389,7 +389,7 @@
                     'O': o, '_O': _o, '_OK': _oK,
                     'K': k, '_K': _k, '_L': _l,
                     'V': v, '_V': _v,
-                    'ASSIGN1': "__i__.d['"+k+"'] = "+_oK+"["+_k+"]; __i__.d['"+v+"'] = "+_v+" = "+_o+"["+_oK+"["+_k+"]];"
+                    'ASSIGN1': "data['"+k+"'] = "+_oK+"["+_k+"]; data['"+v+"'] = "+_v+" = "+_o+"["+_oK+"["+_k+"]];"
                 }, 2));
                 $__forType = 2;
                 $__level+=2;
@@ -405,7 +405,7 @@
                     'O': o, '_O': _o,
                     '_K': _k, '_L': _l,
                     'V': v, '_V': _v,
-                    'ASSIGN1': "__i__.d['"+v+"'] = "+_v+" = "+_o+"["+_k+"];"
+                    'ASSIGN1': "data['"+v+"'] = "+_v+" = "+_o+"["+_k+"];"
                 }, 1));
                 $__forType = 1;
                 $__level+=2;
@@ -719,7 +719,7 @@
                 
                 variable_raw = variable;
                 // transform into tpl variable
-                variable = "__i__.d['" + variable + "']";
+                variable = "data['" + variable + "']";
                 len = variable_raw.length;
                 
                 // extra space
@@ -1325,7 +1325,7 @@
             var j = joinLines;
             return [
                 j(""
-                ,"var __p__ = '';"
+                ,"var __p__ = '', data = __i__.d;"
                 ,""), r['BLOCKCODE'], j(""
                 ,"return __p__;"
                 ,"")
@@ -1336,7 +1336,7 @@
             var j = joinLines;
             return [
                 j(""
-                ,"if ( "), r['IFCOND'], j(" )"
+                ,"if ("), r['IFCOND'], j(")"
                 ,"{"
                 ,"")
             ].join( "" );
@@ -1347,7 +1347,7 @@
             return [
                 j(""
                 ,"}"
-                ,"else if ( "), r['ELIFCOND'], j(" )"
+                ,"else if ("), r['ELIFCOND'], j(")"
                 ,"{"
                 ,"")
             ].join( "" );
@@ -1459,7 +1459,7 @@
             {
                 return [
                     j(""
-                    ,"var __p__ = '';"
+                    ,"var __p__ = '', data = __i__.d;"
                     ,""), r['FCODE'], j(""
                     ,"return __p__;"
                     ,"")

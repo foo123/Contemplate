@@ -72,35 +72,35 @@
                 /* tpl main render code starts here */
                 
                 __i__.d = data;
-                __p__ += '<div>' + "\n" + '    <br />' + "\n" + '    <strong>Number of Items:' + ( Contemplate.count(__i__.d['users'][__i__.d['i']]) ) + '</strong>' + "\n" + '    <br />' + "\n" + '    ';
-                var _O24 = __i__.d['users'][__i__.d['i']], _OK25 = Contemplate.keys(_O24);
+                __p__ += '<div>' + "\n" + '    <br />' + "\n" + '    <strong>Number of Items:' + ( Contemplate.count(data['users'][data['i']]) ) + '</strong>' + "\n" + '    <br />' + "\n" + '    ';
+                var _O24 = data['users'][data['i']], _OK25 = Contemplate.keys(_O24);
                 if (_OK25 && _OK25.length)
                 {
                     var _K26, _V28, _L27 = _OK25.length;
                     for (_K26=0; _K26<_L27; _K26++)
                     {
-                        __i__.d['j'] = _OK25[_K26]; __i__.d['user'] = _V28 = _O24[_OK25[_K26]];
+                        data['j'] = _OK25[_K26]; data['user'] = _V28 = _O24[_OK25[_K26]];
                         
                          
-                        __p__ += '' + "\n" + '        <div id=\'' + ( __i__.d['user']["id"] ) + '\' class="';        
-                        if ( 0 == (__i__.d['j'] % 2) )
+                        __p__ += '' + "\n" + '        <div id=\'' + ( data['user']["id"] ) + '\' class="';        
+                        if (0 == (data['j'] % 2))
                         {
                                      
                             __p__ += 'even';        
                         }
-                        else if ( 1 == (__i__.d['j'] % 2) )
+                        else if (1 == (data['j'] % 2))
                         {
                                      
                             __p__ += 'odd';        
                         }
                                  
-                        __p__ += '">' + "\n" + '            <a href="/' + ( __i__.d['user']["name"] ) + '">' + ( __i__.d['user']['name'] ) + '' + ( __i__.d['user']['text'] ) + ' ' + ( Contemplate.n(__i__.d['i']) + Contemplate.n(__i__.d['j']) ) + '</a>: <strong>' + ( __i__.d['user']["text"] ) + '</strong>' + "\n" + '        </div>' + "\n" + '        ';        
-                        if (  Contemplate.haskey(__i__.d['user'], "key1")  )
+                        __p__ += '">' + "\n" + '            <a href="/' + ( data['user']["name"] ) + '">' + ( data['user']['name'] ) + '' + ( data['user']['text'] ) + ' ' + ( Contemplate.n(data['i']) + Contemplate.n(data['j']) ) + '</a>: <strong>' + ( data['user']["text"] ) + '</strong>' + "\n" + '        </div>' + "\n" + '        ';        
+                        if ( Contemplate.haskey(data['user'], "key1") )
                         {
                                      
                             __p__ += '' + "\n" + '            <div> User has key &quot;key1&quot; </div>' + "\n" + '        ';        
                         }
-                        else if (  Contemplate.haskey(__i__.d['user'], "key", "key1")  )
+                        else if ( Contemplate.haskey(data['user'], "key", "key1") )
                         {
                                      
                             __p__ += '' + "\n" + '            <div> User has key [&quot;key&quot;][&quot;key1&quot;] </div>' + "\n" + '        ';        

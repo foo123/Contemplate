@@ -301,7 +301,7 @@ def TT_BlockCode( r=None, t=1 ):
 def TT_IF( r=None, t=1 ):
     return "".join([
         j(""
-        ,"if ( "), r['IFCOND'], j(" ):"
+        ,"if ("), r['IFCOND'], j("):"
         ,"")
     ])
     
@@ -309,7 +309,7 @@ def TT_IF( r=None, t=1 ):
 def TT_ELSEIF( r=None, t=1 ):
     return "".join([
         j(""
-        ,"elif ( "), r['ELIFCOND'], j(" ):"
+        ,"elif ("), r['ELIFCOND'], j("):"
         ,"")
     ])
 
@@ -364,6 +364,7 @@ def TT_BLOCK( r=None, t=1 ):
     return "".join([
         j(""
         ,"__p__ = ''"
+        ,"data = __i__.d"
         ,""), r['BLOCKCODE'], j(""
         ,"return __p__"
         ,"")
@@ -378,6 +379,7 @@ def TT_FUNC( r=None, t=1 ):
         return "".join([
             j(""
             ,"__p__ = ''"
+            ,"data = __i__.d"
             ,""), r['FCODE'], j(""
             ,"return __p__"
             ,"")
@@ -421,7 +423,7 @@ def getSeparators( text, separators=None ):
 
 # whether var is set
 def t_isset( varname ):
-    return ' ("' + varname + '__RAW__" in __i__.d) '
+    return ' ("' + varname + '__RAW__" in data) '
         
 # set/create/update tpl var
 def t_set( args ):
@@ -436,7 +438,7 @@ def t_unset( varname=None ):
     global _G
     if varname:
         varname = str(varname).strip()
-        return "';" + _G.TEOL + padLines( 'if ("'+varname+'__RAW__" in __i__.d): del ' + varname ) + _G.TEOL
+        return "';" + _G.TEOL + padLines( 'if ("'+varname+'__RAW__" in data): del ' + varname ) + _G.TEOL
     return "'; " + _G.TEOL
     
 # if
@@ -509,8 +511,8 @@ def t_for( for_expr ):
             'O': o, '_O': _o, 
             'K': k, '_K': _k,
             'V': v, '_V': _v,
-            'ASSIGN1': '__i__.d[\''+k+'\'] = '+_k+'',
-            'ASSIGN2': '__i__.d[\''+v+'\'] = '+_v+''
+            'ASSIGN1': 'data[\''+k+'\'] = '+_k+'',
+            'ASSIGN2': 'data[\''+v+'\'] = '+_v+''
         }, 2) )
         _G.level += 2
     
@@ -523,7 +525,7 @@ def t_for( for_expr ):
         out = "' " + padLines( TT_FOR({
             'O': o, '_O': _o, 
             'V': v, '_V': _v,
-            'ASSIGN1': '__i__.d[\''+v+'\'] = '+_v+''
+            'ASSIGN1': 'data[\''+v+'\'] = '+_v+''
         }, 1) )
         _G.level += 2
     
@@ -796,7 +798,7 @@ def parseVariable( s, i, l, pre='VARSTR' ):
         
         variable_raw = variable
         # transform into tpl variable
-        variable = "__i__.d['" + variable + "']"
+        variable = "data['" + variable + "']"
         _len = len(variable_raw)
         
         # extra space

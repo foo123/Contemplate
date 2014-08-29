@@ -54,34 +54,34 @@ final class Contemplate_sub_Cached extends Contemplate
         {
             /* tpl main render code starts here */
             
-            $__i__->d = $data;
-            $__p__ .= '<div>' . "\n" . '    <br />' . "\n" . '    <strong>Number of Items:' . ( Contemplate::count($__i__->d['users'][$__i__->d['i']]) ) . '</strong>' . "\n" . '    <br />' . "\n" . '    ';
-            $_O14 = $__i__->d['users'][$__i__->d['i']];
+            $__i__->d =& $data;
+            $__p__ .= '<div>' . "\n" . '    <br />' . "\n" . '    <strong>Number of Items:' . ( Contemplate::count($data['users'][$data['i']]) ) . '</strong>' . "\n" . '    <br />' . "\n" . '    ';
+            $_O14 = $data['users'][$data['i']];
             if (!empty($_O14))
             {
                 foreach ($_O14 as $_K15=>$_V16)
                 {
-                    $__i__->d['j'] = $_K15; $__i__->d['user'] = $_V16;
+                    $data['j'] = $_K15; $data['user'] = $_V16;
                      
-                    $__p__ .= '' . "\n" . '        <div id=\'' . ( $__i__->d['user']["id"] ) . '\' class="';        
-                    if ( 0 == ($__i__->d['j'] % 2) )
+                    $__p__ .= '' . "\n" . '        <div id=\'' . ( $data['user']["id"] ) . '\' class="';        
+                    if (0 == ($data['j'] % 2))
                     {
                                  
                         $__p__ .= 'even';        
                     }
-                    elseif ( 1 == ($__i__->d['j'] % 2) )
+                    elseif (1 == ($data['j'] % 2))
                     {
                                  
                         $__p__ .= 'odd';        
                     }
                              
-                    $__p__ .= '">' . "\n" . '            <a href="/' . ( $__i__->d['user']["name"] ) . '">' . ( $__i__->d['user']['name'] ) . '' . ( $__i__->d['user']['text'] ) . ' ' . ( Contemplate::n($__i__->d['i']) + Contemplate::n($__i__->d['j']) ) . '</a>: <strong>' . ( $__i__->d['user']["text"] ) . '</strong>' . "\n" . '        </div>' . "\n" . '        ';        
-                    if (  Contemplate::haskey($__i__->d['user'], "key1")  )
+                    $__p__ .= '">' . "\n" . '            <a href="/' . ( $data['user']["name"] ) . '">' . ( $data['user']['name'] ) . '' . ( $data['user']['text'] ) . ' ' . ( Contemplate::n($data['i']) + Contemplate::n($data['j']) ) . '</a>: <strong>' . ( $data['user']["text"] ) . '</strong>' . "\n" . '        </div>' . "\n" . '        ';        
+                    if ( Contemplate::haskey($data['user'], "key1") )
                     {
                                  
                         $__p__ .= '' . "\n" . '            <div> User has key &quot;key1&quot; </div>' . "\n" . '        ';        
                     }
-                    elseif (  Contemplate::haskey($__i__->d['user'], "key", "key1")  )
+                    elseif ( Contemplate::haskey($data['user'], "key", "key1") )
                     {
                                  
                         $__p__ .= '' . "\n" . '            <div> User has key [&quot;key&quot;][&quot;key1&quot;] </div>' . "\n" . '        ';        

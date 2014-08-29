@@ -61,26 +61,26 @@ def __getTplClass__(Contemplate):
                 # tpl main render code starts here
                 
                 __i__.d = data
-                __p__ += '<div>' + "\n" + '    <br />' + "\n" + '    <strong>Number of Items:' + str( Contemplate.count(__i__.d['users'][__i__.d['i']]) ) + '</strong>' + "\n" + '    <br />' + "\n" + '    ' 
-                _O1 = Contemplate.items(__i__.d['users'][__i__.d['i']])
+                __p__ += '<div>' + "\n" + '    <br />' + "\n" + '    <strong>Number of Items:' + str( Contemplate.count(data['users'][data['i']]) ) + '</strong>' + "\n" + '    <br />' + "\n" + '    ' 
+                _O1 = Contemplate.items(data['users'][data['i']])
                 if (_O1):
                     for _K2,_V3 in _O1:
-                        __i__.d['j'] = _K2
-                        __i__.d['user'] = _V3
+                        data['j'] = _K2
+                        data['user'] = _V3
                          
-                        __p__ += '' + "\n" + '        <div id=\'' + str( __i__.d['user']["id"] ) + '\' class="'         
-                        if ( 0 == (__i__.d['j'] % 2) ):
+                        __p__ += '' + "\n" + '        <div id=\'' + str( data['user']["id"] ) + '\' class="'         
+                        if (0 == (data['j'] % 2)):
                                      
                             __p__ += 'even'         
-                        elif ( 1 == (__i__.d['j'] % 2) ):
+                        elif (1 == (data['j'] % 2)):
                                      
                             __p__ += 'odd'         
                                  
-                        __p__ += '">' + "\n" + '            <a href="/' + str( __i__.d['user']["name"] ) + '">' + str( __i__.d['user']['name'] ) + '' + str( __i__.d['user']['text'] ) + ' ' + str( Contemplate.n(__i__.d['i']) + Contemplate.n(__i__.d['j']) ) + '</a>: <strong>' + str( __i__.d['user']["text"] ) + '</strong>' + "\n" + '        </div>' + "\n" + '        '         
-                        if (  Contemplate.haskey(__i__.d['user'], "key1")  ):
+                        __p__ += '">' + "\n" + '            <a href="/' + str( data['user']["name"] ) + '">' + str( data['user']['name'] ) + '' + str( data['user']['text'] ) + ' ' + str( Contemplate.n(data['i']) + Contemplate.n(data['j']) ) + '</a>: <strong>' + str( data['user']["text"] ) + '</strong>' + "\n" + '        </div>' + "\n" + '        '         
+                        if ( Contemplate.haskey(data['user'], "key1") ):
                                      
                             __p__ += '' + "\n" + '            <div> User has key &quot;key1&quot; </div>' + "\n" + '        '         
-                        elif (  Contemplate.haskey(__i__.d['user'], "key", "key1")  ):
+                        elif ( Contemplate.haskey(data['user'], "key", "key1") ):
                                      
                             __p__ += '' + "\n" + '            <div> User has key [&quot;key&quot;][&quot;key1&quot;] </div>' + "\n" + '        '         
                                  

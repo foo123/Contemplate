@@ -175,7 +175,7 @@ class Contemplate
         elseif ( $this->_renderFunction )
         {
             /* dynamic function */
-            $__i__->d = $data; 
+            $__i__->d =& $data; 
             $renderFunction = $this->_renderFunction;  
             $__p__ = $renderFunction( $__i__ );
         }
@@ -815,7 +815,7 @@ class Contemplate
                     'O'=> $o, '_O'=> $_o, 
                     'K'=> '$'.$k, '_K'=> $_k,
                     'V'=> '$'.$v, '_V'=> $_v,
-                    'ASSIGN1'=> "\$__i__->d['$k'] = $_k; \$__i__->d['$v'] = $_v;"
+                    'ASSIGN1'=> "\$data['$k'] = $_k; \$data['$v'] = $_v;"
                 ), 2) );
             self::$__level+=2;
         }
@@ -827,7 +827,7 @@ class Contemplate
             $out = "';" . self::padLines( self::TT_FOR(array(
                     'O'=> $o, '_O'=> $_o, 
                     'V'=> '$'.$v, '_V'=> $_v,
-                    'ASSIGN1'=> "\$__i__->d['$v'] = $_v;"
+                    'ASSIGN1'=> "\$data['$v'] = $_v;"
                 ), 1) );
             self::$__level+=2;
         }
@@ -1108,7 +1108,7 @@ class Contemplate
             
             $variable_raw = $variable;
             // transform into tpl variable
-            $variable = "\$__i__->d['" . $variable . "']";
+            $variable = "\$data['" . $variable . "']";
             $len = strlen($variable_raw);
             
             // extra space
@@ -1763,7 +1763,7 @@ class Contemplate
     {
         return implode("", array(
             self::j(""
-            ,"if ( "), $r['IFCOND'], self::j(" )"
+            ,"if ("), $r['IFCOND'], self::j(")"
             ,"{"
             ,"")
         ));
@@ -1775,7 +1775,7 @@ class Contemplate
         return implode("", array(
             self::j(""
             ,"}"
-            ,"elseif ( "), $r['ELIFCOND'], self::j(" )"
+            ,"elseif ("), $r['ELIFCOND'], self::j(")"
             ,"{"
             ,"")
         ));
@@ -1864,7 +1864,7 @@ class Contemplate
     {
         return implode("", array(
             self::j(""
-            ,"\$__p__ = '';"
+            ,"\$__p__ = ''; \$data =& \$__i__->d;"
             ,""), $r['BLOCKCODE'], self::j(""
             ,"return \$__p__;"
             ,"")
@@ -1883,7 +1883,7 @@ class Contemplate
         {
             return implode("", array(
                 self::j(""
-                ,"\$__p__ = '';"  
+                ,"\$__p__ = ''; \$data =& \$__i__->d;"  
                 ,""), $r['FCODE'], self::j(""
                 ,"return \$__p__;"
                 ,"")
@@ -1901,7 +1901,7 @@ class Contemplate
         {
             return implode("", array(
                 self::j(""
-                ,"\$__i__->d = \$data;" 
+                ,"\$__i__->d =& \$data;" 
                 ,""), $r['RCODE'], self::j(""
                 ,"")
             ));

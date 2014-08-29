@@ -8,7 +8,7 @@ __Light-weight and flexible template engine for PHP, Python, Node and client-sid
 
 **see also:**  
 
-* [ModelView](https://github.com/foo123/modelview.js) a light-weight and flexible MVVM framework based in jQuery
+* [ModelView](https://github.com/foo123/modelview.js) a light-weight and flexible MVVM framework based on jQuery
 * [Dromeo](https://github.com/foo123/Dromeo) a flexible, agnostic router for Node/JS, PHP and Python
 * [PublishSubscribe](https://github.com/foo123/PublishSubscribe) a flexible Publish-Subscribe implementation for Node/JS, PHP and Python
 

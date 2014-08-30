@@ -1,7 +1,7 @@
 Contemplate
 ===========
 
-__Light-weight and flexible template engine for PHP, Python, Node and client-side JavaScript__
+__Light-weight, fast and flexible template engine for PHP, Python, Node and client-side JavaScript__
 
 ![Contemplate](/screenshots/contemplate.jpg)
 
@@ -87,7 +87,7 @@ syntax, yet work the same in all the engine's implementations.
 
 * Engine Implementations for __PHP__ , __Python__ , __Node__  and __client-side JavaScript__
 
-* Simple and __light-weight__ ( only one relatively small class for each implementation, no other dependencies )
+* Simple and __light-weight__ ( only one relatively small class for each implementation, no other dependencies ) ~28kB minified, ~11kB zipped
 
 * __Fast__ , can cache templates dynamically (filesystem caching has 3 modes, __NONE__ which uses only in-memory caching, __NOUPDATE__ which caches the templates only once and __AUTOUPDATE__ which re-creates the cached template if original template has changed, useful for debugging)
 

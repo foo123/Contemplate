@@ -135,20 +135,21 @@ syntax, yet work the same in all the engine's implementations.
 
 ###Performance
 
-Contemplate engine (for JavaScript, 0.6.6) new performance tests and comparison on [jsperf here](http://jsperf.com/js-template-engines-performance/95) (see changelog for 0.6.6)
+The following tests were made on a revision of a 2013 jsperf test for various javascript template engines. More tests should be done.
 
-**Good news** Contemplate is (consistently) 2nd place (near 1st place) on all browsers.
+Contemplate engine (JavaScript, 0.6.5) jsperf performance tests are [here](http://jsperf.com/js-template-engines-performance/94)
 
-![Contemplate jsperf](/screenshots/jsperf-2014-08-2.png)
-
-
-
-Contemplate engine (for JavaScript, 0.6.5) performance tests and comparison on [jsperf here](http://jsperf.com/js-template-engines-performance/94)
-
-**Good news** Contemplate is 2nd place on Firefox and 3rd (or close) place on Opera, IE
-**Not so Good news** Contemplate is average to slower on Chrome
+Contemplate is 2nd place on Firefox and 3rd (or close) place on Opera, IE
+While Contemplate is average to slower on Chrome. The reason was mostly that Contemplate was using a code to copy/isolate the input data every time inside the render function, which most of the time is redundant, else user can use the Contemplate.data method to create a shallow copy suitable to be used as render data. So this was removed, plus some minor refactoring and minor loop optimisation.
 
 ![Contemplate jsperf](/screenshots/jsperf-2014-08.png)
+
+
+This resulted in great performance increase as shown below. Contemplate engine (JavaScript, 0.6.6) new jsper performance tests are [jsperf here](http://jsperf.com/js-template-engines-performance/95) (see changelog for 0.6.6)
+
+Contemplate is (consistently) 2nd place (near 1st place) on all browsers.
+
+![Contemplate jsperf](/screenshots/jsperf-2014-08-2.png)
 
 
 ###Tests

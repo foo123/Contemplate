@@ -149,7 +149,7 @@ While Contemplate is average to slower on Chrome. The reason was mostly that Con
 ![Contemplate jsperf](/screenshots/jsperf-2014-08.png)
 
 
-This resulted in great performance increase as shown below. Contemplate engine (JavaScript, 0.6.6) new jsper performance tests are [jsperf here](http://jsperf.com/js-template-engines-performance/95) (see changelog for 0.6.6)
+This resulted in great performance increase as shown below. Contemplate engine (JavaScript, 0.6.6) new jsper performance tests are [here](http://jsperf.com/js-template-engines-performance/95) (see changelog for 0.6.6)
 
 Contemplate is (consistently) 2nd place (near 1st place) on all browsers.
 

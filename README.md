@@ -3,7 +3,11 @@ Contemplate
 
 __Light-weight, fast and flexible template engine for PHP, Python, Node and client-side JavaScript__
 
+
 ![Contemplate](/screenshots/contemplate.jpg)
+
+
+[Contemplate.js](https://raw.githubusercontent.com/foo123/Contemplate/master/src/js/Contemplate.js),  [Contemplate.min.js](https://raw.githubusercontent.com/foo123/Contemplate/master/src/js/Contemplate.min.js)
 
 
 **see also:**  

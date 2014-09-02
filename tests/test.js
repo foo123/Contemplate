@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version 0.6.6
+*  @version 0.6.7
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -62,6 +62,7 @@ Contemplate.addInline({
 });
 */
 
+/*console.log(Contemplate.parseTpl( '<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>' ));*/
 
 // the data to be used by the templates
 var

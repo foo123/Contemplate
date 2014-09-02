@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version 0.6.6
+*  @version 0.6.7
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -39,8 +39,8 @@ function print_plugin($v=null)
 {
     return '<pre>' . print_r($v, true) . '</pre>';
 }
-Contemplate::addPlugin('test', test_plugin);
-Contemplate::addPlugin('print', print_plugin);
+Contemplate::addPlugin('test', 'test_plugin');
+Contemplate::addPlugin('print', 'print_plugin');
 
 // set the cache directory (make sure to exist)
 Contemplate::setCacheDir(ABSPATH.'/_tplcache');
@@ -58,6 +58,8 @@ Contemplate::add(array(
     // add an inline template
     'inlinetpl' => array('<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>')
 ));
+
+/*print_r(Contemplate::parseTpl( '<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>' ));*/
 
 /*
 // add an inline template

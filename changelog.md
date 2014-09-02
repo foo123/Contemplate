@@ -1,5 +1,9 @@
 ###ChangeLog
 
+__0.6.7__
+* make parse method public as Contemplate.parseTpl( tpl, options )
+
+
 __0.6.6__
 * remove render data initialisation/copy/isolation code from inside tpl.render methods (makes rendering a lot faster), user can copy data (once) using Contemplate.data method if needed as needed
 * minor edits/optimizations (e.g in loops)

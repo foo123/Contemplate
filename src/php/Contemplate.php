@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.6.6
+*  @version: 0.6.7
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -15,7 +15,7 @@ if (!class_exists('Contemplate'))
 
 class Contemplate
 {
-    const VERSION = "0.6.6";
+    const VERSION = "0.6.7";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -342,6 +342,29 @@ class Contemplate
         {
             self::$__inlines[ $tpls ] = $tplStr;
         }
+    }
+        
+    public static function parseTpl( $tpl, $options=array() ) 
+    {
+        if ( $options && !empty($options['separators']) )
+            $separators = $options['separators'];
+        else $separators = null;
+        
+        if ( $separators )
+        {
+            $tmp = array(self::$__leftTplSep, self::$__rightTplSep);
+            self::$__leftTplSep = $separators[ 0 ];  self::$__rightTplSep = $separators[ 1 ];
+        }
+        
+        self::resetState( );
+        $parsed = self::parse( $tpl );
+        
+        if ( $separators )
+        {
+            self::$__leftTplSep = $tmp[ 0 ]; self::$__rightTplSep = $tmp[ 1 ];
+        }
+        
+        return $parsed;
     }
         
     // return the requested template (with optional data)

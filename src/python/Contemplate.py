@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.6.6
+#  @version 0.6.7
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -1471,7 +1471,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.6.6"
+    VERSION = "0.6.7"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -1702,6 +1702,25 @@ class Contemplate:
             _G.inlines = Contemplate.merge(_G.inlines, tpls)
         elif tpls and tplStr:
             _G.inlines[tpls] = tplStr
+        
+    def parseTpl( tpl, options=dict() ):
+        global _G
+        
+        separators = options['separators'] if options and ('separators' in options) else None
+        
+        if separators:
+            tmp = [_G.leftTplSep, _G.rightTplSep]
+            _G.leftTplSep = separators[ 0 ]  
+            _G.rightTplSep = separators[ 1 ]
+        
+        resetState( )
+        parsed = parse( tpl )
+        
+        if separators:
+            _G.leftTplSep = tmp[ 0 ]
+            _G.rightTplSep = tmp[ 1 ]
+        
+        return parsed
         
     # return the requested template (with optional data)
     # static

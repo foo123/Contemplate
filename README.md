@@ -139,21 +139,32 @@ syntax, yet work the same in all the engine's implementations.
 
 ###Performance
 
+**Note:** The engines included in the (following) tests, have different philosophy and in general provide different features. These are only illustrative modulo all the other features.
+
+
+**Render Time**
+
 The following tests were made on a revision of a 2013 jsperf test for various javascript template engines. More tests should be done.
 
 Contemplate engine (JavaScript, 0.6.5) jsperf performance tests are [here](http://jsperf.com/js-template-engines-performance/94)
 
-Contemplate is 2nd place on Firefox and 3rd (or close) place on Opera, IE
-While Contemplate is average to slower on Chrome. The reason was mostly that Contemplate was using a code to copy/isolate the input data every time inside the render function, which most of the time is redundant, else user can use the Contemplate.data method to create a shallow copy suitable to be used as render data. So this was removed, plus some minor refactoring and minor loop optimisation.
+Contemplate was 2nd place on Firefox and 3rd (or close) place on Opera, IE, while Contemplate was average to slower on Chrome. The reason was mostly that Contemplate was using a code to copy/isolate the input data every time inside the render function, which most of the time is redundant, else user can use the *Contemplate.data* method to create a shallow copy suitable to be used as render data. So this was removed, plus some minor refactoring and minor loop optimisation.
 
-![Contemplate jsperf](/screenshots/jsperf-2014-08.png)
-
-
-This resulted in great performance increase as shown below. Contemplate engine (JavaScript, 0.6.6) new jsper performance tests are [here](http://jsperf.com/js-template-engines-performance/95) (see changelog for 0.6.6)
+This resulted in great performance increase as shown below. Contemplate engine (JavaScript, 0.6.7) new jsperf tests are [here](http://jsperf.com/js-template-engines-performance/96) (see changelog for 0.6.6, 0.6.7)
 
 Contemplate is (consistently) 2nd place (near 1st place) on all browsers.
 
-![Contemplate jsperf](/screenshots/jsperf-2014-08-2.png)
+[![contemplate rendering jsperf](/screenshots/jsperf-rendering.png)](http://jsperf.com/js-template-engines-performance/96)
+
+
+**Parse / Compilation Time**
+
+The following [jsperf tests](http://jsperf.com/js-template-engines-compilation/3) involve swig, handlebars contemplate and mustache javascript template engines. More tests should be done.
+
+Contemplate engine (JavaScript, 0.6.7, parse method made public) is (consistently) 2nd place (near 1st place) on all browsers.
+
+[![contemplate parse jsperf](/screenshots/jsperf-compilation.png)]((http://jsperf.com/js-template-engines-compilation/3))
+
 
 
 ###Tests

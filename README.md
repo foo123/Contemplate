@@ -163,7 +163,7 @@ The following [jsperf tests](http://jsperf.com/js-template-engines-compilation/3
 
 Contemplate engine (JavaScript, 0.6.7, parse method made public) is (consistently) 2nd place (near 1st place) on all browsers.
 
-[![contemplate parse jsperf](/screenshots/jsperf-compilation.png)]((http://jsperf.com/js-template-engines-compilation/3))
+[![contemplate parse jsperf](/screenshots/jsperf-compilation.png)](http://jsperf.com/js-template-engines-compilation/3)
 
 
 

@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.6.7
+#  @version 0.6.8
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -721,7 +721,7 @@ def parseControlConstructs( m ):
 # static
 def parseBlocks( s ):
     global _G
-    blocks = {} 
+    blocks = [] 
     bl = len(_G.allblocks)
     
     while bl:
@@ -750,9 +750,9 @@ def parseBlocks( s ):
         if 1 == _G.allblockscnt[ block ]:
         
             # 1st occurance, block definition
-            blocks[ block ] = TT_BLOCK({
+            blocks.append([ block, TT_BLOCK({
                     'BLOCKCODE': s[pos1+tl:pos2-tl-1] + "';"
-                })
+                })])
         
         s = s[0:pos1] + rep + s[pos2+1:]
         if 1 <= _G.allblockscnt[ block ]: _G.allblockscnt[ block ] -= 1
@@ -1106,12 +1106,15 @@ def createTemplateRenderFunction( id, seps=None ):
     
     blocks = parse(getSeparators( Contemplate.getTemplateContents(id), seps ))
     
+    renderf = blocks[0]
+    blocks = blocks[1]
+    
     if _G.extends:
         func = TT_FUNC( None, 1 )
     
     else:
         func = TT_FUNC({
-                'FCODE': "__p__ += '" + blocks[0] + "'"
+                'FCODE': "__p__ += '" + renderf + "'"
             }, 2)
     
     _G.funcId += 1
@@ -1120,9 +1123,9 @@ def createTemplateRenderFunction( id, seps=None ):
     fn = createFunction(funcName, '__i__=None', padLines(func, 1), {'Contemplate': Contemplate})
     
     blockfns = {}
-    for b,bc in blocks[1].items():
-        funcName = '_contemplateBlockFn_' + b + '_' + str(_G.funcId)
-        blockfns[b] = createFunction(funcName, '__i__=None', padLines(bc, 1), {'Contemplate': Contemplate})
+    for b in blocks:
+        funcName = '_contemplateBlockFn_' + b[0] + '_' + str(_G.funcId)
+        blockfns[b] = createFunction(funcName, '__i__=None', padLines(b[1], 1), {'Contemplate': Contemplate})
     
     return [ fn, blockfns]
 
@@ -1133,13 +1136,16 @@ def createCachedTemplate( id, filename, classname, seps=None ):
     
     blocks = parse(getSeparators( Contemplate.getTemplateContents(id), seps ))
     
+    renderf = blocks[0]
+    blocks = blocks[1]
+    
     # tpl-defined blocks
     sblocks = ''
-    for b,bc in blocks[1].items():
+    for b in blocks:
         sblocks += _G.TEOL + TT_BlockCode({
-                    'BLOCKNAME': b,
-                    'BLOCKMETHODNAME': "_blockfn_"+b,
-                    'BLOCKMETHODCODE': padLines(bc, 1)
+                    'BLOCKNAME': b[0],
+                    'BLOCKMETHODNAME': "_blockfn_"+b[0],
+                    'BLOCKMETHODCODE': padLines(b[1], 1)
                 })
     
     # tpl render code
@@ -1150,13 +1156,11 @@ def createCachedTemplate( id, filename, classname, seps=None ):
     else:
         extendCode = ''
         renderCode = TT_RCODE({
-                    'RCODE': "__p__ += '" + blocks[0] + "'" 
+                    'RCODE': "__p__ += '" + renderf + "'" 
                 }, 2)
     
-    if _G.tplPrefixCode:
-        prefixCode = _G.tplPrefixCode
-    else:
-        prefixCode = ''
+    if _G.tplPrefixCode: prefixCode = _G.tplPrefixCode
+    else: prefixCode = ''
         
     # generate tpl class
     classCode = TT_ClassCode({
@@ -1179,9 +1183,15 @@ def getCachedTemplate( id, options=dict() ):
         # dynamic in-memory caching during page-request
         tpl = Contemplate()
         tpl.setId( id )
-        fns = createTemplateRenderFunction(id, options['separators'])
-        tpl.setRenderFunction( fns[0] )
-        tpl.setBlocks( fns[1] )
+        
+        if 'parsed' in options:
+            _G.funcId += 1
+            tpl.setRenderFunction( createFunction('_contemplateFn' + str(_G.funcId), '__i__=None', padLines(options['parsed'], 1), {'Contemplate': Contemplate}) )
+        else:
+            fns = createTemplateRenderFunction(id, options['separators'])
+            tpl.setRenderFunction( fns[0] )
+            tpl.setBlocks( fns[1] )
+        
         if _G.extends: tpl.extend( Contemplate.tpl(_G.extends) )
         return tpl
     
@@ -1471,7 +1481,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.6.7"
+    VERSION = "0.6.8"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2

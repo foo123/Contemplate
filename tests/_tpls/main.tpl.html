@@ -26,6 +26,8 @@
         
         <style>#forkongithub a{background:#aa0000;color:#fff;text-decoration:none;font-family:arial, sans-serif;text-align:center;font-weight:bold;padding:5px 40px;font-size:0.9rem;line-height:1.4rem;position:relative;transition:0.5s;}#forkongithub a:hover{background:#aa0000;color:#fff;}#forkongithub a::before,#forkongithub a::after{content:"";width:100%;display:block;position:absolute;z-index:100;top:1px;left:0;height:1px;background:#fff;}#forkongithub a::after{bottom:1px;top:auto;}@media screen and (min-width:800px){#forkongithub{position:absolute;display:block;z-index:100;top:0;right:0;width:200px;overflow:hidden;height:200px;}#forkongithub a{width:200px;position:absolute;top:60px;right:-60px;transform:rotate(45deg);-webkit-transform:rotate(45deg);box-shadow:4px 4px 10px rgba(0,0,0,0.8);}}</style><span id="forkongithub"><a href="https://github.com/foo123/Contemplate">Eat me on GitHub</a></span>
         
+        <strong>Contemplate.VERSION = <% $contemplate_version %></strong><br /><br />
+        
         An inline template:
         <div id="inline"><% $render_inline %></div>
         
@@ -37,6 +39,7 @@
         <hr />
         
         In the CLIENT:
+        <strong>Contemplate.VERSION (client) = <span id="version">0</span></strong><br /><br />
         <div id="results_client"></div>
         <script>
             Contemplate.setLocaleStrings({
@@ -60,7 +63,7 @@
             Contemplate.addPlugin('print', function(v){
                 return '<pre>' + JSON.stringify(v, null, 4) + '</pre>';
             });
-
+            document.getElementById("version").innerHTML = ''+Contemplate.VERSION;
             document.getElementById("results_client").innerHTML = Contemplate.tpl('demo', <% $data_client %>);
         </script>
     

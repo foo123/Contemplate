@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.6.7
+*  @version: 0.6.8
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -15,7 +15,7 @@ if (!class_exists('Contemplate'))
 
 class Contemplate
 {
-    const VERSION = "0.6.7";
+    const VERSION = "0.6.8";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -1081,9 +1081,9 @@ class Contemplate
             if ( 1 === self::$__allblockscnt[ $block ] )
             {
                 // 1st occurance, block definition
-                $blocks[ $block ] = self::TT_BLOCK(array(
+                array_push($blocks, array($block, self::TT_BLOCK(array(
                         'BLOCKCODE'=> substr($s, $pos1+$tl, $pos2-$tl-1-$pos1-$tl) ."';"
-                    ));
+                    ))));
             }
             /*
                 function strSlice($str, $start, $end) {
@@ -1470,6 +1470,10 @@ class Contemplate
         
         $blocks = self::parse(self::getSeparators( self::getTemplateContents($id), $seps ));
         
+        $renderf = $blocks[0];
+        $blocks = $blocks[1];
+        $bl = count($blocks);
+        
         if ( self::$__extends )
         {
             $func = self::TT_FUNC( null, 1 );
@@ -1477,16 +1481,16 @@ class Contemplate
         else
         {
             $func = self::TT_FUNC(array(
-                        'FCODE'=> "\$__p__ .= '" . $blocks[0] . "';"
+                        'FCODE'=> "\$__p__ .= '" . $renderf . "';"
                     ), 2);
         }
         
         $fn = create_function('$__i__', $func);
         
         $blockfns = array();  
-        foreach ($blocks[1] as $b=>$bc) 
+        for($b=0; $b<$bl; $b++) 
         {
-            $blockfns[$b] = create_function('$__i__', $bc);
+            $blockfns[$blocks[$b][0]] = create_function('$__i__', $blocks[$b][1]);
         }
         
         return array($fn, $blockfns);
@@ -1498,14 +1502,18 @@ class Contemplate
         
         $blocks = self::parse(self::getSeparators( self::getTemplateContents($id), $seps ));
         
+        $renderf = $blocks[0];
+        $blocks = $blocks[1];
+        $bl = count($blocks);
+        
         // tpl-defined blocks
         $sblocks = '';
-        foreach ($blocks[1] as $b=>$bc)
+        for($b=0; $b<$bl; $b++) 
         {
             $sblocks .= self::$__TEOL . self::TT_BlockCode(array(
-                            'BLOCKNAME'=> $b,
-                            'BLOCKMETHODNAME'=> "_blockfn_$b",
-                            'BLOCKMETHODCODE'=> self::padLines($bc, 1)
+                            'BLOCKNAME'=> $blocks[$b][0],
+                            'BLOCKMETHODNAME'=> "_blockfn_" . $blocks[$b][0],
+                            'BLOCKMETHODCODE'=> self::padLines($blocks[$b][1], 1)
                         ));
         }
         
@@ -1519,14 +1527,12 @@ class Contemplate
         {
             $extendCode = '';
             $renderCode = self::TT_RCODE(array(
-                            'RCODE'=> "\$__p__ .= '" . $blocks[0] . "';"
+                            'RCODE'=> "\$__p__ .= '" . $renderf . "';"
                         ), 2);
         }
         
-        if ( self::$__tplPrefixCode )
-            $prefixCode = self::$__tplPrefixCode;
-        else
-            $prefixCode = '';
+        if ( self::$__tplPrefixCode ) $prefixCode = self::$__tplPrefixCode;
+        else  $prefixCode = '';
             
         // generate tpl class
         $class = '<?php ' .self::$__TEOL . self::TT_ClassCode(array(
@@ -1544,18 +1550,22 @@ class Contemplate
     
     private static function getCachedTemplate( $id, $options=array() )
     {
-        $options = (array)$options;
-        
         // inline templates saved only in-memory
         if ( isset(self::$__inlines[$id]) )
         {
             // dynamic in-memory caching during page-request
             //return new Contemplate($id, self::createTemplateRenderFunction($id));
-            $tpl = new Contemplate();
-            $tpl->setId( $id );
-            $fns = self::createTemplateRenderFunction($id, $options['separators']);
-            $tpl->setRenderFunction( $fns[0] ); 
-            $tpl->setBlocks( $fns[1] );
+            $tpl = new Contemplate(); $tpl->setId( $id );
+            if ( isset($options['parsed']) && is_string($options['parsed']) )
+            {
+                // already parsed code was given
+                $tpl->setRenderFunction( create_function('$__i__', $options['parsed']) ); 
+            }
+            else
+            {
+                $fns = self::createTemplateRenderFunction($id, $options['separators']);
+                $tpl->setRenderFunction( $fns[0] ); $tpl->setBlocks( $fns[1] );
+            }
             if ( self::$__extends ) $tpl->extend( self::tpl(self::$__extends, null, false) );
             return $tpl;
         }

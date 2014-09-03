@@ -33,19 +33,6 @@ def __getTplClass__(Contemplate):
         # tpl-defined blocks render code starts here
         
         
-        # tpl block render method for block 'Block1'
-        def _blockfn_Block1(self, __i__):
-            
-            __p__ = ''
-            data = __i__.d
-             
-            __p__ += '' + "\n" + 'Base template Block1' + "\n" + '<br /><br />' + "\n" + '' +  __i__.renderBlock( 'Block11' ) 
-            __p__ += '' + "\n" + '<br /><br />' + "\n" + '' +  __i__.renderBlock( 'Block12' ) 
-            __p__ += '' + "\n" + '<br /><br />' + "\n" + '';
-            return __p__
-            
-        
-        
         # tpl block render method for block 'Block3'
         def _blockfn_Block3(self, __i__):
             
@@ -68,6 +55,17 @@ def __getTplClass__(Contemplate):
             
         
         
+        # tpl block render method for block 'Block12'
+        def _blockfn_Block12(self, __i__):
+            
+            __p__ = ''
+            data = __i__.d
+             
+            __p__ += 'Base template nested Block12';
+            return __p__
+            
+        
+        
         # tpl block render method for block 'Block11'
         def _blockfn_Block11(self, __i__):
             
@@ -79,13 +77,15 @@ def __getTplClass__(Contemplate):
             
         
         
-        # tpl block render method for block 'Block12'
-        def _blockfn_Block12(self, __i__):
+        # tpl block render method for block 'Block1'
+        def _blockfn_Block1(self, __i__):
             
             __p__ = ''
             data = __i__.d
              
-            __p__ += 'Base template nested Block12';
+            __p__ += '' + "\n" + 'Base template Block1' + "\n" + '<br /><br />' + "\n" + '' +  __i__.renderBlock( 'Block11' ) 
+            __p__ += '' + "\n" + '<br /><br />' + "\n" + '' +  __i__.renderBlock( 'Block12' ) 
+            __p__ += '' + "\n" + '<br /><br />' + "\n" + '';
             return __p__
             
         

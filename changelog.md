@@ -1,5 +1,10 @@
 ###ChangeLog
 
+__0.6.8__
+* option to create a template instance from pre-parsed template code returned from *Contemplate.parseTpl* method
+* minor changes
+
+
 __0.6.7__
 * make parse method public as Contemplate.parseTpl( tpl, options )
 
@@ -20,16 +25,20 @@ __0.6.4__
 * Contemplate for Node.js is **not** global anymore
 * refactor/optimize
 
+
 __0.6.3__
 * add more options (e.g 'autoUpdate') per single template
 * fix some typos
+
 
 __0.6.2__
 * parse nested blocks
 * **escape** parse option (true by default), options syntax change (see manual)
 
+
 __0.6.1__
 * enable template separators to be defined **inside** a template or passed as **paramaters**
+
 
 __0.6__
 * define template separators in the 1st line of a template (each tpl can define its own separators)

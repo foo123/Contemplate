@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.6.7
+*  @version: 0.6.8
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -28,7 +28,7 @@
     
     "use strict";
     
-    var __version__ = "0.6.7", self,
+    var __version__ = "0.6.8", self,
     
         // auxilliaries
         Obj = Object, Arr = Array, Str = String, Func = Function, 
@@ -645,7 +645,7 @@
         },
         
         parseBlocks = function( s ) {
-            var blocks = {}, bl = $__allblocks.length, 
+            var blocks = [], bl = $__allblocks.length, 
                 block, delims, tag, rep, tl, rl,
                 pos1, pos2, off, containerblock
             ;
@@ -676,9 +676,9 @@
                 if ( 1 === $__allblockscnt[ block ] )
                 {
                     // 1st occurance, block definition
-                    blocks[ block ] = TT_BLOCK({
+                    blocks.push([ block, TT_BLOCK({
                             'BLOCKCODE': s.slice( pos1+tl, pos2-tl-1 ) + "';"
-                        });
+                        })]);
                 }
                 s = s.slice(0, pos1) + rep + s.slice(pos2+1);
                 if ( 1 <= $__allblockscnt[ block ] ) $__allblockscnt[ block ]--;
@@ -1037,7 +1037,11 @@
             
             resetState();
             
-            var blocks = parse( getSeparators( getTemplateContents( id ), seps ) ), funcs = {}, b, func;
+            var blocks = parse( getSeparators( getTemplateContents( id ), seps ) ), funcs = {}, b, bl, func, renderf;
+            
+            renderf = blocks[0];
+            blocks = blocks[1];
+            bl = blocks.length;
             
             if ($__extends)
             {
@@ -1048,12 +1052,12 @@
                 // Introduce the data as local variables using with(){}
                // Convert the template into pure JavaScript
                 func = TT_FUNC({
-                            'FCODE': "__p__ += '" + blocks[0] + "';"
+                            'FCODE': "__p__ += '" + renderf + "';"
                         }, 2);
             }
             
             // defined blocks
-            for (b in blocks[1]) funcs[b] = new Func("Contemplate,__i__", blocks[1][b]);
+            for (b=0; b<bl; b++) funcs[blocks[b][0]] = new Func("Contemplate,__i__", blocks[b][1]);
             
             return [new Func("Contemplate,__i__", func), funcs];
         },
@@ -1063,20 +1067,23 @@
             resetState();
             
             var  
-                funcs = {}, prefixCode, extendCode, renderCode, b, sblocks, bcode,
-                blocks = parse( getSeparators( getTemplateContents( id ), seps ) )
+                funcs = {}, prefixCode, extendCode, renderCode, b, bl, sblocks,
+                blocks = parse( getSeparators( getTemplateContents( id ), seps ) ), renderf
             ;
+            
+            renderf = blocks[0];
+            blocks = blocks[1];
+            bl = blocks.length;
             
             // tpl-defined blocks
             sblocks = [];
-            for ( b in blocks[1] ) 
+            for (b=0; b<bl; b++) 
             {
-                bcode = $__TEOL + TT_BlockCode({
-                                    'BLOCKNAME': b,
-                                    'BLOCKMETHODNAME': b,
-                                    'BLOCKMETHODCODE': padLines(blocks[1][b], 1)
-                                });
-                sblocks.push( bcode );
+                sblocks.push( $__TEOL + TT_BlockCode({
+                                    'BLOCKNAME': blocks[b][0],
+                                    'BLOCKMETHODNAME': blocks[b][0],
+                                    'BLOCKMETHODCODE': padLines(blocks[b][1], 1)
+                                }) );
             }
             if ( sblocks.length )
             {
@@ -1103,14 +1110,12 @@
             {
                 extendCode = '';
                 renderCode = TT_RCODE({
-                                'RCODE': "__p__ += '" + blocks[0] + "';"
+                                'RCODE': "__p__ += '" + renderf + "';"
                             }, 2);
             }
             
-            if ( $__tplPrefixCode )
-                prefixCode = $__tplPrefixCode;
-            else
-                prefixCode = '';
+            if ( $__tplPrefixCode )  prefixCode = $__tplPrefixCode;
+            else prefixCode = '';
             
           // generate tpl class
             var classCode = TT_ClassCode({
@@ -1127,14 +1132,22 @@
         
         getCachedTemplate = function( id, options ) {
             
-            options = options || {};
-            
             // inline templates saved only in-memory
             if ( $__inlines[id] )
             {
                 // dynamic in-memory caching during page-request
-                var funcs = createTemplateRenderFunction( id, options.separators ), 
+                var funcs, tpl;
+                if ( options.parsed )
+                {
+                    // already parsed code was given
+                    tpl = getContemplateInstance( self, id, new Func("Contemplate,__i__", options.parsed) );
+                }
+                else
+                {
+                    // parse code and create template class
+                    funcs = createTemplateRenderFunction( id, options.separators ); 
                     tpl = getContemplateInstance( self, id, funcs[ 0 ] ).setBlocks( funcs[ 1 ] );
+                }
                 if ($__extends) tpl.extend( self.tpl($__extends) );
                 return tpl;
             }
@@ -1740,8 +1753,7 @@
                 'separators': null
             }, options);
             
-            if ( false === options.escape ) $__escape = false;
-            else  $__escape = true;
+            $__escape = false !== options.escape;
             
             // Figure out if we're getting a template, or if we need to
             // load the template - and be sure to cache the result.

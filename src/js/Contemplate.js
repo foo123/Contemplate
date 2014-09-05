@@ -9,23 +9,28 @@
 *  http://ejohn.org/blog/javascript-micro-templating/
 *
 **/
-!function (root, moduleName, moduleDefinition) {
+!function( root, name, factory ) {
 
+    "use strict";
+    
     //
-    // export the module
+    // export the module, umd-style
     
     // node, CommonJS, etc..
-    if ( 'object' === typeof(module) && module.exports ) module.exports = moduleDefinition();
+    if ( 'object' === typeof(module) && module.exports ) 
+        module.exports = (module.deps = module.deps || {})[ name ] = module.deps[ name ] || (factory.call( root ) || 1);
     
     // AMD, etc..
-    else if ( 'function' === typeof(define) && define.amd ) define( moduleDefinition );
+    else if ( 'function' === typeof(define) && define.amd ) define( name, [ ], function( ){ return factory.call( root ); } );
     
     // browser, etc..
-    else root[ moduleName ] = moduleDefinition();
+    else if ( !(name in root) ) root[ name ] = factory.call( root ) || 1;
 
 
-}(this.self || this, 'Contemplate', function( undef ) {
-    
+}(  /* current root */          this, 
+    /* module name */           'Contemplate',
+    /* module factory */        function( undef ) {
+        
     "use strict";
     
     var __version__ = "0.6.8", self,

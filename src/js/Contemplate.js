@@ -32,7 +32,7 @@
 
 }(  /* current root */          this, 
     /* module name */           "Contemplate",
-    /* module factory */        function( undef ) {
+    /* module factory */        function( exports, undef ) {
         
     "use strict";
     

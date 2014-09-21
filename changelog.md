@@ -1,5 +1,12 @@
 ###ChangeLog
 
+__0.6.9__
+* add a custom simpler/faster html escape function **%e**
+* minimise plugin naming convention (%plugin_pluginName, %plg_pluginName)
+* add html entinties escape mode as parameter (default= "ENT_COMPAT")
+* optimise "htmlentities", "count" etc. methods from phpjs (Contemplate.js)
+
+
 __0.6.8__
 * option to create a template instance from pre-parsed template code returned from *Contemplate.parseTpl* method
 * minor changes

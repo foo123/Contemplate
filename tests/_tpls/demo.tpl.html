@@ -44,7 +44,7 @@
     
     <!-- use contemplate literal data with template function, in this case a print test plugin -->
     <strong>use literal data with template function, in this case a print plugin</strong><br />
-    <% %plugin_print({ 
+    <% %plg_print({ 
         "stringVar"     : "stringValue", 
         "numericVar"    : 123, 
         "arrayVar"      : [
@@ -116,6 +116,8 @@
     
     <strong>Functions</strong><br />
     <ul>
+    <li>%e(&lt;ok k=&quot;v&quot;&gt;) = <% %e('<ok k="v">') %></li>
+    <li>%html(&lt;ok k=&quot;v&quot;&gt;) = <% %html('<ok k="v">') %></li>
     <li>trim(__FOO__, _) = <% %trim("__FOO__", "_") %></li>
     <li>trim(  FOO  ) = <% %trim("  FOO  ") %></li>
     <li>lowercase(FOO) = <% %lowercase("FOO") %></li>

@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.6.8
+#  @version 0.6.9
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -24,11 +24,31 @@ import os, sys, re, time, datetime, calendar, codecs
 
 ODict = dict
 
+#try:
+#    # Python 3.x
+#    import html
+#    __htmlent__ = html
+#    __ENT_COMPAT__ = False
+    
+        
+
+#except ImportError:
+# Python 2.x
+import cgi
+
+# http://www.php2python.com/wiki/function.htmlentities/
+def htmlentities(s, mode='ENT_COMPAT'):
+    mode = True if 'ENT_COMPAT' == mode else False
+    return cgi.escape(s, mode).encode('ascii', 'xmlcharrefreplace').decode('ascii')
+    
+
 try:
     # Python 3.x
-    import html
-    __htmlent__ = html
-    __ENT_COMPAT__ = False
+    import urllib.parse
+    
+    # http://www.php2python.com/wiki/function.urlencode/
+    def urlencode(s):
+        return urllib.parse.quote_plus(s)
     
     # http://www.php2python.com/wiki/function.stripslashes/
     # http://tech.7starsea.com/post/203
@@ -36,26 +56,18 @@ try:
     def stripslashes(s):
         return codecs.decode(s, 'unicode_escape')
         
-
 except ImportError:
     # Python 2.x
-    import cgi
-    __htmlent__ = cgi
-    __ENT_COMPAT__ = True
+    import urllib
+    
+    # http://www.php2python.com/wiki/function.urlencode/
+    def urlencode(s):
+        return urllib.quote_plus(s)
     
     # http://www.php2python.com/wiki/function.stripslashes/
     # static
     def stripslashes(s):
         return s.decode('string_escape')
-
-try:
-    # Python 3.x
-    import urllib.parse
-    __urlencode__ = urllib.parse
-except ImportError:
-    # Python 2.x
-    import urllib
-    __urlencode__ = urllib
 
     
 
@@ -128,13 +140,13 @@ class _G:
 
     funcs = [
         'htmlselect', 'htmltable',
-        'plugin_([a-zA-Z0-9_]+)', 'haskey',
+        'plg_([a-zA-Z0-9_]+)', 'plugin_([a-zA-Z0-9_]+)', 'haskey',
         'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
         'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'addslashes', 'stripslashes',
         'tpl', 'uuid',
         'html', 'url', 'count', 
         'ldate', 'date', 'now', 'locale',
-        'dq', 'q', 'l', 's', 'n', 'f' 
+        'dq', 'q', 'l', 's', 'n', 'f', 'e' 
     ]
 
     plugins = {}
@@ -968,7 +980,7 @@ def funcReplace( m ):
     global _G
     plugin = m.group(2) 
     if plugin and plugin in _G.plugins: 
-        return 'Contemplate.plugin_' + plugin 
+        return 'Contemplate.plg_' + plugin 
     else: 
         return 'Contemplate.' + m.group(1)
 
@@ -1481,7 +1493,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.6.8"
+    VERSION = "0.6.9"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -1602,6 +1614,9 @@ class Contemplate:
     # add custom plugins as template functions
     def addPlugin( name, handler ):
         global _G
+        plugin_name = 'plg_' + str(name)
+        setattr(Contemplate, plugin_name, handler)
+        _G.plugins[ plugin_name ] = True
         plugin_name = 'plugin_' + str(name)
         setattr(Contemplate, plugin_name, handler)
         _G.plugins[ plugin_name ] = True
@@ -1764,24 +1779,6 @@ class Contemplate:
     # Basic template functions
     #
     
-    # basic html escaping
-    # static
-    def html( s ):
-        # http://www.php2python.com/wiki/function.htmlentities/
-        return __htmlent__.escape(s.encode('utf8'), __ENT_COMPAT__).encode('ascii', 'xmlcharrefreplace')
-    
-    # basic url escaping
-    # static
-    def url( s ):
-        # http://www.php2python.com/wiki/function.urlencode/
-        return __urlencode__.quote_plus(s)
-    
-    # count items in array/list or object/dict
-    # static
-    def count( a ):
-        # http://www.php2python.com/wiki/function.count/
-        return len(a)
-    
     # check if (nested) keys exist in tpl variable
     def haskey( v, *args ):
         if not v or not (isinstance(v, list) or isinstance(v, dict)): return False
@@ -1818,6 +1815,27 @@ class Contemplate:
     # static
     def f( e ):
         return float(e)
+    
+    # basic custom faster html escaping
+    # static
+    def e( s ):
+        return s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
+    
+    # basic html escaping
+    # static
+    def html( s, mode='ENT_COMPAT' ):
+        return htmlentities(s, mode)
+    
+    # basic url escaping
+    # static
+    def url( s ):
+        return urlencode(s)
+    
+    # count items in array/list or object/dict
+    # static
+    def count( a ):
+        # http://www.php2python.com/wiki/function.count/
+        return len(a)
     
     # http://www.php2python.com/wiki/function.addslashes/
     # static

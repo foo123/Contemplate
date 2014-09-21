@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.6.8
+*  @version: 0.6.9
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -36,7 +36,7 @@
         
     "use strict";
     
-    var __version__ = "0.6.8", self,
+    var __version__ = "0.6.9", self,
     
         // auxilliaries
         Obj = Object, Arr = Array, Str = String, Func = Function, 
@@ -135,13 +135,13 @@
         
         $__funcs = [ 
             'htmlselect', 'htmltable', 
-            'plugin_([a-zA-Z0-9_]+)', 'haskey', 
+            'plg_([a-zA-Z0-9_]+)', 'plugin_([a-zA-Z0-9_]+)', 'haskey', 
             'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
             'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'addslashes', 'stripslashes',
             'tpl', 'uuid',
             'html', 'url', 'count', 
             'ldate', 'date', 'now', 'locale',
-            'dq', 'q', 'l', 's', 'n', 'f' 
+            'dq', 'q', 'l', 's', 'n', 'f', 'e' 
         ],
         
         $__plugins = { },
@@ -891,7 +891,7 @@
         funcReplace = function( m, func, plugin ) {
             // allow custom plugins as template functions
             if ( plugin && $__plugins[ plugin ] )
-                return 'Contemplate.plugin_' + plugin;
+                return 'Contemplate.plg_' + plugin;
             return 'Contemplate.' + func; 
         },
             
@@ -1631,6 +1631,7 @@
             if ( name && handler )
             {
                 $__plugins[ name ] = true;
+                self[ "plg_" + name ] = handler;
                 self[ "plugin_" + name ] = handler;
             }
         },
@@ -1782,29 +1783,15 @@
         // Basic template functions
         //
         
-        // basic html escaping
-        html: function( s ) { 
-            return htmlentities(s, 'ENT_COMPAT', 'UTF-8'); 
-        },
-        
-        // basic url escaping
-        url: urlencode,
-        
-        // count items in obj/array
-        count: count,
-        
         // haskey, has_key, check if (nested) keys exist in tpl variable
         haskey: function( v/*, key1, key2, etc.. */ ) {
-            var to_string = _toString( v );
-            if (!v || "[object Array]" != to_string && "[object Object]" != to_string) return false;
-            var args = slice( arguments ), argslen, i, tmp;
-            args.shift( );
-            argslen = args.length;
-            tmp = v;
-            for (i=0; i<argslen; i++)
+            var to_string = _toString( v ), argslen, i, tmp;
+            if (!v || "[object Array]" !== to_string && "[object Object]" !== to_string) return false;
+            argslen = arguments.length; tmp = v;
+            for (i=1; i<arguments.length; i++)
             {
-                if (undef === tmp[args[i]]) return false;
-                tmp = tmp[args[i]];
+                if ( !(arguments[i] in tmp) ) return false;
+                tmp = tmp[ arguments[i] ];
             }
             return true;
         },
@@ -1833,6 +1820,27 @@
         f: function( e ) { 
             return parse_float(e, 10); 
         },
+        
+        // basic custom faster html escaping
+        e: function( s ) {
+            return s
+                .split('&').join('&amp;')
+                .split('<').join('&lt;')
+                .split('>').join('&gt;')
+                .split('"').join('&quot;')
+            ;
+        },
+        
+        // basic html escaping
+        html: function( s, mode ) { 
+            return htmlentities(s, mode || 'ENT_COMPAT', 'UTF-8'); 
+        },
+        
+        // basic url escaping
+        url: urlencode,
+        
+        // count items in obj/array
+        count: count,
         
         addslashes: function( str ) {
             // http://kevin.vanzonneveld.net
@@ -2203,32 +2211,30 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 
-function get_html_translation_table (table, quote_style) {
+function get_html_translation_table (table, quote_style) 
+{
+  var tblID, useTable = null,
+    useQuoteStyle = null;
+
+  useTable = !isNaN(table) ? get_html_translation_table.constMappingTable[table] : table ? table.toUpperCase() : 'HTML_SPECIALCHARS';
+  useQuoteStyle = !isNaN(quote_style) ? get_html_translation_table.constMappingQuoteStyle[quote_style] : quote_style ? quote_style.toUpperCase() : 'ENT_COMPAT';
+
+  if (useTable !== 'HTML_SPECIALCHARS' && useTable !== 'HTML_ENTITIES') 
+  {
+    throw new Error("Table: " + useTable + ' not supported');
+    return;
+  }
+  // use cached table if exists
+  tblID = useTable + '__' + useQuoteStyle;
+  if ( get_html_translation_table.tbls[tblID] )  return get_html_translation_table.tbls[tblID];
+  
   var entities = {},
     hash_map = {},
     decimal;
-  var constMappingTable = {},
-    constMappingQuoteStyle = {};
-  var useTable = {},
-    useQuoteStyle = {};
-
-  // Translate arguments
-  constMappingTable[0] = 'HTML_SPECIALCHARS';
-  constMappingTable[1] = 'HTML_ENTITIES';
-  constMappingQuoteStyle[0] = 'ENT_NOQUOTES';
-  constMappingQuoteStyle[2] = 'ENT_COMPAT';
-  constMappingQuoteStyle[3] = 'ENT_QUOTES';
-
-  useTable = !isNaN(table) ? constMappingTable[table] : table ? table.toUpperCase() : 'HTML_SPECIALCHARS';
-  useQuoteStyle = !isNaN(quote_style) ? constMappingQuoteStyle[quote_style] : quote_style ? quote_style.toUpperCase() : 'ENT_COMPAT';
-
-  if (useTable !== 'HTML_SPECIALCHARS' && useTable !== 'HTML_ENTITIES') {
-    throw new Error("Table: " + useTable + ' not supported');
-    // return false;
-  }
-
+    
   entities['38'] = '&amp;';
-  if (useTable === 'HTML_ENTITIES') {
+  if ( useTable === 'HTML_ENTITIES' ) 
+  {
     entities['160'] = '&nbsp;';
     entities['161'] = '&iexcl;';
     entities['162'] = '&cent;';
@@ -2327,10 +2333,12 @@ function get_html_translation_table (table, quote_style) {
     entities['255'] = '&yuml;';
   }
 
-  if (useQuoteStyle !== 'ENT_NOQUOTES') {
+  if ( useQuoteStyle !== 'ENT_NOQUOTES' ) 
+  {
     entities['34'] = '&quot;';
   }
-  if (useQuoteStyle === 'ENT_QUOTES') {
+  if ( useQuoteStyle === 'ENT_QUOTES' ) 
+  {
     entities['39'] = '&#39;';
   }
   entities['60'] = '&lt;';
@@ -2338,25 +2346,38 @@ function get_html_translation_table (table, quote_style) {
 
 
   // ascii decimals to real symbols
-  for (decimal in entities) {
-    if (entities.hasOwnProperty(decimal)) {
+  for ( decimal in entities ) 
+  {
+    if ( entities.hasOwnProperty(decimal) ) 
+    {
       hash_map[String.fromCharCode(decimal)] = entities[decimal];
     }
   }
-
-  return hash_map;
+  if ( useQuoteStyle === 'ENT_QUOTES' ) 
+  {
+    hash_map["'"] = '&#039;';
+  }
+  // cache the table
+  return get_html_translation_table.tbls[tblID] = hash_map;
 }
+get_html_translation_table.constMappingTable = {};
+get_html_translation_table.constMappingQuoteStyle = {};
+// Translate arguments
+get_html_translation_table.constMappingTable[0] = 'HTML_SPECIALCHARS';
+get_html_translation_table.constMappingTable[1] = 'HTML_ENTITIES';
+get_html_translation_table.constMappingQuoteStyle[0] = 'ENT_NOQUOTES';
+get_html_translation_table.constMappingQuoteStyle[2] = 'ENT_COMPAT';
+get_html_translation_table.constMappingQuoteStyle[3] = 'ENT_QUOTES';
+get_html_translation_table.tbls = {};
+
 function htmlentities (string, quote_style, charset, double_encode) {
   var hash_map = get_html_translation_table('HTML_ENTITIES', quote_style),
     symbol = '';
   string = string == null ? '' : string + '';
 
-  if (!hash_map) {
+  if ( !hash_map ) 
+  {
     return false;
-  }
-
-  if (quote_style && quote_style === 'ENT_QUOTES') {
-    hash_map["'"] = '&#039;';
   }
 
   if (!!double_encode || double_encode == null) {
@@ -2379,7 +2400,8 @@ function htmlentities (string, quote_style, charset, double_encode) {
 
   return string;
 }
-function urlencode (str) {
+function urlencode (str) 
+{
   str = (str + '').toString();
 
   // Tilde should be allowed unescaped in future versions of PHP (as reflected below), but if you want to reflect current
@@ -2387,7 +2409,8 @@ function urlencode (str) {
   return encodeURIComponent(str).replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').
   replace(/\)/g, '%29').replace(/\*/g, '%2A').replace(/%20/g, '+');
 }
-function rawurlencode (str) {
+function rawurlencode (str) 
+{
   str = (str + '').toString();
 
   // Tilde should be allowed unescaped in future versions of PHP (as reflected below), but if you want to reflect current
@@ -2395,103 +2418,33 @@ function rawurlencode (str) {
   return encodeURIComponent(str).replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').
   replace(/\)/g, '%29').replace(/\*/g, '%2A');
 }
-function count (mixed_var, mode) {
-  var key, cnt = 0;
+function count (mixed_var/*, mode*/) 
+{
+  if ( null === mixed_var || 'undefined' === typeof mixed_var ) return 0;
 
-  if (mixed_var === null || typeof mixed_var === 'undefined') {
-    return 0;
-  } else if (mixed_var.constructor !== Array && mixed_var.constructor !== Object) {
-    return 1;
-  }
-
-  if (mode === 'COUNT_RECURSIVE') {
-    mode = 1;
-  }
-  if (mode != 1) {
-    mode = 0;
-  }
-
-  for (key in mixed_var) {
-    if (mixed_var.hasOwnProperty(key)) {
-      cnt++;
-      if (mode == 1 && mixed_var[key] && (mixed_var[key].constructor === Array || mixed_var[key].constructor === Object)) {
-        cnt += count(mixed_var[key], 1);
-      }
-    }
-  }
-
-  return cnt;
+  else if ( Array === mixed_var.constructor) return mixed_var.length;
+  
+  else if ( Object === mixed_var.constructor) return Keys(mixed_var).length;
+  
+  return 1;
 }
-function is_array (mixed_var) {
-  var ini,
-    _getFuncName = function (fn) {
-      var name = (/\W*function\s+([\w\$]+)\s*\(/).exec(fn);
-      if (!name) {
-        return '(Anonymous)';
-      }
-      return name[1];
-    },
-    _isArray = function (mixed_var) {
-      // return Object.prototype.toString.call(mixed_var) === '[object Array]';
-      // The above works, but let's do the even more stringent approach: (since Object.prototype.toString could be overridden)
-      // Null, Not an object, no length property so couldn't be an Array (or String)
-      if (!mixed_var || typeof mixed_var !== 'object' || typeof mixed_var.length !== 'number') {
-        return false;
-      }
-      var len = mixed_var.length;
-      mixed_var[mixed_var.length] = 'bogus';
-      // The only way I can think of to get around this (or where there would be trouble) would be to have an object defined
-      // with a custom "length" getter which changed behavior on each call (or a setter to mess up the following below) or a custom
-      // setter for numeric properties, but even that would need to listen for specific indexes; but there should be no false negatives
-      // and such a false positive would need to rely on later JavaScript innovations like __defineSetter__
-      if (len !== mixed_var.length) { // We know it's an array since length auto-changed with the addition of a
-      // numeric property at its length end, so safely get rid of our bogus element
-        mixed_var.length -= 1;
-        return true;
-      }
-      // Get rid of the property we added onto a non-array object; only possible
-      // side-effect is if the user adds back the property later, it will iterate
-      // this property in the older order placement in IE (an order which should not
-      // be depended on anyways)
-      delete mixed_var[mixed_var.length];
-      return false;
-    };
-
-  if (!mixed_var || typeof mixed_var !== 'object') {
-    return false;
-  }
-
-  // BEGIN REDUNDANT
-  //this.php_js = this.php_js || {};
-  //this.php_js.ini = this.php_js.ini || {};
-  // END REDUNDANT
-
-  ini = null; //this.php_js.ini['phpjs.objectsAsArrays'];
-
-  return _isArray(mixed_var) ||
-    // Allow returning true unless user has called
-    // ini_set('phpjs.objectsAsArrays', 0) to disallow objects as arrays
-    ((!ini || ( // if it's not set to 0 and it's not 'off', check for objects as arrays
-    (parseInt(ini.local_value, 10) !== 0 && (!ini.local_value.toLowerCase || ini.local_value.toLowerCase() !== 'off')))
-    ) && (
-    Object.prototype.toString.call(mixed_var) === '[object Object]' && _getFuncName(mixed_var.constructor) === 'Object' // Most likely a literal and intended as assoc. array
-    ));
+function is_array (mixed_var) 
+{
+    return (mixed_var instanceof Array) || '[object Array]' === _toString(mixed_var);
 }
-function array_flip (trans) {
-  var key, tmp_ar = {};
+function array_flip (trans) 
+{
+  var k, tmp = {}, key, keys = Keys(trans), kl = keys.length;
 
-  if (trans && typeof trans=== 'object' && trans.change_key_case) { // Duck-type check for our own array()-created PHPJS_Array
-    return trans.flip();
+  for (k=0; k<kl; k++) 
+  {
+    key = keys[ k ];
+    tmp[ trans[ key ] ] = key;
   }
-
-  for (key in trans) {
-    if (!trans.hasOwnProperty(key)) {continue;}
-    tmp_ar[trans[key]] = key;
-  }
-
-  return tmp_ar;
+  return tmp;
 }
-function sprintf () {
+function sprintf () 
+{
   var regex = /%%|%(\d+\$)?([-+\'#0 ]*)(\*\d+\$|\*|\d+)?(\.(\*\d+\$|\*|\d+))?([scboxXuideEfFgG])/g;
   var a = arguments,
     i = 0,

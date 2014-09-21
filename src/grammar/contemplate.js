@@ -70,6 +70,7 @@ var contemplate_grammar = {
                                   
             // template functions, plugins, etc..
             "function" : [
+                "RegExp::/%plg_[a-zA-Z0-9_]+/",
                 "RegExp::/%plugin_[a-zA-Z0-9_]+/",
                 [
                     "%htmlselect", "%htmltable", "%html", "%url", "%uuid",
@@ -78,7 +79,7 @@ var contemplate_grammar = {
                     "%lowercase", "%uppercase", "%camelcase", "%snakecase", 
                     "%count", "%haskey", "%now", "%time", "%date", 
                     "%ldate", "%locale", "%l", "%pluralise", 
-                    "%dq", "%n", "%s", "%f","%q"
+                    "%dq", "%n", "%s", "%f", "%q", "%e"
                 ]
             ]
         },

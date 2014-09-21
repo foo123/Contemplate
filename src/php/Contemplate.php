@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.6.8
+*  @version: 0.6.9
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -15,7 +15,7 @@ if (!class_exists('Contemplate'))
 
 class Contemplate
 {
-    const VERSION = "0.6.8";
+    const VERSION = "0.6.9";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -80,13 +80,13 @@ class Contemplate
     
     private static $__funcs = array( 
         'htmlselect', 'htmltable',
-        'plugin_([a-zA-Z0-9_]+)', 'haskey', 
+        'plg_([a-zA-Z0-9_]+)', 'plugin_([a-zA-Z0-9_]+)', 'haskey', 
         'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
         'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'addslashes', 'stripslashes',
         'tpl', 'uuid',
         'html', 'url', 'count', 
         'ldate', 'date', 'now', 'locale',
-        'dq', 'q', 'l', 's', 'n', 'f' 
+        'dq', 'q', 'l', 's', 'n', 'f', 'e' 
     );
     
     private static $__plugins = array();
@@ -233,6 +233,7 @@ class Contemplate
     // add custom plugins as template functions
     public static function addPlugin( $name, $handler ) 
     {
+        self::$__plugins[ "plg_$name" ] = $handler;
         self::$__plugins[ "plugin_$name" ] = $handler;
     }
     
@@ -399,24 +400,6 @@ class Contemplate
     // Basic template functions
     //
     
-    // basic html escaping
-    public static function html( $s ) 
-    { 
-        return htmlentities($s, ENT_COMPAT, 'UTF-8'); 
-    }
-    
-    // basic url escaping
-    public static function url( $s ) 
-    { 
-        return urlencode($s); 
-    }
-    
-    // count items in array
-    public static function count( $a ) 
-    { 
-        return count($a); 
-    }
-    
     // check if (nested) keys exist in tpl variable
     public static function haskey( $v/*, key1, key2, etc.. */ ) 
     {
@@ -461,6 +444,30 @@ class Contemplate
     public static function f( $e ) 
     { 
         return floatval($e); 
+    }
+    
+    // basic custom faster html escaping
+    public static function e( $s ) 
+    {
+        return str_replace(array('&', '<', '>', '"'), array('&amp;', '&lt;', '&gt;', '&quot;'), $s);
+    }
+        
+    // basic html escaping
+    public static function html( $s, $mode=ENT_COMPAT ) 
+    { 
+        return htmlentities($s, $mode, 'UTF-8'); 
+    }
+    
+    // basic url escaping
+    public static function url( $s ) 
+    { 
+        return urlencode($s); 
+    }
+    
+    // count items in array
+    public static function count( $a ) 
+    { 
+        return count($a); 
     }
     
     public static function addslashes( $s )

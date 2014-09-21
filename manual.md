@@ -134,6 +134,7 @@ this is exactly how the Contemplate::tpl($id, $data) (PHP), or Contemplate.tpl(i
 __Template Functions / Plugins__
 
 
+* *%e(str)*   custom fast html escape
 * *%n(val)*   convert val to integer
 * *%s(val)*   convert val to string
 * *%f(val)*   convert val to float
@@ -169,4 +170,4 @@ __Template Functions / Plugins__
 * *%html(val)*  html-escape val (htmlentities)
 * *%url(val)*  url-encode val (urlencode)
 
-* *%plugin_pluginName([val1, val2, ..])*  call a custom (user-defined) plugin as a template function
+* *%plg_pluginName([val1, val2, ..])* , *%plugin_pluginName([val1, val2, ..])*  call a custom (user-defined) plugin as a template function

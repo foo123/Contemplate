@@ -65,6 +65,13 @@ def print_plugin(v=None):
 
 Contemplate.addPlugin('test', test_plugin)
 Contemplate.addPlugin('print', print_plugin)
+def definition():
+    global Contemplate
+    def bracketFunc(v):
+        return '[[' + str(v) + ']]'
+    Contemplate.bracket = bracketFunc
+definition()    
+Contemplate.addPlugin('inlinedBracket', None, 'Contemplate.bracket')
 
 # set the cache directory (make sure to exist)
 Contemplate.setCacheDir('./_tplcache')

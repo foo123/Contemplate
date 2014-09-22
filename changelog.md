@@ -1,6 +1,7 @@
 ###ChangeLog
 
 __0.6.9__
+* enable plugin code inlining inside the compiled template
 * add a custom simpler/faster html escape function **%e**
 * minimise plugin naming convention (%plugin_pluginName, %plg_pluginName)
 * add html entinties escape mode as parameter (default= "ENT_COMPAT")

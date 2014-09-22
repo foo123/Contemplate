@@ -80,7 +80,7 @@ class Contemplate
     
     private static $__funcs = array( 
         'htmlselect', 'htmltable',
-        'plg_([a-zA-Z0-9_]+)', 'plugin_([a-zA-Z0-9_]+)', 'haskey', 
+        '(plg_|plugin_)([a-zA-Z0-9_]+)', 'haskey', 
         'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
         'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'addslashes', 'stripslashes',
         'tpl', 'uuid',
@@ -231,10 +231,9 @@ class Contemplate
     //
     
     // add custom plugins as template functions
-    public static function addPlugin( $name, $handler ) 
+    public static function addPlugin( $name, $handlerFunc, $codeStr=null ) 
     {
-        self::$__plugins[ "plg_$name" ] = $handler;
-        self::$__plugins[ "plugin_$name" ] = $handler;
+        self::$__plugins[ $name ] = array($handlerFunc, $codeStr);
     }
     
     // custom php code to add to start of template (eg custom access checks etc..)
@@ -405,10 +404,9 @@ class Contemplate
     {
         if (!$v || !is_array($v)) return false;
         $args = func_get_args();
-        array_shift($args);
         $argslen = count($args);
         $tmp = $v;
-        for ($i=0; $i<$argslen; $i++)
+        for ($i=1; $i<$argslen; $i++)
         {
             if (!array_key_exists($args[$i], $tmp)) return false;
             $tmp = $tmp[$args[$i]];
@@ -449,7 +447,7 @@ class Contemplate
     // basic custom faster html escaping
     public static function e( $s ) 
     {
-        return str_replace(array('&', '<', '>', '"'), array('&amp;', '&lt;', '&gt;', '&quot;'), $s);
+        return str_replace(array('&', '<', '>', '"', '\''), array('&amp;', '&lt;', '&gt;', '&quot;', '&#39;'), $s);
     }
         
     // basic html escaping
@@ -1299,6 +1297,28 @@ class Contemplate
         return null;
     }
     
+    private static function funcReplace( $m )
+    {
+        $plugin = !empty($m[3]) ? $m[3] : null; 
+        if ( $plugin && isset(self::$__plugins[$plugin]) )
+        {
+            if ( self::$__plugins[$plugin][1] )
+            {
+                return self::$__plugins[$plugin][1]; 
+            }
+            else
+            {
+                self::$__plugins['plg_' . $plugin] = self::$__plugins[$plugin][0];
+                unset(self::$__plugins[$plugin]);
+                return 'Contemplate::plg_' . $plugin; 
+            }
+        }
+        else
+        {
+            return 'Contemplate::' . $m[1];
+        }
+    }
+    
     private static function parse( $tpl, $withblocks=true ) 
     {
         $parts = self::split($tpl, self::$__leftTplSep, self::$__rightTplSep);
@@ -1375,7 +1395,7 @@ class Contemplate
                 $tag = preg_replace_callback( self::$__regExps['controls'], array(__CLASS__, 'parseControlConstructs'), $tag );
                 
                 // functions
-                $tag = preg_replace( self::$__regExps['functions'], 'Contemplate::${1}', $tag );
+                $tag = preg_replace_callback( self::$__regExps['functions'], array(__CLASS__, 'funcReplace')/*'Contemplate::${1}'*/, $tag );
                 
                 // other replacements
                 $tag = preg_replace( self::$__regExps['replacements'], '\' . ( $1 ) . \'', $tag );

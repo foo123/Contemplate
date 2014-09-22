@@ -117,6 +117,8 @@
         UNDERLN = /[ -]/g, NEWLINE = /\n\r|\r\n|\n|\r/g,
         ALPHA = /^[a-zA-Z_]/, NUM = /^[0-9]/, ALPHANUM = /^[a-zA-Z0-9_]/i, SPACE = /^\s/,
         
+        AMP = /&/g, LT = /</g, GT = />/g, DQUOT = /"/g, SQUOT = /'/g,
+        
         $__regExps = {
             'specials' : null,
             'replacements' : null,
@@ -135,7 +137,7 @@
         
         $__funcs = [ 
             'htmlselect', 'htmltable', 
-            'plg_([a-zA-Z0-9_]+)', 'plugin_([a-zA-Z0-9_]+)', 'haskey', 
+            '(plg_|plugin_)([a-zA-Z0-9_]+)', 'haskey', 
             'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
             'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'addslashes', 'stripslashes',
             'tpl', 'uuid',
@@ -888,11 +890,9 @@
             return null;
         },
         
-        funcReplace = function( m, func, plugin ) {
+        funcReplace = function( m, func, plg, plugin ) {
             // allow custom plugins as template functions
-            if ( plugin && $__plugins[ plugin ] )
-                return 'Contemplate.plg_' + plugin;
-            return 'Contemplate.' + func; 
+            return plugin && (plugin in $__plugins) ? $__plugins[ plugin ] : ('Contemplate.' + func);
         },
             
         parse = function( tpl, withblocks ) {
@@ -1627,12 +1627,19 @@
         //
         
         // add custom plugins as template functions
-        addPlugin: function( name, handler ) {
-            if ( name && handler )
+        addPlugin: function( name, handlerFunc, codeStr ) {
+            if ( name && (handlerFunc||codeStr) )
             {
-                $__plugins[ name ] = true;
-                self[ "plg_" + name ] = handler;
-                self[ "plugin_" + name ] = handler;
+                if ( codeStr )
+                {
+                    $__plugins[ name ] = codeStr;
+                }
+                else
+                {
+                    $__plugins[ name ] = 'Contemplate.plg_' + name;
+                    self[ "plg_" + name ] = handlerFunc;
+                    //self[ "plugin_" + name ] = handlerFunc;
+                }
             }
         },
     
@@ -1813,21 +1820,24 @@
         
         // to Integer
         n: function( e ) { 
-            return parse_int(e, 10); 
+            return parseInt(e, 10); 
         },
         
         // to Float
         f: function( e ) { 
-            return parse_float(e, 10); 
+            return parseFloat(e, 10); 
         },
         
         // basic custom faster html escaping
         e: function( s ) {
             return s
-                .split('&').join('&amp;')
-                .split('<').join('&lt;')
-                .split('>').join('&gt;')
-                .split('"').join('&quot;')
+                // http://jsperf.com/replace-vs-split-join-vs-replaceall/28
+                // http://jsperf.com/replace-multi-patterns-in-a-string
+                .replace(AMP, '&amp;')
+                .replace(LT, '&lt;')
+                .replace(GT, '&gt;')
+                .replace(DQUOT, '&quot;')
+                .replace(SQUOT, '&#39;')
             ;
         },
         

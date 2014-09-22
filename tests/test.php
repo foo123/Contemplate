@@ -41,6 +41,11 @@ function print_plugin($v=null)
 }
 Contemplate::addPlugin('test', 'test_plugin');
 Contemplate::addPlugin('print', 'print_plugin');
+function bracket($v=null)
+{
+    return '[[' . $v . ']]';
+}
+Contemplate::addPlugin('inlinedBracket', null, 'bracket');
 
 // set the cache directory (make sure to exist)
 Contemplate::setCacheDir(ABSPATH.'/_tplcache');

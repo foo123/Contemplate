@@ -140,7 +140,7 @@ class _G:
 
     funcs = [
         'htmlselect', 'htmltable',
-        'plg_([a-zA-Z0-9_]+)', 'plugin_([a-zA-Z0-9_]+)', 'haskey',
+        '(plg_|plugin_)([a-zA-Z0-9_]+)', 'haskey',
         'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
         'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'addslashes', 'stripslashes',
         'tpl', 'uuid',
@@ -978,11 +978,8 @@ def parseVariable( s, i, l, pre='VARSTR' ):
 
 def funcReplace( m ):
     global _G
-    plugin = m.group(2) 
-    if plugin and plugin in _G.plugins: 
-        return 'Contemplate.plg_' + plugin 
-    else: 
-        return 'Contemplate.' + m.group(1)
+    plugin = m.group(3) 
+    return _G.plugins[plugin] if plugin and plugin in _G.plugins else 'Contemplate.' + m.group(1) 
 
 # static
 def parse( tpl, withblocks=True ):
@@ -1612,14 +1609,14 @@ class Contemplate:
     #
     
     # add custom plugins as template functions
-    def addPlugin( name, handler ):
+    def addPlugin( name, handlerFunc, codeStr=None ):
         global _G
-        plugin_name = 'plg_' + str(name)
-        setattr(Contemplate, plugin_name, handler)
-        _G.plugins[ plugin_name ] = True
-        plugin_name = 'plugin_' + str(name)
-        setattr(Contemplate, plugin_name, handler)
-        _G.plugins[ plugin_name ] = True
+        name = str(name)
+        if codeStr:
+            _G.plugins[ name ] = codeStr
+        else:
+            _G.plugins[ name ] = 'Contemplate.plg_' + name
+            setattr(Contemplate, 'plg_' + name, handlerFunc)
     
     # static
     def setPrefixCode( preCode=None ):
@@ -1819,7 +1816,7 @@ class Contemplate:
     # basic custom faster html escaping
     # static
     def e( s ):
-        return s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
+        return s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;').replace('\'', '&#39;')
     
     # basic html escaping
     # static

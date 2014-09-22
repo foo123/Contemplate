@@ -63,6 +63,11 @@
             Contemplate.addPlugin('print', function(v){
                 return '<pre>' + JSON.stringify(v, null, 4) + '</pre>';
             });
+            window.bracket = function(v)
+            {
+                return '[[' + v + ']]';
+            }
+            Contemplate.addPlugin('inlinedBracket', null, 'bracket');
             document.getElementById("version").innerHTML = ''+Contemplate.VERSION;
             document.getElementById("results_client").innerHTML = Contemplate.tpl('demo', <% $data_client %>);
         </script>

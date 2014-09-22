@@ -38,6 +38,11 @@ Contemplate.addPlugin('test', function(v){
 Contemplate.addPlugin('print', function(v){
     return '<pre>' + JSON.stringify(v, null, 4) + '</pre>';
 });
+global.bracket = function(v)
+{
+    return '[[' + v + ']]';
+}
+Contemplate.addPlugin('inlinedBracket', null, 'bracket');
 
 // make sure it exists
 Contemplate.setCacheDir(fs.realpathSync(path.join(__dirname, '/_tplcache')));

@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.6.9
+*  @version: 0.6.10
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -36,7 +36,7 @@
         
     "use strict";
     
-    var __version__ = "0.6.9", self,
+    var __version__ = "0.6.10", self,
     
         // auxilliaries
         Obj = Object, Arr = Array, Str = String, Func = Function, 
@@ -117,7 +117,7 @@
         UNDERLN = /[ -]/g, NEWLINE = /\n\r|\r\n|\n|\r/g,
         ALPHA = /^[a-zA-Z_]/, NUM = /^[0-9]/, ALPHANUM = /^[a-zA-Z0-9_]/i, SPACE = /^\s/,
         
-        AMP = /&/g, LT = /</g, GT = />/g, DQUOT = /"/g, SQUOT = /'/g,
+        re_amp = /&/g, re_lt = /</g, re_gt = />/g, re_quot = /"/g, re_quot_s = /'/g,
         
         $__regExps = {
             'specials' : null,
@@ -239,6 +239,41 @@
             return text;
         },
     
+        // faster html escape
+        // http://jsperf.com/split-join-vs-regex-replace/10
+        ESC1 = function( s ) {
+            var i = 0, l = s.length, r = '', c;
+            while ( i < l ) 
+            {
+                c = s.charAt( i++ );
+                switch( c.charCodeAt( 0 ) )
+                {
+                    case 34: r += '&quot;'; break;
+                    case 38: r += '&amp;'; break;
+                    case 39: r += "&#39;"; break;
+                    case 60: r += "&lt;"; break;
+                    case 62: r += "&gt;"; break;
+                    default: r += c;
+                }
+            }
+            return r;
+        },
+
+        // second-third faster html escape
+        // http://jsperf.com/htmlencoderegex
+        // http://jsperf.com/htmlencoderegex/53
+        ESC2 = function( s ) {
+            return s
+                // http://jsperf.com/replace-vs-split-join-vs-replaceall/28
+                // http://jsperf.com/replace-multi-patterns-in-a-string
+                .replace(re_amp, '&amp;')
+                .replace(re_lt, '&lt;')
+                .replace(re_gt, '&gt;')
+                .replace(re_quot, '&quot;')
+                .replace(re_quot_s, '&#39;')
+            ;
+        },
+        
         getTemplateContents = function( id, asyncCB ) {
             if ( $__inlines[id] )
             {
@@ -1829,17 +1864,7 @@
         },
         
         // basic custom faster html escaping
-        e: function( s ) {
-            return s
-                // http://jsperf.com/replace-vs-split-join-vs-replaceall/28
-                // http://jsperf.com/replace-multi-patterns-in-a-string
-                .replace(AMP, '&amp;')
-                .replace(LT, '&lt;')
-                .replace(GT, '&gt;')
-                .replace(DQUOT, '&quot;')
-                .replace(SQUOT, '&#39;')
-            ;
-        },
+        e: ESC1,
         
         // basic html escaping
         html: function( s, mode ) { 

@@ -1,5 +1,8 @@
 ###ChangeLog
 
+__0.6.10__
+* optimise custom html esc method (Contemplate.js)
+
 __0.6.9__
 * enable plugin code inlining inside the compiled template
 * add a custom simpler/faster html escape function **%e**

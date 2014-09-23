@@ -1867,7 +1867,7 @@
         },
         
         // basic custom faster html escaping
-        e: isNode || isChrome ? ESC2 : ESC1,
+        e: /*isNode || isChrome ? ESC2 :*/ ESC1,
         
         // basic html escaping
         html: function( s, mode ) { 

@@ -46,6 +46,9 @@
         isNode = "undefined" !== typeof(global) && '[object global]' === _toString(global),
         isArray = function( o ) { return (o instanceof Arr) || ('[object Array]' === _toString(o)); },
         
+        userAgent = navigator ? navigator.userAgent : "",
+        isChrome = /Chrome\//.test(userAgent),
+        
         _fs = isNode ? require('fs') : null, 
         fwrite = _fs ? _fs.writeFileSync : null,
         fread =  _fs ? _fs.readFileSync : null,
@@ -1864,7 +1867,7 @@
         },
         
         // basic custom faster html escaping
-        e: ESC1,
+        e: isNode || isChrome ? ESC2 : ESC1,
         
         // basic html escaping
         html: function( s, mode ) { 

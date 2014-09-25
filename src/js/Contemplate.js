@@ -46,7 +46,7 @@
         isNode = "undefined" !== typeof(global) && '[object global]' === _toString(global),
         isArray = function( o ) { return (o instanceof Arr) || ('[object Array]' === _toString(o)); },
         
-        userAgent = navigator ? navigator.userAgent : "",
+        userAgent = "undefined"!==typeof(navigator) ? navigator.userAgent : "",
         isChrome = /Chrome\//.test(userAgent),
         
         _fs = isNode ? require('fs') : null, 

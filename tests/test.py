@@ -4,7 +4,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.6.9
+#  @version 0.6.11
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -92,11 +92,6 @@ Contemplate.add({
 
 #print (pprint.pformat(Contemplate.parseTpl( '<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>' ), 4))
 
-
-## add an inline template
-#Contemplate.addInline({
-#    'inlinetpl' : '<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>'
-#})
 
 # the data to be used by the templates
 listdata = {'list' : ['item1', 'item2', 'item3'] }

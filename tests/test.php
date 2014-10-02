@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version 0.6.9
+*  @version 0.6.11
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -65,13 +65,6 @@ Contemplate::add(array(
 ));
 
 /*print_r(Contemplate::parseTpl( '<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>' ));*/
-
-/*
-// add an inline template
-Contemplate::addInline(array(
-    'inlinetpl' => '<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>'
-));
-*/
 
 /* localize some strings */
 /* make sure this file is encoded in UTF-8 */

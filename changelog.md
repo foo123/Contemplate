@@ -1,5 +1,9 @@
 ###ChangeLog
 
+__0.6.11__
+* remove *Contemplate.addInline* method, *Contemplate.add* handles both references and literal/inline templates
+* minor changes/updates
+
 __0.6.10__
 * optimise custom html esc method (Contemplate.js)
 

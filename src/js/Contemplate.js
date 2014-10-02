@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.6.10
+*  @version: 0.6.11
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -36,7 +36,7 @@
         
     "use strict";
     
-    var __version__ = "0.6.10", self,
+    var __version__ = "0.6.11", self,
     
         // auxilliaries
         Obj = Object, Arr = Array, Str = String, Func = Function, 
@@ -102,7 +102,7 @@
         $__isInited = false,  $__locale = {}, $__plurals = {},
         
         $__async = false, $__cacheMode = 0, $__cacheDir = './', $__cache = {}, $__templates = {}, 
-        $__partials = {}, $__inlines = {},
+        $__partials = {}, 
         
         $__leftTplSep = "<%", $__rightTplSep = "%>", $__tplStart = "", $__tplEnd = "", $__tplPrefixCode = "",
         
@@ -278,68 +278,72 @@
         },
         
         getTemplateContents = function( id, asyncCB ) {
-            if ( $__inlines[id] )
+            var template;
+            if ( (template=$__templates[id]) )
             {
-                if ( $__async && asyncCB )
+                if ( template[1] ) //inline tpl
                 {
-                    // async
-                    asyncCB( $__inlines[id] );
-                    return '';
+                    if ( $__async && asyncCB )
+                    {
+                        // async
+                        asyncCB( template[0] );
+                        return '';
+                    }
+                    else
+                    {
+                        // sync
+                        return template[0];
+                    }
                 }
                 else
                 {
-                    // sync
-                    return $__inlines[id];
-                }
-            }
-            else if ( $__templates[id] )
-            {
-                // nodejs
-                if ( isNode && _fs ) 
-                { 
-                    if ( $__async && asyncCB )
-                    {
-                        // async
-                        freadAsync($__templates[id], { encoding: self.ENCODING }, function(err, data){
-                            if ( err ) asyncCB( '' );
-                            else asyncCB( data );
-                        }); 
-                        return '';
+                    // nodejs
+                    if ( isNode && _fs ) 
+                    { 
+                        if ( $__async && asyncCB )
+                        {
+                            // async
+                            freadAsync(template[0], { encoding: self.ENCODING }, function(err, data){
+                                if ( err ) asyncCB( '' );
+                                else asyncCB( data );
+                            }); 
+                            return '';
+                        }
+                        else
+                        {
+                            // sync
+                            return fread(template[0], { encoding: self.ENCODING }); 
+                        }
                     }
-                    else
-                    {
-                        // sync
-                        return fread($__templates[id], { encoding: self.ENCODING }); 
+                    // client-side js and #id of DOM script-element given as template holder
+                    else if ( '#'===template[0].charAt(0) ) 
+                    { 
+                        if ( $__async && asyncCB )
+                        {
+                            // async
+                            asyncCB( window.document.getElementById(template[0].substring(1)).innerHTML || '' );
+                            return '';
+                        }
+                        else
+                        {
+                            // sync
+                            return window.document.getElementById(template[0].substring(1)).innerHTML || ''; 
+                        }
                     }
-                }
-                // client-side js and #id of DOM script-element given as template holder
-                else if ( '#'===$__templates[id].charAt(0) ) 
-                { 
-                    if ( $__async && asyncCB )
-                    {
-                        // async
-                        asyncCB( window.document.getElementById($__templates[id].substring(1)).innerHTML || '' );
-                        return '';
-                    }
-                    else
-                    {
-                        // sync
-                        return window.document.getElementById($__templates[id].substring(1)).innerHTML || ''; 
-                    }
-                }
-                // client-side js and url given as template location
-                else 
-                { 
-                    if ( $__async && asyncCB )
-                    {
-                        // async
-                        ajaxLoad('GET', $__templates[id], null, asyncCB); 
-                        return '';
-                    }
-                    else
-                    {
-                        // sync
-                        return ajaxLoad('GET', $__templates[id]); 
+                    // client-side js and url given as template location
+                    else 
+                    { 
+                        if ( $__async && asyncCB )
+                        {
+                            // async
+                            ajaxLoad('GET', template[0], null, asyncCB); 
+                            return '';
+                        }
+                        else
+                        {
+                            // sync
+                            return ajaxLoad('GET', template[0]); 
+                        }
                     }
                 }
             }
@@ -740,8 +744,7 @@
             var string = q, escaped = false, ch = '';
             while ( i < l )
             {
-                ch = s[i++];
-                string += ch;
+                string += (ch=s[i++]);
                 if ( q === ch && !escaped )  break;
                 escaped = (!escaped && '\\' === ch);
             }
@@ -1177,82 +1180,85 @@
         },
         
         getCachedTemplate = function( id, options ) {
-            
-            // inline templates saved only in-memory
-            if ( $__inlines[id] )
+            var template;
+            if ( (template=$__templates[id]) )
             {
-                // dynamic in-memory caching during page-request
-                var funcs, tpl;
-                if ( options.parsed )
+                // inline templates saved only in-memory
+                if ( template[1] )
                 {
-                    // already parsed code was given
-                    tpl = getContemplateInstance( self, id, new Func("Contemplate,__i__", options.parsed) );
-                }
-                else
-                {
-                    // parse code and create template class
-                    funcs = createTemplateRenderFunction( id, options.separators ); 
-                    tpl = getContemplateInstance( self, id, funcs[ 0 ] ).setBlocks( funcs[ 1 ] );
-                }
-                if ($__extends) tpl.extend( self.tpl($__extends) );
-                return tpl;
-            }
-            
-            else
-            {
-                if ( !isNode ) $__cacheMode = self.CACHE_TO_DISK_NONE;
-                
-                if ( true !== options.autoUpdate && self.CACHE_TO_DISK_NOUPDATE === $__cacheMode )
-                {
-                    var cachedTplFile = getCachedTemplateName(id), 
-                        cachedTplClass = getCachedTemplateClass(id);
-                    if ( !fexists(cachedTplFile) )
+                    // dynamic in-memory caching during page-request
+                    var funcs, tpl;
+                    if ( options.parsed )
                     {
-                        createCachedTemplate(id, cachedTplFile, cachedTplClass, options.separators);
-                    }
-                    if ( fexists(cachedTplFile) )
-                    {
-                        var tplclass = require( cachedTplFile )( self ), 
-                            tpl = new tplclass( ).setId( id );
-                        return tpl;
-                    }
-                    return null;
-                }
-                
-                else if ( true === options.autoUpdate || self.CACHE_TO_DISK_AUTOUPDATE === $__cacheMode )
-                {    
-                    var cachedTplFile = getCachedTemplateName(id), 
-                        cachedTplClass = getCachedTemplateClass(id);
-                    if ( !fexists(cachedTplFile) )
-                    {
-                        // if tpl not exist create it
-                        createCachedTemplate(id, cachedTplFile, cachedTplClass, options.separators);
+                        // already parsed code was given
+                        tpl = getContemplateInstance( self, id, new Func("Contemplate,__i__", options.parsed) );
                     }
                     else
                     {
-                        var stat = fstat(cachedTplFile), stat2 = fstat($__templates[id]);
-                        if ( stat.mtime.getTime() <= stat2.mtime.getTime() )
-                        {
-                            // is out-of-sync re-create it
-                            createCachedTemplate(id, cachedTplFile, cachedTplClass, options.separators);
-                        }
+                        // parse code and create template class
+                        funcs = createTemplateRenderFunction( id, options.separators ); 
+                        tpl = getContemplateInstance( self, id, funcs[ 0 ] ).setBlocks( funcs[ 1 ] );
                     }
-                    if ( fexists(cachedTplFile) )
-                    {
-                        var tplclass = require( cachedTplFile )( self ), 
-                            tpl = new tplclass( ).setId( id );
-                        return tpl;
-                    }
-                    return null;
-                }
-                        
-                else
-                {    
-                    // dynamic in-memory caching during page-request
-                    var funcs = createTemplateRenderFunction( id, options.separators ), 
-                        tpl = getContemplateInstance( self, id, funcs[ 0 ] ).setBlocks( funcs[1] );
                     if ($__extends) tpl.extend( self.tpl($__extends) );
                     return tpl;
+                }
+                
+                else
+                {
+                    if ( !isNode ) $__cacheMode = self.CACHE_TO_DISK_NONE;
+                    
+                    if ( true !== options.autoUpdate && self.CACHE_TO_DISK_NOUPDATE === $__cacheMode )
+                    {
+                        var cachedTplFile = getCachedTemplateName(id), 
+                            cachedTplClass = getCachedTemplateClass(id);
+                        if ( !fexists(cachedTplFile) )
+                        {
+                            createCachedTemplate(id, cachedTplFile, cachedTplClass, options.separators);
+                        }
+                        if ( fexists(cachedTplFile) )
+                        {
+                            var tplclass = require( cachedTplFile )( self ), 
+                                tpl = new tplclass( ).setId( id );
+                            return tpl;
+                        }
+                        return null;
+                    }
+                    
+                    else if ( true === options.autoUpdate || self.CACHE_TO_DISK_AUTOUPDATE === $__cacheMode )
+                    {    
+                        var cachedTplFile = getCachedTemplateName(id), 
+                            cachedTplClass = getCachedTemplateClass(id);
+                        if ( !fexists(cachedTplFile) )
+                        {
+                            // if tpl not exist create it
+                            createCachedTemplate(id, cachedTplFile, cachedTplClass, options.separators);
+                        }
+                        else
+                        {
+                            var stat = fstat(cachedTplFile), stat2 = fstat(template[0]);
+                            if ( stat.mtime.getTime() <= stat2.mtime.getTime() )
+                            {
+                                // is out-of-sync re-create it
+                                createCachedTemplate(id, cachedTplFile, cachedTplClass, options.separators);
+                            }
+                        }
+                        if ( fexists(cachedTplFile) )
+                        {
+                            var tplclass = require( cachedTplFile )( self ), 
+                                tpl = new tplclass( ).setId( id );
+                            return tpl;
+                        }
+                        return null;
+                    }
+                            
+                    else
+                    {    
+                        // dynamic in-memory caching during page-request
+                        var funcs = createTemplateRenderFunction( id, options.separators ), 
+                            tpl = getContemplateInstance( self, id, funcs[ 0 ] ).setBlocks( funcs[1] );
+                        if ($__extends) tpl.extend( self.tpl($__extends) );
+                        return tpl;
+                    }
                 }
             }
             return null;
@@ -1754,30 +1760,30 @@
                         // unified way to add tpls both as reference and inline
                         // inline tpl, passed as array
                         if ( tpls[ tplID ][ 0 ] )
-                            $__inlines[ tplID ] = tpls[ tplID ][ 0 ];
-                        delete tpls[ tplID ];
+                            $__templates[ tplID ] = [tpls[ tplID ][ 0 ], true];
+                    }
+                    else
+                    {
+                        $__templates[ tplID ] = [tpls[ tplID ], false];
                     }
                 }
-                $__templates = self.merge($__templates, tpls);  
             }
             else if ( tpls && tplStr )
             {
-                $__templates[ tpls ] = tplStr; 
+                if ( isArray( tplStr ) )
+                {
+                    // unified way to add tpls both as reference and inline
+                    // inline tpl, passed as array
+                    if ( tplStr[ 0 ] )
+                        $__templates[ tpls ] = [tplStr[ 0 ], true];
+                }
+                else
+                {
+                    $__templates[ tpls ] = [tplStr, false]; 
+                }
             }
         },
     
-        // add inline templates manually
-        addInline: function( tpls, tplStr ) { 
-            if ( "object" === typeof(tpls) )
-            {
-                $__inlines = self.merge($__inlines, tpls);
-            }
-            else if ( tpls && tplStr )
-            {
-                $__inlines[ tpls ] = tplStr; 
-            }
-        },
-        
         parseTpl: function( tpl, options ) {
             var tmp, parsed, separators = options && options.separators ? options.separators : null;
             
@@ -1830,13 +1836,13 @@
         
         // haskey, has_key, check if (nested) keys exist in tpl variable
         haskey: function( v/*, key1, key2, etc.. */ ) {
-            var to_string = _toString( v ), argslen, i, tmp;
+            var to_string = _toString( v ), args, i, tmp;
             if (!v || "[object Array]" !== to_string && "[object Object]" !== to_string) return false;
-            argslen = arguments.length; tmp = v;
-            for (i=1; i<arguments.length; i++)
+            args = arguments; tmp = v;
+            for (i=1; i<args.length; i++)
             {
-                if ( !(arguments[i] in tmp) ) return false;
-                tmp = tmp[ arguments[i] ];
+                if ( !(args[i] in tmp) ) return false;
+                tmp = tmp[ args[i] ];
             }
             return true;
         },

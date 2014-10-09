@@ -73,13 +73,13 @@
                 
                 __i__.d = data;
                 __p__ += '<div>' + "\n" + '    <br />' + "\n" + '    <strong>Number of Items:' + ( Contemplate.count(data['users'][data['i']]) ) + '</strong>' + "\n" + '    <br />' + "\n" + '    ';
-                var _O24 = data['users'][data['i']], _OK25 = Contemplate.keys(_O24);
-                if (_OK25 && _OK25.length)
+                var _O42 = data['users'][data['i']], _OK43 = Contemplate.keys(_O42);
+                if (_OK43 && _OK43.length)
                 {
-                    var _K26, _V28, _L27 = _OK25.length;
-                    for (_K26=0; _K26<_L27; _K26++)
+                    var _K44, _V46, _L45 = _OK43.length;
+                    for (_K44=0; _K44<_L45; _K44++)
                     {
-                        data['j'] = _OK25[_K26]; data['user'] = _V28 = _O24[_OK25[_K26]];
+                        data['j'] = _OK43[_K44]; data['user'] = _V46 = _O42[_OK43[_K44]];
                         
                          
                         __p__ += '' + "\n" + '        <div id=\'' + ( data['user']["id"] ) + '\' class="';        

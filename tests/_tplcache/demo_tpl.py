@@ -80,7 +80,7 @@ def __getTplClass__(Contemplate):
                  
                 __p__ += '' + "\n" + '        $foo is NOT set' + "\n" + '    ' 
              
-            __p__ += '' + "\n" + '    <br />' + "\n" + '    ' + "\n" + '    ' + str( Contemplate.plg_test(data['foo']) ) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <!-- use contemplate literal data with template function, in this case a print test plugin -->' + "\n" + '    <strong>use literal data with template function, in this case a print plugin</strong><br />' + "\n" + '    ' + str( Contemplate.plg_print({          "stringVar"     : "stringValue",          "numericVar"    : 123,          "arrayVar"      : [             0, 1, "astring", 3,              { "prop": 1 }          ]      }) ) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal array data in associative loop</strong><br />' + "\n" + '    ' 
+            __p__ += '' + "\n" + '    <br />' + "\n" + '    ' + "\n" + '    ' + str( Contemplate.plg_test(data['foo']) ) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <!-- use contemplate literal data with template function, in this case a print test plugin -->' + "\n" + '    <strong>use literal data with template function, in this case a print plugin</strong><br />' + "\n" + '    ' + str( Contemplate.plg_print({          "stringVar"     : "stringValue",          "numericVar"    : 123,          "arrayVar"      : [             0, 1, "astring", 3,              { "prop": 1 }          ]      }) ) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal array data in associative loop (php-style)</strong><br />' + "\n" + '    ' 
             _O1 = Contemplate.items(["a", "b", "c"])
             if (_O1):
                 for _K2,_V3 in _O1:
@@ -89,7 +89,7 @@ def __getTplClass__(Contemplate):
                      
                     __p__ += '' + "\n" + '        [' + str( data['index'] ) + '] = <strong>' + str( data['value'] ) + '</strong><br /> ' + "\n" + '    ' 
              
-            __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal array data in non-associative loop</strong><br />' + "\n" + '    ' 
+            __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal array data in non-associative loop (php-style)</strong><br />' + "\n" + '    ' 
             _O4 = Contemplate.values(["a", "b", "c"])
             if (_O4):
                 for _V5 in _O4:
@@ -97,7 +97,7 @@ def __getTplClass__(Contemplate):
                      
                     __p__ += '' + "\n" + '        <strong>' + str( data['value2'] ) + '</strong><br /> ' + "\n" + '    ' 
              
-            __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal object data in associative loop</strong><br />' + "\n" + '    ' 
+            __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal object data in associative loop (php-style)</strong><br />' + "\n" + '    ' 
             _O6 = Contemplate.items({"k1":"a", "k2":"b", "k3":"c"})
             if (_O6):
                 for _K7,_V8 in _O6:
@@ -106,13 +106,47 @@ def __getTplClass__(Contemplate):
                      
                     __p__ += '' + "\n" + '        [' + str( data['index3'] ) + '] = <strong>' + str( data['value3'] ) + '</strong><br /> ' + "\n" + '    ' 
              
-            __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal object data in non-associative loop</strong><br />' + "\n" + '    ' 
+            __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal object data in non-associative loop (php-style)</strong><br />' + "\n" + '    ' 
             _O9 = Contemplate.values({"k1":"a", "k2":"b", "k3":"c"})
             if (_O9):
                 for _V10 in _O9:
                     data['value4'] = _V10
                      
                     __p__ += '' + "\n" + '        <strong>' + str( data['value4'] ) + '</strong><br /> ' + "\n" + '    ' 
+             
+            __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal array data in associative loop (python-style)</strong><br />' + "\n" + '    ' 
+            _O11 = Contemplate.items(["a", "b", "c"])
+            if (_O11):
+                for _K12,_V13 in _O11:
+                    data['index4'] = _K12
+                    data['value4'] = _V13
+                     
+                    __p__ += '' + "\n" + '        [' + str( data['index4'] ) + '] = <strong>' + str( data['value4'] ) + '</strong><br /> ' + "\n" + '    ' 
+             
+            __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal array data in non-associative loop (python-style)</strong><br />' + "\n" + '    ' 
+            _O14 = Contemplate.values(["a", "b", "c"])
+            if (_O14):
+                for _V15 in _O14:
+                    data['value5'] = _V15
+                     
+                    __p__ += '' + "\n" + '        <strong>' + str( data['value5'] ) + '</strong><br /> ' + "\n" + '    ' 
+             
+            __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal object data in associative loop (python-style)</strong><br />' + "\n" + '    ' 
+            _O16 = Contemplate.items({"k1":"a", "k2":"b", "k3":"c"})
+            if (_O16):
+                for _K17,_V18 in _O16:
+                    data['index6'] = _K17
+                    data['value7'] = _V18
+                     
+                    __p__ += '' + "\n" + '        [' + str( data['index6'] ) + '] = <strong>' + str( data['value7'] ) + '</strong><br /> ' + "\n" + '    ' 
+             
+            __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal object data in non-associative loop (python-style)</strong><br />' + "\n" + '    ' 
+            _O19 = Contemplate.values({"k1":"a", "k2":"b", "k3":"c"})
+            if (_O19):
+                for _V20 in _O19:
+                    data['value8'] = _V20
+                     
+                    __p__ += '' + "\n" + '        <strong>' + str( data['value8'] ) + '</strong><br /> ' + "\n" + '    ' 
              
             __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A select box</strong><br />' + "\n" + '    ' + str( Contemplate.htmlselect(data['select_data'], data['select_options']) ) + '' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A table with alternative format</strong><br />' + "\n" + '    ' + str( Contemplate.htmltable(data['table_data'], {"header" : True}) ) + '' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A select box with alternative format</strong><br />' + "\n" + '    ' + str( Contemplate.htmlselect(data['select_data'], {             "optgroups" : ["group1", "group2", "group3"],             "selected" : 3,             "multiple" : False,             "style" : "width:200px;",             "foo123" : ":,=>"         }) ) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    <!-- include a (sub-)template file -->' + "\n" + '     <!-- print a localized date php-style -->' + "\n" + '<strong>A (localized) date, PHP-style</strong><br />' + "\n" + '' + str( Contemplate.ldate("M, d", Contemplate.now()) ) + '' + "\n" + '' 
              

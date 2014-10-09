@@ -100,8 +100,10 @@ __Template Directives / Control Constructs__
 * *%else()*  ELSE construct
 * *%endif()*   ENDIF construct, end the if construct
 
-* *%for($obj as $key=>$val)*  associative FOR loop
-* *%for($obj as $val)*  non-associative FOR loop
+* *%for($obj as $key=>$val)*  associative FOR loop (php-style)
+* *%for($obj as $val)*  non-associative FOR loop (php-style)
+* *%for($key,$val in $obj)*  associative FOR loop (python-style)
+* *%for($val in $obj)*  non-associative FOR loop (python-style)
 * *%elsefor()*   ELSEFOR, alternative code block when loop is empty
 * *%endfor()*  ENDFOR , end the loop construct
 

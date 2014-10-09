@@ -56,12 +56,12 @@ final class Contemplate_sub_Cached extends Contemplate
             
             $__i__->d =& $data;
             $__p__ .= '<div>' . "\n" . '    <br />' . "\n" . '    <strong>Number of Items:' . ( Contemplate::count($data['users'][$data['i']]) ) . '</strong>' . "\n" . '    <br />' . "\n" . '    ';
-            $_O14 = $data['users'][$data['i']];
-            if (!empty($_O14))
+            $_O24 = $data['users'][$data['i']];
+            if (!empty($_O24))
             {
-                foreach ($_O14 as $_K15=>$_V16)
+                foreach ($_O24 as $_K25=>$_V26)
                 {
-                    $data['j'] = $_K15; $data['user'] = $_V16;
+                    $data['j'] = $_K25; $data['user'] = $_V26;
                      
                     $__p__ .= '' . "\n" . '        <div id=\'' . ( $data['user']["id"] ) . '\' class="';        
                     if (0 == ($data['j'] % 2))

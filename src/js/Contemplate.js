@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.6.11
+*  @version: 0.6.12
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -36,7 +36,7 @@
         
     "use strict";
     
-    var __version__ = "0.6.11", self,
+    var __version__ = "0.6.12", self,
     
         // auxilliaries
         Obj = Object, Arr = Array, Str = String, Func = Function, 
@@ -420,13 +420,27 @@
         
         // for, foreach
         t_for = function( for_expr ) {
-            for_expr = for_expr.split(' as ');
             var out,
-                o = trim(for_expr[0]), 
-                _o = '_O' + (++$__idcnt),
-                kv = for_expr[1].split('=>'), 
-                isAssoc = kv.length >= 2
+                is_php_style = for_expr.indexOf(' as '),
+                is_python_style = for_expr.indexOf(' in '),
+                o, _o, kv, isAssoc
             ;
+            
+            if ( -1 < is_python_style )
+            {
+                for_expr = [for_expr.slice(0, is_python_style), for_expr.slice(is_python_style+4)];
+                o = trim(for_expr[1]);
+                _o = '_O' + (++$__idcnt);
+                kv = for_expr[0].split(',');
+            }
+            else /*if ( -1 < is_php_style )*/
+            {
+                for_expr = [for_expr.slice(0, is_php_style), for_expr.slice(is_php_style+4)];
+                o = trim(for_expr[0]);
+                _o = '_O' + (++$__idcnt);
+                kv = for_expr[1].split('=>');
+            }
+            isAssoc = kv.length >= 2
             
             if ( isAssoc )
             {

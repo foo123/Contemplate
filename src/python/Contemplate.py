@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.6.11
+#  @version 0.6.12
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -501,12 +501,21 @@ def t_endif( args='' ):
 def t_for( for_expr ):
     global _G
     
-    for_expr = for_expr.split(' as ')
-    o = for_expr[0].strip()
-    _G.id += 1
-    _o = '_O' + str(_G.id)
+    is_php_style = for_expr.find(' as ')
+    is_python_style = for_expr.find(' in ')
     
-    kv = for_expr[1].split('=>')
+    if -1 < is_python_style:
+        for_expr = [for_expr[0:is_python_style], for_expr[is_python_style+4:]]
+        o = for_expr[1].strip()
+        _G.id += 1
+        _o = '_O' + str(_G.id)
+        kv = for_expr[0].split(',')
+    else: #if -1 < is_php_style
+        for_expr = [for_expr[0:is_php_style], for_expr[is_php_style+4:]]
+        o = for_expr[0].strip()
+        _G.id += 1
+        _o = '_O' + str(_G.id)
+        kv = for_expr[1].split('=>')
     isAssoc = (len(kv) >= 2)
     
     if isAssoc:
@@ -1492,7 +1501,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.6.11"
+    VERSION = "0.6.12"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2

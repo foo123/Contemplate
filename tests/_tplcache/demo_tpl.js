@@ -43,13 +43,13 @@
                 var __p__ = '', data = __i__.d;
                  
                 __p__ += '' + "\n" + '' + "\n" + '    <strong>Block3 is overriden by the demo template</strong>' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>Functions</strong><br />' + "\n" + '    <ul>' + "\n" + '    <li>%e(&lt;ok k=&quot;v&quot;&gt;) = ' + ( Contemplate.e('<ok k="v">') ) + '</li>' + "\n" + '    <li>%html(&lt;ok k=&quot;v&quot;&gt;) = ' + ( Contemplate.html('<ok k="v">') ) + '</li>' + "\n" + '    <li>trim(__FOO__, _) = ' + ( Contemplate.trim("__FOO__", "_") ) + '</li>' + "\n" + '    <li>trim(  FOO  ) = ' + ( Contemplate.trim("  FOO  ") ) + '</li>' + "\n" + '    <li>lowercase(FOO) = ' + ( Contemplate.lowercase("FOO") ) + '</li>' + "\n" + '    <li>lowercase(fOo) = ' + ( Contemplate.lowercase("fOo") ) + '</li>' + "\n" + '    <li>uppercase(foo) = ' + ( Contemplate.uppercase("foo") ) + '</li>' + "\n" + '    <li>uppercase(FoO) = ' + ( Contemplate.uppercase("FoO") ) + '</li>' + "\n" + '    <li>camelcase(camel_case, _) = ' + ( Contemplate.camelcase("camel_case", "_") ) + '</li>' + "\n" + '    <li>camelcase(camelCase) = ' + ( Contemplate.camelcase("camelCase") ) + '</li>' + "\n" + '    <li>snakecase(snakeCase, _) = ' + ( Contemplate.snakecase("snakeCase", "_") ) + '</li>' + "\n" + '    <li>snakecase(snake_case) = ' + ( Contemplate.snakecase("snake_case") ) + '</li>' + "\n" + '    <li>l(locale) = ' + ( Contemplate.l("locale") ) + '</li>' + "\n" + '    <li>locale(locale) = ' + ( Contemplate.locale("locale") ) + '</li>' + "\n" + '    <li>pluralise(item, 1) = ' + ( Contemplate.pluralise("item", 1) ) + '</li>' + "\n" + '    <li>pluralise(item, 2) = ' + ( Contemplate.pluralise("item", 2) ) + '</li>' + "\n" + '    <li>sprintf("%02d : %02d : %02d", 2, 0, 12) = ' + ( Contemplate.sprintf("%02d : %02d : %02d", 2, 0, 12) ) + '</li>' + "\n" + '    <li>addslashes("this string\'s s\\"s s\\\\"s s\\\\\\"s") = ' + ( Contemplate.addslashes("this string's s\'s s\\'s s\\\'s") ) + '</li>' + "\n" + '    <li>stripslashes("this string\'s s\\"s s\\\\"s s\\\\\\"s") = ' + ( Contemplate.stripslashes("this string's s\'s s\\'s s\\\'s") ) + '</li>' + "\n" + '    <li>uuid(namespace) = ' + ( Contemplate.uuid("namespace") ) + '</li>' + "\n" + '    </ul>' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    ';
-                var _O19 = data['users'], _OK20 = Contemplate.keys(_O19);
-                if (_OK20 && _OK20.length)
+                var _O37 = data['users'], _OK38 = Contemplate.keys(_O37);
+                if (_OK38 && _OK38.length)
                 {
-                    var _K21, _V23, _L22 = _OK20.length;
-                    for (_K21=0; _K21<_L22; _K21++)
+                    var _K39, _V41, _L40 = _OK38.length;
+                    for (_K39=0; _K39<_L40; _K39++)
                     {
-                        data['i'] = _OK20[_K21]; data['usergroup'] = _V23 = _O19[_OK20[_K21]];
+                        data['i'] = _OK38[_K39]; data['usergroup'] = _V41 = _O37[_OK38[_K39]];
                         
                          
                         __p__ += '' + "\n" + '        <!-- call a (sub-)template -->' + "\n" + '        ' + Contemplate.tpl( "sub",  {"i" : data['i'], "users" : data['users']} ); 
@@ -97,7 +97,7 @@
                     __p__ += '' + "\n" + '        $foo is NOT set' + "\n" + '    ';
                 }
                  
-                __p__ += '' + "\n" + '    <br />' + "\n" + '    ' + "\n" + '    ' + ( Contemplate.plg_test(data['foo']) ) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <!-- use contemplate literal data with template function, in this case a print test plugin -->' + "\n" + '    <strong>use literal data with template function, in this case a print plugin</strong><br />' + "\n" + '    ' + ( Contemplate.plg_print({          "stringVar"     : "stringValue",          "numericVar"    : 123,          "arrayVar"      : [             0, 1, "astring", 3,              { "prop": 1 }          ]      }) ) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal array data in associative loop</strong><br />' + "\n" + '    ';
+                __p__ += '' + "\n" + '    <br />' + "\n" + '    ' + "\n" + '    ' + ( Contemplate.plg_test(data['foo']) ) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <!-- use contemplate literal data with template function, in this case a print test plugin -->' + "\n" + '    <strong>use literal data with template function, in this case a print plugin</strong><br />' + "\n" + '    ' + ( Contemplate.plg_print({          "stringVar"     : "stringValue",          "numericVar"    : 123,          "arrayVar"      : [             0, 1, "astring", 3,              { "prop": 1 }          ]      }) ) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal array data in associative loop (php-style)</strong><br />' + "\n" + '    ';
                 var _O1 = ["a", "b", "c"], _OK2 = Contemplate.keys(_O1);
                 if (_OK2 && _OK2.length)
                 {
@@ -111,7 +111,7 @@
                     }
                 }
                  
-                __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal array data in non-associative loop</strong><br />' + "\n" + '    ';
+                __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal array data in non-associative loop (php-style)</strong><br />' + "\n" + '    ';
                 var _O6 = Contemplate.values(["a", "b", "c"]);
                 if (_O6 && _O6.length)
                 {
@@ -125,7 +125,7 @@
                     }
                 }
                  
-                __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal object data in associative loop</strong><br />' + "\n" + '    ';
+                __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal object data in associative loop (php-style)</strong><br />' + "\n" + '    ';
                 var _O10 = {"k1":"a", "k2":"b", "k3":"c"}, _OK11 = Contemplate.keys(_O10);
                 if (_OK11 && _OK11.length)
                 {
@@ -139,7 +139,7 @@
                     }
                 }
                  
-                __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal object data in non-associative loop</strong><br />' + "\n" + '    ';
+                __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal object data in non-associative loop (php-style)</strong><br />' + "\n" + '    ';
                 var _O15 = Contemplate.values({"k1":"a", "k2":"b", "k3":"c"});
                 if (_O15 && _O15.length)
                 {
@@ -150,6 +150,62 @@
                         
                          
                         __p__ += '' + "\n" + '        <strong>' + ( data['value4'] ) + '</strong><br /> ' + "\n" + '    ';
+                    }
+                }
+                 
+                __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal array data in associative loop (python-style)</strong><br />' + "\n" + '    ';
+                var _O19 = ["a", "b", "c"], _OK20 = Contemplate.keys(_O19);
+                if (_OK20 && _OK20.length)
+                {
+                    var _K21, _V23, _L22 = _OK20.length;
+                    for (_K21=0; _K21<_L22; _K21++)
+                    {
+                        data['index4'] = _OK20[_K21]; data['value4'] = _V23 = _O19[_OK20[_K21]];
+                        
+                         
+                        __p__ += '' + "\n" + '        [' + ( data['index4'] ) + '] = <strong>' + ( data['value4'] ) + '</strong><br /> ' + "\n" + '    ';
+                    }
+                }
+                 
+                __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal array data in non-associative loop (python-style)</strong><br />' + "\n" + '    ';
+                var _O24 = Contemplate.values(["a", "b", "c"]);
+                if (_O24 && _O24.length)
+                {
+                    var _K25, _V27, _L26 = _O24.length;
+                    for (_K25=0; _K25<_L26; _K25++)
+                    {
+                        data['value5'] = _V27 = _O24[_K25];
+                        
+                         
+                        __p__ += '' + "\n" + '        <strong>' + ( data['value5'] ) + '</strong><br /> ' + "\n" + '    ';
+                    }
+                }
+                 
+                __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal object data in associative loop (python-style)</strong><br />' + "\n" + '    ';
+                var _O28 = {"k1":"a", "k2":"b", "k3":"c"}, _OK29 = Contemplate.keys(_O28);
+                if (_OK29 && _OK29.length)
+                {
+                    var _K30, _V32, _L31 = _OK29.length;
+                    for (_K30=0; _K30<_L31; _K30++)
+                    {
+                        data['index6'] = _OK29[_K30]; data['value7'] = _V32 = _O28[_OK29[_K30]];
+                        
+                         
+                        __p__ += '' + "\n" + '        [' + ( data['index6'] ) + '] = <strong>' + ( data['value7'] ) + '</strong><br /> ' + "\n" + '    ';
+                    }
+                }
+                 
+                __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>use literal object data in non-associative loop (python-style)</strong><br />' + "\n" + '    ';
+                var _O33 = Contemplate.values({"k1":"a", "k2":"b", "k3":"c"});
+                if (_O33 && _O33.length)
+                {
+                    var _K34, _V36, _L35 = _O33.length;
+                    for (_K34=0; _K34<_L35; _K34++)
+                    {
+                        data['value8'] = _V36 = _O33[_K34];
+                        
+                         
+                        __p__ += '' + "\n" + '        <strong>' + ( data['value8'] ) + '</strong><br /> ' + "\n" + '    ';
                     }
                 }
                  

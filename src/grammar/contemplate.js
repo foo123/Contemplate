@@ -64,14 +64,13 @@ var contemplate_grammar = {
             "keyword" : [
                 "%extends", "%block", "%endblock", "%template", "%include",
                 "%if", "%elseif", "%else", "%endif", 
-                "%for", "%elsefor", "%endfor", "as", 
+                "%for", "%elsefor", "%endfor", "as", "in",
                 "%set", "%unset", "%isset"
             ],
                                   
             // template functions, plugins, etc..
             "function" : [
-                "RegExp::/%plg_[a-zA-Z0-9_]+/",
-                "RegExp::/%plugin_[a-zA-Z0-9_]+/",
+                "RegExp::/%(plg|plugin)_[a-zA-Z0-9_]+/",
                 [
                     "%htmlselect", "%htmltable", "%html", "%url", "%uuid",
                     "%addslashes", "%stripslashes",

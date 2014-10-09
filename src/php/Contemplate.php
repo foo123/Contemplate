@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.6.11
+*  @version: 0.6.12
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -15,7 +15,7 @@ if (!class_exists('Contemplate'))
 
 class Contemplate
 {
-    const VERSION = "0.6.11";
+    const VERSION = "0.6.12";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -824,10 +824,23 @@ class Contemplate
     {
         static $id = 0;
         
-        $for_expr = explode(' as ', $for_expr); 
-        $o = trim($for_expr[0]); 
-        $_o = '$_O' . (++$id);
-        $kv = explode('=>', $for_expr[1]); 
+        $is_php_style = strpos($for_expr, ' as ');
+        $is_python_style = strpos($for_expr, ' in ');
+        
+        if ( false !== $is_python_style )
+        {
+            $for_expr = array(substr($for_expr, 0, $is_python_style), substr($for_expr, $is_python_style+4));
+            $o = trim($for_expr[1]); 
+            $_o = '$_O' . (++$id);
+            $kv = explode(',', $for_expr[0]); 
+        }
+        else /*if ( false !== $is_php_style )*/
+        {
+            $for_expr = array(substr($for_expr, 0, $is_php_style), substr($for_expr, $is_php_style+4));
+            $o = trim($for_expr[0]); 
+            $_o = '$_O' . (++$id);
+            $kv = explode('=>', $for_expr[1]); 
+        }
         $isAssoc = (count($kv) >= 2);
         
         if ( $isAssoc )

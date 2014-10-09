@@ -1,5 +1,8 @@
 ###ChangeLog
 
+__0.6.12__
+* python-style for-loops contructs (see manual and examples)
+
 __0.6.11__
 * remove *Contemplate.addInline* method, *Contemplate.add* handles both references and literal/inline templates
 * minor changes/updates

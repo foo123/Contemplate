@@ -60,30 +60,58 @@
     
     <br /><br />
     
-    <strong>use literal array data in associative loop</strong><br />
+    <strong>use literal array data in associative loop (php-style)</strong><br />
     <% %for(["a", "b", "c"] as $index=>$value) %>
         [<% $index %>] = <strong><% $value %></strong><br /> 
     <% %endfor() %>
     
     <br /><br />
     
-    <strong>use literal array data in non-associative loop</strong><br />
+    <strong>use literal array data in non-associative loop (php-style)</strong><br />
     <% %for(["a", "b", "c"] as $value2) %>
         <strong><% $value2 %></strong><br /> 
     <% %endfor() %>
     
     <br /><br />
     
-    <strong>use literal object data in associative loop</strong><br />
+    <strong>use literal object data in associative loop (php-style)</strong><br />
     <% %for({"k1":"a", "k2":"b", "k3":"c"} as $index3=>$value3) %>
         [<% $index3 %>] = <strong><% $value3 %></strong><br /> 
     <% %endfor() %>
     
     <br /><br />
     
-    <strong>use literal object data in non-associative loop</strong><br />
+    <strong>use literal object data in non-associative loop (php-style)</strong><br />
     <% %for({"k1":"a", "k2":"b", "k3":"c"} as $value4) %>
         <strong><% $value4 %></strong><br /> 
+    <% %endfor() %>
+    
+    <br /><br />
+    
+    <strong>use literal array data in associative loop (python-style)</strong><br />
+    <% %for($index4,$value4 in ["a", "b", "c"]) %>
+        [<% $index4 %>] = <strong><% $value4 %></strong><br /> 
+    <% %endfor() %>
+    
+    <br /><br />
+    
+    <strong>use literal array data in non-associative loop (python-style)</strong><br />
+    <% %for($value5 in ["a", "b", "c"]) %>
+        <strong><% $value5 %></strong><br /> 
+    <% %endfor() %>
+    
+    <br /><br />
+    
+    <strong>use literal object data in associative loop (python-style)</strong><br />
+    <% %for($index6,$value7 in {"k1":"a", "k2":"b", "k3":"c"}) %>
+        [<% $index6 %>] = <strong><% $value7 %></strong><br /> 
+    <% %endfor() %>
+    
+    <br /><br />
+    
+    <strong>use literal object data in non-associative loop (python-style)</strong><br />
+    <% %for($value8 in {"k1":"a", "k2":"b", "k3":"c"}) %>
+        <strong><% $value8 %></strong><br /> 
     <% %endfor() %>
     
     <br /><br />

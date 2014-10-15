@@ -1,7 +1,7 @@
 Contemplate
 ===========
 
-__Light-weight, fast and flexible template engine for PHP, Python, Node and client-side JavaScript, ActionScript(TODO) __
+__Light-weight, fast and flexible template engine for PHP, Python, Node and client-side JavaScript, ActionScript(TODO)__
 
 
 ![Contemplate](/screenshots/contemplate.jpg)

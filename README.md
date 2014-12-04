@@ -16,6 +16,7 @@ __Light-weight, fast and flexible template engine for PHP, Python, Node and clie
 * [ModelView MVC jQueryUI Widgets](https://github.com/foo123/modelview-widgets) plug-n-play, state-full, full-MVC widgets for jQueryUI using modelview.js (e.g calendars, datepickers, colorpickers, tables/grids, etc..) (in progress)
 * [Dromeo](https://github.com/foo123/Dromeo) a flexible, agnostic router for Node/JS, PHP, Python, ActionScript
 * [PublishSubscribe](https://github.com/foo123/PublishSubscribe) a flexible Publish-Subscribe implementation for Node/JS, PHP, Python, ActionScript
+* [Xpresion](https://github.com/foo123/Xpresion) a flexible eXpression parser for Node/JS, PHP, Python, ActionScript
 
 
 This started as a a __proof-of-concept__ . 

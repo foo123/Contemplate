@@ -4,7 +4,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.6.12
+#  @version 0.7
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -71,7 +71,7 @@ def definition():
         return '[[' + str(v) + ']]'
     Contemplate.bracket = bracketFunc
 definition()    
-Contemplate.addPlugin('inlinedBracket', None, 'Contemplate.bracket')
+Contemplate.addPlugin('inlinedBracket', Contemplate.inline('Contemplate.bracket'))
 
 # set the cache directory (make sure to exist)
 Contemplate.setCacheDir('./_tplcache')

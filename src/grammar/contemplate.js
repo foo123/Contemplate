@@ -77,6 +77,7 @@ var contemplate_grammar = {
                     "%sprintf", "%concat", "%ltrim", "%rtrim", "%trim", 
                     "%lowercase", "%uppercase", "%camelcase", "%snakecase", 
                     "%count", "%haskey", "%now", "%time", "%date", 
+                    "%inline", /*"%tpl",*/
                     "%ldate", "%locale", "%l", "%pluralise", 
                     "%dq", "%n", "%s", "%f", "%q", "%e"
                 ]

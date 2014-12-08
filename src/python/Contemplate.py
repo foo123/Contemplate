@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.6.12
+#  @version 0.7
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -142,7 +142,7 @@ class _G:
         '(plg_|plugin_)([a-zA-Z0-9_]+)', 'haskey',
         'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
         'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'addslashes', 'stripslashes',
-        'tpl', 'uuid',
+        'inline', 'tpl', 'uuid',
         'html', 'url', 'count', 
         'ldate', 'date', 'now', 'locale',
         'dq', 'q', 'l', 's', 'n', 'f', 'e' 
@@ -151,6 +151,74 @@ class _G:
     plugins = {}
     
 
+
+# can use inline templates for plugins etc.. to enable non-linear plugin compile-time replacement
+class Tpl:
+ 
+    def multisplit( tpl, reps=dict() ): 
+    
+        a = [ tpl ]
+        #items = reps.items() if isinstance(reps, dict) else enumerate(reps)
+        for r,s in reps.items():
+        
+            c = [ ]
+            if not isinstance(s, (list,tuple)): s = [ s ]
+            for ai in a:
+            
+                if  isinstance(ai, str):
+                
+                    b = ai.split( r ) 
+                    bl = len(b)
+                    if bl > 1:
+                    
+                        for j in range(bl-1):
+                            c = c + [b[j], s, b[j+1]]
+                    
+                    else:
+                    
+                        c = c + b
+                    
+                
+                else:
+                
+                    c = c + [ai]
+                
+            
+            a = c
+        
+        return a
+    
+    
+    def __init__( self, tpl='', replacements=dict(), split_args=False ): 
+    
+        self.split_args = bool(split_args)
+        self.tpl = Tpl.multisplit( tpl, replacements )
+    
+    
+    def dispose( self ): 
+    
+        self.split_args = None
+        self.tpl = None
+        return self
+    
+    
+    def render( self, args=list() ): 
+    
+        tpl = self.tpl
+        l = len(tpl)
+        argslen = len(args)
+        out = [ ]
+        for s in tpl:
+        
+            if isinstance(s, str): out.append( s )
+            elif isinstance(s[0], str): out.append(str(args[ s[ 0 ] ]))
+            elif 0 > s[0]: out.append(str(args[ argslen+s[ 0 ] ]))
+            else: out.append(str(args[ s[ 0 ] ]))
+        
+        return ''.join(out)
+    
+
+    
 
 # static
 def resetState( ):
@@ -987,7 +1055,11 @@ def parseVariable( s, i, l, pre='VARSTR' ):
 def funcReplace( m ):
     global _G
     plugin = m.group(3) 
-    return _G.plugins[plugin] if plugin and plugin in _G.plugins else 'Contemplate.' + m.group(1) 
+    if plugin and plugin in _G.plugins:
+        pl = _G.plugins[plugin]
+        return pl.render([]) if isinstance(pl,Tpl) else pl
+    
+    return 'Contemplate.' + m.group(1) 
 
 # static
 def parse( tpl, withblocks=True ):
@@ -1501,7 +1573,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.6.12"
+    VERSION = "0.7"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -1620,14 +1692,14 @@ class Contemplate:
     #
     
     # add custom plugins as template functions
-    def addPlugin( name, handlerFunc, codeStr=None ):
+    def addPlugin( name, pluginCode ):
         global _G
         name = str(name)
-        if codeStr:
-            _G.plugins[ name ] = codeStr
+        if isinstance(pluginCode, Tpl):
+            _G.plugins[ name ] = pluginCode
         else:
             _G.plugins[ name ] = 'Contemplate.plg_' + name
-            setattr(Contemplate, 'plg_' + name, handlerFunc)
+            setattr(Contemplate, 'plg_' + name, pluginCode)
     
     # static
     def setPrefixCode( preCode=None ):
@@ -1780,6 +1852,12 @@ class Contemplate:
     # Basic template functions
     #
     
+    # inline tpls, both inside Contemplate templates (i.e as parameters) and in code
+    def inline( tpl, reps=None ):
+        if isinstance(tpl, Tpl): return str(tpl.render( [] if not reps else reps ))
+        return Tpl( tpl, {} if not reps else reps )
+    
+        
     # check if (nested) keys exist in tpl variable
     def haskey( v, *args ):
         if not v or not (isinstance(v, list) or isinstance(v, dict)): return False
@@ -1963,8 +2041,25 @@ class Contemplate:
         # clone data to avoid mess-ups
         data = _self.merge({}, data)
         options = _self.merge({}, options)
-        o='' 
         
+        hasRowTpl = 'tpl_row' in options
+        hasCellTpl = 'tpl_cell' in options
+        rowTpl = None 
+        cellTpl = None
+        
+        if hasRowTpl:
+        
+            if not isinstance(options['tpl_row'], Tpl):
+                options['tpl_row'] = Tpl(str(options['tpl_row']), {'$row_class':'row_class','$row':'row'})
+            rowTpl = options['tpl_row']
+        
+        if hasCellTpl:
+        
+            if not isinstance(options['tpl_cell'], Tpl):
+                options['tpl_cell'] = Tpl(str(options['tpl_cell']), {'$cell':'cell'})
+            cellTpl = options['tpl_cell']
+        
+            
         o="<table"
         
         if 'id' in options:
@@ -2035,12 +2130,27 @@ class Contemplate:
         l=len(rows)
         for i in range(l):
         
-            if odd:
-                o+="<tr class='"+class_odd+"'><td>"+'</td><td>'.join(rows[i])+"</td></tr>"
-                odd=False
+            row_class = class_odd if odd else class_even
+            
+            if hasCellTpl:
+            
+                row = ''
+                for cell in rows[i]:
+                    row += cellTpl.render( {'cell': cell} )
+            
             else:
-                o+="<tr class='"+class_even+"'><td>"+'</td><td>'.join(rows[i])+"</td></tr>"
-                odd=True
+            
+                row = "<td>"+("</td><td>".join(rows[i]))+"</td>"
+            
+            if hasRowTpl:
+            
+                o += rowTpl.render( {'row_class': row_class, 'row': row} )
+            
+            else:
+            
+                o += "<tr class='"+row_class+"'>"+row+"</tr>"
+            
+            odd = False if odd else True
             
         del rows
         
@@ -2055,8 +2165,16 @@ class Contemplate:
         # clone data to avoid mess-ups
         data = _self.merge({}, data)
         options = _self.merge({}, options)
-        o=''
+        hasOptionTpl = 'tpl_option' in options
+        optionTpl = None
+            
+        if hasOptionTpl:
         
+            if not isinstance(options['tpl_option'], Tpl):
+                options['tpl_option'] = Tpl(str(options['tpl_option']), {'$selected':'selected','$value':'value','$option':'option'})
+            optionTpl = options['tpl_option']
+        
+            
         o="<select"
         
         if ('multiple' in options) and options['multiple']:
@@ -2101,10 +2219,12 @@ class Contemplate:
                     if 'use_key' in options:  v2=k2
                     elif 'use_value' in options:   k2=v2
                         
-                    if k2 in options['selected']:
-                        o+="<option value='"+str(k2)+"' selected='selected'>"+str(v2)+"</option>"
+                    if hasOptionTpl:
+                        o += optionTpl.render({'value': k2,'option': v2,'selected': ' selected="selected"' if k2 in options['selected'] else ''})
+                    elif k2 in options['selected']:
+                        o += "<option value='"+str(k2)+"' selected='selected'>"+str(v2)+"</option>"
                     else:
-                        o+="<option value='"+str(k2)+"'>"+str(v2)+"</option>"
+                        o += "<option value='"+str(k2)+"'>"+str(v2)+"</option>"
                     
                 
                 o+="</optgroup>"
@@ -2114,10 +2234,12 @@ class Contemplate:
                 if 'use_key' in options: v=k
                 elif 'use_value' in options:  k=v
                     
-                if k in options['selected']:
-                    o+="<option value='"+str(k)+"' selected='selected'>"+str(v)+"</option>"
+                if hasOptionTpl:
+                    o += optionTpl.render({'value': k,'option': v,'selected': ' selected="selected"' if k in options['selected'] else ''})
+                elif k in options['selected']:
+                    o += "<option value='"+str(k)+"' selected='selected'>"+str(v)+"</option>"
                 else:
-                    o+="<option value='"+str(k)+"'>"+str(v)+"</option>"
+                    o += "<option value='"+str(k)+"'>"+str(v)+"</option>"
             
         
         o+="</select>"

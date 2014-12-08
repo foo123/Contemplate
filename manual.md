@@ -166,6 +166,8 @@ __Template Functions / Plugins__
 * *%locale(val)* , *%l(val)*  return localised string for val (if exists), localised strings are user-defined
 * *%pluralise(singular, count)*  return plural string for singular (if exists) depending on count, pluralised strings are user-defined
 
+* *%inline(tpl, [reps|data])*  create or render an inline template referenced in *tpl* (can also be used as parameter in other template functions, e.g %htmlselect, %htmltable to render individual rows/options via a custom template)
+
 * *%htmlselect(data, options)*  render a select box from given data with given options (shorthand to render a select box)
 * *%htmltable(data, options)*  render a table from given data with given options (shorthand to render a table)
 

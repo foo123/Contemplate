@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.6.12
+*  @version: 0.7
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -36,15 +36,18 @@
         
     "use strict";
     
-    var __version__ = "0.6.12", self,
+    var __version__ = "0.7", self, Tpl, ContemplateInlineTpl,
     
         // auxilliaries
+        PROTO = 'prototype', HAS = 'hasOwnProperty', 
         Obj = Object, Arr = Array, Str = String, Func = Function, 
         Keys = Obj.keys, parse_int = parseInt, parse_float = parseFloat,
-        OP = Obj.prototype, AP = Arr.prototype, FP = Func.prototype,
-        _toString = FP.call.bind(OP.toString), _hasOwn = FP.call.bind(OP.hasOwnProperty), slice = FP.call.bind(AP.slice),
-        isNode = "undefined" !== typeof(global) && '[object global]' === _toString(global),
-        isArray = function( o ) { return (o instanceof Arr) || ('[object Array]' === _toString(o)); },
+        OP = Obj[PROTO], AP = Arr[PROTO], FP = Func[PROTO],
+        _toString = OP.toString, slice = FP.call.bind(AP.slice),
+        isNode = "undefined" !== typeof(global) && '[object global]' === _toString.call(global),
+        isArray = function( o ) { return (o instanceof Arr) || ('[object Array]' === _toString.call(o)); }, is_array = isArray,
+        FUNC = function( a, f ) { return new Func( a, f ); },
+        RE = function( r, f ) { return new RegExp( r, f||'' ); },
         
         userAgent = "undefined"!==typeof(navigator) ? navigator.userAgent : "",
         isChrome = /Chrome\//.test(userAgent),
@@ -97,6 +100,76 @@
     //
     //////////////////////////////////////////////////////////////////////////////////////
     
+    // can use inline templates for plugins etc.. to enable non-linear plugin compile-time replacement
+    ContemplateInlineTpl = Tpl = function Tpl( tpl, replacements, split_args ) {
+        if ( !(this instanceof Tpl) ) return new Tpl(tpl, replacements, split_args);
+        this.split_args = !!split_args;
+        this.tpl = Tpl.multisplit( tpl||'', replacements||{} );
+    };
+    Tpl.multisplit = function multisplit( tpl, reps ) {
+        var r, s, i, j, a, b, c, al, bl;
+        a = [ tpl ];
+        for ( r in reps )
+        {
+            if ( reps.hasOwnProperty( r ) )
+            {
+                c = [ ]; s = reps[ r ];
+                if (!s || !s.push) s = [ s ];
+                for (i=0,al=a.length; i<al; i++)
+                {
+                    if ( a[ i ].substr )
+                    {
+                        b = a[ i ].split( r ); bl = b.length;
+                        if ( bl > 1 )
+                        {
+                            for (j=0; j<bl-1; j++)
+                                c = c.concat( [b[j], s, b[j+1]] );
+                        }
+                        else
+                        {
+                            c = c.concat( b );
+                        }
+                    }
+                    else
+                    {
+                        c = c.concat( [a[ i ]] );
+                    }
+                }
+                a = c;
+            }
+        }
+        return a;
+    };
+    Tpl[PROTO] = {
+        constructor: Tpl
+        
+        ,split_args: false
+        ,tpl: null
+        
+        ,dispose: function( ) {
+            var self = this;
+            self.split_args = null;
+            self.tpl = null;
+            return self;
+        }
+        ,render: function( args ) {
+            var tpl = this.tpl, l = tpl.length, 
+                i, s, out = new Array( l ), argslen
+            ;
+            args = args || [ ];
+            argslen = args.length;
+            
+            for (i=0; i<l; i++)
+            {
+                s = tpl[ i ];
+                if ( s.substr ) out[ i ] = s;
+                else if ( s[0].substr ) out[ i ] = args[ s[ 0 ] ];
+                else out[ i ] = 0 > s[0] ? args[ argslen+s[ 0 ] ] : args[ s[ 0 ] ];
+            }
+            return out.join('');
+        }
+    };
+    
     // private vars
     var 
         $__isInited = false,  $__locale = {}, $__plurals = {},
@@ -131,7 +204,7 @@
         },
         
         $__controlConstructs = [
-            'include', 'template', 
+            'include', 'template',
             'extends', 'endblock', 'block',
             'elsefor', 'endfor', 'for',
             'set', 'unset', 'isset',
@@ -143,7 +216,7 @@
             '(plg_|plugin_)([a-zA-Z0-9_]+)', 'haskey', 
             'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
             'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'addslashes', 'stripslashes',
-            'tpl', 'uuid',
+            'inline', 'tpl', 'uuid',
             'html', 'url', 'count', 
             'ldate', 'date', 'now', 'locale',
             'dq', 'q', 'l', 's', 'n', 'f', 'e' 
@@ -208,7 +281,7 @@
                 { 
                     for (k in o) 
                     { 
-                        if ( _hasOwn(o, k) ) 
+                        if ( o[HAS](k) ) 
                         { 
                             merged[ k ] = o[ k ]; 
                         } 
@@ -625,7 +698,7 @@
             return parts;
         },
     
-        parseControlConstructs = function( match, ctrl, args )  {
+        parseControlConstructs = function parseControlConstructs( match, ctrl, args )  {
             if ( ctrl )
             {
                 args = args || '';
@@ -765,7 +838,7 @@
             return string;
         },
         
-        parseVariable = function( s, i, l, pre )  {
+        parseVariable = function parseVariable( s, i, l, pre )  {
             pre = pre || 'VARSTR';
             if ( ALPHA.test(s[i]) )
             {
@@ -947,7 +1020,12 @@
         
         funcReplace = function( m, func, plg, plugin ) {
             // allow custom plugins as template functions
-            return plugin && (plugin in $__plugins) ? $__plugins[ plugin ] : ('Contemplate.' + func);
+            if ( plugin && $__plugins[HAS](plugin) )
+            {
+                var pl = $__plugins[ plugin ];
+                return (pl instanceof Tpl) ? pl.render( [] ) : pl;
+            }
+            return ('Contemplate.' + func);
         },
             
         parse = function( tpl, withblocks ) {
@@ -1040,12 +1118,15 @@
                     
                     for (id in variables)  
                     {
-                        tag = tag.split( id+'__RAW__' ).join( variables[id][1] );
-                        tag = tag.split( id ).join( variables[id][0] );
+                        if ( variables[HAS](id) )
+                        {
+                            tag = tag.split( id+'__RAW__' ).join( variables[id][1] );
+                            tag = tag.split( id ).join( variables[id][0] );
+                        }
                     }
                     
                     for (id in strings)  
-                        tag = tag.split( id ).join( strings[id] );
+                        if ( strings[HAS](id) ) tag = tag.split( id ).join( strings[id] );
                         
                     s = tag
                             .split( "\t" ).join( $__tplStart )
@@ -1120,9 +1201,9 @@
             }
             
             // defined blocks
-            for (b=0; b<bl; b++) funcs[blocks[b][0]] = new Func("Contemplate,__i__", blocks[b][1]);
+            for (b=0; b<bl; b++) funcs[blocks[b][0]] = FUNC("Contemplate,__i__", blocks[b][1]);
             
-            return [new Func("Contemplate,__i__", func), funcs];
+            return [FUNC("Contemplate,__i__", func), funcs];
         },
         
         createCachedTemplate = function( id, filename, classname, seps ) {
@@ -1205,7 +1286,7 @@
                     if ( options.parsed )
                     {
                         // already parsed code was given
-                        tpl = getContemplateInstance( self, id, new Func("Contemplate,__i__", options.parsed) );
+                        tpl = getContemplateInstance( self, id, FUNC("Contemplate,__i__", options.parsed) );
                     }
                     else
                     {
@@ -1663,14 +1744,14 @@
             $__stack = [ ];
             
             // pre-compute the needed regular expressions
-            $__regExps['specials'] = new RegExp('[\\n\\r\\v\\t]', 'g');
+            $__regExps['specials'] = RE('[\\n\\r\\v\\t]', 'g');
             
-            $__regExps['replacements'] = new RegExp('\\t[ ]*(.*?)[ ]*\\v', 'g');
+            $__regExps['replacements'] = RE('\\t[ ]*(.*?)[ ]*\\v', 'g');
             
-            $__regExps['controls'] = new RegExp('\\t[ ]*%('+$__controlConstructs.join('|')+')\\b[ ]*\\((.*)\\)', 'g');
-            $__regExps['controls2'] = new RegExp('%('+$__controlConstructs.join('|')+')\\b[ ]*\\((.*)\\)', 'g');
+            $__regExps['controls'] = RE('\\t[ ]*%('+$__controlConstructs.join('|')+')\\b[ ]*\\((.*)\\)', 'g');
+            $__regExps['controls2'] = RE('%('+$__controlConstructs.join('|')+')\\b[ ]*\\((.*)\\)', 'g');
             
-            $__regExps['functions'] = new RegExp('%('+$__funcs.join('|')+')\\b', 'g');
+            $__regExps['functions'] = RE('%('+$__funcs.join('|')+')\\b', 'g');
             
             $__preserveLines = $__preserveLinesDefault;
             
@@ -1685,18 +1766,18 @@
         //
         
         // add custom plugins as template functions
-        addPlugin: function( name, handlerFunc, codeStr ) {
-            if ( name && (handlerFunc||codeStr) )
+        addPlugin: function( name, pluginCode ) {
+            if ( name && pluginCode )
             {
-                if ( codeStr )
+                if ( pluginCode instanceof Tpl )
                 {
-                    $__plugins[ name ] = codeStr;
+                    $__plugins[ name ] = pluginCode;
                 }
-                else
+                else /*if ( 'function' === typeof plugin )*/
                 {
                     $__plugins[ name ] = 'Contemplate.plg_' + name;
-                    self[ "plg_" + name ] = handlerFunc;
-                    //self[ "plugin_" + name ] = handlerFunc;
+                    self[ "plg_" + name ] = pluginCode;
+                    //self[ "plugin_" + name ] = pluginCode;
                 }
             }
         },
@@ -1706,7 +1787,10 @@
         },
     
         setLocaleStrings: function( l ) { 
-            $__locale = self.merge($__locale, l); 
+            if ( "object" === typeof l )
+            {
+                $__locale = self.merge($__locale, l); 
+            }
         },
         
         clearLocaleStrings: function( ) { 
@@ -1714,11 +1798,11 @@
         },
         
         setPlurals: function( plurals ) { 
-            if ( plurals )
+            if ( "object" === typeof plurals )
             {
                 for (var singular in plurals)
                 {
-                    if ( null == plurals[ singular ] )
+                    if ( plurals[HAS](singular) && null == plurals[ singular ] )
                     {
                         // auto plural
                         plurals[ singular ] = singular+'s';
@@ -1765,20 +1849,23 @@
         
         // add templates manually
         add: function( tpls, tplStr ) { 
-            if ( "object" === typeof(tpls) )
+            if ( "object" === typeof tpls )
             {
                 for (var tplID in tpls)
                 {
-                    if ( isArray( tpls[ tplID ] ) )
+                    if ( tpls[HAS](tplID) )
                     {
-                        // unified way to add tpls both as reference and inline
-                        // inline tpl, passed as array
-                        if ( tpls[ tplID ][ 0 ] )
-                            $__templates[ tplID ] = [tpls[ tplID ][ 0 ], true];
-                    }
-                    else
-                    {
-                        $__templates[ tplID ] = [tpls[ tplID ], false];
+                        if ( isArray( tpls[ tplID ] ) )
+                        {
+                            // unified way to add tpls both as reference and inline
+                            // inline tpl, passed as array
+                            if ( tpls[ tplID ][ 0 ] )
+                                $__templates[ tplID ] = [tpls[ tplID ][ 0 ], true];
+                        }
+                        else
+                        {
+                            $__templates[ tplID ] = [tpls[ tplID ], false];
+                        }
                     }
                 }
             }
@@ -1848,14 +1935,19 @@
         // Basic template functions
         //
         
+        // inline tpls, both inside Contemplate templates (i.e as parameters) and in code
+        inline: function( tpl, reps ) {
+            return tpl && (tpl instanceof Tpl) ? tpl.render( reps||[] ) : Tpl(tpl, reps||{});
+        },
+        
         // haskey, has_key, check if (nested) keys exist in tpl variable
         haskey: function( v/*, key1, key2, etc.. */ ) {
-            var to_string = _toString( v ), args, i, tmp;
+            var to_string = _toString.call( v ), args, i, tmp;
             if (!v || "[object Array]" !== to_string && "[object Object]" !== to_string) return false;
             args = arguments; tmp = v;
             for (i=1; i<args.length; i++)
             {
-                if ( !(args[i] in tmp) ) return false;
+                if ( !tmp || !tmp[HAS](args[i]) ) return false;
                 tmp = tmp[ args[i] ];
             }
             return true;
@@ -2000,7 +2092,7 @@
         // locale
         // locale, l
         locale: function( e ) { 
-            return (_hasOwn($__locale, e)) ? $__locale[e] : e; 
+            return $__locale[HAS](e) ? $__locale[e] : e; 
         },
         // pluralise
         pluralise: function( singular, count ) {
@@ -2019,187 +2111,217 @@
         //
         
         // html table
-        htmltable: function( $data, $options ) {
+        htmltable: function( data, options ) {
             // clone data to avoid mess-ups
-            $data = self.merge({}, $data);
-            $options = self.merge({}, $options || {});
-            var $o='', $tk='', $header='', $footer='', $k, $rows=[], $i, $j, $l, $vals, $col, $colvals, $class_odd, $class_even, $odd=false;
+            data = self.merge({}, data);
+            options = self.merge({}, options || {});
+            var o='', tk='', header='', footer='', 
+                k, rows=[], row, rl, r, i, j, l, vals, col, colvals, 
+                class_odd, class_even, row_class, odd=false,
+                hasRowTpl = options[HAS]('tpl_row'), 
+                hasCellTpl = options[HAS]('tpl_cell'), 
+                rowTpl = null, cellTpl = null
+            ;
             
-            $o="<table";
-            
-            if ($options['id'])
-            $o+=" id='"+$options['id']+"'";
-            if ($options['class'])
-            $o+=" class='"+$options['class']+"'";
-            if ($options['style'])
-            $o+=" style='"+$options['style']+"'";
-            if ($options['data'])
+            if ( hasRowTpl )
             {
-                for ($k in $options['data'])
+                if ( !(options['tpl_row'] instanceof Tpl) )
+                    options['tpl_row'] = new Tpl(options['tpl_row'], {'$row_class':'row_class','$row':'row'});
+                rowTpl = options['tpl_row'];
+            }
+            if ( hasCellTpl )
+            {
+                if ( !(options['tpl_cell'] instanceof Tpl) )
+                    options['tpl_cell'] = new Tpl(options['tpl_cell'], {'$cell':'cell'});
+                cellTpl = options['tpl_cell'];
+            }
+            
+            o="<table";
+            
+            if (options['id']) o+=" id='"+options['id']+"'";
+            if (options['class']) o+=" class='"+options['class']+"'";
+            if (options['style']) o+=" style='"+options['style']+"'";
+            if (options['data'])
+            {
+                for (k in options['data'])
                 {
-                    if (self.hasOwn($options['data'], $k))
-                        $o+=" data-"+$k+"='"+$options['data'][$k]+"'";
+                    if (options['data'][HAS](k))
+                        o+=" data-"+k+"='"+options['data'][k]+"'";
                 }
             }
-            $o+=">";
+            o+=">";
                 
-            $tk='';
-            if (
-                $options['header'] || 
-                $options['footer']
-            )
-                $tk="<td>"+(self.keys($data)||[]).join('</td><td>')+"</td>";
+            tk='';
+            if ( options['header'] || options['footer'] )
+                tk="<td>"+(self.keys(data)||[]).join('</td><td>')+"</td>";
                 
-            $header='';
-            if ($options['header'])
-                $header="<thead><tr>"+$tk+"</tr></thead>";
-                
-            $footer='';
-            if ($options['footer'])
-                $footer="<tfoot><tr>"+$tk+"</tr></tfoot>";
+            header = options['header'] ? "<thead><tr>"+tk+"</tr></thead>" : '';
+            footer = options['footer'] ? "<tfoot><tr>"+tk+"</tr></tfoot>" : '';
             
-            $o+=$header;
+            o+=header;
             
             // get data rows
-            $rows=[];
-            $vals=self.values($data) || [];
-            for ($i in $vals)
+            rows=[];
+            vals=self.values(data) || [];
+            for (i in vals)
             {
-                if (self.hasOwn($vals, $i))
+                if (vals[HAS](i))
                 {
-                    $col=$vals[$i];
-                    if (!is_array($col))  $col=[$col];
-                    $colvals=self.values($col) || [];
-                    for ($j=0, $l=$colvals.length; $j<$l; $j++)
+                    col=vals[i];
+                    if (!isArray(col))  col=[col];
+                    colvals=self.values(col) || [];
+                    for (j=0, l=colvals.length; j<l; j++)
                     {
-                        if (!$rows[$j]) $rows[$j]=new Arr($l);
-                        $rows[$j][$i]=$colvals[$j];
+                        if (!rows[j]) rows[j]=new Arr(l);
+                        rows[j][i]=colvals[j];
                     }
                 }
             }
             
-            if ($options['odd'])
-                $class_odd=$options['odd'];
-            else
-                $class_odd='odd';
-            if ($options['even'])
-                $class_even=$options['even'];
-            else
-                $class_even='even';
+            class_odd = options['odd'] ? options['odd'] : 'odd';
+            class_even = options['even'] ? options['even'] : 'even';
                 
             // render rows
-            $odd=false;
-            for ($i=0, $l=$rows.length; $i<$l; $i++)
+            odd=false;
+            for (i=0, l=rows.length; i<l; i++)
             {
-                if ($odd)
-                    $o+="<tr class='"+$class_odd+"'><td>"+$rows[$i].join('</td><td>')+"</td></tr>";
-                else
-                    $o+="<tr class='"+$class_even+"'><td>"+$rows[$i].join('</td><td>')+"</td></tr>";
+                row_class = odd ? class_odd : class_even;
                 
-                $odd=!$odd;
+                if ( hasCellTpl )
+                {
+                    row = '';
+                    for (r=0,rl=rows[i].length; r<rl; r++)
+                        row += cellTpl.render( {cell: rows[i][r]} );
+                }
+                else
+                {
+                    row = "<td>"+rows[i].join('</td><td>')+"</td>";
+                }
+                if ( hasRowTpl )
+                {
+                    o += rowTpl.render( {row_class: row_class, row: row} );
+                }
+                else
+                {
+                    o += "<tr class='"+row_class+"'>"+row+"</tr>";
+                }
+                
+                odd=!odd;
             }
-            $rows=null;
+            rows=null;
             // strict mode error, top level indentifier
             //delete $rows;
             
-            $o+=$footer;
-            $o+="</table>";
-            return $o;
+            o+=footer;
+            o+="</table>";
+            return o;
         },
         
         // html select
-        htmlselect: function( $data, $options ) {
+        htmlselect: function( data, options ) {
             // clone data to avoid mess-ups
-            $data = self.merge({}, $data);
-            $options = self.merge({}, $options || {});
-            var $o='', $k, $k2, $v, $v2;
+            data = self.merge({}, data);
+            options = self.merge({}, options || {});
+            var o='', k, k2, v, v2,
+                hasOptionTpl = options[HAS]('tpl_option'), 
+                optionTpl = null
+            ;
             
-            $o="<select";
-            
-            if ($options['multiple'])
-            $o+=" multiple";
-            if ($options['disabled'])
-            $o+=" disabled='disabled'";
-            if ($options['name'])
-            $o+=" name='"+$options['name']+"'";
-            if ($options['id'])
-            $o+=" id='"+$options['id']+"'";
-            if ($options['class'])
-            $o+=" class='"+$options['class']+"'";
-            if ($options['style'])
-            $o+=" style='"+$options['style']+"'";
-            if ($options['data'])
+            if ( hasOptionTpl )
             {
-                for ($k in $options['data'])
+                if ( !(options['tpl_option'] instanceof Tpl) )
+                    options['tpl_option'] = new Tpl(options['tpl_option'], {'$selected':'selected','$value':'value','$option':'option'});
+                optionTpl = options['tpl_option'];
+            }
+            
+            o="<select";
+            
+            if (options['multiple']) o+=" multiple";
+            if (options['disabled']) o+=" disabled='disabled'";
+            if (options['name']) o+=" name='"+options['name']+"'";
+            if (options['id']) o+=" id='"+options['id']+"'";
+            if (options['class']) o+=" class='"+options['class']+"'";
+            if (options['style']) o+=" style='"+options['style']+"'";
+            if (options['data'])
+            {
+                for (k in options['data'])
                 {
-                    if (self.hasOwn($options['data'], $k))
-                        $o+=" data-"+$k+"='"+$options['data'][$k]+"'";
+                    if (options['data'][HAS](k))
+                        o+=" data-"+k+"='"+options['data'][k]+"'";
                 }
             }
-            $o+=">";
+            o+=">";
             
-            if ($options['selected'])
+            if (options['selected'])
             {
-                if (!is_array($options['selected'])) $options['selected']=[$options['selected']];
-                $options['selected']=array_flip($options['selected']);
+                if (!isArray(options['selected'])) options['selected']=[options['selected']];
+                options['selected']=array_flip(options['selected']);
             }
             else
-                $options['selected']={};
+                options['selected']={};
                 
-            if ($options['optgroups'])
+            if (options['optgroups'])
             {
-                if (!is_array($options['optgroups'])) $options['optgroups']=[$options['optgroups']];
-                $options['optgroups']=array_flip($options['optgroups']);
+                if (!isArray(options['optgroups'])) options['optgroups']=[options['optgroups']];
+                options['optgroups']=array_flip(options['optgroups']);
             }
         
-            for ($k in $data)
+            for (k in data)
             {
-                if (self.hasOwn($data, $k))
+                if (data[HAS](k))
                 {
-                    $v=$data[$k];
-                    if ($options['optgroups'] && $options['optgroups'][$k])
+                    v=data[k];
+                    if (options['optgroups'] && options['optgroups'][HAS](k))
                     {
-                        $o+="<optgroup label='"+$k+"'>";
-                        for  ($k2 in $v)
+                        o+="<optgroup label='"+k+"'>";
+                        for  (k2 in v)
                         {
-                            if (self.hasOwn($v, $k2))
+                            if (v[HAS](k2))
                             {
-                                $v2=$v[$k2];
-                                if ($options['use_key'])
-                                    $v2=$k2;
-                                else if ($options['use_value'])
-                                    $k2=$v2;
+                                v2=v[k2];
+                                if (options['use_key'])  v2=k2;
+                                else if (options['use_value']) k2=v2;
                                     
-                                if (/*$options['selected'][$k2]*/ self.hasOwn($options['selected'], $k2))
-                                    $o+="<option value='"+$k2+"' selected='selected'>"+$v2+"</option>";
+                                if ( hasOptionTpl )
+                                    o += optionTpl.render({
+                                        value: k2,
+                                        option: v2,
+                                        selected: options['selected'][HAS](k2)?' selected="selected"' : ''
+                                    });
+                                else if (/*$options['selected'][$k2]*/ options['selected'][HAS](k2))
+                                    o += "<option value='"+k2+"' selected='selected'>"+v2+"</option>";
                                 else
-                                    $o+="<option value='"+$k2+"'>"+$v2+"</option>";
+                                    o += "<option value='"+k2+"'>"+v2+"</option>";
                             }
                         }
-                        $o+="</optgroup>";
+                        o+="</optgroup>";
                     }
                     else
                     {
-                        if ($options['use_key'])
-                            $v=$k;
-                        else if ($options['use_value'])
-                            $k=$v;
+                        if (options['use_key']) v=k;
+                        else if (options['use_value']) k=v;
                             
-                        if ($options['selected'][$k])
-                            $o+="<option value='"+$k+"' selected='selected'>"+$v+"</option>";
+                        if ( hasOptionTpl )
+                            o += optionTpl.render({
+                                value: k,
+                                option: v,
+                                selected: options['selected'][HAS](k)?' selected="selected"' : ''
+                            });
+                        else if (options['selected'][HAS](k))
+                            o += "<option value='"+k+"' selected='selected'>"+v+"</option>";
                         else
-                            $o+="<option value='"+$k+"'>"+$v+"</option>";
+                            o += "<option value='"+k+"'>"+v+"</option>";
                     }
                 }
             }
-            $o+="</select>";
-            return $o;
+            o+="</select>";
+            return o;
         },
         
         getTemplateContents: getTemplateContents,
         
         hasOwn: function( o, p ) { 
-            return o && _hasOwn(o, p); 
+            return o && o[HAS](p); 
         },
         
         keys: function( o ) {
@@ -2218,7 +2340,7 @@
                     var a = [], k;
                     for (k in o) 
                     {
-                        if ( _hasOwn(o, k) ) a.push( o[k] );
+                        if ( o[HAS](k) ) a.push( o[k] );
                     }
                     return a;
                 }
@@ -2239,7 +2361,7 @@
             // use php-style variables using '$' in front of var name
             for (key in o) 
             { 
-                if (_hasOwn(o, key)) 
+                if (o[HAS](key)) 
                 { 
                     //if ('$'==n[0]) continue;
                     //if ('$'==key[0]) newkey = key;
@@ -2486,10 +2608,10 @@ function count (mixed_var/*, mode*/)
   
   return 1;
 }
-function is_array (mixed_var) 
+/*function is_array (mixed_var) 
 {
-    return (mixed_var instanceof Array) || '[object Array]' === _toString(mixed_var);
-}
+    return (mixed_var instanceof Array) || '[object Array]' === _toString.call(mixed_var);
+}*/
 function array_flip (trans) 
 {
   var k, tmp = {}, key, keys = Keys(trans), kl = keys.length;

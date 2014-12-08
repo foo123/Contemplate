@@ -113,6 +113,8 @@ syntax, yet work the same in all the engine's implementations.
 
 * Templates can *call another template* using __template__ directive, these templates are called as templates subroutines and parsed by themselves
 
+* Templates and template functions can also have **inline templates** as parameters via __inline__ template function
+
 * __Template Inheritance__ , templates can *extend/inherit other templates* using __extends__ directive and *override blocks* using __block__ , __endblock__ directives (see examples)
 
 * __Nested Blocks__ , *template blocks* can be nested and repeated in multiple ways
@@ -131,8 +133,6 @@ syntax, yet work the same in all the engine's implementations.
 
 ###Todo
 
-* refined template parsing (v.0.5+) [DONE]
-* support (custom) plugins (v.0.5+) [DONE]
 * support asynchronous template loading/rendering for node/browser
 * add Contemplate implementations for Perl, Java, Scala
 * transform Contemplate (for PHP) into a PHP C-extension, Contemplate (for node) into standalone executable (eg. https://github.com/crcn/nexe)

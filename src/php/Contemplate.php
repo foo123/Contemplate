@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.6.12
+*  @version: 0.7
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -13,9 +13,79 @@
 if (!class_exists('Contemplate'))
 {
 
+// can use inline templates for plugins etc.. to enable non-linear plugin compile-time replacement
+class ContemplateInlineTpl
+{ 
+    public $tpl = '';
+    public $split_args = false;
+    
+    public static function multisplit( $tpl, $reps ) 
+    {
+        $a = array( $tpl );
+        foreach ( (array)$reps as $r=>$s )
+        {
+            $c = array( );
+            if ( !is_array($s) ) $s = array( $s );
+            $al = count($a);
+            for ($i=0; $i<$al; $i++)
+            {
+                if ( is_string($a[ $i ]) )
+                {
+                    $b = explode($r, $a[ $i ]); $bl = count($b);
+                    if ( $bl > 1 )
+                    {
+                        for ($j=0; $j<$bl-1; $j++)
+                            $c = array_merge($c, array($b[$j], $s, $b[$j+1]));
+                    }
+                    else
+                    {
+                        $c = array_merge($c, $b);
+                    }
+                }
+                else
+                {
+                    $c = array_merge($c, array($a[ $i ]));
+                }
+            }
+            $a = $c;
+        }
+        return $a;
+    }
+    
+    public function __construct( $tpl='', $replacements=array(), $split_args=false ) 
+    {
+        $this->split_args = (bool)$split_args;
+        $this->tpl = self::multisplit( $tpl, (array)$replacements );
+    }
+    
+    public function dispose( ) 
+    {
+        $this->split_args = null;
+        $this->tpl = null;
+        return $this;
+    }
+    
+    public function render( $args=array() ) 
+    {
+        $tpl =& $this->tpl; 
+        $l = count($tpl);
+        $args = (array)$args;
+        $argslen = count($args);
+        $out = array( );
+        for ($i=0; $i<$l; $i++)
+        {
+            $s = $tpl[ $i ];
+            if ( is_string($s) ) $out[ ] = $s;
+            else if ( is_string($s[0]) ) $out[ ] = $args[ $s[ 0 ] ];
+            else $out[ ] = 0 > $s[0] ? $args[ $argslen+$s[ 0 ] ] : $args[ $s[ 0 ] ];
+        }
+        return implode('', $out);
+    }
+}
+    
 class Contemplate
 {
-    const VERSION = "0.6.12";
+    const VERSION = "0.7";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -82,7 +152,7 @@ class Contemplate
         '(plg_|plugin_)([a-zA-Z0-9_]+)', 'haskey', 
         'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
         'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'addslashes', 'stripslashes',
-        'tpl', 'uuid',
+        'inline', 'tpl', 'uuid',
         'html', 'url', 'count', 
         'ldate', 'date', 'now', 'locale',
         'dq', 'q', 'l', 's', 'n', 'f', 'e' 
@@ -230,9 +300,9 @@ class Contemplate
     //
     
     // add custom plugins as template functions
-    public static function addPlugin( $name, $handlerFunc, $codeStr=null ) 
+    public static function addPlugin( $name, $pluginCode ) 
     {
-        self::$__plugins[ $name ] = array($handlerFunc, $codeStr);
+        self::$__plugins[ $name ] = $pluginCode;
     }
     
     // custom php code to add to start of template (eg custom access checks etc..)
@@ -396,6 +466,13 @@ class Contemplate
     //
     // Basic template functions
     //
+    
+    // inline tpls, both inside Contemplate templates (i.e as parameters) and in code
+    public static function inline( $tpl, $reps=array() )
+    {
+        if ( $tpl && ($tpl instanceof ContemplateInlineTpl) ) return $tpl->render( (array)$reps );
+        return new ContemplateInlineTpl( $tpl, $reps );
+    }
     
     // check if (nested) keys exist in tpl variable
     public static function haskey( $v/*, key1, key2, etc.. */ ) 
@@ -604,14 +681,28 @@ class Contemplate
         $data=(array)$data;
         $options=(array)$options;
         
+        $hasRowTpl = isset($options['tpl_row']);
+        $hasCellTpl = isset($options['tpl_cell']);
+        $rowTpl = null; $cellTpl = null;
+        
+        if ( $hasRowTpl )
+        {
+            if ( !($options['tpl_row'] instanceof ContemplateInlineTpl) )
+                $options['tpl_row'] = new ContemplateInlineTpl($options['tpl_row'], array('$odd'=>'odd','$row'=>'row'));
+            $rowTpl = $options['tpl_row'];
+        }
+        if ( $hasCellTpl )
+        {
+            if ( !($options['tpl_cell'] instanceof ContemplateInlineTpl) )
+                $options['tpl_cell'] = new ContemplateInline($options['tpl_cell'], array('$cell'=>'cell'));
+            $cellTpl = $options['tpl_cell'];
+        }
+            
         $o="<table";
         
-        if (isset($options['id']))
-        $o.=" id='{$options['id']}'";
-        if (isset($options['class']))
-        $o.=" class='{$options['class']}'";
-        if (isset($options['style']))
-        $o.=" style='{$options['style']}'";
+        if (isset($options['id']))  $o.=" id='{$options['id']}'";
+        if (isset($options['class'])) $o.=" class='{$options['class']}'";
+        if (isset($options['style']))  $o.=" style='{$options['style']}'";
         if (isset($options['data']))
         {
             foreach ((array)$options['data'] as $k=>$v)
@@ -658,12 +749,28 @@ class Contemplate
             
         // render rows
         $odd=false;
-        foreach (@$rows as $row)
+        foreach (@$rows as $row1)
         {
-            if ($odd)
-                $o.="<tr class='{$class_odd}'><td>".implode('</td><td>', $row)."</td></tr>";
+            $row_class = $odd ? $class_odd : $class_even;
+            
+            if ( $hasCellTpl )
+            {
+                $row = ''; $rl = count($row1);
+                for ($r=0; $r<$rl; $r++)
+                    $row .= $cellTpl->render( array('cell'=> $row1[$r]) );
+            }
             else
-                $o.="<tr class='{$class_even}'><td>".implode('</td><td>', $row)."</td></tr>";
+            {
+                $row = "<td>".implode('</td><td>', $row1)."</td>";
+            }
+            if ( $hasRowTpl )
+            {
+                $o .= $rowTpl->render( array('odd'=> $row_class, 'row'=> $row) );
+            }
+            else
+            {
+                $o .= "<tr class='" . $row_class . "'>".$row."</tr>";
+            }
             
             $odd=!$odd;
         }
@@ -680,20 +787,24 @@ class Contemplate
         $data=(array)$data;
         $options=(array)$options;
         
+        $hasOptionTpl = isset($options['tpl_option']); 
+        $optionTpl = null;
+        
+        if ( $hasOptionTpl )
+        {
+            if ( !($options['tpl_option'] instanceof ContemplateInlineTpl) )
+                $options['tpl_option'] = new ContemplateInlineTpl($options['tpl_option'], array('$selected'=>'selected','$value'=>'value','$option'=>'option'));
+            $optionTpl = $options['tpl_option'];
+        }
+            
         $o="<select";
         
-        if (isset($options['multiple']) && $options['multiple'])
-        $o.=" multiple";
-        if (isset($options['disabled']) && $options['disabled'])
-        $o.=" disabled='disabled'";
-        if (isset($options['name']))
-        $o.=" name='{$options['name']}'";
-        if (isset($options['id']))
-        $o.=" id='{$options['id']}'";
-        if (isset($options['class']))
-        $o.=" class='{$options['class']}'";
-        if (isset($options['style']))
-        $o.=" style='{$options['style']}'";
+        if (isset($options['multiple']) && $options['multiple']) $o.=" multiple";
+        if (isset($options['disabled']) && $options['disabled']) $o.=" disabled='disabled'";
+        if (isset($options['name'])) $o.=" name='{$options['name']}'";
+        if (isset($options['id'])) $o.=" id='{$options['id']}'";
+        if (isset($options['class']))  $o.=" class='{$options['class']}'";
+        if (isset($options['style'])) $o.=" style='{$options['style']}'";
         if (isset($options['data']))
         {
             foreach ((array)$options['data'] as $k=>$v)
@@ -716,29 +827,37 @@ class Contemplate
                 $o.="<optgroup label='{$k}'>";
                 foreach ((array)$v as $k2=>$v2)
                 {
-                    if (isset($options['use_key']))
-                        $v2=$k2;
-                    elseif (isset($options['use_value']))
-                        $k2=$v2;
+                    if (isset($options['use_key']))  $v2=$k2;
+                    elseif (isset($options['use_value'])) $k2=$v2;
                         
-                    if (/*isset($options['selected'][$k2])*/ array_key_exists($k2, $options['selected']))
-                        $o.="<option value='{$k2}' selected='selected'>{$v2}</option>";
+                    if ( $hasOptionTpl )
+                        $o .= $optionTpl->render(array(
+                            'value'=> $k2,
+                            'option'=> $v2,
+                            'selected'=> array_key_exists($k2, $options['selected']) ? ' selected="selected"' : ''
+                        ));
+                    elseif (/*isset($options['selected'][$k2])*/ array_key_exists($k2, $options['selected']))
+                        $o .= "<option value='{$k2}' selected='selected'>{$v2}</option>";
                     else
-                        $o.="<option value='{$k2}'>{$v2}</option>";
+                        $o .= "<option value='{$k2}'>{$v2}</option>";
                 }
                 $o.="</optgroup>";
             }
             else
             {
-                if (isset($options['use_key']))
-                    $v=$k;
-                elseif (isset($options['use_value']))
-                    $k=$v;
+                if (isset($options['use_key'])) $v=$k;
+                elseif (isset($options['use_value'])) $k=$v;
                     
-                if (isset($options['selected'][$k]))
-                    $o.="<option value='{$k}' selected='selected'>{$v}</option>";
+                if ( $hasOptionTpl )
+                    $o .= $optionTpl->render(array(
+                        'value'=> $k,
+                        'option'=> $v,
+                        'selected'=> array_key_exists($k, $options['selected']) ? ' selected="selected"' : ''
+                    ));
+                elseif (isset($options['selected'][$k]))
+                    $o .= "<option value='{$k}' selected='selected'>{$v}</option>";
                 else
-                    $o.="<option value='{$k}'>{$v}</option>";
+                    $o .= "<option value='{$k}'>{$v}</option>";
             }
         }
         $o.="</select>";
@@ -1313,13 +1432,15 @@ class Contemplate
         $plugin = !empty($m[3]) ? $m[3] : null; 
         if ( $plugin && isset(self::$__plugins[$plugin]) )
         {
-            if ( self::$__plugins[$plugin][1] )
+            $pl = self::$__plugins[$plugin];
+            
+            if ( $pl instanceof ContemplateInlineTpl )
             {
-                return self::$__plugins[$plugin][1]; 
+                return $pl->render(array());
             }
             else
             {
-                self::$__plugins['plg_' . $plugin] = self::$__plugins[$plugin][0];
+                self::$__plugins['plg_' . $plugin] = $pl;
                 unset(self::$__plugins[$plugin]);
                 return 'Contemplate::plg_' . $plugin; 
             }

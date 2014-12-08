@@ -67,7 +67,7 @@
             {
                 return '[[' + v + ']]';
             }
-            Contemplate.addPlugin('inlinedBracket', null, 'bracket');
+            Contemplate.addPlugin('inlinedBracket', Contemplate.inline('bracket'));
             document.getElementById("version").innerHTML = ''+Contemplate.VERSION;
             document.getElementById("results_client").innerHTML = Contemplate.tpl('demo', <% $data_client %>);
         </script>

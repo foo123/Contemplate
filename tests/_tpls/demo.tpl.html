@@ -122,17 +122,18 @@
     <br /><br />
     
     <strong>A table with alternative format</strong><br />
-    <% %htmltable($table_data, {"header" : true}) %>
+    <% %htmltable($table_data, {"header" : true, "tpl_cell": %inline("<td>{{value}} (inline tpl)</td>",{"{{value}}":"cell"})}) %>
 
     <br /><br />
     
     <strong>A select box with alternative format</strong><br />
     <% %htmlselect($select_data, {
+            "foo123" : ":,=>",
             "optgroups" : ["group1", "group2", "group3"],
             "selected" : 3,
             "multiple" : false,
             "style" : "width:200px;",
-            "foo123" : ":,=>"
+            "tpl_option": '<option value="$value" $selected>$option (inline tpl)</option>'
         }) %>
     
     <br /><br />

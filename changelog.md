@@ -3,6 +3,7 @@
 __0.7__
 * inline templates both in Contemplate templates (e.g as parameters to other functions) or in code
 * %inline template function, creates/renders inline templates
+* templates classes extend Contemplate.Tpl template class (Contemplate.InlineTpl also?)
 * minor updates
 
 __0.6.12__

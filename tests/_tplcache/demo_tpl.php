@@ -3,15 +3,15 @@
 /* Contemplate cached template 'demo' */
 if (!class_exists('Contemplate_demo_Cached'))
 {
-final class Contemplate_demo_Cached extends Contemplate
+final class Contemplate_demo_Cached extends ContemplateTpl
 {    
     /* constructor */
-    public function __construct($id=null, $__=null)
+    public function __construct($id=null)
     {
         /* initialize internal vars */
         $this->id = null; 
         $this->d = null;
-        $this->_renderFunction = null;
+        $this->_renderer = null;
         $this->_extends = null;
         $this->_blocks = null;
         
@@ -201,18 +201,16 @@ final class Contemplate_demo_Cached extends Contemplate
     
     /* tpl-defined blocks render code ends here */
     
-    /* render a tpl block method */
-    public function renderBlock($block, $__i__=null)
+    /* tpl renderBlock method */
+    public function renderBlock( $block, $__i__=null )
     {
+        $__p__ = '';
         if ( !$__i__ ) $__i__ = $this;
         
         $method = '_blockfn_' . $block;
-        
         if ( method_exists($this, $method) ) return $this->{$method}($__i__);
-        
         elseif ( $this->_extends ) return $this->_extends->renderBlock($block, $__i__);
-        
-        return '';
+        return $__p__;
     }
     
     /* tpl render method */

@@ -36,7 +36,7 @@
         
     "use strict";
     
-    var __version__ = "0.7", self, Tpl, ContemplateInlineTpl,
+    var __version__ = "0.7", Contemplate, Tpl, InlineTpl, 
     
         // auxilliaries
         PROTO = 'prototype', HAS = 'hasOwnProperty', 
@@ -45,7 +45,23 @@
         OP = Obj[PROTO], AP = Arr[PROTO], FP = Func[PROTO],
         _toString = OP.toString, slice = FP.call.bind(AP.slice),
         isNode = "undefined" !== typeof(global) && '[object global]' === _toString.call(global),
-        isArray = function( o ) { return (o instanceof Arr) || ('[object Array]' === _toString.call(o)); }, is_array = isArray,
+        
+        // php-like functions, mostly adapted from phpjs project
+        is_array = function( o ) { return (o instanceof Arr) || ('[object Array]' === _toString.call(o)); }, 
+        is_object = function( o ) { return (o instanceof Obj) || ('[object Object]' === _toString.call(o)); }, 
+        count = function( mixed_var ) {
+            if ( null === mixed_var || 'undefined' === typeof mixed_var ) return 0;
+            else if ( is_array(mixed_var) ) return mixed_var.length;
+            else if ( is_object(mixed_var) ) return Keys(mixed_var).length;
+            return 1;
+        },
+        array_flip = function( trans ) {
+            var cis = {}, k, key, keys = Keys(trans), kl = keys.length;
+            for (k=0; k<kl; k++) { key = keys[ k ];  cis[ trans[ key ] ] = key; }
+            return cis;
+        },
+        time = function( ) { return Math.floor(new Date().getTime() / 1000); },
+        
         FUNC = function( a, f ) { return new Func( a, f ); },
         RE = function( r, f ) { return new RegExp( r, f||'' ); },
         
@@ -94,81 +110,635 @@
         }
     ;
 
+    /////////////////////////////////////////////////////////////////////////
+    //
+    //   PHP functions adapted from phpjs project
+    //   https://github.com/kvz/phpjs
+    //
+    ///////////////////////////////////////////////////////////////////////////
+
+    function get_html_translation_table (table, quote_style) 
+    {
+      var tblID, useTable = null,
+        useQuoteStyle = null;
+
+      useTable = !isNaN(table) ? get_html_translation_table.constMappingTable[table] : (table ? table.toUpperCase() : 'HTML_SPECIALCHARS');
+      useQuoteStyle = !isNaN(quote_style) ? get_html_translation_table.constMappingQuoteStyle[quote_style] : (quote_style ? quote_style.toUpperCase() : 'ENT_COMPAT');
+
+      if (useTable !== 'HTML_SPECIALCHARS' && useTable !== 'HTML_ENTITIES') 
+      {
+        throw new Error("Table: " + useTable + ' not supported');
+        return;
+      }
+      // use cached table if exists
+      tblID = useTable + '__' + useQuoteStyle;
+      if ( get_html_translation_table.tbls[tblID] )  return get_html_translation_table.tbls[tblID];
+      
+      var entities = {},
+        hash_map = {},
+        decimal;
+        
+      entities['38'] = '&amp;';
+      if ( useTable === 'HTML_ENTITIES' ) 
+      {
+        entities['160'] = '&nbsp;';
+        entities['161'] = '&iexcl;';
+        entities['162'] = '&cent;';
+        entities['163'] = '&pound;';
+        entities['164'] = '&curren;';
+        entities['165'] = '&yen;';
+        entities['166'] = '&brvbar;';
+        entities['167'] = '&sect;';
+        entities['168'] = '&uml;';
+        entities['169'] = '&copy;';
+        entities['170'] = '&ordf;';
+        entities['171'] = '&laquo;';
+        entities['172'] = '&not;';
+        entities['173'] = '&shy;';
+        entities['174'] = '&reg;';
+        entities['175'] = '&macr;';
+        entities['176'] = '&deg;';
+        entities['177'] = '&plusmn;';
+        entities['178'] = '&sup2;';
+        entities['179'] = '&sup3;';
+        entities['180'] = '&acute;';
+        entities['181'] = '&micro;';
+        entities['182'] = '&para;';
+        entities['183'] = '&middot;';
+        entities['184'] = '&cedil;';
+        entities['185'] = '&sup1;';
+        entities['186'] = '&ordm;';
+        entities['187'] = '&raquo;';
+        entities['188'] = '&frac14;';
+        entities['189'] = '&frac12;';
+        entities['190'] = '&frac34;';
+        entities['191'] = '&iquest;';
+        entities['192'] = '&Agrave;';
+        entities['193'] = '&Aacute;';
+        entities['194'] = '&Acirc;';
+        entities['195'] = '&Atilde;';
+        entities['196'] = '&Auml;';
+        entities['197'] = '&Aring;';
+        entities['198'] = '&AElig;';
+        entities['199'] = '&Ccedil;';
+        entities['200'] = '&Egrave;';
+        entities['201'] = '&Eacute;';
+        entities['202'] = '&Ecirc;';
+        entities['203'] = '&Euml;';
+        entities['204'] = '&Igrave;';
+        entities['205'] = '&Iacute;';
+        entities['206'] = '&Icirc;';
+        entities['207'] = '&Iuml;';
+        entities['208'] = '&ETH;';
+        entities['209'] = '&Ntilde;';
+        entities['210'] = '&Ograve;';
+        entities['211'] = '&Oacute;';
+        entities['212'] = '&Ocirc;';
+        entities['213'] = '&Otilde;';
+        entities['214'] = '&Ouml;';
+        entities['215'] = '&times;';
+        entities['216'] = '&Oslash;';
+        entities['217'] = '&Ugrave;';
+        entities['218'] = '&Uacute;';
+        entities['219'] = '&Ucirc;';
+        entities['220'] = '&Uuml;';
+        entities['221'] = '&Yacute;';
+        entities['222'] = '&THORN;';
+        entities['223'] = '&szlig;';
+        entities['224'] = '&agrave;';
+        entities['225'] = '&aacute;';
+        entities['226'] = '&acirc;';
+        entities['227'] = '&atilde;';
+        entities['228'] = '&auml;';
+        entities['229'] = '&aring;';
+        entities['230'] = '&aelig;';
+        entities['231'] = '&ccedil;';
+        entities['232'] = '&egrave;';
+        entities['233'] = '&eacute;';
+        entities['234'] = '&ecirc;';
+        entities['235'] = '&euml;';
+        entities['236'] = '&igrave;';
+        entities['237'] = '&iacute;';
+        entities['238'] = '&icirc;';
+        entities['239'] = '&iuml;';
+        entities['240'] = '&eth;';
+        entities['241'] = '&ntilde;';
+        entities['242'] = '&ograve;';
+        entities['243'] = '&oacute;';
+        entities['244'] = '&ocirc;';
+        entities['245'] = '&otilde;';
+        entities['246'] = '&ouml;';
+        entities['247'] = '&divide;';
+        entities['248'] = '&oslash;';
+        entities['249'] = '&ugrave;';
+        entities['250'] = '&uacute;';
+        entities['251'] = '&ucirc;';
+        entities['252'] = '&uuml;';
+        entities['253'] = '&yacute;';
+        entities['254'] = '&thorn;';
+        entities['255'] = '&yuml;';
+      }
+
+      if ( useQuoteStyle !== 'ENT_NOQUOTES' ) 
+      {
+        entities['34'] = '&quot;';
+      }
+      if ( useQuoteStyle === 'ENT_QUOTES' ) 
+      {
+        entities['39'] = '&#39;';
+      }
+      entities['60'] = '&lt;';
+      entities['62'] = '&gt;';
+
+
+      // ascii decimals to real symbols
+      for ( decimal in entities ) 
+      {
+        if ( entities.hasOwnProperty(decimal) ) 
+        {
+          hash_map[String.fromCharCode(decimal)] = entities[decimal];
+        }
+      }
+      if ( useQuoteStyle === 'ENT_QUOTES' ) 
+      {
+        hash_map["'"] = '&#039;';
+      }
+      // cache the table
+      return get_html_translation_table.tbls[tblID] = hash_map;
+    }
+    get_html_translation_table.constMappingTable = {};
+    get_html_translation_table.constMappingQuoteStyle = {};
+    // Translate arguments
+    get_html_translation_table.constMappingTable[0] = 'HTML_SPECIALCHARS';
+    get_html_translation_table.constMappingTable[1] = 'HTML_ENTITIES';
+    get_html_translation_table.constMappingQuoteStyle[0] = 'ENT_NOQUOTES';
+    get_html_translation_table.constMappingQuoteStyle[2] = 'ENT_COMPAT';
+    get_html_translation_table.constMappingQuoteStyle[3] = 'ENT_QUOTES';
+    get_html_translation_table.tbls = {};
+
+    function htmlentities (string, quote_style, charset, double_encode) {
+      var hash_map = get_html_translation_table('HTML_ENTITIES', quote_style),
+        symbol = '';
+      string = string == null ? '' : string + '';
+
+      if ( !hash_map ) 
+      {
+        return false;
+      }
+
+      if (!!double_encode || double_encode == null) {
+        for (symbol in hash_map) {
+          if (hash_map.hasOwnProperty(symbol)) {
+            string = string.split(symbol).join(hash_map[symbol]);
+          }
+        }
+      } else {
+        string = string.replace(/([\s\S]*?)(&(?:#\d+|#x[\da-f]+|[a-zA-Z][\da-z]*);|$)/g, function (ignore, text, entity) {
+          for (symbol in hash_map) {
+            if (hash_map.hasOwnProperty(symbol)) {
+              text = text.split(symbol).join(hash_map[symbol]);
+            }
+          }
+
+          return text + entity;
+        });
+      }
+
+      return string;
+    }
+    function urlencode (str) 
+    {
+      str = (str + '').toString();
+
+      // Tilde should be allowed unescaped in future versions of PHP (as reflected below), but if you want to reflect current
+      // PHP behavior, you would need to add ".replace(/~/g, '%7E');" to the following.
+      return encodeURIComponent(str).replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').
+      replace(/\)/g, '%29').replace(/\*/g, '%2A').replace(/%20/g, '+');
+    }
+    function rawurlencode (str) 
+    {
+      str = (str + '').toString();
+
+      // Tilde should be allowed unescaped in future versions of PHP (as reflected below), but if you want to reflect current
+      // PHP behavior, you would need to add ".replace(/~/g, '%7E');" to the following.
+      return encodeURIComponent(str).replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').
+      replace(/\)/g, '%29').replace(/\*/g, '%2A');
+    }
+    function sprintf () 
+    {
+      var regex = /%%|%(\d+\$)?([-+\'#0 ]*)(\*\d+\$|\*|\d+)?(\.(\*\d+\$|\*|\d+))?([scboxXuideEfFgG])/g;
+      var a = arguments,
+        i = 0,
+        format = a[i++];
+
+      // pad()
+      var pad = function (str, len, chr, leftJustify) {
+        if (!chr) {
+          chr = ' ';
+        }
+        var padding = (str.length >= len) ? '' : Array(1 + len - str.length >>> 0).join(chr);
+        return leftJustify ? str + padding : padding + str;
+      };
+
+      // justify()
+      var justify = function (value, prefix, leftJustify, minWidth, zeroPad, customPadChar) {
+        var diff = minWidth - value.length;
+        if (diff > 0) {
+          if (leftJustify || !zeroPad) {
+            value = pad(value, minWidth, customPadChar, leftJustify);
+          } else {
+            value = value.slice(0, prefix.length) + pad('', diff, '0', true) + value.slice(prefix.length);
+          }
+        }
+        return value;
+      };
+
+      // formatBaseX()
+      var formatBaseX = function (value, base, prefix, leftJustify, minWidth, precision, zeroPad) {
+        // Note: casts negative numbers to positive ones
+        var number = value >>> 0;
+        prefix = prefix && number && {
+          '2': '0b',
+          '8': '0',
+          '16': '0x'
+        }[base] || '';
+        value = prefix + pad(number.toString(base), precision || 0, '0', false);
+        return justify(value, prefix, leftJustify, minWidth, zeroPad);
+      };
+
+      // formatString()
+      var formatString = function (value, leftJustify, minWidth, precision, zeroPad, customPadChar) {
+        if (precision != null) {
+          value = value.slice(0, precision);
+        }
+        return justify(value, '', leftJustify, minWidth, zeroPad, customPadChar);
+      };
+
+      // doFormat()
+      var doFormat = function (substring, valueIndex, flags, minWidth, _, precision, type) {
+        var number;
+        var prefix;
+        var method;
+        var textTransform;
+        var value;
+
+        if (substring == '%%') {
+          return '%';
+        }
+
+        // parse flags
+        var leftJustify = false,
+          positivePrefix = '',
+          zeroPad = false,
+          prefixBaseX = false,
+          customPadChar = ' ';
+        var flagsl = flags.length;
+        for (var j = 0; flags && j < flagsl; j++) {
+          switch (flags.charAt(j)) {
+          case ' ':
+            positivePrefix = ' ';
+            break;
+          case '+':
+            positivePrefix = '+';
+            break;
+          case '-':
+            leftJustify = true;
+            break;
+          case "'":
+            customPadChar = flags.charAt(j + 1);
+            break;
+          case '0':
+            zeroPad = true;
+            break;
+          case '#':
+            prefixBaseX = true;
+            break;
+          }
+        }
+
+        // parameters may be null, undefined, empty-string or real valued
+        // we want to ignore null, undefined and empty-string values
+        if (!minWidth) {
+          minWidth = 0;
+        } else if (minWidth == '*') {
+          minWidth = +a[i++];
+        } else if (minWidth.charAt(0) == '*') {
+          minWidth = +a[minWidth.slice(1, -1)];
+        } else {
+          minWidth = +minWidth;
+        }
+
+        // Note: undocumented perl feature:
+        if (minWidth < 0) {
+          minWidth = -minWidth;
+          leftJustify = true;
+        }
+
+        if (!isFinite(minWidth)) {
+          throw new Error('sprintf: (minimum-)width must be finite');
+        }
+
+        if (!precision) {
+          precision = 'fFeE'.indexOf(type) > -1 ? 6 : (type == 'd') ? 0 : undefined;
+        } else if (precision == '*') {
+          precision = +a[i++];
+        } else if (precision.charAt(0) == '*') {
+          precision = +a[precision.slice(1, -1)];
+        } else {
+          precision = +precision;
+        }
+
+        // grab value using valueIndex if required?
+        value = valueIndex ? a[valueIndex.slice(0, -1)] : a[i++];
+
+        switch (type) {
+        case 's':
+          return formatString(String(value), leftJustify, minWidth, precision, zeroPad, customPadChar);
+        case 'c':
+          return formatString(String.fromCharCode(+value), leftJustify, minWidth, precision, zeroPad);
+        case 'b':
+          return formatBaseX(value, 2, prefixBaseX, leftJustify, minWidth, precision, zeroPad);
+        case 'o':
+          return formatBaseX(value, 8, prefixBaseX, leftJustify, minWidth, precision, zeroPad);
+        case 'x':
+          return formatBaseX(value, 16, prefixBaseX, leftJustify, minWidth, precision, zeroPad);
+        case 'X':
+          return formatBaseX(value, 16, prefixBaseX, leftJustify, minWidth, precision, zeroPad).toUpperCase();
+        case 'u':
+          return formatBaseX(value, 10, prefixBaseX, leftJustify, minWidth, precision, zeroPad);
+        case 'i':
+        case 'd':
+          number = +value || 0;
+          number = Math.round(number - number % 1); // Plain Math.round doesn't just truncate
+          prefix = number < 0 ? '-' : positivePrefix;
+          value = prefix + pad(String(Math.abs(number)), precision, '0', false);
+          return justify(value, prefix, leftJustify, minWidth, zeroPad);
+        case 'e':
+        case 'E':
+        case 'f': // Should handle locales (as per setlocale)
+        case 'F':
+        case 'g':
+        case 'G':
+          number = +value;
+          prefix = number < 0 ? '-' : positivePrefix;
+          method = ['toExponential', 'toFixed', 'toPrecision']['efg'.indexOf(type.toLowerCase())];
+          textTransform = ['toString', 'toUpperCase']['eEfFgG'.indexOf(type) % 2];
+          value = prefix + Math.abs(number)[method](precision);
+          return justify(value, prefix, leftJustify, minWidth, zeroPad)[textTransform]();
+        default:
+          return substring;
+        }
+      };
+
+      return format.replace(regex, doFormat);
+    }
+    function ltrim (str, charlist) {
+      charlist = !charlist ? ' \\s\u00A0' : (charlist + '').replace(/([\[\]\(\)\.\?\/\*\{\}\+\$\^\:])/g, '$1');
+      var re = new RegExp('^[' + charlist + ']+', 'g');
+      return (str + '').replace(re, '');
+    }
+    function rtrim (str, charlist) {
+      charlist = !charlist ? ' \\s\u00A0' : (charlist + '').replace(/([\[\]\(\)\.\?\/\*\{\}\+\$\^\:])/g, '\\$1');
+      var re = new RegExp('[' + charlist + ']+$', 'g');
+      return (str + '').replace(re, '');
+    }
+    function trim (str, charlist) {
+      var whitespace, l = 0,
+        i = 0;
+      str += '';
+
+      if (!charlist) {
+        // default list
+        whitespace = " \n\r\t\f\x0b\xa0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u2028\u2029\u3000";
+      } else {
+        // preg_quote custom list
+        charlist += '';
+        whitespace = charlist.replace(/([\[\]\(\)\.\?\/\*\{\}\+\$\^\:])/g, '$1');
+      }
+
+      l = str.length;
+      for (i = 0; i < l; i++) {
+        if (whitespace.indexOf(str.charAt(i)) === -1) {
+          str = str.substring(i);
+          break;
+        }
+      }
+
+      l = str.length;
+      for (i = l - 1; i >= 0; i--) {
+        if (whitespace.indexOf(str.charAt(i)) === -1) {
+          str = str.substring(0, i + 1);
+          break;
+        }
+      }
+
+      return whitespace.indexOf(str.charAt(0)) === -1 ? str : '';
+    }
+    function date (format, timestamp) {
+        var //that = this,
+          jsdate,
+          f,
+          formatChr = /\\?([a-z])/gi,
+          formatChrCb,
+          // Keep this here (works, but for code commented-out
+          // below for file size reasons)
+          //, tal= [],
+          _pad = function (n, c) {
+            n = n.toString();
+            return n.length < c ? _pad('0' + n, c, '0') : n;
+          },
+          txt_words = ["Sun", "Mon", "Tues", "Wednes", "Thurs", "Fri", "Satur", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      formatChrCb = function (t, s) {
+        return f[t] ? f[t]() : s;
+      };
+      f = {
+        // Day
+        d: function () { // Day of month w/leading 0; 01..31
+          return _pad(f.j(), 2);
+        },
+        D: function () { // Shorthand day name; Mon...Sun
+          return f.l().slice(0, 3);
+        },
+        j: function () { // Day of month; 1..31
+          return jsdate.getDate();
+        },
+        l: function () { // Full day name; Monday...Sunday
+          return txt_words[f.w()] + 'day';
+        },
+        N: function () { // ISO-8601 day of week; 1[Mon]..7[Sun]
+          return f.w() || 7;
+        },
+        S: function () { // Ordinal suffix for day of month; st, nd, rd, th
+          var j = f.j();
+          return j < 4 | j > 20 && (['st', 'nd', 'rd'][j % 10 - 1] || 'th');
+        },
+        w: function () { // Day of week; 0[Sun]..6[Sat]
+          return jsdate.getDay();
+        },
+        z: function () { // Day of year; 0..365
+          var a = new Date(f.Y(), f.n() - 1, f.j()),
+            b = new Date(f.Y(), 0, 1);
+          return Math.round((a - b) / 864e5);
+        },
+
+        // Week
+        W: function () { // ISO-8601 week number
+          var a = new Date(f.Y(), f.n() - 1, f.j() - f.N() + 3),
+            b = new Date(a.getFullYear(), 0, 4);
+          return _pad(1 + Math.round((a - b) / 864e5 / 7), 2);
+        },
+
+        // Month
+        F: function () { // Full month name; January...December
+          return txt_words[6 + f.n()];
+        },
+        m: function () { // Month w/leading 0; 01...12
+          return _pad(f.n(), 2);
+        },
+        M: function () { // Shorthand month name; Jan...Dec
+          return f.F().slice(0, 3);
+        },
+        n: function () { // Month; 1...12
+          return jsdate.getMonth() + 1;
+        },
+        t: function () { // Days in month; 28...31
+          return (new Date(f.Y(), f.n(), 0)).getDate();
+        },
+
+        // Year
+        L: function () { // Is leap year?; 0 or 1
+          var j = f.Y();
+          return j % 4 === 0 & j % 100 !== 0 | j % 400 === 0;
+        },
+        o: function () { // ISO-8601 year
+          var n = f.n(),
+            W = f.W(),
+            Y = f.Y();
+          return Y + (n === 12 && W < 9 ? 1 : n === 1 && W > 9 ? -1 : 0);
+        },
+        Y: function () { // Full year; e.g. 1980...2010
+          return jsdate.getFullYear();
+        },
+        y: function () { // Last two digits of year; 00...99
+          return f.Y().toString().slice(-2);
+        },
+
+        // Time
+        a: function () { // am or pm
+          return jsdate.getHours() > 11 ? "pm" : "am";
+        },
+        A: function () { // AM or PM
+          return f.a().toUpperCase();
+        },
+        B: function () { // Swatch Internet time; 000..999
+          var H = jsdate.getUTCHours() * 36e2,
+            // Hours
+            i = jsdate.getUTCMinutes() * 60,
+            // Minutes
+            s = jsdate.getUTCSeconds(); // Seconds
+          return _pad(Math.floor((H + i + s + 36e2) / 86.4) % 1e3, 3);
+        },
+        g: function () { // 12-Hours; 1..12
+          return f.G() % 12 || 12;
+        },
+        G: function () { // 24-Hours; 0..23
+          return jsdate.getHours();
+        },
+        h: function () { // 12-Hours w/leading 0; 01..12
+          return _pad(f.g(), 2);
+        },
+        H: function () { // 24-Hours w/leading 0; 00..23
+          return _pad(f.G(), 2);
+        },
+        i: function () { // Minutes w/leading 0; 00..59
+          return _pad(jsdate.getMinutes(), 2);
+        },
+        s: function () { // Seconds w/leading 0; 00..59
+          return _pad(jsdate.getSeconds(), 2);
+        },
+        u: function () { // Microseconds; 000000-999000
+          return _pad(jsdate.getMilliseconds() * 1000, 6);
+        },
+
+        // Timezone
+        e: function () { // Timezone identifier; e.g. Atlantic/Azores, ...
+          // The following works, but requires inclusion of the very large
+          // timezone_abbreviations_list() function.
+    /*              return that.date_default_timezone_get();
+    */
+          throw 'Not supported (see source code of date() for timezone on how to add support)';
+        },
+        I: function () { // DST observed?; 0 or 1
+          // Compares Jan 1 minus Jan 1 UTC to Jul 1 minus Jul 1 UTC.
+          // If they are not equal, then DST is observed.
+          var a = new Date(f.Y(), 0),
+            // Jan 1
+            c = Date.UTC(f.Y(), 0),
+            // Jan 1 UTC
+            b = new Date(f.Y(), 6),
+            // Jul 1
+            d = Date.UTC(f.Y(), 6); // Jul 1 UTC
+          return ((a - c) !== (b - d)) ? 1 : 0;
+        },
+        O: function () { // Difference to GMT in hour format; e.g. +0200
+          var tzo = jsdate.getTimezoneOffset(),
+            a = Math.abs(tzo);
+          return (tzo > 0 ? "-" : "+") + _pad(Math.floor(a / 60) * 100 + a % 60, 4);
+        },
+        P: function () { // Difference to GMT w/colon; e.g. +02:00
+          var O = f.O();
+          return (O.substr(0, 3) + ":" + O.substr(3, 2));
+        },
+        T: function () { // Timezone abbreviation; e.g. EST, MDT, ...
+          return 'UTC';
+        },
+        Z: function () { // Timezone offset in seconds (-43200...50400)
+          return -jsdate.getTimezoneOffset() * 60;
+        },
+
+        // Full Date/Time
+        c: function () { // ISO-8601 date.
+          return 'Y-m-d\\TH:i:sP'.replace(formatChr, formatChrCb);
+        },
+        r: function () { // RFC 2822
+          return 'D, d M Y H:i:s O'.replace(formatChr, formatChrCb);
+        },
+        U: function () { // Seconds since UNIX epoch
+          return jsdate / 1000 | 0;
+        }
+      };
+      var date = function (format, timestamp) {
+        //that = this;
+        jsdate = (timestamp === undefined ? new Date() : // Not provided
+          (timestamp instanceof Date) ? new Date(timestamp) : // JS Date()
+          new Date(timestamp * 1000) // UNIX timestamp (auto-convert to int)
+        );
+        return format.replace(formatChr, formatChrCb);
+      };
+      return date(format, timestamp);
+    }
+    function _localized_date($locale, $format, $timestamp) 
+    {
+        var $txt_words = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sun", "Mon", "Tues", "Wednes", "Thurs", "Fri", "Satur", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        
+        var $date = date($format, $timestamp);
+        
+        // localize days/months
+        for (var i=0, l=$txt_words.length; i<l; i++)
+        {
+            if ($locale[HAS]($txt_words[i])) $date = $date.replace($txt_words[i], $locale[$txt_words[i]]);
+        }
+        
+        // return localized date
+        return $date;
+    }
+    
+    
     /////////////////////////////////////////////////////////////////////////////////////
     //
     //  Contemplate Engine Main Class
     //
     //////////////////////////////////////////////////////////////////////////////////////
-    
-    // can use inline templates for plugins etc.. to enable non-linear plugin compile-time replacement
-    ContemplateInlineTpl = Tpl = function Tpl( tpl, replacements, split_args ) {
-        if ( !(this instanceof Tpl) ) return new Tpl(tpl, replacements, split_args);
-        this.split_args = !!split_args;
-        this.tpl = Tpl.multisplit( tpl||'', replacements||{} );
-    };
-    Tpl.multisplit = function multisplit( tpl, reps ) {
-        var r, s, i, j, a, b, c, al, bl;
-        a = [ tpl ];
-        for ( r in reps )
-        {
-            if ( reps.hasOwnProperty( r ) )
-            {
-                c = [ ]; s = reps[ r ];
-                if (!s || !s.push) s = [ s ];
-                for (i=0,al=a.length; i<al; i++)
-                {
-                    if ( a[ i ].substr )
-                    {
-                        b = a[ i ].split( r ); bl = b.length;
-                        if ( bl > 1 )
-                        {
-                            for (j=0; j<bl-1; j++)
-                                c = c.concat( [b[j], s, b[j+1]] );
-                        }
-                        else
-                        {
-                            c = c.concat( b );
-                        }
-                    }
-                    else
-                    {
-                        c = c.concat( [a[ i ]] );
-                    }
-                }
-                a = c;
-            }
-        }
-        return a;
-    };
-    Tpl[PROTO] = {
-        constructor: Tpl
-        
-        ,split_args: false
-        ,tpl: null
-        
-        ,dispose: function( ) {
-            var self = this;
-            self.split_args = null;
-            self.tpl = null;
-            return self;
-        }
-        ,render: function( args ) {
-            var tpl = this.tpl, l = tpl.length, 
-                i, s, out = new Array( l ), argslen
-            ;
-            args = args || [ ];
-            argslen = args.length;
-            
-            for (i=0; i<l; i++)
-            {
-                s = tpl[ i ];
-                if ( s.substr ) out[ i ] = s;
-                else if ( s[0].substr ) out[ i ] = args[ s[ 0 ] ];
-                else out[ i ] = 0 > s[0] ? args[ argslen+s[ 0 ] ] : args[ s[ 0 ] ];
-            }
-            return out.join('');
-        }
-    };
     
     // private vars
     var 
@@ -190,7 +760,7 @@
     
         $__uuid = 0,
         
-        UNDERLN = /[ -]/g, NEWLINE = /\n\r|\r\n|\n|\r/g,
+        UNDERLN = /[\W]+/g, NEWLINE = /\n\r|\r\n|\n|\r/g,
         ALPHA = /^[a-zA-Z_]/, NUM = /^[0-9]/, ALPHANUM = /^[a-zA-Z0-9_]/i, SPACE = /^\s/,
         
         re_amp = /&/g, re_lt = /</g, re_gt = />/g, re_quot = /"/g, re_quot_s = /'/g,
@@ -334,7 +904,7 @@
             }
             return r;
         },
-
+        /*
         // second-third faster html escape
         // http://jsperf.com/htmlencoderegex
         // http://jsperf.com/htmlencoderegex/53
@@ -348,7 +918,7 @@
                 .replace(re_quot, '&quot;')
                 .replace(re_quot_s, '&#39;')
             ;
-        },
+        },*/
         
         getTemplateContents = function( id, asyncCB ) {
             var template;
@@ -376,7 +946,7 @@
                         if ( $__async && asyncCB )
                         {
                             // async
-                            freadAsync(template[0], { encoding: self.ENCODING }, function(err, data){
+                            freadAsync(template[0], { encoding: Contemplate.ENCODING }, function(err, data){
                                 if ( err ) asyncCB( '' );
                                 else asyncCB( data );
                             }); 
@@ -385,7 +955,7 @@
                         else
                         {
                             // sync
-                            return fread(template[0], { encoding: self.ENCODING }); 
+                            return fread(template[0], { encoding: Contemplate.ENCODING }); 
                         }
                     }
                     // client-side js and #id of DOM script-element given as template holder
@@ -1023,7 +1593,7 @@
             if ( plugin && $__plugins[HAS](plugin) )
             {
                 var pl = $__plugins[ plugin ];
-                return (pl instanceof Tpl) ? pl.render( [] ) : pl;
+                return (pl instanceof Contemplate.InlineTpl) ? pl.render( [] ) : pl;
             }
             return ('Contemplate.' + func);
         },
@@ -1085,7 +1655,7 @@
                                     cnt++;
                                     id = "__##VAR"+cnt+"##__";
                                     variables[ id ] = tokv[ 0 ];
-                                    strings = self.merge( strings, tokv[ 2 ] );
+                                    strings = merge( strings, tokv[ 2 ] );
                                 }
                                 out += id;
                                 index += tokv[ 1 ];
@@ -1232,7 +1802,7 @@
             if ( sblocks.length )
             {
                 sblocks = $__TEOL + 
-                            "_blocks = { " + 
+                            "this._blocks = { " + 
                             $__TEOL + 
                             padLines( sblocks.join(',' + $__TEOL), 1 ) + 
                             $__TEOL + 
@@ -1268,7 +1838,7 @@
                                 'PREFIXCODE': prefixCode,
                                 'EXTENDCODE': padLines(extendCode, 2),
                                 'BLOCKS': padLines(sblocks, 2),
-                                'RENDERCODE': padLines(renderCode, 4)
+                                'RENDERCODE': padLines(renderCode, 3)
                             });
             
             return setCachedTemplate(filename, classCode);
@@ -1286,23 +1856,23 @@
                     if ( options.parsed )
                     {
                         // already parsed code was given
-                        tpl = getContemplateInstance( self, id, FUNC("Contemplate,__i__", options.parsed) );
+                        tpl = Contemplate.Tpl( id, FUNC("Contemplate,__i__", options.parsed) );
                     }
                     else
                     {
                         // parse code and create template class
                         funcs = createTemplateRenderFunction( id, options.separators ); 
-                        tpl = getContemplateInstance( self, id, funcs[ 0 ] ).setBlocks( funcs[ 1 ] );
+                        tpl = Contemplate.Tpl( id, funcs[ 0 ] ).setBlocks( funcs[ 1 ] );
                     }
-                    if ($__extends) tpl.extend( self.tpl($__extends) );
+                    if ($__extends) tpl.extend( Contemplate.tpl($__extends) );
                     return tpl;
                 }
                 
                 else
                 {
-                    if ( !isNode ) $__cacheMode = self.CACHE_TO_DISK_NONE;
+                    if ( !isNode ) $__cacheMode = Contemplate.CACHE_TO_DISK_NONE;
                     
-                    if ( true !== options.autoUpdate && self.CACHE_TO_DISK_NOUPDATE === $__cacheMode )
+                    if ( true !== options.autoUpdate && Contemplate.CACHE_TO_DISK_NOUPDATE === $__cacheMode )
                     {
                         var cachedTplFile = getCachedTemplateName(id), 
                             cachedTplClass = getCachedTemplateClass(id);
@@ -1312,14 +1882,14 @@
                         }
                         if ( fexists(cachedTplFile) )
                         {
-                            var tplclass = require( cachedTplFile )( self ), 
+                            var tplclass = require( cachedTplFile )( Contemplate ), 
                                 tpl = new tplclass( ).setId( id );
                             return tpl;
                         }
                         return null;
                     }
                     
-                    else if ( true === options.autoUpdate || self.CACHE_TO_DISK_AUTOUPDATE === $__cacheMode )
+                    else if ( true === options.autoUpdate || Contemplate.CACHE_TO_DISK_AUTOUPDATE === $__cacheMode )
                     {    
                         var cachedTplFile = getCachedTemplateName(id), 
                             cachedTplClass = getCachedTemplateClass(id);
@@ -1339,7 +1909,7 @@
                         }
                         if ( fexists(cachedTplFile) )
                         {
-                            var tplclass = require( cachedTplFile )( self ), 
+                            var tplclass = require( cachedTplFile )( Contemplate ), 
                                 tpl = new tplclass( ).setId( id );
                             return tpl;
                         }
@@ -1350,8 +1920,8 @@
                     {    
                         // dynamic in-memory caching during page-request
                         var funcs = createTemplateRenderFunction( id, options.separators ), 
-                            tpl = getContemplateInstance( self, id, funcs[ 0 ] ).setBlocks( funcs[1] );
-                        if ($__extends) tpl.extend( self.tpl($__extends) );
+                            tpl = Contemplate.Tpl( id, funcs[ 0 ] ).setBlocks( funcs[1] );
+                        if ($__extends) tpl.extend( Contemplate.tpl($__extends) );
                         return tpl;
                     }
                 }
@@ -1362,12 +1932,12 @@
         setCachedTemplate = function( filename, tplContents, asyncCB ) { 
             if ( asyncCB )
             {
-                fwriteAsync(filename, tplContents, { encoding: self.ENCODING }, function(err) {
+                fwriteAsync(filename, tplContents, { encoding: Contemplate.ENCODING }, function(err) {
                     asyncCB( !err );
                 });
                 return;
             }
-            return fwrite(filename, tplContents, { encoding: self.ENCODING }); 
+            return fwrite(filename, tplContents, { encoding: Contemplate.ENCODING }); 
         },
         
         // generated cached tpl class code as a "heredoc" template (for Node cached templates)
@@ -1380,85 +1950,61 @@
                 ,""
                 ,"    //"
                 ,"    // export the module"
-                ,""    
                 ,"    // node, CommonJS, etc.."
                 ,"    if ( 'object' === typeof(module) && module.exports ) module.exports = moduleDefinition();"
-                ,""    
                 ,"    // AMD, etc.."
                 ,"    else if ( 'function' === typeof(define) && define.amd ) define( moduleDefinition );"
-                ,""    
                 ,"    // browser, etc.."
                 ,"    else root[ moduleName ] = moduleDefinition();"
-                ,""
                 ,""
                 ,"}(this, '"), r['CLASSNAME'], j("', function( ) {"
                 ,"    \"use strict\";"
                 ,"    return function( Contemplate ) {"
                 ,"    /* Contemplate cached template '"), r['TPLID'], j("' */"
-                ,"    /* quasi extends main Contemplate class */"
                 ,"    "
-                ,"    var Contemplate_tpl = Contemplate.tpl;"
                 ,"    "
                 ,"    /* constructor */"
                 ,"    function "), r['CLASSNAME'], j("(id)"
                 ,"    {"
                 ,"        /* initialize internal vars */"
-                ,"        var _extends = null, _blocks = null;"
                 ,"        "
-                ,"        this.id = id;"
+                ,"        this._renderer = id;"
+                ,"        this._blocks = null;"
+                ,"        this._extends = null;"
                 ,"        this.d = null;"
+                ,"        this.id = id;"
                 ,"        "
                 ,"        "
                 ,"        /* tpl-defined blocks render code starts here */"
                 ,""), r['BLOCKS'], j(""
                 ,"        /* tpl-defined blocks render code ends here */"
                 ,"        "
-                ,"        /* template methods */"
-                ,"        "
-                ,"        this.setId = function(id) {"
-                ,"            if ( id ) this.id = id;"
-                ,"            return this;"
-                ,"        };"
-                ,"        "
-                ,"        this.extend = function(tpl) {"
-                ,"            if ( tpl && tpl.substr )"
-                ,"                _extends = Contemplate_tpl( tpl );"
-                ,"            else"
-                ,"                _extends = tpl;"
-                ,"            return this;"
-                ,"        };"
-                ,"        "
-                ,"        /* render a tpl block method */"
-                ,"        this.renderBlock = function(block, __i__) {"
-                ,"            if ( !__i__ ) __i__ = this;"
-                ,"            if ( _blocks && _blocks[block] ) return _blocks[block](__i__);"
-                ,"            else if ( _extends ) return _extends.renderBlock(block, __i__);"
-                ,"            return '';"
-                ,"        };"
-                ,"        "
-                ,"        /* tpl render method */"
-                ,"        this.render = function(data, __i__) {"
-                ,"            if ( !__i__ ) __i__ = this;"
-                ,"            var __p__ = '';"
-                ,"            if ( _extends )"
-                ,"            {"
-                ,"                __p__ = _extends.render(data, __i__);"
-                ,"            }"
-                ,"            else"
-                ,"            {"
-                ,"                /* tpl main render code starts here */"
-                ,""), r['RENDERCODE'], j(""
-                ,"                /* tpl main render code ends here */"
-                ,"            }"
-                ,"            this.d = null;"
-                ,"            return __p__;"
-                ,"        };"
                 ,"        "
                 ,"        /* extend tpl assign code starts here */"
                 ,""), r['EXTENDCODE'], j(""
                 ,"        /* extend tpl assign code ends here */"
                 ,"    };"
                 ,"    "
+                ,"    "
+                ,"    /* extends main Contemplate.Tpl class */"
+                ,"    "), r['CLASSNAME'], j(".prototype = Object.create(Contemplate.Tpl.prototype);"
+                ,"    /* tpl render method */"
+                ,"    "), r['CLASSNAME'], j(".prototype.render = function( data, __i__ ) {"
+                ,"        if ( !__i__ ) __i__ = this;"
+                ,"        var __p__ = '';"
+                ,"        if ( this._extends )"
+                ,"        {"
+                ,"            __p__ = this._extends.render(data, __i__);"
+                ,"        }"
+                ,"        else"
+                ,"        {"
+                ,"            /* tpl main render code starts here */"
+                ,""), r['RENDERCODE'], j(""
+                ,"            /* tpl main render code ends here */"
+                ,"        }"
+                ,"        this.d = null;"
+                ,"        return __p__;"
+                ,"    };"
                 ,"    "
                 ,"    // export it"
                 ,"    return "), r['CLASSNAME'], j(";"
@@ -1474,7 +2020,7 @@
             return [
                 j(""
                 ,"/* tpl block render method for block '"), r['BLOCKNAME'], j("' */"
-                ,"'"), r['BLOCKMETHODNAME'], j("': function(__i__) {"
+                ,"'"), r['BLOCKMETHODNAME'], j("': function(Contemplate,__i__) {"
                 ,""), r['BLOCKMETHODCODE'], j(""
                 ,"}"
                 ,"")
@@ -1651,83 +2197,158 @@
     *
     */
     
-    var getContemplateInstance = function( Contemplate, id, renderFunc ) {
-        //
-        //  Instance template method(s) (for in-memory only templates)
-        //
-        var Contemplate_tpl = Contemplate.tpl,
-            Contemplate_merge = Contemplate.merge
-        ;
-        var ContemplateInstance = function( id, renderFunc ) {
-            // private vars
-            var _renderFunction = null, _extends = null, _blocks = null;
+    // can use inline templates for plugins etc.. to enable non-linear plugin compile-time replacement
+    InlineTpl = function InlineTpl( tpl, replacements ) {
+        if ( !(this instanceof InlineTpl) ) return new InlineTpl(tpl, replacements);
+        this.tpl = InlineTpl.multisplit( tpl||'', replacements||{} );
+    };
+    InlineTpl.multisplit = function multisplit( tpl, reps ) {
+        var r, s, i, j, a, b, c, al, bl;
+        a = [ [1, tpl] ];
+        for ( r in reps )
+        {
+            if ( reps.hasOwnProperty( r ) )
+            {
+                c = [ ]; s = [0, reps[ r ]];
+                for (i=0,al=a.length; i<al; i++)
+                {
+                    if ( 1 === a[ i ][ 0 ] )
+                    {
+                        b = a[ i ][ 1 ].split( r ); bl = b.length;
+                        if ( bl > 1 )
+                        {
+                            for (j=0; j<bl-1; j++)
+                            {
+                                c.push( [1, b[j]] );
+                                c.push( s );
+                                c.push( [1, b[j+1]] );
+                            }
+                        }
+                        else
+                        {
+                            c.push( [1, b[0]] );
+                        }
+                    }
+                    else
+                    {
+                        c.push( a[ i ] );
+                    }
+                }
+                a = c;
+            }
+        }
+        return a;
+    };
+    InlineTpl[PROTO] = {
+        constructor: InlineTpl
+        
+        ,id: null
+        ,tpl: null
+        
+        ,dispose: function( ) {
+            this.tpl = null;
+            this.id = null;
+            return this;
+        }
+        ,render: function( args ) {
+            var tpl = this.tpl, l = tpl.length, argslen, 
+                i, notIsSub, s, out = new Array( l )
+            ;
+            args = args || [ ]; argslen = args.length;
             
-            this.id = null;  
-            this.d = null;
+            for (i=0; i<l; i++)
+            {
+                notIsSub = tpl[ i ][ 0 ]; s = tpl[ i ][ 1 ];
+                if ( notIsSub ) out[ i ] = s;
+                else out[ i ] = (s.substr || s>=0) ? args[ s ] : args[ argslen+s ];
+            }
+            return out.join('');
+        }
+    };
+    
+    Tpl = function Tpl( id, renderFunc ) {
+        if ( !(this instanceof Tpl) ) return new Tpl( id, renderFunc );
+        this.id = null;  this.d = null;
+        if ( id ) 
+        { 
+            this.id = id; 
+            this._renderer = renderFunc; 
+        }
+    };
+    Tpl[PROTO] = {
+        constructor: Tpl
+        ,id: null
+        ,d: null
+        
+        ,_extends: null
+        ,_blocks: null
+        ,_renderer: null 
+        
+        // public methods
+        ,dispose: function( ) {
+            var self = this;
+            self._renderer = null;
+            self._blocks = null;
+            self._extends = null;
+            self.d = null;
+            self.id = null;
+            return self;
+        }
+        
+        ,setId: function( id ) { 
+            if ( id ) this.id = id;  
+            return this; 
+        }
+        
+        ,extend: function( tpl ) { 
+            if ( tpl && tpl.substr )
+                this._extends = Contemplate.tpl( tpl );
+            else
+                this._extends = tpl;
+            return this;
+        }
+        
+        ,setRenderFunction: function( renderfunc ) { 
+            this._renderer = renderfunc; 
+            return this; 
+        }
+        
+        ,setBlocks: function( blocks ) { 
+            if ( 'object' === typeof blocks )
+            {
+                this._blocks = merge(this._blocks||{}, blocks); 
+            }
+            return this; 
+        }
+        
+        ,renderBlock: function( block, __i__ ) {
+            if ( !__i__ ) __i__ = this;
+            if ( this._blocks && this._blocks[HAS](block) ) return this._blocks[block](Contemplate, __i__);
+            else if ( this._extends ) return this._extends.renderBlock(block, __i__);
+            return '';
+        }
+        
+        ,render: function( data, __i__ ) {
+            var __p__ = '';
             
-            if ( id ) 
-            { 
-                this.id = id; 
-                _renderFunction = renderFunc; 
+            if ( !__i__ ) __i__ = this;
+            
+            if ( this._extends ) 
+            {
+                __p__ = this._extends.render(data, __i__);
+            }
+            else if ( this._renderer )  
+            {
+                __i__.d = data; 
+                __p__ = this._renderer(Contemplate, __i__);
             }
             
-            // public methods
-            this.setId = function(id) { 
-                if ( id ) this.id = id;  
-                return this; 
-            };
-            
-            this.extend = function( tpl ) { 
-                if ( tpl && tpl.substr )
-                    _extends = Contemplate_tpl( tpl );
-                else
-                    _extends = tpl;
-                return this;
-            };
-            
-            this.setRenderFunction = function( renderfunc ) { 
-                _renderFunction = renderfunc; 
-                return this; 
-            };
-            
-            this.setBlocks = function( blocks ) { 
-                if ( !_blocks ) _blocks = {}; 
-                _blocks = Contemplate_merge(_blocks, blocks); 
-                return this; 
-            };
-            
-            this.renderBlock = function( block, __i__ ) {
-                if ( !__i__ ) __i__ = this;
-                
-                if ( _blocks && _blocks[block] ) return _blocks[block](Contemplate, __i__);
-                else if ( _extends ) return _extends.renderBlock(block, __i__);
-                
-                return '';
-            };
-            
-            this.render = function( data, __i__ ) {
-                var __p__ = '';
-                
-                if ( !__i__ ) __i__ = this;
-                
-                if ( _extends ) 
-                {
-                    __p__ = _extends.render(data, __i__);
-                }
-                else if ( _renderFunction )  
-                {
-                    __i__.d = data; 
-                    __p__ = _renderFunction(Contemplate, __i__);
-                }
-                
-                this.d = null;
-                return __p__;
-            };
-        };
-        return new ContemplateInstance( id, renderFunc );
-    }
+            this.d = null;
+            return __p__;
+        }
+    };
     
-    self = {
+    Contemplate = {
 
         // constants
         VERSION: __version__,
@@ -1737,6 +2358,9 @@
         CACHE_TO_DISK_NOUPDATE: 4,
         
         ENCODING: 'utf8',
+        
+        Tpl: Tpl,
+        InlineTpl: InlineTpl,
         
         init: function( ) {
             if ( $__isInited ) return;
@@ -1769,15 +2393,15 @@
         addPlugin: function( name, pluginCode ) {
             if ( name && pluginCode )
             {
-                if ( pluginCode instanceof Tpl )
+                if ( pluginCode instanceof Contemplate.InlineTpl )
                 {
                     $__plugins[ name ] = pluginCode;
                 }
                 else /*if ( 'function' === typeof plugin )*/
                 {
                     $__plugins[ name ] = 'Contemplate.plg_' + name;
-                    self[ "plg_" + name ] = pluginCode;
-                    //self[ "plugin_" + name ] = pluginCode;
+                    Contemplate[ "plg_" + name ] = pluginCode;
+                    //Contemplate[ "plugin_" + name ] = pluginCode;
                 }
             }
         },
@@ -1789,7 +2413,7 @@
         setLocaleStrings: function( l ) { 
             if ( "object" === typeof l )
             {
-                $__locale = self.merge($__locale, l); 
+                $__locale = merge($__locale, l); 
             }
         },
         
@@ -1808,7 +2432,7 @@
                         plurals[ singular ] = singular+'s';
                     }
                 }
-                $__plurals = self.merge($__plurals, plurals); 
+                $__plurals = merge($__plurals, plurals); 
             }
         },
         
@@ -1835,7 +2459,7 @@
         },
         
         setCacheMode: function( mode ) { 
-            $__cacheMode = ( isNode ) ? mode : self.CACHE_TO_DISK_NONE; 
+            $__cacheMode = ( isNode ) ? mode : Contemplate.CACHE_TO_DISK_NONE; 
         },
         
         setSyncMode: function( bool ) { 
@@ -1855,7 +2479,7 @@
                 {
                     if ( tpls[HAS](tplID) )
                     {
-                        if ( isArray( tpls[ tplID ] ) )
+                        if ( is_array( tpls[ tplID ] ) )
                         {
                             // unified way to add tpls both as reference and inline
                             // inline tpl, passed as array
@@ -1871,7 +2495,7 @@
             }
             else if ( tpls && tplStr )
             {
-                if ( isArray( tplStr ) )
+                if ( is_array( tplStr ) )
                 {
                     // unified way to add tpls both as reference and inline
                     // inline tpl, passed as array
@@ -1906,7 +2530,12 @@
         },
         
         // return the requested template (with optional data)
-        tpl: function( id, data, options ) {
+        tpl: function( tpl, data, options ) {
+            if ( tpl instanceof Contemplate.Tpl )
+            {
+                // Provide some basic currying to the user
+                return ( "object" === typeof data ) ? tpl.render( data ) : tpl;
+            }
             options = merge({
                 'autoUpdate': false,
                 'refresh': false,
@@ -1918,16 +2547,15 @@
             
             // Figure out if we're getting a template, or if we need to
             // load the template - and be sure to cache the result.
-            if ( !!options.refresh || !$__cache[ id ] )
+            if ( !!options.refresh || !$__cache[ tpl ] )
             {
-                $__cache[ id ] = getCachedTemplate( id, options );
+                $__cache[ tpl ] = getCachedTemplate( tpl, options );
             }
             
-            var tpl = $__cache[ id ];
+            var tmpl = $__cache[ tpl ];
             
             // Provide some basic currying to the user
-            if ( data && "object" === typeof(data) ) return tpl.render( data );
-            else  return tpl;
+            return ( "object" === typeof data ) ? tmpl.render( data ) : tmpl;
         },
         
         
@@ -1937,7 +2565,7 @@
         
         // inline tpls, both inside Contemplate templates (i.e as parameters) and in code
         inline: function( tpl, reps ) {
-            return tpl && (tpl instanceof Tpl) ? tpl.render( reps||[] ) : Tpl(tpl, reps||{});
+            return (tpl instanceof Contemplate.InlineTpl) ? tpl.render( reps||[] ) : Contemplate.InlineTpl(tpl, reps||{});
         },
         
         // haskey, has_key, check if (nested) keys exist in tpl variable
@@ -2058,9 +2686,9 @@
         camelcase: function( s, sep, capitalizeFirst ) {
             sep = sep || "_";
             if ( capitalizeFirst )
-                return s.split( sep ).map( self.ucfirst ).join( "" );
+                return s.split( sep ).map( Contemplate.ucfirst ).join( "" );
             else
-                return self.lcfirst( s.split( sep ).map( self.ucfirst ).join( "" ) );
+                return Contemplate.lcfirst( s.split( sep ).map( Contemplate.ucfirst ).join( "" ) );
         },
         snakecase: function( s, sep ) {
             sep = sep || "_";
@@ -2113,8 +2741,8 @@
         // html table
         htmltable: function( data, options ) {
             // clone data to avoid mess-ups
-            data = self.merge({}, data);
-            options = self.merge({}, options || {});
+            data = merge({}, data);
+            options = merge({}, options || {});
             var o='', tk='', header='', footer='', 
                 k, rows=[], row, rl, r, i, j, l, vals, col, colvals, 
                 class_odd, class_even, row_class, odd=false,
@@ -2125,14 +2753,14 @@
             
             if ( hasRowTpl )
             {
-                if ( !(options['tpl_row'] instanceof Tpl) )
-                    options['tpl_row'] = new Tpl(options['tpl_row'], {'$row_class':'row_class','$row':'row'});
+                if ( !(options['tpl_row'] instanceof Contemplate.InlineTpl) )
+                    options['tpl_row'] = Contemplate.InlineTpl(options['tpl_row'], {'$row_class':'row_class','$row':'row'});
                 rowTpl = options['tpl_row'];
             }
             if ( hasCellTpl )
             {
-                if ( !(options['tpl_cell'] instanceof Tpl) )
-                    options['tpl_cell'] = new Tpl(options['tpl_cell'], {'$cell':'cell'});
+                if ( !(options['tpl_cell'] instanceof Contemplate.InlineTpl) )
+                    options['tpl_cell'] = Contemplate.InlineTpl(options['tpl_cell'], {'$cell':'cell'});
                 cellTpl = options['tpl_cell'];
             }
             
@@ -2153,7 +2781,7 @@
                 
             tk='';
             if ( options['header'] || options['footer'] )
-                tk="<td>"+(self.keys(data)||[]).join('</td><td>')+"</td>";
+                tk="<td>"+(Contemplate.keys(data)||[]).join('</td><td>')+"</td>";
                 
             header = options['header'] ? "<thead><tr>"+tk+"</tr></thead>" : '';
             footer = options['footer'] ? "<tfoot><tr>"+tk+"</tr></tfoot>" : '';
@@ -2162,14 +2790,14 @@
             
             // get data rows
             rows=[];
-            vals=self.values(data) || [];
+            vals=Contemplate.values(data) || [];
             for (i in vals)
             {
                 if (vals[HAS](i))
                 {
                     col=vals[i];
-                    if (!isArray(col))  col=[col];
-                    colvals=self.values(col) || [];
+                    if (!is_array(col))  col=[col];
+                    colvals=Contemplate.values(col) || [];
                     for (j=0, l=colvals.length; j<l; j++)
                     {
                         if (!rows[j]) rows[j]=new Arr(l);
@@ -2220,8 +2848,8 @@
         // html select
         htmlselect: function( data, options ) {
             // clone data to avoid mess-ups
-            data = self.merge({}, data);
-            options = self.merge({}, options || {});
+            data = merge({}, data);
+            options = merge({}, options || {});
             var o='', k, k2, v, v2,
                 hasOptionTpl = options[HAS]('tpl_option'), 
                 optionTpl = null
@@ -2229,8 +2857,8 @@
             
             if ( hasOptionTpl )
             {
-                if ( !(options['tpl_option'] instanceof Tpl) )
-                    options['tpl_option'] = new Tpl(options['tpl_option'], {'$selected':'selected','$value':'value','$option':'option'});
+                if ( !(options['tpl_option'] instanceof Contemplate.InlineTpl) )
+                    options['tpl_option'] = new Contemplate.InlineTpl(options['tpl_option'], {'$selected':'selected','$value':'value','$option':'option'});
                 optionTpl = options['tpl_option'];
             }
             
@@ -2254,7 +2882,7 @@
             
             if (options['selected'])
             {
-                if (!isArray(options['selected'])) options['selected']=[options['selected']];
+                if (!is_array(options['selected'])) options['selected']=[options['selected']];
                 options['selected']=array_flip(options['selected']);
             }
             else
@@ -2262,7 +2890,7 @@
                 
             if (options['optgroups'])
             {
-                if (!isArray(options['optgroups'])) options['optgroups']=[options['optgroups']];
+                if (!is_array(options['optgroups'])) options['optgroups']=[options['optgroups']];
                 options['optgroups']=array_flip(options['optgroups']);
             }
         
@@ -2355,8 +2983,8 @@
         merge: merge,
         
         data: function( o ) {
-            if (isArray(o)) return o.slice();
-            var c = {} /*self.merge({}, o)*/, key, newkey;
+            if (is_array(o)) return o.slice();
+            var c = {} /*Contemplate.merge({}, o)*/, key, newkey;
             // clone the data and
             // use php-style variables using '$' in front of var name
             for (key in o) 
@@ -2375,678 +3003,19 @@
         }
     };
     // aliases
-    self.now = self.time;
-    self.l = self.locale;
+    Contemplate.now = Contemplate.time;
+    Contemplate.l = Contemplate.locale;
     
     // Template Engine end here
     //
     //
 
 
-
-/////////////////////////////////////////////////////////////////////////
-//
-//   PHP functions adapted from phpjs project
-//   https://github.com/kvz/phpjs
-//
-///////////////////////////////////////////////////////////////////////////
-
-function get_html_translation_table (table, quote_style) 
-{
-  var tblID, useTable = null,
-    useQuoteStyle = null;
-
-  useTable = !isNaN(table) ? get_html_translation_table.constMappingTable[table] : table ? table.toUpperCase() : 'HTML_SPECIALCHARS';
-  useQuoteStyle = !isNaN(quote_style) ? get_html_translation_table.constMappingQuoteStyle[quote_style] : quote_style ? quote_style.toUpperCase() : 'ENT_COMPAT';
-
-  if (useTable !== 'HTML_SPECIALCHARS' && useTable !== 'HTML_ENTITIES') 
-  {
-    throw new Error("Table: " + useTable + ' not supported');
-    return;
-  }
-  // use cached table if exists
-  tblID = useTable + '__' + useQuoteStyle;
-  if ( get_html_translation_table.tbls[tblID] )  return get_html_translation_table.tbls[tblID];
-  
-  var entities = {},
-    hash_map = {},
-    decimal;
-    
-  entities['38'] = '&amp;';
-  if ( useTable === 'HTML_ENTITIES' ) 
-  {
-    entities['160'] = '&nbsp;';
-    entities['161'] = '&iexcl;';
-    entities['162'] = '&cent;';
-    entities['163'] = '&pound;';
-    entities['164'] = '&curren;';
-    entities['165'] = '&yen;';
-    entities['166'] = '&brvbar;';
-    entities['167'] = '&sect;';
-    entities['168'] = '&uml;';
-    entities['169'] = '&copy;';
-    entities['170'] = '&ordf;';
-    entities['171'] = '&laquo;';
-    entities['172'] = '&not;';
-    entities['173'] = '&shy;';
-    entities['174'] = '&reg;';
-    entities['175'] = '&macr;';
-    entities['176'] = '&deg;';
-    entities['177'] = '&plusmn;';
-    entities['178'] = '&sup2;';
-    entities['179'] = '&sup3;';
-    entities['180'] = '&acute;';
-    entities['181'] = '&micro;';
-    entities['182'] = '&para;';
-    entities['183'] = '&middot;';
-    entities['184'] = '&cedil;';
-    entities['185'] = '&sup1;';
-    entities['186'] = '&ordm;';
-    entities['187'] = '&raquo;';
-    entities['188'] = '&frac14;';
-    entities['189'] = '&frac12;';
-    entities['190'] = '&frac34;';
-    entities['191'] = '&iquest;';
-    entities['192'] = '&Agrave;';
-    entities['193'] = '&Aacute;';
-    entities['194'] = '&Acirc;';
-    entities['195'] = '&Atilde;';
-    entities['196'] = '&Auml;';
-    entities['197'] = '&Aring;';
-    entities['198'] = '&AElig;';
-    entities['199'] = '&Ccedil;';
-    entities['200'] = '&Egrave;';
-    entities['201'] = '&Eacute;';
-    entities['202'] = '&Ecirc;';
-    entities['203'] = '&Euml;';
-    entities['204'] = '&Igrave;';
-    entities['205'] = '&Iacute;';
-    entities['206'] = '&Icirc;';
-    entities['207'] = '&Iuml;';
-    entities['208'] = '&ETH;';
-    entities['209'] = '&Ntilde;';
-    entities['210'] = '&Ograve;';
-    entities['211'] = '&Oacute;';
-    entities['212'] = '&Ocirc;';
-    entities['213'] = '&Otilde;';
-    entities['214'] = '&Ouml;';
-    entities['215'] = '&times;';
-    entities['216'] = '&Oslash;';
-    entities['217'] = '&Ugrave;';
-    entities['218'] = '&Uacute;';
-    entities['219'] = '&Ucirc;';
-    entities['220'] = '&Uuml;';
-    entities['221'] = '&Yacute;';
-    entities['222'] = '&THORN;';
-    entities['223'] = '&szlig;';
-    entities['224'] = '&agrave;';
-    entities['225'] = '&aacute;';
-    entities['226'] = '&acirc;';
-    entities['227'] = '&atilde;';
-    entities['228'] = '&auml;';
-    entities['229'] = '&aring;';
-    entities['230'] = '&aelig;';
-    entities['231'] = '&ccedil;';
-    entities['232'] = '&egrave;';
-    entities['233'] = '&eacute;';
-    entities['234'] = '&ecirc;';
-    entities['235'] = '&euml;';
-    entities['236'] = '&igrave;';
-    entities['237'] = '&iacute;';
-    entities['238'] = '&icirc;';
-    entities['239'] = '&iuml;';
-    entities['240'] = '&eth;';
-    entities['241'] = '&ntilde;';
-    entities['242'] = '&ograve;';
-    entities['243'] = '&oacute;';
-    entities['244'] = '&ocirc;';
-    entities['245'] = '&otilde;';
-    entities['246'] = '&ouml;';
-    entities['247'] = '&divide;';
-    entities['248'] = '&oslash;';
-    entities['249'] = '&ugrave;';
-    entities['250'] = '&uacute;';
-    entities['251'] = '&ucirc;';
-    entities['252'] = '&uuml;';
-    entities['253'] = '&yacute;';
-    entities['254'] = '&thorn;';
-    entities['255'] = '&yuml;';
-  }
-
-  if ( useQuoteStyle !== 'ENT_NOQUOTES' ) 
-  {
-    entities['34'] = '&quot;';
-  }
-  if ( useQuoteStyle === 'ENT_QUOTES' ) 
-  {
-    entities['39'] = '&#39;';
-  }
-  entities['60'] = '&lt;';
-  entities['62'] = '&gt;';
-
-
-  // ascii decimals to real symbols
-  for ( decimal in entities ) 
-  {
-    if ( entities.hasOwnProperty(decimal) ) 
-    {
-      hash_map[String.fromCharCode(decimal)] = entities[decimal];
-    }
-  }
-  if ( useQuoteStyle === 'ENT_QUOTES' ) 
-  {
-    hash_map["'"] = '&#039;';
-  }
-  // cache the table
-  return get_html_translation_table.tbls[tblID] = hash_map;
-}
-get_html_translation_table.constMappingTable = {};
-get_html_translation_table.constMappingQuoteStyle = {};
-// Translate arguments
-get_html_translation_table.constMappingTable[0] = 'HTML_SPECIALCHARS';
-get_html_translation_table.constMappingTable[1] = 'HTML_ENTITIES';
-get_html_translation_table.constMappingQuoteStyle[0] = 'ENT_NOQUOTES';
-get_html_translation_table.constMappingQuoteStyle[2] = 'ENT_COMPAT';
-get_html_translation_table.constMappingQuoteStyle[3] = 'ENT_QUOTES';
-get_html_translation_table.tbls = {};
-
-function htmlentities (string, quote_style, charset, double_encode) {
-  var hash_map = get_html_translation_table('HTML_ENTITIES', quote_style),
-    symbol = '';
-  string = string == null ? '' : string + '';
-
-  if ( !hash_map ) 
-  {
-    return false;
-  }
-
-  if (!!double_encode || double_encode == null) {
-    for (symbol in hash_map) {
-      if (hash_map.hasOwnProperty(symbol)) {
-        string = string.split(symbol).join(hash_map[symbol]);
-      }
-    }
-  } else {
-    string = string.replace(/([\s\S]*?)(&(?:#\d+|#x[\da-f]+|[a-zA-Z][\da-z]*);|$)/g, function (ignore, text, entity) {
-      for (symbol in hash_map) {
-        if (hash_map.hasOwnProperty(symbol)) {
-          text = text.split(symbol).join(hash_map[symbol]);
-        }
-      }
-
-      return text + entity;
-    });
-  }
-
-  return string;
-}
-function urlencode (str) 
-{
-  str = (str + '').toString();
-
-  // Tilde should be allowed unescaped in future versions of PHP (as reflected below), but if you want to reflect current
-  // PHP behavior, you would need to add ".replace(/~/g, '%7E');" to the following.
-  return encodeURIComponent(str).replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').
-  replace(/\)/g, '%29').replace(/\*/g, '%2A').replace(/%20/g, '+');
-}
-function rawurlencode (str) 
-{
-  str = (str + '').toString();
-
-  // Tilde should be allowed unescaped in future versions of PHP (as reflected below), but if you want to reflect current
-  // PHP behavior, you would need to add ".replace(/~/g, '%7E');" to the following.
-  return encodeURIComponent(str).replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').
-  replace(/\)/g, '%29').replace(/\*/g, '%2A');
-}
-function count (mixed_var/*, mode*/) 
-{
-  if ( null === mixed_var || 'undefined' === typeof mixed_var ) return 0;
-
-  else if ( Array === mixed_var.constructor) return mixed_var.length;
-  
-  else if ( Object === mixed_var.constructor) return Keys(mixed_var).length;
-  
-  return 1;
-}
-/*function is_array (mixed_var) 
-{
-    return (mixed_var instanceof Array) || '[object Array]' === _toString.call(mixed_var);
-}*/
-function array_flip (trans) 
-{
-  var k, tmp = {}, key, keys = Keys(trans), kl = keys.length;
-
-  for (k=0; k<kl; k++) 
-  {
-    key = keys[ k ];
-    tmp[ trans[ key ] ] = key;
-  }
-  return tmp;
-}
-function sprintf () 
-{
-  var regex = /%%|%(\d+\$)?([-+\'#0 ]*)(\*\d+\$|\*|\d+)?(\.(\*\d+\$|\*|\d+))?([scboxXuideEfFgG])/g;
-  var a = arguments,
-    i = 0,
-    format = a[i++];
-
-  // pad()
-  var pad = function (str, len, chr, leftJustify) {
-    if (!chr) {
-      chr = ' ';
-    }
-    var padding = (str.length >= len) ? '' : Array(1 + len - str.length >>> 0).join(chr);
-    return leftJustify ? str + padding : padding + str;
-  };
-
-  // justify()
-  var justify = function (value, prefix, leftJustify, minWidth, zeroPad, customPadChar) {
-    var diff = minWidth - value.length;
-    if (diff > 0) {
-      if (leftJustify || !zeroPad) {
-        value = pad(value, minWidth, customPadChar, leftJustify);
-      } else {
-        value = value.slice(0, prefix.length) + pad('', diff, '0', true) + value.slice(prefix.length);
-      }
-    }
-    return value;
-  };
-
-  // formatBaseX()
-  var formatBaseX = function (value, base, prefix, leftJustify, minWidth, precision, zeroPad) {
-    // Note: casts negative numbers to positive ones
-    var number = value >>> 0;
-    prefix = prefix && number && {
-      '2': '0b',
-      '8': '0',
-      '16': '0x'
-    }[base] || '';
-    value = prefix + pad(number.toString(base), precision || 0, '0', false);
-    return justify(value, prefix, leftJustify, minWidth, zeroPad);
-  };
-
-  // formatString()
-  var formatString = function (value, leftJustify, minWidth, precision, zeroPad, customPadChar) {
-    if (precision != null) {
-      value = value.slice(0, precision);
-    }
-    return justify(value, '', leftJustify, minWidth, zeroPad, customPadChar);
-  };
-
-  // doFormat()
-  var doFormat = function (substring, valueIndex, flags, minWidth, _, precision, type) {
-    var number;
-    var prefix;
-    var method;
-    var textTransform;
-    var value;
-
-    if (substring == '%%') {
-      return '%';
-    }
-
-    // parse flags
-    var leftJustify = false,
-      positivePrefix = '',
-      zeroPad = false,
-      prefixBaseX = false,
-      customPadChar = ' ';
-    var flagsl = flags.length;
-    for (var j = 0; flags && j < flagsl; j++) {
-      switch (flags.charAt(j)) {
-      case ' ':
-        positivePrefix = ' ';
-        break;
-      case '+':
-        positivePrefix = '+';
-        break;
-      case '-':
-        leftJustify = true;
-        break;
-      case "'":
-        customPadChar = flags.charAt(j + 1);
-        break;
-      case '0':
-        zeroPad = true;
-        break;
-      case '#':
-        prefixBaseX = true;
-        break;
-      }
-    }
-
-    // parameters may be null, undefined, empty-string or real valued
-    // we want to ignore null, undefined and empty-string values
-    if (!minWidth) {
-      minWidth = 0;
-    } else if (minWidth == '*') {
-      minWidth = +a[i++];
-    } else if (minWidth.charAt(0) == '*') {
-      minWidth = +a[minWidth.slice(1, -1)];
-    } else {
-      minWidth = +minWidth;
-    }
-
-    // Note: undocumented perl feature:
-    if (minWidth < 0) {
-      minWidth = -minWidth;
-      leftJustify = true;
-    }
-
-    if (!isFinite(minWidth)) {
-      throw new Error('sprintf: (minimum-)width must be finite');
-    }
-
-    if (!precision) {
-      precision = 'fFeE'.indexOf(type) > -1 ? 6 : (type == 'd') ? 0 : undefined;
-    } else if (precision == '*') {
-      precision = +a[i++];
-    } else if (precision.charAt(0) == '*') {
-      precision = +a[precision.slice(1, -1)];
-    } else {
-      precision = +precision;
-    }
-
-    // grab value using valueIndex if required?
-    value = valueIndex ? a[valueIndex.slice(0, -1)] : a[i++];
-
-    switch (type) {
-    case 's':
-      return formatString(String(value), leftJustify, minWidth, precision, zeroPad, customPadChar);
-    case 'c':
-      return formatString(String.fromCharCode(+value), leftJustify, minWidth, precision, zeroPad);
-    case 'b':
-      return formatBaseX(value, 2, prefixBaseX, leftJustify, minWidth, precision, zeroPad);
-    case 'o':
-      return formatBaseX(value, 8, prefixBaseX, leftJustify, minWidth, precision, zeroPad);
-    case 'x':
-      return formatBaseX(value, 16, prefixBaseX, leftJustify, minWidth, precision, zeroPad);
-    case 'X':
-      return formatBaseX(value, 16, prefixBaseX, leftJustify, minWidth, precision, zeroPad).toUpperCase();
-    case 'u':
-      return formatBaseX(value, 10, prefixBaseX, leftJustify, minWidth, precision, zeroPad);
-    case 'i':
-    case 'd':
-      number = +value || 0;
-      number = Math.round(number - number % 1); // Plain Math.round doesn't just truncate
-      prefix = number < 0 ? '-' : positivePrefix;
-      value = prefix + pad(String(Math.abs(number)), precision, '0', false);
-      return justify(value, prefix, leftJustify, minWidth, zeroPad);
-    case 'e':
-    case 'E':
-    case 'f': // Should handle locales (as per setlocale)
-    case 'F':
-    case 'g':
-    case 'G':
-      number = +value;
-      prefix = number < 0 ? '-' : positivePrefix;
-      method = ['toExponential', 'toFixed', 'toPrecision']['efg'.indexOf(type.toLowerCase())];
-      textTransform = ['toString', 'toUpperCase']['eEfFgG'.indexOf(type) % 2];
-      value = prefix + Math.abs(number)[method](precision);
-      return justify(value, prefix, leftJustify, minWidth, zeroPad)[textTransform]();
-    default:
-      return substring;
-    }
-  };
-
-  return format.replace(regex, doFormat);
-}
-function ltrim (str, charlist) {
-  charlist = !charlist ? ' \\s\u00A0' : (charlist + '').replace(/([\[\]\(\)\.\?\/\*\{\}\+\$\^\:])/g, '$1');
-  var re = new RegExp('^[' + charlist + ']+', 'g');
-  return (str + '').replace(re, '');
-}
-function rtrim (str, charlist) {
-  charlist = !charlist ? ' \\s\u00A0' : (charlist + '').replace(/([\[\]\(\)\.\?\/\*\{\}\+\$\^\:])/g, '\\$1');
-  var re = new RegExp('[' + charlist + ']+$', 'g');
-  return (str + '').replace(re, '');
-}
-function trim (str, charlist) {
-  var whitespace, l = 0,
-    i = 0;
-  str += '';
-
-  if (!charlist) {
-    // default list
-    whitespace = " \n\r\t\f\x0b\xa0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u2028\u2029\u3000";
-  } else {
-    // preg_quote custom list
-    charlist += '';
-    whitespace = charlist.replace(/([\[\]\(\)\.\?\/\*\{\}\+\$\^\:])/g, '$1');
-  }
-
-  l = str.length;
-  for (i = 0; i < l; i++) {
-    if (whitespace.indexOf(str.charAt(i)) === -1) {
-      str = str.substring(i);
-      break;
-    }
-  }
-
-  l = str.length;
-  for (i = l - 1; i >= 0; i--) {
-    if (whitespace.indexOf(str.charAt(i)) === -1) {
-      str = str.substring(0, i + 1);
-      break;
-    }
-  }
-
-  return whitespace.indexOf(str.charAt(0)) === -1 ? str : '';
-}
-function time () {
-  return Math.floor(new Date().getTime() / 1000);
-}
-function date (format, timestamp) {
-    var //that = this,
-      jsdate,
-      f,
-      formatChr = /\\?([a-z])/gi,
-      formatChrCb,
-      // Keep this here (works, but for code commented-out
-      // below for file size reasons)
-      //, tal= [],
-      _pad = function (n, c) {
-        n = n.toString();
-        return n.length < c ? _pad('0' + n, c, '0') : n;
-      },
-      txt_words = ["Sun", "Mon", "Tues", "Wednes", "Thurs", "Fri", "Satur", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-  formatChrCb = function (t, s) {
-    return f[t] ? f[t]() : s;
-  };
-  f = {
-    // Day
-    d: function () { // Day of month w/leading 0; 01..31
-      return _pad(f.j(), 2);
-    },
-    D: function () { // Shorthand day name; Mon...Sun
-      return f.l().slice(0, 3);
-    },
-    j: function () { // Day of month; 1..31
-      return jsdate.getDate();
-    },
-    l: function () { // Full day name; Monday...Sunday
-      return txt_words[f.w()] + 'day';
-    },
-    N: function () { // ISO-8601 day of week; 1[Mon]..7[Sun]
-      return f.w() || 7;
-    },
-    S: function () { // Ordinal suffix for day of month; st, nd, rd, th
-      var j = f.j();
-      return j < 4 | j > 20 && (['st', 'nd', 'rd'][j % 10 - 1] || 'th');
-    },
-    w: function () { // Day of week; 0[Sun]..6[Sat]
-      return jsdate.getDay();
-    },
-    z: function () { // Day of year; 0..365
-      var a = new Date(f.Y(), f.n() - 1, f.j()),
-        b = new Date(f.Y(), 0, 1);
-      return Math.round((a - b) / 864e5);
-    },
-
-    // Week
-    W: function () { // ISO-8601 week number
-      var a = new Date(f.Y(), f.n() - 1, f.j() - f.N() + 3),
-        b = new Date(a.getFullYear(), 0, 4);
-      return _pad(1 + Math.round((a - b) / 864e5 / 7), 2);
-    },
-
-    // Month
-    F: function () { // Full month name; January...December
-      return txt_words[6 + f.n()];
-    },
-    m: function () { // Month w/leading 0; 01...12
-      return _pad(f.n(), 2);
-    },
-    M: function () { // Shorthand month name; Jan...Dec
-      return f.F().slice(0, 3);
-    },
-    n: function () { // Month; 1...12
-      return jsdate.getMonth() + 1;
-    },
-    t: function () { // Days in month; 28...31
-      return (new Date(f.Y(), f.n(), 0)).getDate();
-    },
-
-    // Year
-    L: function () { // Is leap year?; 0 or 1
-      var j = f.Y();
-      return j % 4 === 0 & j % 100 !== 0 | j % 400 === 0;
-    },
-    o: function () { // ISO-8601 year
-      var n = f.n(),
-        W = f.W(),
-        Y = f.Y();
-      return Y + (n === 12 && W < 9 ? 1 : n === 1 && W > 9 ? -1 : 0);
-    },
-    Y: function () { // Full year; e.g. 1980...2010
-      return jsdate.getFullYear();
-    },
-    y: function () { // Last two digits of year; 00...99
-      return f.Y().toString().slice(-2);
-    },
-
-    // Time
-    a: function () { // am or pm
-      return jsdate.getHours() > 11 ? "pm" : "am";
-    },
-    A: function () { // AM or PM
-      return f.a().toUpperCase();
-    },
-    B: function () { // Swatch Internet time; 000..999
-      var H = jsdate.getUTCHours() * 36e2,
-        // Hours
-        i = jsdate.getUTCMinutes() * 60,
-        // Minutes
-        s = jsdate.getUTCSeconds(); // Seconds
-      return _pad(Math.floor((H + i + s + 36e2) / 86.4) % 1e3, 3);
-    },
-    g: function () { // 12-Hours; 1..12
-      return f.G() % 12 || 12;
-    },
-    G: function () { // 24-Hours; 0..23
-      return jsdate.getHours();
-    },
-    h: function () { // 12-Hours w/leading 0; 01..12
-      return _pad(f.g(), 2);
-    },
-    H: function () { // 24-Hours w/leading 0; 00..23
-      return _pad(f.G(), 2);
-    },
-    i: function () { // Minutes w/leading 0; 00..59
-      return _pad(jsdate.getMinutes(), 2);
-    },
-    s: function () { // Seconds w/leading 0; 00..59
-      return _pad(jsdate.getSeconds(), 2);
-    },
-    u: function () { // Microseconds; 000000-999000
-      return _pad(jsdate.getMilliseconds() * 1000, 6);
-    },
-
-    // Timezone
-    e: function () { // Timezone identifier; e.g. Atlantic/Azores, ...
-      // The following works, but requires inclusion of the very large
-      // timezone_abbreviations_list() function.
-/*              return that.date_default_timezone_get();
-*/
-      throw 'Not supported (see source code of date() for timezone on how to add support)';
-    },
-    I: function () { // DST observed?; 0 or 1
-      // Compares Jan 1 minus Jan 1 UTC to Jul 1 minus Jul 1 UTC.
-      // If they are not equal, then DST is observed.
-      var a = new Date(f.Y(), 0),
-        // Jan 1
-        c = Date.UTC(f.Y(), 0),
-        // Jan 1 UTC
-        b = new Date(f.Y(), 6),
-        // Jul 1
-        d = Date.UTC(f.Y(), 6); // Jul 1 UTC
-      return ((a - c) !== (b - d)) ? 1 : 0;
-    },
-    O: function () { // Difference to GMT in hour format; e.g. +0200
-      var tzo = jsdate.getTimezoneOffset(),
-        a = Math.abs(tzo);
-      return (tzo > 0 ? "-" : "+") + _pad(Math.floor(a / 60) * 100 + a % 60, 4);
-    },
-    P: function () { // Difference to GMT w/colon; e.g. +02:00
-      var O = f.O();
-      return (O.substr(0, 3) + ":" + O.substr(3, 2));
-    },
-    T: function () { // Timezone abbreviation; e.g. EST, MDT, ...
-      return 'UTC';
-    },
-    Z: function () { // Timezone offset in seconds (-43200...50400)
-      return -jsdate.getTimezoneOffset() * 60;
-    },
-
-    // Full Date/Time
-    c: function () { // ISO-8601 date.
-      return 'Y-m-d\\TH:i:sP'.replace(formatChr, formatChrCb);
-    },
-    r: function () { // RFC 2822
-      return 'D, d M Y H:i:s O'.replace(formatChr, formatChrCb);
-    },
-    U: function () { // Seconds since UNIX epoch
-      return jsdate / 1000 | 0;
-    }
-  };
-  var date = function (format, timestamp) {
-    //that = this;
-    jsdate = (timestamp === undefined ? new Date() : // Not provided
-      (timestamp instanceof Date) ? new Date(timestamp) : // JS Date()
-      new Date(timestamp * 1000) // UNIX timestamp (auto-convert to int)
-    );
-    return format.replace(formatChr, formatChrCb);
-  };
-  return date(format, timestamp);
-}
-function _localized_date($locale, $format, $timestamp) 
-{
-    var $txt_words = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sun", "Mon", "Tues", "Wednes", "Thurs", "Fri", "Satur", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    
-    var $date = date($format, $timestamp);
-    
-    // localize days/months
-    for (var i=0, l=$txt_words.length; i<l; i++)
-    {
-        if ($locale[$txt_words[i]]) $date = $date.replace($txt_words[i], $locale[$txt_words[i]]);
-    }
-    
-    // return localized date
-    return $date;
-}
-
-    
-    //
-    //
-    //
-    
-    
-    
     // init the engine on load
-    self.init();
+    Contemplate.init();
     
     // export it
     // add it to global namespace to be available for sub-templates, same as browser
-    //if ( isNode ) global.Contemplate = self;
-    return self;
+    //if ( isNode ) global.Contemplate = Contemplate;
+    return Contemplate;
 });

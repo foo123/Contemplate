@@ -10,7 +10,7 @@
 def __getTplClass__(Contemplate):
 
     # extends the main Contemplate class
-    class Contemplate_demo_Cached(Contemplate):
+    class Contemplate_demo_Cached(Contemplate.Tpl):
         'Contemplate cached template demo'
 
         # constructor
@@ -18,7 +18,7 @@ def __getTplClass__(Contemplate):
             # initialize internal vars
             self.id = None 
             self.d = None
-            self._renderFunction = None
+            self._renderer = None
             self._extends = None
             self._blocks = None
 

@@ -116,6 +116,7 @@ class _G:
     NEWLINE = None
     NL = None
 
+    UNDERL = r'[\W]+'
     ALPHA = r'^[a-zA-Z_]'
     NUM = r'^[0-9]'
     ALPHANUM = r'^[a-zA-Z0-9_]'
@@ -153,35 +154,37 @@ class _G:
 
 
 # can use inline templates for plugins etc.. to enable non-linear plugin compile-time replacement
-class Tpl:
+class InlineTpl:
  
     def multisplit( tpl, reps=dict() ): 
     
-        a = [ tpl ]
+        a = [ [1, tpl] ]
         #items = reps.items() if isinstance(reps, dict) else enumerate(reps)
         for r,s in reps.items():
         
             c = [ ]
-            if not isinstance(s, (list,tuple)): s = [ s ]
+            s = [ 0, s ]
             for ai in a:
             
-                if  isinstance(ai, str):
+                if 1 == ai[0]:
                 
-                    b = ai.split( r ) 
+                    b = ai[1].split( r ) 
                     bl = len(b)
                     if bl > 1:
                     
                         for j in range(bl-1):
-                            c = c + [b[j], s, b[j+1]]
+                            c.append([1, b[j]])
+                            c.append(s)
+                            c.append([1, b[j+1]])
                     
                     else:
                     
-                        c = c + b
+                        c.append([1, b[0]])
                     
                 
                 else:
                 
-                    c = c + [ai]
+                    c.append(ai)
                 
             
             a = c
@@ -189,15 +192,15 @@ class Tpl:
         return a
     
     
-    def __init__( self, tpl='', replacements=dict(), split_args=False ): 
+    def __init__( self, tpl='', replacements=dict() ): 
     
-        self.split_args = bool(split_args)
-        self.tpl = Tpl.multisplit( tpl, replacements )
+        self.id = None
+        self.tpl = InlineTpl.multisplit( tpl, replacements )
     
     
     def dispose( self ): 
     
-        self.split_args = None
+        self.id = None
         self.tpl = None
         return self
     
@@ -210,14 +213,87 @@ class Tpl:
         out = [ ]
         for s in tpl:
         
-            if isinstance(s, str): out.append( s )
-            elif isinstance(s[0], str): out.append(str(args[ s[ 0 ] ]))
-            elif 0 > s[0]: out.append(str(args[ argslen+s[ 0 ] ]))
-            else: out.append(str(args[ s[ 0 ] ]))
+            notIsSub = s[ 0 ] 
+            s = s[ 1 ]
+            if notIsSub: out.append(str(s))
+            else: out.append( str(args[ s ] if (isinstance(s,str) or s>=0) else args[ argslen+s ]))
         
         return ''.join(out)
     
 
+    
+class Tpl:
+    
+    def __init__( self, id=None ):
+        self.id = None
+        self.d = None
+        self._renderer = None
+        self._extends = None
+        self._blocks = None
+        
+        if id is not None:   
+            self.id = id 
+    
+    def dispose( self ):
+        self.id = None
+        self.d = None
+        self._renderer = None
+        self._extends = None
+        self._blocks = None
+        return self
+    
+    def setId( self, id=None ):
+        if id is not None: self.id = id
+        
+        return self
+    
+    def extend( self, tpl ): 
+        if tpl and isinstance(tpl, str):
+            self._extends = Contemplate.tpl( tpl )
+        else:
+            self._extends = tpl 
+        
+        return self
+    
+    def setBlocks( self, blocks ): 
+        if not self._blocks: self._blocks = {} 
+        self._blocks = Contemplate.merge(self._blocks, blocks)
+        
+        return self
+    
+    def setRenderFunction( self, renderFunc=None ): 
+        if renderFunc: self._renderer = renderFunc
+        
+        return self
+    
+    def renderBlock( self, block, __i__=None ):
+        if ( not __i__ ): __i__ = self
+        
+        if (self._blocks) and (block in self._blocks):
+            blockfunc = self._blocks[block]
+            return blockfunc( __i__ )
+        
+        elif self._extends:
+            return self._extends.renderBlock(block, __i__)
+        
+        return ''
+        
+    
+    def render( self, data, __i__=None ):
+        __p__ = ''
+        if ( not __i__ ): __i__ = self
+        
+        if self._extends:  
+            __p__ = self._extends.render(data, __i__)
+        
+        elif self._renderer is not None: 
+            # dynamic function
+            __i__.d = data
+            renderer = self._renderer
+            __p__ = renderer( __i__ )
+        
+        self.d = None
+        return __p__
     
 
 # static
@@ -302,7 +378,7 @@ def TT_ClassCode( r=None, t=1 ):
         ,"def __getTplClass__(Contemplate):"
         ,""
         ,"    # extends the main Contemplate class"
-        ,"    class "), r['CLASSNAME'], j("(Contemplate):"
+        ,"    class "), r['CLASSNAME'], j("(Contemplate.Tpl):"
         ,"        'Contemplate cached template "), r['TPLID'], j("'"
         ,""
         ,"        # constructor"
@@ -310,7 +386,7 @@ def TT_ClassCode( r=None, t=1 ):
         ,"            # initialize internal vars"
         ,"            self.id = None "
         ,"            self.d = None" 
-        ,"            self._renderFunction = None"
+        ,"            self._renderer = None"
         ,"            self._extends = None"
         ,"            self._blocks = None"
         ,""
@@ -1057,7 +1133,7 @@ def funcReplace( m ):
     plugin = m.group(3) 
     if plugin and plugin in _G.plugins:
         pl = _G.plugins[plugin]
-        return pl.render([]) if isinstance(pl,Tpl) else pl
+        return pl.render([]) if isinstance(pl,Contemplate.InlineTpl) else pl
     
     return 'Contemplate.' + m.group(1) 
 
@@ -1182,11 +1258,13 @@ def parse( tpl, withblocks=True ):
 
 # static
 def getCachedTemplateName( id ):
-    return id.replace('-', '_').replace(' ', '_') + '_tpl' + '.py'
+    global _G
+    return re.sub(_G.UNDERL, '_', id) + '_tpl' + '.py'
 
 # static
 def getCachedTemplateClass( id ):
-    return 'Contemplate_' + id.replace('-', '_').replace(' ', '_') + '_Cached'
+    global _G
+    return 'Contemplate_' + re.sub(_G.UNDERL, '_', id) + '_Cached'
 
 # static
 def createTemplateRenderFunction( id, seps=None ):
@@ -1273,7 +1351,7 @@ def getCachedTemplate( id, options=dict() ):
         # inline templates saved only in-memory
         if template[1]:
             # dynamic in-memory caching during page-request
-            tpl = Contemplate()
+            tpl = Contemplate.Tpl()
             tpl.setId( id )
             
             if 'parsed' in options:
@@ -1321,7 +1399,7 @@ def getCachedTemplate( id, options=dict() ):
         else:
         
             # dynamic in-memory caching during page-request
-            tpl = Contemplate()
+            tpl = Contemplate.Tpl()
             tpl.setId( id )
             fns = createTemplateRenderFunction(id, options['separators'])
             tpl.setRenderFunction( fns[0] )
@@ -1582,72 +1660,8 @@ class Contemplate:
     # set file encoding if needed, here (eg 'utf8')
     ENCODING = 'utf-8'
     
-    #
-    #  Instance template methods (for in-memory only templates)
-    #
-    def __init__( self, id=None, renderFunc=None ):
-        self.id = None
-        self.d = None
-        self._renderFunction = None
-        self._extends = None
-        self._blocks = None
-        
-        if id is not None:   
-            self.id = id 
-            self._renderFunction = renderFunc
-    
-    def setId( self, id=None ):
-        if id is not None: self.id = id
-        
-        return self
-    
-    def extend( self, tpl ): 
-        if tpl and isinstance(tpl, str):
-            self._extends = Contemplate.tpl( tpl )
-        else:
-            self._extends = tpl 
-        
-        return self
-    
-    def setBlocks( self, blocks ): 
-        if not self._blocks: self._blocks = {} 
-        self._blocks = Contemplate.merge(self._blocks, blocks)
-        
-        return self
-    
-    def setRenderFunction( self, renderFunc=None ): 
-        if renderFunc: self._renderFunction = renderFunc
-        
-        return self
-    
-    def renderBlock( self, block, __i__=None ):
-        if ( not __i__ ): __i__ = self
-        
-        if (self._blocks) and (block in self._blocks):
-            blockfunc = self._blocks[block]
-            return blockfunc( __i__ )
-        
-        elif self._extends:
-            return self._extends.renderBlock(block, __i__)
-        
-        return ''
-        
-    
-    def render( self, data, __i__=None ):
-        __p__ = ''
-        if ( not __i__ ): __i__ = self
-        
-        if self._extends:  
-            __p__ = self._extends.render(data, __i__)
-        
-        elif self._renderFunction is not None: 
-            # dynamic function
-            __i__.d = data
-            renderFunction = self._renderFunction
-            __p__ = renderFunction( __i__ )
-        
-        self.d = None
-        return __p__
+    InlineTpl = InlineTpl
+    Tpl = Tpl
     
     #
     #
@@ -1675,6 +1689,7 @@ class Contemplate:
         _G.NEWLINE = re.compile(r'\n\r|\r\n|\n|\r')
         _G.NL = re.compile(r'\n')
         
+        _G.UNDERL = re.compile( _G.UNDERL )
         _G.ALPHA = re.compile( _G.ALPHA )
         _G.NUM = re.compile( _G.NUM )
         _G.ALPHANUM = re.compile( _G.ALPHANUM )
@@ -1695,7 +1710,7 @@ class Contemplate:
     def addPlugin( name, pluginCode ):
         global _G
         name = str(name)
-        if isinstance(pluginCode, Tpl):
+        if isinstance(pluginCode, Contemplate.InlineTpl):
             _G.plugins[ name ] = pluginCode
         else:
             _G.plugins[ name ] = 'Contemplate.plg_' + name
@@ -1822,8 +1837,13 @@ class Contemplate:
         
     # return the requested template (with optional data)
     # static
-    def tpl( id, data=None, options=None ):
+    def tpl( tpl, data=None, options=None ):
         global _G
+        
+        if isinstance(tpl, Contemplate.Tpl):
+            # Provide some basic currying to the user
+            if isinstance(data, dict): return str(tpl.render( data ))
+            else: return tpl
         
         if not options: options = {}
         options = merge({
@@ -1838,15 +1858,15 @@ class Contemplate:
         
         # Figure out if we're getting a template, or if we need to
         # load the template - and be sure to cache the result.
-        if options['refresh'] or not (id in _G.cache): 
+        if options['refresh'] or not (tpl in _G.cache): 
             
-            _G.cache[ id ] = getCachedTemplate( id, options )
+            _G.cache[ tpl ] = getCachedTemplate( tpl, options )
         
-        tpl = _G.cache[ id ]
+        tmpl = _G.cache[ tpl ]
         
         # Provide some basic currying to the user
-        if isinstance(data, dict): return str(tpl.render( data ))
-        else: return tpl
+        if isinstance(data, dict): return str(tmpl.render( data ))
+        else: return tmpl
     
     #
     # Basic template functions
@@ -1854,8 +1874,8 @@ class Contemplate:
     
     # inline tpls, both inside Contemplate templates (i.e as parameters) and in code
     def inline( tpl, reps=None ):
-        if isinstance(tpl, Tpl): return str(tpl.render( [] if not reps else reps ))
-        return Tpl( tpl, {} if not reps else reps )
+        if isinstance(tpl, Contemplate.InlineTpl): return str(tpl.render( [] if not reps else reps ))
+        return Contemplate.InlineTpl( tpl, {} if not reps else reps )
     
         
     # check if (nested) keys exist in tpl variable
@@ -2049,14 +2069,14 @@ class Contemplate:
         
         if hasRowTpl:
         
-            if not isinstance(options['tpl_row'], Tpl):
-                options['tpl_row'] = Tpl(str(options['tpl_row']), {'$row_class':'row_class','$row':'row'})
+            if not isinstance(options['tpl_row'], Contemplate.InlineTpl):
+                options['tpl_row'] = Contemplate.InlineTpl(str(options['tpl_row']), {'$row_class':'row_class','$row':'row'})
             rowTpl = options['tpl_row']
         
         if hasCellTpl:
         
-            if not isinstance(options['tpl_cell'], Tpl):
-                options['tpl_cell'] = Tpl(str(options['tpl_cell']), {'$cell':'cell'})
+            if not isinstance(options['tpl_cell'], Contemplate.InlineTpl):
+                options['tpl_cell'] = Contemplate.InlineTpl(str(options['tpl_cell']), {'$cell':'cell'})
             cellTpl = options['tpl_cell']
         
             
@@ -2170,8 +2190,8 @@ class Contemplate:
             
         if hasOptionTpl:
         
-            if not isinstance(options['tpl_option'], Tpl):
-                options['tpl_option'] = Tpl(str(options['tpl_option']), {'$selected':'selected','$value':'value','$option':'option'})
+            if not isinstance(options['tpl_option'], Contemplate.InlineTpl):
+                options['tpl_option'] = Contemplate.InlineTpl(str(options['tpl_option']), {'$selected':'selected','$value':'value','$option':'option'})
             optionTpl = options['tpl_option']
         
             

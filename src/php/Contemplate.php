@@ -16,35 +16,37 @@ if (!class_exists('Contemplate'))
 // can use inline templates for plugins etc.. to enable non-linear plugin compile-time replacement
 class ContemplateInlineTpl
 { 
+    public $id = null;
     public $tpl = '';
-    public $split_args = false;
     
     public static function multisplit( $tpl, $reps ) 
     {
-        $a = array( $tpl );
+        $a = array( array(1, $tpl) );
         foreach ( (array)$reps as $r=>$s )
         {
-            $c = array( );
-            if ( !is_array($s) ) $s = array( $s );
-            $al = count($a);
+            $c = array( ); $s = array( 0, $s ); $al = count($a);
             for ($i=0; $i<$al; $i++)
             {
-                if ( is_string($a[ $i ]) )
+                if ( 1 === $a[ $i ][ 0 ] )
                 {
-                    $b = explode($r, $a[ $i ]); $bl = count($b);
+                    $b = explode($r, $a[ $i ][ 1 ]); $bl = count($b);
                     if ( $bl > 1 )
                     {
                         for ($j=0; $j<$bl-1; $j++)
-                            $c = array_merge($c, array($b[$j], $s, $b[$j+1]));
+                        {
+                            $c[] = array(1, $b[$j]);
+                            $c[] = $s;
+                            $c[] = array(1, $b[$j+1]);
+                        }
                     }
                     else
                     {
-                        $c = array_merge($c, $b);
+                        $c[] = array(1, $b[0]);
                     }
                 }
                 else
                 {
-                    $c = array_merge($c, array($a[ $i ]));
+                    $c[] = $a[ $i ];
                 }
             }
             $a = $c;
@@ -52,16 +54,15 @@ class ContemplateInlineTpl
         return $a;
     }
     
-    public function __construct( $tpl='', $replacements=array(), $split_args=false ) 
+    public function __construct( $tpl='', $replacements=array() ) 
     {
-        $this->split_args = (bool)$split_args;
         $this->tpl = self::multisplit( $tpl, (array)$replacements );
     }
     
     public function dispose( ) 
     {
-        $this->split_args = null;
         $this->tpl = null;
+        $this->id = null;
         return $this;
     }
     
@@ -74,15 +75,112 @@ class ContemplateInlineTpl
         $out = array( );
         for ($i=0; $i<$l; $i++)
         {
-            $s = $tpl[ $i ];
-            if ( is_string($s) ) $out[ ] = $s;
-            else if ( is_string($s[0]) ) $out[ ] = $args[ $s[ 0 ] ];
-            else $out[ ] = 0 > $s[0] ? $args[ $argslen+$s[ 0 ] ] : $args[ $s[ 0 ] ];
+            $notIsSub = $tpl[ $i ][ 0 ]; $s = $tpl[ $i ][ 1 ];
+            if ( $notIsSub ) $out[ ] = $s;
+            else $out[ ] = (is_string($s) || $s>=0) ? $args[ $s ] : $args[ $argslen+$s ];
         }
         return implode('', $out);
     }
 }
+class ContemplateTpl
+{ 
+    public $id = null;
+    public $d = null;
+    protected $_extends = null;
+    protected $_blocks = null;
+    protected $_renderer = null;
     
+    
+    public function __construct( $id=null )
+    {
+        /* initialize internal vars */
+        $this->id = null; 
+        $this->d = null;
+        $this->_renderer = null;
+        $this->_extends = null;
+        $this->_blocks = null;
+        if ( $id ) 
+        { 
+            $this->id = $id; 
+        }
+    }
+    
+    public function dispose( ) 
+    {
+        $this->_extends = null;
+        $this->_blocks = null;
+        $this->_renderer = null;
+        $this->d = null;
+        $this->id = null;
+        return $this;
+    }
+    
+    public function setId( $id=null ) 
+    { 
+        if ( $id ) $this->id = $id; 
+        return $this; 
+    }
+    
+    public function extend( $tpl ) 
+    { 
+        if ( $tpl && is_string($tpl) )
+            $this->_extends = Contemplate::tpl( $tpl );
+        else
+            $this->_extends = $tpl; 
+        return $this; 
+    }
+    
+    public function setBlocks( $blocks ) 
+    { 
+        if ( !$this->_blocks ) $this->_blocks = array(); 
+        $this->_blocks = Contemplate::merge( $this->_blocks, $blocks ); 
+        return $this; 
+    }
+    
+    public function setRenderFunction( $renderFunc=null ) 
+    { 
+        if ( $renderFunc ) $this->_renderer = $renderFunc; 
+        return $this; 
+    }
+    
+    public function renderBlock( $block, $__i__=null )
+    {
+        if ( !$__i__ ) $__i__ = $this;
+        
+        if ( $this->_blocks && isset($this->_blocks[$block]) ) 
+        {
+            $blockfunc = $this->_blocks[$block]; 
+            return $blockfunc( $__i__ );
+        }
+        elseif ( $this->_extends ) 
+        {
+            return $this->_extends->renderBlock($block, $__i__);
+        }
+        return '';
+    }
+    
+    public function render( $data, $__i__=null ) 
+    {
+        $__p__ = ''; 
+        if ( !$__i__ ) $__i__ = $this;
+        
+        if ( $this->_extends ) 
+        { 
+            $__p__ = $this->_extends->render($data, $__i__); 
+        }
+        elseif ( $this->_renderer )
+        {
+            /* dynamic function */
+            $__i__->d =& $data; 
+            $renderer = $this->_renderer;
+            $__p__ = $renderer( $__i__ );
+        }
+        
+        $this->d = null;
+        return $__p__;
+    }
+}
+
 class Contemplate
 {
     const VERSION = "0.7";
@@ -162,100 +260,17 @@ class Contemplate
     
     //
     //
-    // instance properties (when no caching is used)
-    public $id = null;
-    public $d = null;
-    protected $_renderFunction = null;
-    protected $_extends = null;
-    protected $_blocks = null;
-    
-    
     //
-    //  Instance template methods
-    //
-    public function __construct( $id=null, $renderFunc=null )
+    
+    public static function ContemplateTpl( $id=null )
     {
-        $this->id = null; 
-        $this->d = null; 
-        $this->_renderFunction = null; 
-        $this->_extends = null; 
-        $this->_blocks = null;
-        if ( $id ) 
-        { 
-            $this->id = $id; 
-            $this->_renderFunction = $renderFunc; 
-        }
+        return new ContemplateTpl( $id );
     }
     
-    public function setId( $id=null ) 
-    { 
-        if ( $id ) $this->id = $id; 
-        return $this; 
-    }
-    
-    public function extend( $tpl ) 
-    { 
-        if ( $tpl && is_string($tpl) )
-            $this->_extends = Contemplate::tpl( $tpl );
-        else
-            $this->_extends = $tpl; 
-        return $this; 
-    }
-    
-    public function setBlocks( $blocks ) 
-    { 
-        if ( !$this->_blocks ) $this->_blocks = array(); 
-        $this->_blocks = self::merge( $this->_blocks, $blocks ); 
-        return $this; 
-    }
-    
-    public function setRenderFunction( $renderFunc=null ) 
-    { 
-        if ( $renderFunc ) $this->_renderFunction = $renderFunc; 
-        return $this; 
-    }
-    
-    public function renderBlock( $block, $__i__=null )
+    public static function ContemplateInlineTpl( $tpl, $reps=array() )
     {
-        if ( !$__i__ ) $__i__ = $this;
-        
-        if ( $this->_blocks && isset($this->_blocks[$block]) ) 
-        {
-            $blockfunc = $this->_blocks[$block]; 
-            return $blockfunc( $__i__ );
-        }
-        elseif ( $this->_extends ) 
-        {
-            return $this->_extends->renderBlock($block, $__i__);
-        }
-        
-        return '';
+        return new ContemplateInlineTpl( $tpl, $reps );
     }
-    
-    public function render( $data, $__i__=null ) 
-    {
-        $__p__ = ''; 
-        if ( !$__i__ ) $__i__ = $this;
-        
-        if ( $this->_extends ) 
-        { 
-            $__p__ = $this->_extends->render($data, $__i__); 
-        }
-        elseif ( $this->_renderFunction )
-        {
-            /* dynamic function */
-            $__i__->d =& $data; 
-            $renderFunction = $this->_renderFunction;  
-            $__p__ = $renderFunction( $__i__ );
-        }
-        
-        $this->d = null;
-        return $__p__;
-    }
-    
-    //
-    //
-    //
     
     public static function init( )
     {
@@ -436,8 +451,15 @@ class Contemplate
     }
         
     // return the requested template (with optional data)
-    public static function tpl( $id, $data=null, $options=array() )
+    public static function tpl( $tpl, $data=null, $options=array() )
     {
+        if ( $tpl instanceof ContemplateTpl )
+        {
+            // Provide some basic currying to the user
+            if ( is_array( $data ) )  return $tpl->render( $data );
+            else  return $tpl;
+        }
+        
         $options = array_merge(array(
             'autoUpdate'=> false,
             'refresh'=> false,
@@ -450,17 +472,17 @@ class Contemplate
         
         // Figure out if we're getting a template, or if we need to
         // load the template - and be sure to cache the result.
-        if ( $options['refresh'] || !isset(self::$__cache[ $id ]) ) 
+        if ( $options['refresh'] || !isset(self::$__cache[ $tpl ]) ) 
         {
             // load/parse required tpl (and any associated tpl)
-            self::$__cache[ $id ] = self::getCachedTemplate( $id, $options );
+            self::$__cache[ $tpl ] = self::getCachedTemplate( $tpl, $options );
         }
         
-        $tpl = self::$__cache[ $id ];
+        $tmpl = self::$__cache[ $tpl ];
         
         // Provide some basic currying to the user
-        if ( is_array( $data ) )  return $tpl->render( $data );
-        else  return $tpl;
+        if ( is_array( $data ) )  return $tmpl->render( $data );
+        else  return $tmpl;
     }
     
     //
@@ -1613,12 +1635,12 @@ class Contemplate
     
     private static function getCachedTemplateName( $id ) 
     { 
-        return self::$__cacheDir . str_replace(array('-', ' '), '_', $id) . '_tpl.php'; 
+        return self::$__cacheDir . preg_replace('/[\\W]+/', '_', $id) . '_tpl.php'; 
     }
     
     private static function getCachedTemplateClass( $id ) 
     { 
-        return 'Contemplate_' . str_replace(array('-', ' '), '_', $id) . '_Cached';  
+        return 'Contemplate_' .  preg_replace('/[\\W]+/', '_', $id) . '_Cached';  
     }
     
     private static function createTemplateRenderFunction( $id, $seps=null )
@@ -1715,7 +1737,7 @@ class Contemplate
             {
                 // dynamic in-memory caching during page-request
                 //return new Contemplate($id, self::createTemplateRenderFunction($id));
-                $tpl = new Contemplate(); $tpl->setId( $id );
+                $tpl = new ContemplateTpl(); $tpl->setId( $id );
                 if ( isset($options['parsed']) && is_string($options['parsed']) )
                 {
                     // already parsed code was given
@@ -1774,7 +1796,7 @@ class Contemplate
                 {
                     // dynamic in-memory caching during page-request
                     //return new Contemplate($id, self::createTemplateRenderFunction($id));
-                    $tpl = new Contemplate();
+                    $tpl = new ContemplateTpl();
                     $tpl->setId( $id );
                     $fns = self::createTemplateRenderFunction($id, $options['separators']);
                     $tpl->setRenderFunction( $fns[0] ); 
@@ -1875,15 +1897,15 @@ class Contemplate
             ,"/* Contemplate cached template '"), $r['TPLID'], self::j("' */"
             ,"if (!class_exists('"), $r['CLASSNAME'], self::j("'))"
             ,"{"
-            ,"final class "), $r['CLASSNAME'], self::j(" extends Contemplate"
+            ,"final class "), $r['CLASSNAME'], self::j(" extends ContemplateTpl"
             ,"{    "
             ,"    /* constructor */"
-            ,"    public function __construct(\$id=null, \$__=null)"
+            ,"    public function __construct(\$id=null)"
             ,"    {"
             ,"        /* initialize internal vars */"
             ,"        \$this->id = null; "
             ,"        \$this->d = null;"
-            ,"        \$this->_renderFunction = null;"
+            ,"        \$this->_renderer = null;"
             ,"        \$this->_extends = null;"
             ,"        \$this->_blocks = null;"
             ,"        "
@@ -1898,18 +1920,16 @@ class Contemplate
             ,""), $r['BLOCKS'], self::j(""
             ,"    /* tpl-defined blocks render code ends here */"
             ,"    "
-            ,"    /* render a tpl block method */"
-            ,"    public function renderBlock(\$block, \$__i__=null)"
+            ,"    /* tpl renderBlock method */"
+            ,"    public function renderBlock( \$block, \$__i__=null )"
             ,"    {"
+            ,"        \$__p__ = '';"
             ,"        if ( !\$__i__ ) \$__i__ = \$this;"
             ,"        "
             ,"        \$method = '_blockfn_' . \$block;"
-            ,"        "
             ,"        if ( method_exists(\$this, \$method) ) return \$this->{\$method}(\$__i__);"
-            ,"        "
             ,"        elseif ( \$this->_extends ) return \$this->_extends->renderBlock(\$block, \$__i__);"
-            ,"        "
-            ,"        return '';"
+            ,"        return \$__p__;"
             ,"    }"
             ,"    "
             ,"    /* tpl render method */"

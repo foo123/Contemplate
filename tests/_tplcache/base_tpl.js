@@ -104,8 +104,8 @@
     };
     
     
-    /* extends main Contemplate.Tpl class */
-    Contemplate_base_Cached.prototype = Object.create(Contemplate.Tpl.prototype);
+    /* extends main Contemplate.Template class */
+    Contemplate_base_Cached.prototype = Object.create(Contemplate.Template.prototype);
     /* tpl render method */
     Contemplate_base_Cached.prototype.render = function( data, __i__ ) {
         if ( !__i__ ) __i__ = this;

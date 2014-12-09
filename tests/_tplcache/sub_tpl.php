@@ -3,7 +3,7 @@
 /* Contemplate cached template 'sub' */
 if (!class_exists('Contemplate_sub_Cached'))
 {
-final class Contemplate_sub_Cached extends ContemplateTpl
+final class Contemplate_sub_Cached extends ContemplateTemplate
 {    
     /* constructor */
     public function __construct($id=null)

@@ -14,10 +14,11 @@ if (!class_exists('Contemplate'))
 {
 
 // can use inline templates for plugins etc.. to enable non-linear plugin compile-time replacement
-class ContemplateInlineTpl
+class ContemplateInlineTemplate
 { 
     public $id = null;
     public $tpl = '';
+    private $_renderer = null;
     
     public static function multisplit( $tpl, $reps ) 
     {
@@ -54,20 +55,49 @@ class ContemplateInlineTpl
         return $a;
     }
     
-    public function __construct( $tpl='', $replacements=array() ) 
+    public static function compile( $tpl ) 
     {
+        $l = count($tpl);
+        $out = 'return ';
+        for ($i=0; $i<$l; $i++)
+        {
+            $notIsSub = $tpl[ $i ][ 0 ]; $s = $tpl[ $i ][ 1 ];
+            if ( $notIsSub ) $out .= "'" . preg_replace('/\\n/', "' . \"\\n\" . '", preg_replace("/'/", "\\'", $s)) . "'";
+            else $out .= " . \$args['" . $s . "'] . ";
+        }
+        $out .= ';';
+        return create_function('$args', $out);
+    }
+    
+    public function __construct( $tpl='', $replacements=null, $compiled=true ) 
+    {
+        if ( !$replacements ) $replacements = array();
+        $this->id = null;
+        $this->_renderer = null;
         $this->tpl = self::multisplit( $tpl, (array)$replacements );
+        if ( false !== $compiled )
+        {
+            $this->_renderer = self::compile( $this->tpl );
+        }
     }
     
     public function dispose( ) 
     {
-        $this->tpl = null;
         $this->id = null;
+        $this->tpl = null;
+        $this->_renderer = null;
         return $this;
     }
     
-    public function render( $args=array() ) 
+    public function render( $args=null ) 
     {
+        if ( !$args ) $args = array();
+        if ( $this->_renderer )
+        {
+            $renderer = $this->_renderer;
+            return $renderer( $args );
+        }
+        
         $tpl =& $this->tpl; 
         $l = count($tpl);
         $args = (array)$args;
@@ -77,12 +107,13 @@ class ContemplateInlineTpl
         {
             $notIsSub = $tpl[ $i ][ 0 ]; $s = $tpl[ $i ][ 1 ];
             if ( $notIsSub ) $out[ ] = $s;
-            else $out[ ] = (is_string($s) || $s>=0) ? $args[ $s ] : $args[ $argslen+$s ];
+            //else $out[ ] = (is_string($s) || $s>=0) ? $args[ $s ] : $args[ $argslen+$s ];
+            else $out[ ] = $args[ $s ];
         }
         return implode('', $out);
     }
 }
-class ContemplateTpl
+class ContemplateTemplate
 { 
     public $id = null;
     public $d = null;
@@ -262,14 +293,14 @@ class Contemplate
     //
     //
     
-    public static function ContemplateTpl( $id=null )
+    public static function Template( $id=null )
     {
-        return new ContemplateTpl( $id );
+        return new ContemplateTemplate( $id );
     }
     
-    public static function ContemplateInlineTpl( $tpl, $reps=array() )
+    public static function InlineTemplate( $tpl, $reps=array(), $compiled=true )
     {
-        return new ContemplateInlineTpl( $tpl, $reps );
+        return new ContemplateInlineTemplate( $tpl, $reps, $compiled );
     }
     
     public static function init( )
@@ -453,7 +484,7 @@ class Contemplate
     // return the requested template (with optional data)
     public static function tpl( $tpl, $data=null, $options=array() )
     {
-        if ( $tpl instanceof ContemplateTpl )
+        if ( $tpl instanceof ContemplateTemplate )
         {
             // Provide some basic currying to the user
             if ( is_array( $data ) )  return $tpl->render( $data );
@@ -490,10 +521,10 @@ class Contemplate
     //
     
     // inline tpls, both inside Contemplate templates (i.e as parameters) and in code
-    public static function inline( $tpl, $reps=array() )
+    public static function inline( $tpl, $reps=array(), $compiled=true )
     {
-        if ( $tpl && ($tpl instanceof ContemplateInlineTpl) ) return $tpl->render( (array)$reps );
-        return new ContemplateInlineTpl( $tpl, $reps );
+        if ( $tpl && ($tpl instanceof ContemplateInlineTemplate) ) return $tpl->render( (array)$reps );
+        return new ContemplateInlineTemplate( $tpl, $reps, $compiled );
     }
     
     // check if (nested) keys exist in tpl variable
@@ -709,14 +740,14 @@ class Contemplate
         
         if ( $hasRowTpl )
         {
-            if ( !($options['tpl_row'] instanceof ContemplateInlineTpl) )
-                $options['tpl_row'] = new ContemplateInlineTpl($options['tpl_row'], array('$odd'=>'odd','$row'=>'row'));
+            if ( !($options['tpl_row'] instanceof ContemplateInlineTemplate) )
+                $options['tpl_row'] = new ContemplateInlineTemplate($options['tpl_row'], array('$odd'=>'odd','$row'=>'row'));
             $rowTpl = $options['tpl_row'];
         }
         if ( $hasCellTpl )
         {
-            if ( !($options['tpl_cell'] instanceof ContemplateInlineTpl) )
-                $options['tpl_cell'] = new ContemplateInline($options['tpl_cell'], array('$cell'=>'cell'));
+            if ( !($options['tpl_cell'] instanceof ContemplateInlineTemplate) )
+                $options['tpl_cell'] = new ContemplateInlineTemplate($options['tpl_cell'], array('$cell'=>'cell'));
             $cellTpl = $options['tpl_cell'];
         }
             
@@ -814,8 +845,8 @@ class Contemplate
         
         if ( $hasOptionTpl )
         {
-            if ( !($options['tpl_option'] instanceof ContemplateInlineTpl) )
-                $options['tpl_option'] = new ContemplateInlineTpl($options['tpl_option'], array('$selected'=>'selected','$value'=>'value','$option'=>'option'));
+            if ( !($options['tpl_option'] instanceof ContemplateInlineTemplate) )
+                $options['tpl_option'] = new ContemplateInlineTemplate($options['tpl_option'], array('$selected'=>'selected','$value'=>'value','$option'=>'option'));
             $optionTpl = $options['tpl_option'];
         }
             
@@ -1456,9 +1487,9 @@ class Contemplate
         {
             $pl = self::$__plugins[$plugin];
             
-            if ( $pl instanceof ContemplateInlineTpl )
+            if ( $pl instanceof ContemplateInlineTemplate )
             {
-                return $pl->render(array());
+                return $pl->render( );
             }
             else
             {
@@ -1737,7 +1768,7 @@ class Contemplate
             {
                 // dynamic in-memory caching during page-request
                 //return new Contemplate($id, self::createTemplateRenderFunction($id));
-                $tpl = new ContemplateTpl(); $tpl->setId( $id );
+                $tpl = new ContemplateTemplate(); $tpl->setId( $id );
                 if ( isset($options['parsed']) && is_string($options['parsed']) )
                 {
                     // already parsed code was given
@@ -1796,7 +1827,7 @@ class Contemplate
                 {
                     // dynamic in-memory caching during page-request
                     //return new Contemplate($id, self::createTemplateRenderFunction($id));
-                    $tpl = new ContemplateTpl();
+                    $tpl = new ContemplateTemplate();
                     $tpl->setId( $id );
                     $fns = self::createTemplateRenderFunction($id, $options['separators']);
                     $tpl->setRenderFunction( $fns[0] ); 
@@ -1897,7 +1928,7 @@ class Contemplate
             ,"/* Contemplate cached template '"), $r['TPLID'], self::j("' */"
             ,"if (!class_exists('"), $r['CLASSNAME'], self::j("'))"
             ,"{"
-            ,"final class "), $r['CLASSNAME'], self::j(" extends ContemplateTpl"
+            ,"final class "), $r['CLASSNAME'], self::j(" extends ContemplateTemplate"
             ,"{    "
             ,"    /* constructor */"
             ,"    public function __construct(\$id=null)"

@@ -10,7 +10,7 @@
 def __getTplClass__(Contemplate):
 
     # extends the main Contemplate class
-    class Contemplate_main_Cached(Contemplate.Tpl):
+    class Contemplate_main_Cached(Contemplate.Template):
         'Contemplate cached template main'
 
         # constructor

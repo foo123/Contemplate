@@ -36,7 +36,7 @@
         
     "use strict";
     
-    var __version__ = "0.7", Contemplate, Tpl, InlineTpl, 
+    var __version__ = "0.7", Contemplate, Template, InlineTemplate, 
     
         // auxilliaries
         PROTO = 'prototype', HAS = 'hasOwnProperty', 
@@ -1593,7 +1593,7 @@
             if ( plugin && $__plugins[HAS](plugin) )
             {
                 var pl = $__plugins[ plugin ];
-                return (pl instanceof Contemplate.InlineTpl) ? pl.render( [] ) : pl;
+                return (pl instanceof Contemplate.InlineTemplate) ? pl.render( ) : pl;
             }
             return ('Contemplate.' + func);
         },
@@ -1856,13 +1856,13 @@
                     if ( options.parsed )
                     {
                         // already parsed code was given
-                        tpl = Contemplate.Tpl( id, FUNC("Contemplate,__i__", options.parsed) );
+                        tpl = Contemplate.Template( id, FUNC("Contemplate,__i__", options.parsed) );
                     }
                     else
                     {
                         // parse code and create template class
                         funcs = createTemplateRenderFunction( id, options.separators ); 
-                        tpl = Contemplate.Tpl( id, funcs[ 0 ] ).setBlocks( funcs[ 1 ] );
+                        tpl = Contemplate.Template( id, funcs[ 0 ] ).setBlocks( funcs[ 1 ] );
                     }
                     if ($__extends) tpl.extend( Contemplate.tpl($__extends) );
                     return tpl;
@@ -1920,7 +1920,7 @@
                     {    
                         // dynamic in-memory caching during page-request
                         var funcs = createTemplateRenderFunction( id, options.separators ), 
-                            tpl = Contemplate.Tpl( id, funcs[ 0 ] ).setBlocks( funcs[1] );
+                            tpl = Contemplate.Template( id, funcs[ 0 ] ).setBlocks( funcs[1] );
                         if ($__extends) tpl.extend( Contemplate.tpl($__extends) );
                         return tpl;
                     }
@@ -1986,8 +1986,8 @@
                 ,"    };"
                 ,"    "
                 ,"    "
-                ,"    /* extends main Contemplate.Tpl class */"
-                ,"    "), r['CLASSNAME'], j(".prototype = Object.create(Contemplate.Tpl.prototype);"
+                ,"    /* extends main Contemplate.Template class */"
+                ,"    "), r['CLASSNAME'], j(".prototype = Object.create(Contemplate.Template.prototype);"
                 ,"    /* tpl render method */"
                 ,"    "), r['CLASSNAME'], j(".prototype.render = function( data, __i__ ) {"
                 ,"        if ( !__i__ ) __i__ = this;"
@@ -2198,11 +2198,17 @@
     */
     
     // can use inline templates for plugins etc.. to enable non-linear plugin compile-time replacement
-    InlineTpl = function InlineTpl( tpl, replacements ) {
-        if ( !(this instanceof InlineTpl) ) return new InlineTpl(tpl, replacements);
-        this.tpl = InlineTpl.multisplit( tpl||'', replacements||{} );
+    InlineTemplate = function InlineTemplate( tpl, replacements, compiled ) {
+        if ( !(this instanceof InlineTemplate) ) return new InlineTemplate(tpl, replacements);
+        this.id = null;
+        this._renderer = null;
+        this.tpl = InlineTemplate.multisplit( tpl||'', replacements||{} );
+        if ( false !== compiled )
+        {
+            this._renderer = InlineTemplate.compile( this.tpl );
+        }
     };
-    InlineTpl.multisplit = function multisplit( tpl, reps ) {
+    InlineTemplate.multisplit = function multisplit( tpl, reps ) {
         var r, s, i, j, a, b, c, al, bl;
         a = [ [1, tpl] ];
         for ( r in reps )
@@ -2239,35 +2245,55 @@
         }
         return a;
     };
-    InlineTpl[PROTO] = {
-        constructor: InlineTpl
+    InlineTemplate.compile = function( tpl ) {
+        var l = tpl.length, 
+            i, notIsSub, s, out = 'return ';
+        ;
+        
+        for (i=0; i<l; i++)
+        {
+            notIsSub = tpl[ i ][ 0 ]; s = tpl[ i ][ 1 ];
+            if ( notIsSub ) out += "'" + s.replace(/'/g, "\\'").replace(/\n/g, "' + \"\\n\" + '") + "'";
+            else out += " + String(args['" + s + "']) + ";
+        }
+        out += ';';
+        return FUNC('args', out);
+    };
+    InlineTemplate[PROTO] = {
+        constructor: InlineTemplate
         
         ,id: null
         ,tpl: null
+        ,_renderer: null
         
         ,dispose: function( ) {
-            this.tpl = null;
             this.id = null;
+            this.tpl = null;
+            this._renderer = null;
             return this;
         }
         ,render: function( args ) {
-            var tpl = this.tpl, l = tpl.length, argslen, 
+            args = args || [ ];
+            
+            if ( this._renderer ) return this._renderer( args );
+            
+            var tpl = this.tpl, l = tpl.length, argslen = args.length, 
                 i, notIsSub, s, out = new Array( l )
             ;
-            args = args || [ ]; argslen = args.length;
             
             for (i=0; i<l; i++)
             {
                 notIsSub = tpl[ i ][ 0 ]; s = tpl[ i ][ 1 ];
                 if ( notIsSub ) out[ i ] = s;
-                else out[ i ] = (s.substr || s>=0) ? args[ s ] : args[ argslen+s ];
+                //else out[ i ] = (s.substr || s>=0) ? args[ s ] : args[ argslen+s ];
+                else out[ i ] = args[ s ];
             }
             return out.join('');
         }
     };
     
-    Tpl = function Tpl( id, renderFunc ) {
-        if ( !(this instanceof Tpl) ) return new Tpl( id, renderFunc );
+    Template = function Template( id, renderFunc ) {
+        if ( !(this instanceof Template) ) return new Template( id, renderFunc );
         this.id = null;  this.d = null;
         if ( id ) 
         { 
@@ -2275,8 +2301,8 @@
             this._renderer = renderFunc; 
         }
     };
-    Tpl[PROTO] = {
-        constructor: Tpl
+    Template[PROTO] = {
+        constructor: Template
         ,id: null
         ,d: null
         
@@ -2359,8 +2385,8 @@
         
         ENCODING: 'utf8',
         
-        Tpl: Tpl,
-        InlineTpl: InlineTpl,
+        Template: Template,
+        InlineTemplate: InlineTemplate,
         
         init: function( ) {
             if ( $__isInited ) return;
@@ -2393,7 +2419,7 @@
         addPlugin: function( name, pluginCode ) {
             if ( name && pluginCode )
             {
-                if ( pluginCode instanceof Contemplate.InlineTpl )
+                if ( pluginCode instanceof Contemplate.InlineTemplate )
                 {
                     $__plugins[ name ] = pluginCode;
                 }
@@ -2531,7 +2557,7 @@
         
         // return the requested template (with optional data)
         tpl: function( tpl, data, options ) {
-            if ( tpl instanceof Contemplate.Tpl )
+            if ( tpl instanceof Contemplate.Template )
             {
                 // Provide some basic currying to the user
                 return ( "object" === typeof data ) ? tpl.render( data ) : tpl;
@@ -2564,8 +2590,10 @@
         //
         
         // inline tpls, both inside Contemplate templates (i.e as parameters) and in code
-        inline: function( tpl, reps ) {
-            return (tpl instanceof Contemplate.InlineTpl) ? tpl.render( reps||[] ) : Contemplate.InlineTpl(tpl, reps||{});
+        inline: function( tpl, reps, compiled ) {
+            return (tpl instanceof Contemplate.InlineTemplate) 
+                ? tpl.render( reps ) 
+                : Contemplate.InlineTemplate(tpl, reps, compiled);
         },
         
         // haskey, has_key, check if (nested) keys exist in tpl variable
@@ -2753,14 +2781,14 @@
             
             if ( hasRowTpl )
             {
-                if ( !(options['tpl_row'] instanceof Contemplate.InlineTpl) )
-                    options['tpl_row'] = Contemplate.InlineTpl(options['tpl_row'], {'$row_class':'row_class','$row':'row'});
+                if ( !(options['tpl_row'] instanceof Contemplate.InlineTemplate) )
+                    options['tpl_row'] = Contemplate.InlineTemplate(options['tpl_row'], {'$row_class':'row_class','$row':'row'});
                 rowTpl = options['tpl_row'];
             }
             if ( hasCellTpl )
             {
-                if ( !(options['tpl_cell'] instanceof Contemplate.InlineTpl) )
-                    options['tpl_cell'] = Contemplate.InlineTpl(options['tpl_cell'], {'$cell':'cell'});
+                if ( !(options['tpl_cell'] instanceof Contemplate.InlineTemplate) )
+                    options['tpl_cell'] = Contemplate.InlineTemplate(options['tpl_cell'], {'$cell':'cell'});
                 cellTpl = options['tpl_cell'];
             }
             
@@ -2857,8 +2885,8 @@
             
             if ( hasOptionTpl )
             {
-                if ( !(options['tpl_option'] instanceof Contemplate.InlineTpl) )
-                    options['tpl_option'] = new Contemplate.InlineTpl(options['tpl_option'], {'$selected':'selected','$value':'value','$option':'option'});
+                if ( !(options['tpl_option'] instanceof Contemplate.InlineTemplate) )
+                    options['tpl_option'] = new Contemplate.InlineTemplate(options['tpl_option'], {'$selected':'selected','$value':'value','$option':'option'});
                 optionTpl = options['tpl_option'];
             }
             

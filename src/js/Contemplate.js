@@ -760,10 +760,10 @@
     
         $__uuid = 0,
         
-        UNDERLN = /[\W]+/g, NEWLINE = /\n\r|\r\n|\n|\r/g,
+        UNDERLN = /[\W]+/g, NEWLINE = /\n\r|\r\n|\n|\r/g, SQUOTE = /'/g,
         ALPHA = /^[a-zA-Z_]/, NUM = /^[0-9]/, ALPHANUM = /^[a-zA-Z0-9_]/i, SPACE = /^\s/,
         
-        re_amp = /&/g, re_lt = /</g, re_gt = />/g, re_quot = /"/g, re_quot_s = /'/g,
+        re_amp = /&/g, re_lt = /</g, re_gt = />/g, re_quot = /"/g, re_quot_s = SQUOTE,
         
         $__regExps = {
             'specials' : null,
@@ -2199,7 +2199,7 @@
     
     // can use inline templates for plugins etc.. to enable non-linear plugin compile-time replacement
     InlineTemplate = function InlineTemplate( tpl, replacements, compiled ) {
-        if ( !(this instanceof InlineTemplate) ) return new InlineTemplate(tpl, replacements);
+        if ( !(this instanceof InlineTemplate) ) return new InlineTemplate(tpl, replacements, compiled);
         this.id = null;
         this._renderer = null;
         this.tpl = InlineTemplate.multisplit( tpl||'', replacements||{} );
@@ -2253,7 +2253,7 @@
         for (i=0; i<l; i++)
         {
             notIsSub = tpl[ i ][ 0 ]; s = tpl[ i ][ 1 ];
-            if ( notIsSub ) out += "'" + s.replace(/'/g, "\\'").replace(/\n/g, "' + \"\\n\" + '") + "'";
+            if ( notIsSub ) out += "'" + s.replace(SQUOTE, "\\'").replace(NEWLINE, "' + \"\\n\" + '") + "'";
             else out += " + String(args['" + s + "']) + ";
         }
         out += ';';

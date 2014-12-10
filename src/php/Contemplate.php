@@ -62,7 +62,7 @@ class ContemplateInlineTemplate
         for ($i=0; $i<$l; $i++)
         {
             $notIsSub = $tpl[ $i ][ 0 ]; $s = $tpl[ $i ][ 1 ];
-            if ( $notIsSub ) $out .= "'" . preg_replace('/\\n/', "' . \"\\n\" . '", preg_replace("/'/", "\\'", $s)) . "'";
+            if ( $notIsSub ) $out .= "'" . preg_replace(Contemplate::$NEWLINE, "' . \"\\n\" . '", preg_replace(Contemplate::$SQUOTE, "\\'", $s)) . "'";
             else $out .= " . \$args['" . $s . "'] . ";
         }
         $out .= ';';
@@ -220,10 +220,12 @@ class Contemplate
     const CACHE_TO_DISK_AUTOUPDATE = 2;
     const CACHE_TO_DISK_NOUPDATE = 4;
     
-    private static $ALPHA = '/^[a-zA-Z_]/';
-    private static $NUM = '/^[0-9]/';
-    private static $ALPHANUM = '/^[a-zA-Z0-9_]/';
-    private static $SPACE = '/^\\s/';
+    public static $ALPHA = '/^[a-zA-Z_]/';
+    public static $NUM = '/^[0-9]/';
+    public static $ALPHANUM = '/^[a-zA-Z0-9_]/';
+    public static $SPACE = '/^\\s/';
+    public static $NEWLINE = '/\\n\\r|\\r\\n|\\n|\\r/';
+    public static $SQUOTE = "/'/";
     
     private static $__isInited = false;
     private static $__cacheDir = './';
@@ -1894,14 +1896,14 @@ class Contemplate
     {
         if ( null === $level )  $level = self::$__level;
         
-        $NLRX = '/\n\r|\r\n|\n|\r/';
+        //$NLRX = '/\n\r|\r\n|\n|\r/';
         
         if ($level>=0)
         {
             //$pad=implode("", array_fill(0, $level, "    "));
             $pad = str_repeat(self::$__pad, $level);
             
-            $lines = preg_split($NLRX, $lines);
+            $lines = preg_split(self::$NEWLINE, $lines);
             
             foreach ($lines as $i=>$line)
             {   

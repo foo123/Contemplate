@@ -114,6 +114,7 @@ class _G:
     uuid = 0
 
     NEWLINE = None
+    SQUOTE = None
     NL = None
 
     UNDERL = r'[\W]+'
@@ -199,7 +200,7 @@ class InlineTemplate:
         
             notIsSub = s[ 0 ] 
             s = s[ 1 ]
-            if notIsSub: out += "'" + re.sub(r'\n', "' + \"\\n\" + '", re.sub(r"'", "\\'", s)) + "'"
+            if notIsSub: out += "'" + re.sub(_G.NEWLINE, "' + \"\\n\" + '", re.sub(_G.SQUOTE, "\\'", s)) + "'"
             else: out += " + str(args['" + s + "']) + "
         
         out += ''
@@ -1713,6 +1714,7 @@ class Contemplate:
         _G.regExps['functions'] = re.compile(r'%(' + '|'.join(_G.funcs) + ')')
             
         _G.NEWLINE = re.compile(r'\n\r|\r\n|\n|\r')
+        _G.SQUOTE = re.compile(r"'")
         _G.NL = re.compile(r'\n')
         
         _G.UNDERL = re.compile( _G.UNDERL )

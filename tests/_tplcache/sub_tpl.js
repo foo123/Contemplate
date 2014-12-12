@@ -1,6 +1,5 @@
 
 !function (root, moduleName, moduleDefinition) {
-
     //
     // export the module
     // node, CommonJS, etc..
@@ -15,7 +14,6 @@
     return function( Contemplate ) {
     /* Contemplate cached template 'sub' */
     
-    
     /* constructor */
     function Contemplate_sub_Cached(id)
     {
@@ -27,17 +25,14 @@
         this.d = null;
         this.id = id;
         
-        
         /* tpl-defined blocks render code starts here */
         
         /* tpl-defined blocks render code ends here */
-        
         
         /* extend tpl assign code starts here */
         
         /* extend tpl assign code ends here */
     };
-    
     
     /* extends main Contemplate.Template class */
     Contemplate_sub_Cached.prototype = Object.create(Contemplate.Template.prototype);
@@ -54,35 +49,35 @@
             /* tpl main render code starts here */
             
             __i__.d = data;
-            __p__ += '<div>' + "\n" + '    <br />' + "\n" + '    <strong>Number of Items:' + ( Contemplate.count(data['users'][data['i']]) ) + '</strong>' + "\n" + '    <br />' + "\n" + '    ';
-            var _O42 = data['users'][data['i']], _OK43 = Contemplate.keys(_O42);
-            if (_OK43 && _OK43.length)
+            __p__ += '<div>' + "\n" + '    <br />' + "\n" + '    <strong>Number of Items:' + (Contemplate.count(data['users'][data['i']])) + '</strong>' + "\n" + '    <br />' + "\n" + '    ';
+            var _loc_7 = data['users'][data['i']], _loc_8 = Contemplate.keys(_loc_7),
+                _loc_9, _loc_j, _loc_user, _loc_10 = _loc_8 ? _loc_8.length : 0;
+            if (_loc_10)
             {
-                var _K44, _V46, _L45 = _OK43.length;
-                for (_K44=0; _K44<_L45; _K44++)
+                for (_loc_9=0; _loc_9<_loc_10; _loc_9++)
                 {
-                    data['j'] = _OK43[_K44]; data['user'] = _V46 = _O42[_OK43[_K44]];
+                    _loc_j = _loc_8[_loc_9]; _loc_user = _loc_7[_loc_j];
                     
                      
-                    __p__ += '' + "\n" + '        <div id=\'' + ( data['user']["id"] ) + '\' class="';        
-                    if (0 == (data['j'] % 2))
+                    __p__ += '' + "\n" + '        <div id=\'' + (_loc_user["id"]) + '\' class="';        
+                    if (0 == (_loc_j % 2))
                     {
                                  
                         __p__ += 'even';        
                     }
-                    else if (1 == (data['j'] % 2))
+                    else if (1 == (_loc_j % 2))
                     {
                                  
                         __p__ += 'odd';        
                     }
                              
-                    __p__ += '">' + "\n" + '            <a href="/' + ( data['user']["name"] ) + '">' + ( data['user']['name'] ) + '' + ( data['user']['text'] ) + ' ' + ( Contemplate.n(data['i']) + Contemplate.n(data['j']) ) + '</a>: <strong>' + ( data['user']["text"] ) + '</strong>' + "\n" + '        </div>' + "\n" + '        ';        
-                    if ( Contemplate.haskey(data['user'], "key1") )
+                    __p__ += '">' + "\n" + '            <a href="/' + (_loc_user["name"]) + '">' + (_loc_user['name']) + '' + (_loc_user['text']) + ' ' + (Contemplate.n(data['i']) + Contemplate.n(_loc_j)) + '</a>: <strong>' + (_loc_user["text"]) + '</strong>' + "\n" + '        </div>' + "\n" + '        ';        
+                    if ( Contemplate.haskey(_loc_user, "key1") )
                     {
                                  
                         __p__ += '' + "\n" + '            <div> User has key &quot;key1&quot; </div>' + "\n" + '        ';        
                     }
-                    else if ( Contemplate.haskey(data['user'], "key", "key1") )
+                    else if ( Contemplate.haskey(_loc_user, "key", "key1") )
                     {
                                  
                         __p__ += '' + "\n" + '            <div> User has key [&quot;key&quot;][&quot;key1&quot;] </div>' + "\n" + '        ';        
@@ -94,7 +89,7 @@
             else
             {  
                  
-                __p__ += '' + "\n" + '        <div class="none">' + ( Contemplate.l("No Users") ) + '</div>' + "\n" + '    ';
+                __p__ += '' + "\n" + '        <div class="none">' + (Contemplate.l("No Users")) + '</div>' + "\n" + '    ';
             }
              
             __p__ += '' + "\n" + '</div>' + "\n" + '';

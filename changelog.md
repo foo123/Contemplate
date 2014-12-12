@@ -1,5 +1,9 @@
 ###ChangeLog
 
+__0.7.1__
+* handle loop variables as local (block-scoped) variables (not added or accessed to/from passed data)
+* minor optimisations
+
 __0.7__
 * inline templates both in Contemplate templates (e.g as parameters to other functions) or in code
 * %inline template function, creates/renders inline templates

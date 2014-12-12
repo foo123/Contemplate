@@ -1,6 +1,5 @@
 
 !function (root, moduleName, moduleDefinition) {
-
     //
     // export the module
     // node, CommonJS, etc..
@@ -15,7 +14,6 @@
     return function( Contemplate ) {
     /* Contemplate cached template 'base' */
     
-    
     /* constructor */
     function Contemplate_base_Cached(id)
     {
@@ -26,7 +24,6 @@
         this._extends = null;
         this.d = null;
         this.id = id;
-        
         
         /* tpl-defined blocks render code starts here */
         
@@ -97,12 +94,10 @@
         
         /* tpl-defined blocks render code ends here */
         
-        
         /* extend tpl assign code starts here */
         
         /* extend tpl assign code ends here */
     };
-    
     
     /* extends main Contemplate.Template class */
     Contemplate_base_Cached.prototype = Object.create(Contemplate.Template.prototype);

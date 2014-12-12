@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.7
+#  @version 0.7.1
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -106,6 +106,9 @@ class _G:
     startblock = None 
     endblock = None 
     blockptr = -1
+    locals = None 
+    variables = None
+    currentblock = None
     
     extends = None
     id = 0
@@ -159,17 +162,19 @@ class InlineTemplate:
  
     def multisplit( tpl, reps=dict() ): 
     
+        isarray = isinstance(reps, (list,tuple))
         a = [ [1, tpl] ]
-        #items = reps.items() if isinstance(reps, dict) else enumerate(reps)
-        for r,s in reps.items():
+        items = enumerate(reps) if isarray else reps.items()
+        for r,s in items:
         
             c = [ ]
+            sr = s if isarray else r
             s = [ 0, s ]
             for ai in a:
             
                 if 1 == ai[0]:
                 
-                    b = ai[1].split( r ) 
+                    b = ai[1].split( sr ) 
                     bl = len(b)
                     if bl > 1:
                     
@@ -234,18 +239,14 @@ class InlineTemplate:
             return self._renderer( args )
         
         tpl = self.tpl
-        l = len(tpl)
-        argslen = len(args)
-        out = [ ]
+        out = ''
         for s in tpl:
         
             notIsSub = s[ 0 ] 
             s = s[ 1 ]
-            if notIsSub: out.append(str(s))
-            #else: out.append( str(args[ s ] if (isinstance(s,str) or s>=0) else args[ argslen+s ]))
-            else: out.append( str(args[ s ]) )
+            out = str(s) if notIsSub else str(args[ s ])
         
-        return ''.join(out)
+        return out
     
 
     
@@ -338,6 +339,37 @@ def resetState( ):
     _G.extends = None
     _G.level = 0
     _G.id = 0
+    
+    _G.locals = {} 
+    _G.variables = {} 
+    _G.currentblock = '_'
+    if not _G.currentblock in _G.locals: _G.locals[_G.currentblock] = {}
+    if not _G.currentblock in _G.variables: _G.variables[_G.currentblock] = {}
+    
+    #_G.funcId = 0
+
+
+def clearState( ):
+    # clear state
+    global _G
+
+    _G.loops = 0 
+    _G.ifs = 0 
+    _G.loopifs = 0
+    
+    _G.allblocks = []
+    _G.allblockscnt = {}
+    _G.openblocks = [[None, -1]]
+    
+    #_G.extends = None
+    _G.level = 0
+    
+    _G.locals = None 
+    _G.variables = None 
+    _G.currentblock = None
+    
+    _G.id = 0
+    _G.stack = []
     #_G.funcId = 0
 
 
@@ -346,7 +378,7 @@ def pushState( ):
     # push state
     global _G
     _G.stack.append([_G.loops, _G.ifs, _G.loopifs, _G.level,
-    _G.allblocks, _G.allblockscnt, _G.openblocks,  _G.extends])
+    _G.allblocks, _G.allblockscnt, _G.openblocks,  _G.extends, _G.locals, _G.variables, _G.currentblock])
 
 
 # static
@@ -364,6 +396,10 @@ def popState( ):
     _G.openblocks = t[6]
     
     _G.extends = t[7]
+    
+    _G.locals = t[8] 
+    _G.variables = t[9] 
+    _G.currentblock = t[10]
 
 
 # static
@@ -373,14 +409,7 @@ def padLines( lines, level=None ):
     
     if level >= 0:
         pad = _G.pad * level
-        
-        lines = re.split(_G.NEWLINE, lines)
-        lenlines = len(lines)
-        
-        for i in range(lenlines):
-            lines[i] = pad + lines[i]
-        
-        lines = _G.TEOL.join(lines)
+        lines = pad + ((_G.TEOL + pad).join( re.split(_G.NEWLINE, lines) ))
     
     return lines
 
@@ -513,9 +542,9 @@ def TT_FOR( r=None, t=2 ):
             j(""
             ,""), r['_O'], " = Contemplate.items(", r['O'], j(")"
             ,"if ("), r['_O'], j("):"
-            ,"    for "), r['_K'], ",", r['_V'], " in ", r['_O'], j(":"
-            ,"        "), r['ASSIGN1'], j(""
-            ,"        "), r['ASSIGN2'], j(""
+            ,"    for "), r['K'], ",", r['V'], " in ", r['_O'], j(":"
+            #,"        "), r['ASSIGN1'], j(""
+            #,"        "), r['ASSIGN2'], j(""
             ,"")
         ])
     else:
@@ -523,8 +552,8 @@ def TT_FOR( r=None, t=2 ):
             j(""
             ,""), r['_O'], " = Contemplate.values(", r['O'], j(")"
             ,"if ("), r['_O'], j("):"
-            ,"    for "), r['_V'], " in ", r['_O'], j(":"
-            ,"        "), r['ASSIGN1'], j(""
+            ,"    for "), r['V'], " in ", r['_O'], j(":"
+            #,"        "), r['ASSIGN1'], j(""
             ,"")
         ])
     
@@ -679,44 +708,38 @@ def t_for( for_expr ):
         for_expr = [for_expr[0:is_python_style], for_expr[is_python_style+4:]]
         o = for_expr[1].strip()
         _G.id += 1
-        _o = '_O' + str(_G.id)
+        _o = '_loc_' + str(_G.id)
         kv = for_expr[0].split(',')
     else: #if -1 < is_php_style
         for_expr = [for_expr[0:is_php_style], for_expr[is_php_style+4:]]
         o = for_expr[0].strip()
         _G.id += 1
-        _o = '_O' + str(_G.id)
+        _o = '_loc_' + str(_G.id)
         kv = for_expr[1].split('=>')
     isAssoc = (len(kv) >= 2)
     
     if isAssoc:
-        k = kv[0].strip() + '__RAW__'
-        v = kv[1].strip() + '__RAW__'
+        k = kv[0].strip()
+        v = kv[1].strip()
         
-        _G.id += 1
-        _k = '_K' + str(_G.id)
-        _G.id += 1
-        _v = '_V' + str(_G.id)
-        
+        _G.locals[_G.currentblock][_G.variables[_G.currentblock][k]] = 1
+        _G.locals[_G.currentblock][_G.variables[_G.currentblock][v]] = 1
         out = "' " + padLines( TT_FOR({
             'O': o, '_O': _o, 
-            'K': k, '_K': _k,
-            'V': v, '_V': _v,
-            'ASSIGN1': 'data[\''+k+'\'] = '+_k+'',
-            'ASSIGN2': 'data[\''+v+'\'] = '+_v+''
+            'K': k, 'V': v,
+            'ASSIGN1': '',
+            'ASSIGN2': ''
         }, 2) )
         _G.level += 2
     
     else:
-        v = kv[0].strip() + '__RAW__'
+        v = kv[0].strip()
         
-        _G.id += 1
-        _v = '_V' + str(_G.id)
-        
+        _G.locals[_G.currentblock][_G.variables[_G.currentblock][v]] = 1
         out = "' " + padLines( TT_FOR({
             'O': o, '_O': _o, 
-            'V': v, '_V': _v,
-            'ASSIGN1': 'data[\''+v+'\'] = '+_v+''
+            'V': v,
+            'ASSIGN1': ''
         }, 1) )
         _G.level += 2
     
@@ -948,9 +971,9 @@ def parseBlocks( s ):
         s = s[0:pos1] + rep + s[pos2+1:]
         if 1 <= _G.allblockscnt[ block ]: _G.allblockscnt[ block ] -= 1
     
-    _G.allblocks = None 
-    _G.allblockscnt = None 
-    _G.openblocks = None
+    #_G.allblocks = None 
+    #_G.allblockscnt = None 
+    #_G.openblocks = None
     
     return [ s, blocks ]
 
@@ -967,12 +990,12 @@ def parseString( s, q, i, l ):
     return string
 
 
-def parseVariable( s, i, l, pre='VARSTR' ):
+def parseVariable( s, i, l ):
     global _G
     
     if ( _G.ALPHA.match(s[i]) ):
     
-        cnt = 0
+        #cnt = 0
         strings = {}
         variables = []
         space = 0
@@ -989,7 +1012,10 @@ def parseVariable( s, i, l, pre='VARSTR' ):
         
         variable_raw = variable
         # transform into tpl variable
-        variable = "data['" + variable + "']"
+        variable_main = "data['" + variable_raw + "']"
+        variable_rest = ""
+        _G.id += 1
+        id = "__##VAR"+str(_G.id)+"##__"
         _len = len(variable_raw)
         
         # extra space
@@ -1029,7 +1055,7 @@ def parseVariable( s, i, l, pre='VARSTR' ):
                 if ( lp ):
                 
                     # transform into tpl variable bracketed property
-                    variable += "['" + property + "']"
+                    variable_rest += "['" + property + "']"
                     _len += space + 1 + lp
                     space = 0
                 
@@ -1050,10 +1076,10 @@ def parseVariable( s, i, l, pre='VARSTR' ):
                 if ( '"' == ch or "'" == ch ):
                 
                     property = parseString( s, ch, i+1, l )
-                    cnt += 1
-                    strid = "__##"+pre+str(cnt)+"##__"
-                    strings[ strid ] = property
-                    variable += delim + strid
+                    _G.id += 1
+                    strid = "__##STR"+str(_G.id)+"##__"
+                    strings[strid] = property
+                    variable_rest += delim + strid
                     lp = len(property)
                     i += lp
                     _len += space + 1 + lp
@@ -1070,7 +1096,7 @@ def parseVariable( s, i, l, pre='VARSTR' ):
                         property += s[i]
                         i += 1
                     
-                    variable += delim + property
+                    variable_rest += delim + property
                     lp = len(property)
                     _len += space + 1 + lp
                     space = 0
@@ -1080,13 +1106,13 @@ def parseVariable( s, i, l, pre='VARSTR' ):
                 elif ( '$' == ch ):
                 
                     sub = s[i+1:]
-                    subvariables = parseVariable(sub, 0, len(sub), pre + '_' + str(cnt) + '_');
+                    subvariables = parseVariable(sub, 0, len(sub));
                     if ( subvariables ):
                     
                         # transform into tpl variable property
                         property = subvariables[-1]
-                        variable += delim + property[0][0]
-                        lp = property[1]
+                        variable_rest += delim + property[0]
+                        lp = property[4]
                         i += lp + 1
                         _len += space + 2 + lp
                         space = 0
@@ -1100,7 +1126,7 @@ def parseVariable( s, i, l, pre='VARSTR' ):
                     if ( bracketcnt > 0 ):
                     
                         bracketcnt -= 1
-                        variable += delim + s[i]
+                        variable_rest += delim + s[i]
                         i += 1
                         _len += space + 2
                         space = 0
@@ -1130,7 +1156,7 @@ def parseVariable( s, i, l, pre='VARSTR' ):
                     if ( bracketcnt > 0 ):
                     
                         bracketcnt -= 1
-                        variable += s[i]
+                        variable_rest += s[i]
                         i += 1
                         _len += space + 1
                         space = 0
@@ -1150,7 +1176,7 @@ def parseVariable( s, i, l, pre='VARSTR' ):
             
         
         
-        variables.append( [[variable, variable_raw], _len, strings] )
+        variables.append( [id, variable_raw, variable_main, variable_rest, _len, strings] )
         return variables
     
     return None
@@ -1186,8 +1212,8 @@ def parse( tpl, withblocks=True ):
             index = 0
             ch = ''
             out = ''
-            cnt = 0
-            variables = {}
+            #cnt = 0
+            variables = []
             strings = {}
             while ( index < count ):
             
@@ -1200,9 +1226,9 @@ def parse( tpl, withblocks=True ):
                 if ( '"' == ch or "'" == ch ):
                 
                     tok = parseString( tag, ch, index, count )
-                    cnt += 1
-                    id = "__##STR" + str(cnt) + "##__"
-                    strings[ id ] = tok
+                    _G.id += 1
+                    id = "__##STR"+str(_G.id)+"##__"
+                    strings[id] = tok
                     out += id
                     index += len(tok)-1
                 
@@ -1210,15 +1236,15 @@ def parse( tpl, withblocks=True ):
                 elif ( '$' == ch ):
                 
                     tok = parseVariable(tag, index, count)
-                    if ( tok ):
+                    if tok:
                     
                         for tokv in tok:
-                            cnt += 1
-                            id = "__##VAR" + str(cnt) + "##__"
-                            variables[ id ] = tokv[ 0 ]
-                            strings.update( tokv[ 2 ] )
+                            id = tokv[ 0 ]
+                            _G.variables[_G.currentblock][ id ] = tokv[ 1 ]
+                            strings.update(tokv[ 5 ])
                         out += id
-                        index += tokv[ 1 ]
+                        index += tokv[ 4 ]
+                        variables = variables + tok
                     
                     else:
                     
@@ -1245,12 +1271,22 @@ def parse( tpl, withblocks=True ):
             
             tag = re.sub( _G.regExps['replacements'], r"' + str( \1 ) + '", tag )
             
-            for (id,variable) in variables.items():  
-                tag = tag.replace( id+'__RAW__', variable[1] )
-                tag = tag.replace( id, variable[0] )
+            # replace variables
+            for v in reversed(variables):
+                id = v[0]
+                varname = v[1]
+                tag = tag.replace( id+'__RAW__', varname )
+                if varname in _G.locals[_G.currentblock]: # local (loop) variable
+                    tag = tag.replace( id, '_loc_'+varname+v[3] )
+                else: # default (data) variable
+                    tag = tag.replace( id, v[2]+v[3] )
             
-            for (id,string) in strings.items():  
-                tag = tag.replace( id, string )
+            # replace strings (accurately)
+            tagTpl = Contemplate.InlineTemplate.multisplit(tag, list(strings.keys()))
+            tag = ''
+            for v in tagTpl:
+                tag += (v[1] if v[0] else strings[ v[1] ])
+            
             
             tag = tag.replace( "\t", _G.tplStart ).replace( "\v", padLines(_G.tplEnd) )
             
@@ -1300,6 +1336,8 @@ def createTemplateRenderFunction( id, seps=None ):
     
     blocks = parse(getSeparators( Contemplate.getTemplateContents(id), seps ))
     
+    clearState()
+    
     renderf = blocks[0]
     blocks = blocks[1]
     
@@ -1329,6 +1367,8 @@ def createCachedTemplate( id, filename, classname, seps=None ):
     resetState()
     
     blocks = parse(getSeparators( Contemplate.getTemplateContents(id), seps ))
+    
+    clearState()
     
     renderf = blocks[0]
     blocks = blocks[1]
@@ -1678,7 +1718,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.7"
+    VERSION = "0.7.1"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -1701,8 +1741,6 @@ class Contemplate:
         
         if _G.isInited: return
             
-        _G.stack = []
-        
         # pre-compute the needed regular expressions
         _G.regExps['specials'] = re.compile(r'[\n\r\v\t]')
         
@@ -1727,6 +1765,8 @@ class Contemplate:
         
         _G.tplStart = "' " + _G.TEOL
         _G.tplEnd = _G.TEOL + "__p__ += '"
+        
+        clearState()
         
         _G.isInited = True
     
@@ -1854,8 +1894,9 @@ class Contemplate:
             _G.leftTplSep = separators[ 0 ]  
             _G.rightTplSep = separators[ 1 ]
         
-        resetState( )
+        resetState()
         parsed = parse( tpl )
+        clearState()
         
         if separators:
             _G.leftTplSep = tmp[ 0 ]

@@ -62,25 +62,23 @@ def __getTplClass__(Contemplate):
                 
                 __i__.d = data
                 __p__ += '<div>' + "\n" + '    <br />' + "\n" + '    <strong>Number of Items:' + str( Contemplate.count(data['users'][data['i']]) ) + '</strong>' + "\n" + '    <br />' + "\n" + '    ' 
-                _O1 = Contemplate.items(data['users'][data['i']])
-                if (_O1):
-                    for _K2,_V3 in _O1:
-                        data['j'] = _K2
-                        data['user'] = _V3
+                _loc_7 = Contemplate.items(data['users'][data['i']])
+                if (_loc_7):
+                    for _loc_j,_loc_user in _loc_7:
                          
-                        __p__ += '' + "\n" + '        <div id=\'' + str( data['user']["id"] ) + '\' class="'         
-                        if (0 == (data['j'] % 2)):
+                        __p__ += '' + "\n" + '        <div id=\'' + str( _loc_user["id"] ) + '\' class="'         
+                        if (0 == (_loc_j % 2)):
                                      
                             __p__ += 'even'         
-                        elif (1 == (data['j'] % 2)):
+                        elif (1 == (_loc_j % 2)):
                                      
                             __p__ += 'odd'         
                                  
-                        __p__ += '">' + "\n" + '            <a href="/' + str( data['user']["name"] ) + '">' + str( data['user']['name'] ) + '' + str( data['user']['text'] ) + ' ' + str( Contemplate.n(data['i']) + Contemplate.n(data['j']) ) + '</a>: <strong>' + str( data['user']["text"] ) + '</strong>' + "\n" + '        </div>' + "\n" + '        '         
-                        if ( Contemplate.haskey(data['user'], "key1") ):
+                        __p__ += '">' + "\n" + '            <a href="/' + str( _loc_user["name"] ) + '">' + str( _loc_user['name'] ) + '' + str( _loc_user['text'] ) + ' ' + str( Contemplate.n(data['i']) + Contemplate.n(_loc_j) ) + '</a>: <strong>' + str( _loc_user["text"] ) + '</strong>' + "\n" + '        </div>' + "\n" + '        '         
+                        if ( Contemplate.haskey(_loc_user, "key1") ):
                                      
                             __p__ += '' + "\n" + '            <div> User has key &quot;key1&quot; </div>' + "\n" + '        '         
-                        elif ( Contemplate.haskey(data['user'], "key", "key1") ):
+                        elif ( Contemplate.haskey(_loc_user, "key", "key1") ):
                                      
                             __p__ += '' + "\n" + '            <div> User has key [&quot;key&quot;][&quot;key1&quot;] </div>' + "\n" + '        '         
                                  

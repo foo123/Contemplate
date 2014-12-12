@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.7
+*  @version: 0.7.1
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -36,7 +36,7 @@
         
     "use strict";
     
-    var __version__ = "0.7", Contemplate, Template, InlineTemplate, 
+    var __version__ = "0.7.1", Contemplate, Template, InlineTemplate, 
     
         // auxilliaries
         PROTO = 'prototype', HAS = 'hasOwnProperty', 
@@ -753,9 +753,9 @@
         $__EOL = "\n", $__TEOL = isNode ? require('os').EOL : "\n", $__escape = true,
         
         $__stack = null, $__level = 0, $__pad = "    ", $__idcnt = 0,
-        $__loops = 0, $__ifs = 0, $__loopifs = 0, $__forType = 2,
+        $__locals, $__variables, $__loops = 0, $__ifs = 0, $__loopifs = 0, $__forType = 2,
         $__allblocks = null, $__allblockscnt = null,  $__openblocks = null,
-        $__startblock = null, $__endblock = null, $__blockptr = -1,
+        $__currentblock, $__startblock = null, $__endblock = null, $__blockptr = -1,
         $__extends = null,
     
         $__uuid = 0,
@@ -798,14 +798,24 @@
             // reset state
             $__loops = 0; $__ifs = 0; $__loopifs = 0; $__forType = 2; $__level = 0;
             $__allblocks = []; $__allblockscnt = {}; $__openblocks = [[null, -1]];
-            $__extends = null;
+            $__extends = null; $__locals = {}; $__variables = {}; $__currentblock = '_';
+            $__locals[$__currentblock] = $__locals[$__currentblock] || {};
+            $__variables[$__currentblock] = $__variables[$__currentblock] || {};
             //$__escape = true;
+        },
+        
+        clearState = function( ) {
+            // clear state
+            $__loops = 0; $__ifs = 0; $__loopifs = 0; $__forType = 2; $__level = 0;
+            $__allblocks = null; $__allblockscnt = null; $__openblocks = null;
+            /*$__extends = null;*/ $__locals = null; $__variables = null; $__currentblock = null;
+            $__idcnt = 0; $__stack = [];
         },
         
         pushState = function( ) {
             // push state
             $__stack.push([$__loops, $__ifs, $__loopifs, $__forType, $__level,
-            $__allblocks, $__allblockscnt, $__openblocks, $__extends]);
+            $__allblocks, $__allblockscnt, $__openblocks, $__extends, $__locals, $__variables, $__currentblock]);
         },
         
         popState = function( ) {
@@ -813,7 +823,7 @@
             var t = $__stack.pop( );
             $__loops = t[0]; $__ifs = t[1]; $__loopifs = t[2]; $__forType = t[3]; $__level = t[4];
             $__allblocks = t[5]; $__allblockscnt = t[6]; $__openblocks = t[7];
-            $__extends = t[8];
+            $__extends = t[8]; $__locals = t[9]; $__variables = t[10]; $__currentblock = t[11];
         },
         
         joinLines = function( ) {
@@ -828,14 +838,8 @@
             {
                 // needs one more additional level due to array.length
                 level = (0===level) ? level : level+1;
-                var pad = new Arr(level).join($__pad), i, l;
-                lines = lines.split(NEWLINE);
-                l = lines.length;
-                for (i=0; i<l; i++)
-                {
-                    lines[i] = pad + lines[i];
-                }
-                return lines.join( $__TEOL );
+                var pad = new Arr(level).join($__pad);
+                lines = pad + (lines.split( NEWLINE ).join( $__TEOL + pad ));
             }
             return lines;
         },
@@ -1073,48 +1077,47 @@
             {
                 for_expr = [for_expr.slice(0, is_python_style), for_expr.slice(is_python_style+4)];
                 o = trim(for_expr[1]);
-                _o = '_O' + (++$__idcnt);
+                _o = '_loc_' + (++$__idcnt);
                 kv = for_expr[0].split(',');
             }
             else /*if ( -1 < is_php_style )*/
             {
                 for_expr = [for_expr.slice(0, is_php_style), for_expr.slice(is_php_style+4)];
                 o = trim(for_expr[0]);
-                _o = '_O' + (++$__idcnt);
+                _o = '_loc_' + (++$__idcnt);
                 kv = for_expr[1].split('=>');
             }
             isAssoc = kv.length >= 2
             
             if ( isAssoc )
             {
-                var k = trim(kv[0]) + '__RAW__',
-                    v = trim(kv[1]) + '__RAW__',
-                    _oK = '_OK' + (++$__idcnt),
-                    _k = '_K' + (++$__idcnt),
-                    _l = '_L' + (++$__idcnt),
-                    _v = '_V' + (++$__idcnt)
+                var k = trim(kv[0]),
+                    v = trim(kv[1]),
+                    _oK = '_loc_' + (++$__idcnt),
+                    _k = '_loc_' + (++$__idcnt),
+                    _l = '_loc_' + (++$__idcnt)
                 ;
+                $__locals[$__currentblock][$__variables[$__currentblock][k]] = 1; 
+                $__locals[$__currentblock][$__variables[$__currentblock][v]] = 1;
                 out = "';" + padLines(TT_FOR({
                     'O': o, '_O': _o, '_OK': _oK,
-                    'K': k, '_K': _k, '_L': _l,
-                    'V': v, '_V': _v,
-                    'ASSIGN1': "data['"+k+"'] = "+_oK+"["+_k+"]; data['"+v+"'] = "+_v+" = "+_o+"["+_oK+"["+_k+"]];"
+                    'K': k, '_K': _k, '_L': _l, 'V': v,
+                    'ASSIGN1': ""+k+" = "+_oK+"["+_k+"]; "+v+" = "+_o+"["+k+"];"
                 }, 2));
                 $__forType = 2;
                 $__level+=2;
             }
             else
             {
-                var v = trim(kv[0]) + '__RAW__',
-                    _k = '_K' + (++$__idcnt),
-                    _l = '_L' + (++$__idcnt),
-                    _v = '_V' + (++$__idcnt)
+                var v = trim(kv[0]),
+                    _k = '_loc_' + (++$__idcnt),
+                    _l = '_loc_' + (++$__idcnt)
                 ;
+                $__locals[$__currentblock][$__variables[$__currentblock][v]] = 1;
                 out = "';" + padLines(TT_FOR({
                     'O': o, '_O': _o,
-                    '_K': _k, '_L': _l,
-                    'V': v, '_V': _v,
-                    'ASSIGN1': "data['"+v+"'] = "+_v+" = "+_o+"["+_k+"];"
+                    '_K': _k, '_L': _l, 'V': v,
+                    'ASSIGN1': ""+v+" = "+_o+"["+_k+"];"
                 }, 1));
                 $__forType = 1;
                 $__level+=2;
@@ -1235,6 +1238,9 @@
             $__openblocks.unshift( [block, $__blockptr-1] );
             $__startblock = block;
             $__endblock = null;
+            $__currentblock = block;
+            $__locals[$__currentblock] = $__locals[$__currentblock] || {};
+            $__variables[$__currentblock] = $__variables[$__currentblock] || {};
             return "' +  __||" + block + "||__";  
         },
         
@@ -1246,8 +1252,13 @@
                 $__endblock = block[0];
                 $__blockptr = block[1]+1;
                 $__startblock = null;
+                $__currentblock = $__openblocks.length ? $__openblocks[0][0] : '_';
                 return "__||/" + block[0] + "||__";
-            }  
+            }
+            else
+            {
+                $__currentblock = '_';
+            }
             return '';  
         },
         
@@ -1392,7 +1403,7 @@
                 s = s.slice(0, pos1) + rep + s.slice(pos2+1);
                 if ( 1 <= $__allblockscnt[ block ] ) $__allblockscnt[ block ]--;
             }
-            $__allblocks = null; $__allblockscnt = null; $__openblocks = null;
+            //$__allblocks = null; $__allblockscnt = null; $__openblocks = null;
             
             return [s, blocks];
         },
@@ -1408,12 +1419,11 @@
             return string;
         },
         
-        parseVariable = function parseVariable( s, i, l, pre )  {
-            pre = pre || 'VARSTR';
+        parseVariable = function parseVariable( s, i, l )  {
             if ( ALPHA.test(s[i]) )
             {
-                var cnt = 0, strings = {}, variables = [], subvariables,
-                    variable, property, variable_raw,
+                var /*cnt = 0,*/ strings = {}, variables = [], subvariables,
+                    id, variable, property, variable_raw, variable_main, variable_rest,
                     len, lp, bracketcnt, delim, ch, 
                     strid, sub, space = 0
                 ;
@@ -1427,7 +1437,10 @@
                 
                 variable_raw = variable;
                 // transform into tpl variable
-                variable = "data['" + variable + "']";
+                variable_main = "data['"+variable_raw+"']";
+                variable_rest = '';
+                $__idcnt++;
+                id = "__##VAR"+$__idcnt+"##__";
                 len = variable_raw.length;
                 
                 // extra space
@@ -1465,7 +1478,7 @@
                         if ( lp )
                         {
                             // transform into tpl variable bracketed property
-                            variable += "['" + property + "']";
+                            variable_rest += "['" + property + "']";
                             len += space + 1 + lp;
                             space = 0;
                         }
@@ -1486,10 +1499,10 @@
                         if ( '"' === ch || "'" === ch )
                         {
                             property = parseString( s, ch, i+1, l );
-                            cnt++;
-                            strid = "__##"+pre+cnt+"##__";
-                            strings[ strid ] = property;
-                            variable += delim + strid;
+                            $__idcnt++;
+                            strid = "__##STR"+$__idcnt+"##__";
+                            strings[strid] = property;
+                            variable_rest += delim + strid;
                             lp = property.length;
                             i += lp;
                             len += space + 1 + lp;
@@ -1504,7 +1517,7 @@
                             {
                                 property += s[i++];
                             }
-                            variable += delim + property;
+                            variable_rest += delim + property;
                             lp = property.length;
                             len += space + 1 + lp;
                             space = 0;
@@ -1514,13 +1527,13 @@
                         else if ( '$' === ch )
                         {
                             sub = s.slice(i+1);
-                            subvariables = parseVariable(sub, 0, sub.length, pre + '_' + cnt + '_');
+                            subvariables = parseVariable(sub, 0, sub.length);
                             if ( subvariables )
                             {
                                 // transform into tpl variable property
                                 property = subvariables[subvariables.length-1];
-                                variable += delim + property[0][0];
-                                lp = property[1];
+                                variable_rest += delim + property[0];
+                                lp = property[4];
                                 i += lp + 1;
                                 len += space + 2 + lp;
                                 space = 0;
@@ -1534,7 +1547,7 @@
                             if ( bracketcnt > 0 )
                             {
                                 bracketcnt--;
-                                variable += delim + s[i++];
+                                variable_rest += delim + s[i++];
                                 len += space + 2;
                                 space = 0;
                             }
@@ -1563,7 +1576,7 @@
                             if ( bracketcnt > 0 )
                             {
                                 bracketcnt--;
-                                variable += s[i++];
+                                variable_rest += s[i++];
                                 len += space + 1;
                                 space = 0;
                             }
@@ -1582,7 +1595,7 @@
                     }
                 }
                 
-                variables.push( [[variable, variable_raw], len, strings] );
+                variables.push( [id, variable_raw, variable_main, variable_rest, len, strings] );
                 return variables
             }
             return null;
@@ -1600,14 +1613,16 @@
             
         parse = function( tpl, withblocks ) {
             var parts, len, parsed, s, i, isTag,
-                tag, strings, variables, id,
-                countl, index, ch, out, cnt, tok, v, tokv
+                tag, strings, variables, varname, id,
+                countl, index, ch, out, tok, v, tokv,
+                tagTpl
             ;
             
             parts = split( tpl, $__leftTplSep, $__rightTplSep );
             len = parts.length;
             isTag = false;
             parsed = '';
+            
             for (i=0; i<len; i++)
             {
                 s = parts[ i ];
@@ -1620,12 +1635,11 @@
                     // refined parsing
                     
                     countl = tag.length;
-                    variables = {};
+                    variables = [];
                     strings = {};
                     index = 0; 
                     ch = ''; 
                     out = ''; 
-                    cnt = 0;
                     
                     while ( index < countl )
                     {
@@ -1637,9 +1651,9 @@
                         if ( '"' === ch || "'" === ch )
                         {
                             tok = parseString( tag, ch, index, countl );
-                            cnt++;
-                            id = "__##STR"+cnt+"##__";
-                            strings[ id ] = tok;
+                            $__idcnt++;
+                            id = "__##STR"+$__idcnt+"##__";
+                            strings[id] = tok;
                             out += id;
                             index += tok.length-1;
                         }
@@ -1652,13 +1666,13 @@
                                 for (v=0; v<tok.length; v++)
                                 {
                                     tokv = tok[ v ];
-                                    cnt++;
-                                    id = "__##VAR"+cnt+"##__";
-                                    variables[ id ] = tokv[ 0 ];
-                                    strings = merge( strings, tokv[ 2 ] );
+                                    id = tokv[ 0 ];
+                                    $__variables[$__currentblock][ id ] = tokv[ 1 ];
+                                    strings = merge( strings, tokv[ 5 ] );
                                 }
                                 out += id;
-                                index += tokv[ 1 ];
+                                index += tokv[ 4 ];
+                                variables = variables.concat( tok );
                             }
                             else
                             {
@@ -1678,30 +1692,40 @@
                     //tag = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), tag);
                 
                     $__startblock = null;  $__endblock = null; $__blockptr = -1;
-                    tag = tag
-                            .replace( $__regExps['controls'], parseControlConstructs )
-                            
-                            .replace( $__regExps['functions'], funcReplace )
-                            
-                            .replace( $__regExps['replacements'], "' + ( $1 ) + '" )
-                        ;
                     
-                    for (id in variables)  
+                    // replace constructs, functions, etc..
+                    tag = tag
+                        .replace( $__regExps['controls'], parseControlConstructs )
+                        .replace( $__regExps['functions'], funcReplace )
+                        .replace( $__regExps['replacements'], "' + ($1) + '" )
+                    ;
+                    
+                    // replace variables
+                    for (v=variables.length-1; v>=0; v--)
                     {
-                        if ( variables[HAS](id) )
-                        {
-                            tag = tag.split( id+'__RAW__' ).join( variables[id][1] );
-                            tag = tag.split( id ).join( variables[id][0] );
-                        }
+                        id = variables[ v ][ 0 ]; varname = variables[ v ][ 1 ];
+                        tag = tag
+                            .split( id+'__RAW__' ).join( varname )
+                            .split( id ).join(( 
+                                $__locals[$__currentblock][HAS](varname) 
+                                ? ('_loc_' + varname) /* local (loop) variable */
+                                : (variables[ v ][ 2 ]) /* default (data) variable */
+                                ) + variables[ v ][ 3 ])
+                        ;
                     }
                     
-                    for (id in strings)  
-                        if ( strings[HAS](id) ) tag = tag.split( id ).join( strings[id] );
+                    // replace strings (accurately)
+                    tagTpl = Contemplate.InlineTemplate.multisplit(tag, Keys(strings));
+                    tag = '';
+                    for (v=0; v<tagTpl.length; v++)
+                    {
+                        tag += (tagTpl[v][0] ? tagTpl[v][1] : strings[ tagTpl[v][1] ]);
+                    }
                         
+                    // replace tpl separators
                     s = tag
-                            .split( "\t" ).join( $__tplStart )
-                            
-                            .split( "\v" ).join( padLines($__tplEnd) )
+                        .split( "\t" ).join( $__tplStart )
+                        .split( "\v" ).join( padLines($__tplEnd) )
                     ;
                     
                     if ( $__startblock )
@@ -1724,7 +1748,6 @@
                     
                     s = s
                         .split( "'" ).join( "\\'" )  // escape single quotes accurately (used by parse function)
-                        
                         .split( /*"\n"*/ /\n/ ).join( $__preserveLines ) // preserve lines
                     ;
                     
@@ -1752,6 +1775,8 @@
             resetState();
             
             var blocks = parse( getSeparators( getTemplateContents( id ), seps ) ), funcs = {}, b, bl, func, renderf;
+            
+            clearState();
             
             renderf = blocks[0];
             blocks = blocks[1];
@@ -1784,6 +1809,8 @@
                 funcs = {}, prefixCode, extendCode, renderCode, b, bl, sblocks,
                 blocks = parse( getSeparators( getTemplateContents( id ), seps ) ), renderf
             ;
+            
+            clearState();
             
             renderf = blocks[0];
             blocks = blocks[1];
@@ -1947,7 +1974,6 @@
                 r['PREFIXCODE']
                 ,j(""
                 ,"!function (root, moduleName, moduleDefinition) {"
-                ,""
                 ,"    //"
                 ,"    // export the module"
                 ,"    // node, CommonJS, etc.."
@@ -1962,7 +1988,6 @@
                 ,"    return function( Contemplate ) {"
                 ,"    /* Contemplate cached template '"), r['TPLID'], j("' */"
                 ,"    "
-                ,"    "
                 ,"    /* constructor */"
                 ,"    function "), r['CLASSNAME'], j("(id)"
                 ,"    {"
@@ -1974,17 +1999,14 @@
                 ,"        this.d = null;"
                 ,"        this.id = id;"
                 ,"        "
-                ,"        "
                 ,"        /* tpl-defined blocks render code starts here */"
                 ,""), r['BLOCKS'], j(""
                 ,"        /* tpl-defined blocks render code ends here */"
-                ,"        "
                 ,"        "
                 ,"        /* extend tpl assign code starts here */"
                 ,""), r['EXTENDCODE'], j(""
                 ,"        /* extend tpl assign code ends here */"
                 ,"    };"
-                ,"    "
                 ,"    "
                 ,"    /* extends main Contemplate.Template class */"
                 ,"    "), r['CLASSNAME'], j(".prototype = Object.create(Contemplate.Template.prototype);"
@@ -2081,10 +2103,10 @@
             {
                 return [
                     j(""
-                    ,"var "), r['_O'], " = ", r['O'], ", ", r['_OK'], " = Contemplate.keys(", r['_O'], j(");"
-                    ,"if ("), r['_OK'], " && ", r['_OK'], j(".length)"
+                    ,"var "), r['_O'], " = ", r['O'], ", ", r['_OK'], " = Contemplate.keys(", r['_O'], j("),"
+                    ,"    "), r['_K'], ", ", r['K'], ", ", r['V'], ", ", r['_L'], " = ", r['_OK'], " ? ", r['_OK'], ".length : 0", j(";"
+                    ,"if ("), r['_L'], j(")"
                     ,"{"
-                    ,"    var "), r['_K'], ", ", r['_V'], ", ", r['_L'], " = ", r['_OK'], ".length", j(";"
                     ,"    for ("), r['_K'], "=0; ", r['_K'], "<", r['_L'], "; ", r['_K'], j("++)"
                     ,"    {"
                     ,"        "), r['ASSIGN1'], j(""
@@ -2096,10 +2118,10 @@
             {
                 return [
                     j(""
-                    ,"var "), r['_O'], " = Contemplate.values(", r['O'], j(");"
-                    ,"if ("), r['_O'], " && ", r['_O'], j(".length)"
+                    ,"var "), r['_O'], " = Contemplate.values(", r['O'], j("),"
+                    ,"    "), r['_K'], ", ", r['V'], ", ", r['_L'], " = ", r['_O'], " ? ", r['_O'], ".length : 0", j(";"
+                    ,"if ("), r['_L'], j(")"
                     ,"{"
-                    ,"    var "), r['_K'], ", ", r['_V'], ", ", r['_L'], " = ", r['_O'], ".length", j(";"
                     ,"    for ("), r['_K'], "=0; ", r['_K'], "<", r['_L'], "; ", r['_K'], j("++)"
                     ,"    {"
                     ,"        "), r['ASSIGN1'], j(""
@@ -2209,18 +2231,18 @@
         }
     };
     InlineTemplate.multisplit = function multisplit( tpl, reps ) {
-        var r, s, i, j, a, b, c, al, bl;
+        var r, sr, s, i, j, a, b, c, al, bl, isarray = is_array(reps);
         a = [ [1, tpl] ];
         for ( r in reps )
         {
             if ( reps.hasOwnProperty( r ) )
             {
-                c = [ ]; s = [0, reps[ r ]];
+                c = [ ]; sr = isarray ? reps[ r ] : r; s = [0, reps[ r ]];
                 for (i=0,al=a.length; i<al; i++)
                 {
                     if ( 1 === a[ i ][ 0 ] )
                     {
-                        b = a[ i ][ 1 ].split( r ); bl = b.length;
+                        b = a[ i ][ 1 ].split( sr ); bl = b.length;
                         if ( bl > 1 )
                         {
                             for (j=0; j<bl-1; j++)
@@ -2277,18 +2299,16 @@
             
             if ( this._renderer ) return this._renderer( args );
             
-            var tpl = this.tpl, l = tpl.length, argslen = args.length, 
-                i, notIsSub, s, out = new Array( l )
+            var tpl = this.tpl, l = tpl.length,
+                i, notIsSub, s, out = ''
             ;
             
             for (i=0; i<l; i++)
             {
                 notIsSub = tpl[ i ][ 0 ]; s = tpl[ i ][ 1 ];
-                if ( notIsSub ) out[ i ] = s;
-                //else out[ i ] = (s.substr || s>=0) ? args[ s ] : args[ argslen+s ];
-                else out[ i ] = args[ s ];
+                out += (notIsSub ? s : args[ s ]);
             }
-            return out.join('');
+            return out;
         }
     };
     
@@ -2391,8 +2411,6 @@
         init: function( ) {
             if ( $__isInited ) return;
             
-            $__stack = [ ];
-            
             // pre-compute the needed regular expressions
             $__regExps['specials'] = RE('[\\n\\r\\v\\t]', 'g');
             
@@ -2407,6 +2425,8 @@
             
             $__tplStart = "'; " + $__TEOL;
             $__tplEnd = $__TEOL + "__p__ += '";
+            
+            clearState();
             
             $__isInited = true;
         },
@@ -2546,6 +2566,7 @@
             
             resetState( );
             parsed = parse( tpl );
+            clearState();
             
             if ( separators )
             {
@@ -2635,7 +2656,7 @@
         },
         
         // basic custom faster html escaping
-        e: /*isNode || isChrome ? ESC2 :*/ ESC1,
+        e: ESC1,
         
         // basic html escaping
         html: function( s, mode ) { 

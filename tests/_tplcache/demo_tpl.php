@@ -32,14 +32,13 @@ final class Contemplate_demo_Cached extends ContemplateTemplate
         $__p__ = ''; $data =& $__i__->d;
          
         $__p__ .= '' . "\n" . '' . "\n" . '    <strong>Block3 is overriden by the demo template</strong>' . "\n" . '' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>Functions</strong><br />' . "\n" . '    <ul>' . "\n" . '    <li>%e(&lt;ok k=&quot;v&quot;&gt;) = ' . ( Contemplate::e('<ok k="v">') ) . '</li>' . "\n" . '    <li>%html(&lt;ok k=&quot;v&quot;&gt;) = ' . ( Contemplate::html('<ok k="v">') ) . '</li>' . "\n" . '    <li>trim(__FOO__, _) = ' . ( Contemplate::trim("__FOO__", "_") ) . '</li>' . "\n" . '    <li>trim(  FOO  ) = ' . ( Contemplate::trim("  FOO  ") ) . '</li>' . "\n" . '    <li>lowercase(FOO) = ' . ( Contemplate::lowercase("FOO") ) . '</li>' . "\n" . '    <li>lowercase(fOo) = ' . ( Contemplate::lowercase("fOo") ) . '</li>' . "\n" . '    <li>uppercase(foo) = ' . ( Contemplate::uppercase("foo") ) . '</li>' . "\n" . '    <li>uppercase(FoO) = ' . ( Contemplate::uppercase("FoO") ) . '</li>' . "\n" . '    <li>camelcase(camel_case, _) = ' . ( Contemplate::camelcase("camel_case", "_") ) . '</li>' . "\n" . '    <li>camelcase(camelCase) = ' . ( Contemplate::camelcase("camelCase") ) . '</li>' . "\n" . '    <li>snakecase(snakeCase, _) = ' . ( Contemplate::snakecase("snakeCase", "_") ) . '</li>' . "\n" . '    <li>snakecase(snake_case) = ' . ( Contemplate::snakecase("snake_case") ) . '</li>' . "\n" . '    <li>l(locale) = ' . ( Contemplate::l("locale") ) . '</li>' . "\n" . '    <li>locale(locale) = ' . ( Contemplate::locale("locale") ) . '</li>' . "\n" . '    <li>pluralise(item, 1) = ' . ( Contemplate::pluralise("item", 1) ) . '</li>' . "\n" . '    <li>pluralise(item, 2) = ' . ( Contemplate::pluralise("item", 2) ) . '</li>' . "\n" . '    <li>sprintf("%02d : %02d : %02d", 2, 0, 12) = ' . ( Contemplate::sprintf("%02d : %02d : %02d", 2, 0, 12) ) . '</li>' . "\n" . '    <li>addslashes("this string\'s s\\"s s\\\\"s s\\\\\\"s") = ' . ( Contemplate::addslashes("this string's s\'s s\\'s s\\\'s") ) . '</li>' . "\n" . '    <li>stripslashes("this string\'s s\\"s s\\\\"s s\\\\\\"s") = ' . ( Contemplate::stripslashes("this string's s\'s s\\'s s\\\'s") ) . '</li>' . "\n" . '    <li>uuid(namespace) = ' . ( Contemplate::uuid("namespace") ) . '</li>' . "\n" . '    </ul>' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    ';
-        $_O21 = $data['users'];
-        if (!empty($_O21))
+        $_loc_131 = $data['users'];
+        if (!empty($_loc_131))
         {
-            foreach ($_O21 as $_K22=>$_V23)
+            foreach ($_loc_131 as $_loc_i=>$_loc_usergroup)
             {
-                $data['i'] = $_K22; $data['usergroup'] = $_V23;
                  
-                $__p__ .= '' . "\n" . '        <!-- call a (sub-)template -->' . "\n" . '        ' . Contemplate::tpl( "sub",  array("i" => $data['i'], "users" => $data['users']) ); 
+                $__p__ .= '' . "\n" . '        <!-- call a (sub-)template -->' . "\n" . '        ' . Contemplate::tpl( "sub",  array("i" => $_loc_i, "users" => $data['users']) ); 
                  
                 $__p__ .= '' . "\n" . '    ';
             }
@@ -85,98 +84,90 @@ final class Contemplate_demo_Cached extends ContemplateTemplate
         }
          
         $__p__ .= '' . "\n" . '    <br />' . "\n" . '    ' . "\n" . '    ' . ( Contemplate::plg_test($data['foo']) ) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <!-- use contemplate literal data with template function, in this case a print test plugin -->' . "\n" . '    <strong>use literal data with template function, in this case a print plugin</strong><br />' . "\n" . '    ' . ( Contemplate::plg_print(array(          "stringVar"     => "stringValue",          "numericVar"    => 123,          "arrayVar"      => array(             0, 1, "astring", 3,              array( "prop"=> 1 )          )      )) ) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>use literal array data in associative loop (php-style)</strong><br />' . "\n" . '    ';
-        $_O1 = array("a", "b", "c");
-        if (!empty($_O1))
+        $_loc_20 = array("a", "b", "c");
+        if (!empty($_loc_20))
         {
-            foreach ($_O1 as $_K2=>$_V3)
+            foreach ($_loc_20 as $_loc_index=>$_loc_value)
             {
-                $data['index'] = $_K2; $data['value'] = $_V3;
                  
-                $__p__ .= '' . "\n" . '        [' . ( $data['index'] ) . '] = <strong>' . ( $data['value'] ) . '</strong><br /> ' . "\n" . '    ';
+                $__p__ .= '' . "\n" . '        [' . ( $_loc_index ) . '] = <strong>' . ( $_loc_value ) . '</strong><br /> ' . "\n" . '    ';
             }
         }
          
         $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>use literal array data in non-associative loop (php-style)</strong><br />' . "\n" . '    ';
-        $_O4 = array("a", "b", "c");
-        if (!empty($_O4))
+        $_loc_27 = array("a", "b", "c");
+        if (!empty($_loc_27))
         {
-            foreach ($_O4 as $_V5)
+            foreach ($_loc_27 as $_loc_value2)
             {
-                $data['value2'] = $_V5;
                  
-                $__p__ .= '' . "\n" . '        <strong>' . ( $data['value2'] ) . '</strong><br /> ' . "\n" . '    ';
+                $__p__ .= '' . "\n" . '        <strong>' . ( $_loc_value2 ) . '</strong><br /> ' . "\n" . '    ';
             }
         }
          
         $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>use literal object data in associative loop (php-style)</strong><br />' . "\n" . '    ';
-        $_O6 = array("k1"=>"a", "k2"=>"b", "k3"=>"c");
-        if (!empty($_O6))
+        $_loc_37 = array("k1"=>"a", "k2"=>"b", "k3"=>"c");
+        if (!empty($_loc_37))
         {
-            foreach ($_O6 as $_K7=>$_V8)
+            foreach ($_loc_37 as $_loc_index3=>$_loc_value3)
             {
-                $data['index3'] = $_K7; $data['value3'] = $_V8;
                  
-                $__p__ .= '' . "\n" . '        [' . ( $data['index3'] ) . '] = <strong>' . ( $data['value3'] ) . '</strong><br /> ' . "\n" . '    ';
+                $__p__ .= '' . "\n" . '        [' . ( $_loc_index3 ) . '] = <strong>' . ( $_loc_value3 ) . '</strong><br /> ' . "\n" . '    ';
             }
         }
          
         $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>use literal object data in non-associative loop (php-style)</strong><br />' . "\n" . '    ';
-        $_O9 = array("k1"=>"a", "k2"=>"b", "k3"=>"c");
-        if (!empty($_O9))
+        $_loc_47 = array("k1"=>"a", "k2"=>"b", "k3"=>"c");
+        if (!empty($_loc_47))
         {
-            foreach ($_O9 as $_V10)
+            foreach ($_loc_47 as $_loc_value4)
             {
-                $data['value4'] = $_V10;
                  
-                $__p__ .= '' . "\n" . '        <strong>' . ( $data['value4'] ) . '</strong><br /> ' . "\n" . '    ';
+                $__p__ .= '' . "\n" . '        <strong>' . ( $_loc_value4 ) . '</strong><br /> ' . "\n" . '    ';
             }
         }
          
         $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>use literal array data in associative loop (python-style)</strong><br />' . "\n" . '    ';
-        $_O11 = array("a", "b", "c");
-        if (!empty($_O11))
+        $_loc_54 = array("a", "b", "c");
+        if (!empty($_loc_54))
         {
-            foreach ($_O11 as $_K12=>$_V13)
+            foreach ($_loc_54 as $_loc_index4=>$_loc_value4)
             {
-                $data['index4'] = $_K12; $data['value4'] = $_V13;
                  
-                $__p__ .= '' . "\n" . '        [' . ( $data['index4'] ) . '] = <strong>' . ( $data['value4'] ) . '</strong><br /> ' . "\n" . '    ';
+                $__p__ .= '' . "\n" . '        [' . ( $_loc_index4 ) . '] = <strong>' . ( $_loc_value4 ) . '</strong><br /> ' . "\n" . '    ';
             }
         }
          
         $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>use literal array data in non-associative loop (python-style)</strong><br />' . "\n" . '    ';
-        $_O14 = array("a", "b", "c");
-        if (!empty($_O14))
+        $_loc_61 = array("a", "b", "c");
+        if (!empty($_loc_61))
         {
-            foreach ($_O14 as $_V15)
+            foreach ($_loc_61 as $_loc_value5)
             {
-                $data['value5'] = $_V15;
                  
-                $__p__ .= '' . "\n" . '        <strong>' . ( $data['value5'] ) . '</strong><br /> ' . "\n" . '    ';
+                $__p__ .= '' . "\n" . '        <strong>' . ( $_loc_value5 ) . '</strong><br /> ' . "\n" . '    ';
             }
         }
          
         $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>use literal object data in associative loop (python-style)</strong><br />' . "\n" . '    ';
-        $_O16 = array("k1"=>"a", "k2"=>"b", "k3"=>"c");
-        if (!empty($_O16))
+        $_loc_71 = array("k1"=>"a", "k2"=>"b", "k3"=>"c");
+        if (!empty($_loc_71))
         {
-            foreach ($_O16 as $_K17=>$_V18)
+            foreach ($_loc_71 as $_loc_index6=>$_loc_value7)
             {
-                $data['index6'] = $_K17; $data['value7'] = $_V18;
                  
-                $__p__ .= '' . "\n" . '        [' . ( $data['index6'] ) . '] = <strong>' . ( $data['value7'] ) . '</strong><br /> ' . "\n" . '    ';
+                $__p__ .= '' . "\n" . '        [' . ( $_loc_index6 ) . '] = <strong>' . ( $_loc_value7 ) . '</strong><br /> ' . "\n" . '    ';
             }
         }
          
         $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>use literal object data in non-associative loop (python-style)</strong><br />' . "\n" . '    ';
-        $_O19 = array("k1"=>"a", "k2"=>"b", "k3"=>"c");
-        if (!empty($_O19))
+        $_loc_81 = array("k1"=>"a", "k2"=>"b", "k3"=>"c");
+        if (!empty($_loc_81))
         {
-            foreach ($_O19 as $_V20)
+            foreach ($_loc_81 as $_loc_value8)
             {
-                $data['value8'] = $_V20;
                  
-                $__p__ .= '' . "\n" . '        <strong>' . ( $data['value8'] ) . '</strong><br /> ' . "\n" . '    ';
+                $__p__ .= '' . "\n" . '        <strong>' . ( $_loc_value8 ) . '</strong><br /> ' . "\n" . '    ';
             }
         }
          

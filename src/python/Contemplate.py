@@ -160,15 +160,15 @@ class _G:
 # can use inline templates for plugins etc.. to enable non-linear plugin compile-time replacement
 class InlineTemplate:
  
-    def multisplit( tpl, reps=dict() ): 
+    def multisplit( tpl, reps=dict(), as_array=False ): 
     
-        isarray = isinstance(reps, (list,tuple))
+        #as_array = isinstance(reps, (list,tuple))
         a = [ [1, tpl] ]
-        items = enumerate(reps) if isarray else reps.items()
+        items = enumerate(reps) if as_array else reps.items()
         for r,s in items:
         
             c = [ ]
-            sr = s if isarray else r
+            sr = s if as_array else r
             s = [ 0, s ]
             for ai in a:
             
@@ -1282,7 +1282,7 @@ def parse( tpl, withblocks=True ):
                     tag = tag.replace( id, v[2]+v[3] )
             
             # replace strings (accurately)
-            tagTpl = Contemplate.InlineTemplate.multisplit(tag, list(strings.keys()))
+            tagTpl = Contemplate.InlineTemplate.multisplit(tag, list(strings.keys()), 1)
             tag = ''
             for v in tagTpl:
                 tag += (v[1] if v[0] else strings[ v[1] ])

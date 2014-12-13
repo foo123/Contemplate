@@ -1715,7 +1715,7 @@
                     }
                     
                     // replace strings (accurately)
-                    tagTpl = Contemplate.InlineTemplate.multisplit(tag, Keys(strings));
+                    tagTpl = Contemplate.InlineTemplate.multisplit(tag, Keys(strings), 1);
                     tag = '';
                     for (v=0; v<tagTpl.length; v++)
                     {
@@ -2230,14 +2230,15 @@
             this._renderer = InlineTemplate.compile( this.tpl );
         }
     };
-    InlineTemplate.multisplit = function multisplit( tpl, reps ) {
-        var r, sr, s, i, j, a, b, c, al, bl, isarray = is_array(reps);
+    InlineTemplate.multisplit = function multisplit( tpl, reps, as_array ) {
+        var r, sr, s, i, j, a, b, c, al, bl/*, as_array = is_array(reps)*/;
+        as_array = !!as_array;
         a = [ [1, tpl] ];
         for ( r in reps )
         {
             if ( reps.hasOwnProperty( r ) )
             {
-                c = [ ]; sr = isarray ? reps[ r ] : r; s = [0, reps[ r ]];
+                c = [ ]; sr = as_array ? reps[ r ] : r; s = [0, reps[ r ]];
                 for (i=0,al=a.length; i<al; i++)
                 {
                     if ( 1 === a[ i ][ 0 ] )

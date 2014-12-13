@@ -20,13 +20,13 @@ class ContemplateInlineTemplate
     public $tpl = '';
     private $_renderer = null;
     
-    public static function multisplit( $tpl, $reps ) 
+    public static function multisplit( $tpl, $reps, $as_array=false ) 
     {
-        $isarray = !Contemplate::is_assoc( $reps );
+        //$as_array = !Contemplate::is_assoc( $reps );
         $a = array( array(1, $tpl) );
         foreach ( (array)$reps as $r=>$s )
         {
-            $c = array( ); $sr = $isarray ? $s : $r; $s = array( 0, $s );  $al = count($a);
+            $c = array( ); $sr = $as_array ? $s : $r; $s = array( 0, $s );  $al = count($a);
             for ($i=0; $i<$al; $i++)
             {
                 if ( 1 === $a[ $i ][ 0 ] )
@@ -1615,7 +1615,7 @@ class Contemplate
                         $tag = str_replace( $id, $variables[ $v ][ 2 ] . $variables[ $v ][ 3 ], $tag );
                 }
                 // replace strings (accurately)
-                $tagTpl = ContemplateInlineTemplate::multisplit($tag, array_keys($strings));
+                $tagTpl = ContemplateInlineTemplate::multisplit($tag, array_keys($strings), 1);
                 $tag = '';
                 foreach ($tagTpl as $v)
                 {

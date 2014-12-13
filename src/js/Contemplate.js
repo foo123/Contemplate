@@ -108,6 +108,18 @@
                 return '';
             }
         }
+        
+        ,re_1 = /([\s\S]*?)(&(?:#\d+|#x[\da-f]+|[a-zA-Z][\da-z]*);|$)/g
+        ,re_2 = /!/g
+        ,re_3 = /'/g
+        ,re_4 = /\(/g
+        ,re_5 = /\)/g
+        ,re_6 = /\*/g
+        ,re_7 = /%20/g
+        ,re_8 = /%%|%(\d+\$)?([-+\'#0 ]*)(\*\d+\$|\*|\d+)?(\.(\*\d+\$|\*|\d+))?([scboxXuideEfFgG])/g
+        ,re_9 = /([\[\]\(\)\.\?\/\*\{\}\+\$\^\:])/g
+        
+        ,date_words = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sun", "Mon", "Tues", "Wednes", "Thurs", "Fri", "Satur", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
     ;
 
     /////////////////////////////////////////////////////////////////////////
@@ -117,7 +129,7 @@
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    function get_html_translation_table (table, quote_style) 
+    function get_html_translation_table( table, quote_style )
     {
       var tblID, useTable = null,
         useQuoteStyle = null;
@@ -276,7 +288,8 @@
     get_html_translation_table.constMappingQuoteStyle[3] = 'ENT_QUOTES';
     get_html_translation_table.tbls = {};
 
-    function htmlentities (string, quote_style, charset, double_encode) {
+    function htmlentities( string, quote_style, charset, double_encode ) 
+    {
       var hash_map = get_html_translation_table('HTML_ENTITIES', quote_style),
         symbol = '';
       string = string == null ? '' : string + '';
@@ -293,7 +306,7 @@
           }
         }
       } else {
-        string = string.replace(/([\s\S]*?)(&(?:#\d+|#x[\da-f]+|[a-zA-Z][\da-z]*);|$)/g, function (ignore, text, entity) {
+        string = string.replace(re_1, function (ignore, text, entity) {
           for (symbol in hash_map) {
             if (hash_map.hasOwnProperty(symbol)) {
               text = text.split(symbol).join(hash_map[symbol]);
@@ -306,235 +319,230 @@
 
       return string;
     }
-    function urlencode (str) 
+    
+    function urlencode( str ) 
     {
-      str = (str + '').toString();
-
-      // Tilde should be allowed unescaped in future versions of PHP (as reflected below), but if you want to reflect current
-      // PHP behavior, you would need to add ".replace(/~/g, '%7E');" to the following.
-      return encodeURIComponent(str).replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').
-      replace(/\)/g, '%29').replace(/\*/g, '%2A').replace(/%20/g, '+');
+        // Tilde should be allowed unescaped in future versions of PHP (as reflected below), but if you want to reflect current
+        // PHP behavior, you would need to add ".replace(/~/g, '%7E');" to the following.
+        return encodeURIComponent('' + str).replace(re_2, '%21').replace(re_3, '%27').replace(re_4, '%28').
+        replace(re_5, '%29').replace(re_6, '%2A').replace(re_7, '+');
     }
-    function rawurlencode (str) 
+    function rawurlencode( str )
     {
-      str = (str + '').toString();
-
-      // Tilde should be allowed unescaped in future versions of PHP (as reflected below), but if you want to reflect current
-      // PHP behavior, you would need to add ".replace(/~/g, '%7E');" to the following.
-      return encodeURIComponent(str).replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').
-      replace(/\)/g, '%29').replace(/\*/g, '%2A');
+        // Tilde should be allowed unescaped in future versions of PHP (as reflected below), but if you want to reflect current
+        // PHP behavior, you would need to add ".replace(/~/g, '%7E');" to the following.
+        return encodeURIComponent('' + str).replace(re_2, '%21').replace(re_3, '%27').replace(re_4, '%28').
+        replace(re_5, '%29').replace(re_6, '%2A');
     }
-    function sprintf () 
+    // pad()
+    function pad_( str, len, chr, leftJustify ) 
     {
-      var regex = /%%|%(\d+\$)?([-+\'#0 ]*)(\*\d+\$|\*|\d+)?(\.(\*\d+\$|\*|\d+))?([scboxXuideEfFgG])/g;
-      var a = arguments,
-        i = 0,
-        format = a[i++];
-
-      // pad()
-      var pad = function (str, len, chr, leftJustify) {
-        if (!chr) {
-          chr = ' ';
-        }
-        var padding = (str.length >= len) ? '' : Array(1 + len - str.length >>> 0).join(chr);
+        chr = chr || ' ';
+        var padding = (str.length >= len) ? '' : new Array(1 + len - str.length >>> 0).join(chr);
         return leftJustify ? str + padding : padding + str;
-      };
-
-      // justify()
-      var justify = function (value, prefix, leftJustify, minWidth, zeroPad, customPadChar) {
+    }
+    // justify()
+    function justify_( value, prefix, leftJustify, minWidth, zeroPad, customPadChar ) 
+    {
         var diff = minWidth - value.length;
-        if (diff > 0) {
-          if (leftJustify || !zeroPad) {
-            value = pad(value, minWidth, customPadChar, leftJustify);
-          } else {
-            value = value.slice(0, prefix.length) + pad('', diff, '0', true) + value.slice(prefix.length);
-          }
+        if ( diff > 0 ) 
+        {
+            if ( leftJustify || !zeroPad ) 
+                value = pad_(value, minWidth, customPadChar, leftJustify);
+            else 
+                value = value.slice(0, prefix.length) + pad_('', diff, '0', true) + value.slice(prefix.length);
         }
         return value;
-      };
-
-      // formatBaseX()
-      var formatBaseX = function (value, base, prefix, leftJustify, minWidth, precision, zeroPad) {
+    }
+    // formatBaseX()
+    function formatBaseX_( value, base, prefix, leftJustify, minWidth, precision, zeroPad )
+    {
         // Note: casts negative numbers to positive ones
         var number = value >>> 0;
         prefix = prefix && number && {
-          '2': '0b',
-          '8': '0',
-          '16': '0x'
-        }[base] || '';
-        value = prefix + pad(number.toString(base), precision || 0, '0', false);
-        return justify(value, prefix, leftJustify, minWidth, zeroPad);
-      };
-
-      // formatString()
-      var formatString = function (value, leftJustify, minWidth, precision, zeroPad, customPadChar) {
-        if (precision != null) {
-          value = value.slice(0, precision);
-        }
-        return justify(value, '', leftJustify, minWidth, zeroPad, customPadChar);
-      };
-
-      // doFormat()
-      var doFormat = function (substring, valueIndex, flags, minWidth, _, precision, type) {
-        var number;
-        var prefix;
-        var method;
-        var textTransform;
-        var value;
-
-        if (substring == '%%') {
-          return '%';
-        }
-
-        // parse flags
-        var leftJustify = false,
-          positivePrefix = '',
-          zeroPad = false,
-          prefixBaseX = false,
-          customPadChar = ' ';
-        var flagsl = flags.length;
-        for (var j = 0; flags && j < flagsl; j++) {
-          switch (flags.charAt(j)) {
-          case ' ':
-            positivePrefix = ' ';
-            break;
-          case '+':
-            positivePrefix = '+';
-            break;
-          case '-':
-            leftJustify = true;
-            break;
-          case "'":
-            customPadChar = flags.charAt(j + 1);
-            break;
-          case '0':
-            zeroPad = true;
-            break;
-          case '#':
-            prefixBaseX = true;
-            break;
-          }
-        }
-
-        // parameters may be null, undefined, empty-string or real valued
-        // we want to ignore null, undefined and empty-string values
-        if (!minWidth) {
-          minWidth = 0;
-        } else if (minWidth == '*') {
-          minWidth = +a[i++];
-        } else if (minWidth.charAt(0) == '*') {
-          minWidth = +a[minWidth.slice(1, -1)];
-        } else {
-          minWidth = +minWidth;
-        }
-
-        // Note: undocumented perl feature:
-        if (minWidth < 0) {
-          minWidth = -minWidth;
-          leftJustify = true;
-        }
-
-        if (!isFinite(minWidth)) {
-          throw new Error('sprintf: (minimum-)width must be finite');
-        }
-
-        if (!precision) {
-          precision = 'fFeE'.indexOf(type) > -1 ? 6 : (type == 'd') ? 0 : undefined;
-        } else if (precision == '*') {
-          precision = +a[i++];
-        } else if (precision.charAt(0) == '*') {
-          precision = +a[precision.slice(1, -1)];
-        } else {
-          precision = +precision;
-        }
-
-        // grab value using valueIndex if required?
-        value = valueIndex ? a[valueIndex.slice(0, -1)] : a[i++];
-
-        switch (type) {
-        case 's':
-          return formatString(String(value), leftJustify, minWidth, precision, zeroPad, customPadChar);
-        case 'c':
-          return formatString(String.fromCharCode(+value), leftJustify, minWidth, precision, zeroPad);
-        case 'b':
-          return formatBaseX(value, 2, prefixBaseX, leftJustify, minWidth, precision, zeroPad);
-        case 'o':
-          return formatBaseX(value, 8, prefixBaseX, leftJustify, minWidth, precision, zeroPad);
-        case 'x':
-          return formatBaseX(value, 16, prefixBaseX, leftJustify, minWidth, precision, zeroPad);
-        case 'X':
-          return formatBaseX(value, 16, prefixBaseX, leftJustify, minWidth, precision, zeroPad).toUpperCase();
-        case 'u':
-          return formatBaseX(value, 10, prefixBaseX, leftJustify, minWidth, precision, zeroPad);
-        case 'i':
-        case 'd':
-          number = +value || 0;
-          number = Math.round(number - number % 1); // Plain Math.round doesn't just truncate
-          prefix = number < 0 ? '-' : positivePrefix;
-          value = prefix + pad(String(Math.abs(number)), precision, '0', false);
-          return justify(value, prefix, leftJustify, minWidth, zeroPad);
-        case 'e':
-        case 'E':
-        case 'f': // Should handle locales (as per setlocale)
-        case 'F':
-        case 'g':
-        case 'G':
-          number = +value;
-          prefix = number < 0 ? '-' : positivePrefix;
-          method = ['toExponential', 'toFixed', 'toPrecision']['efg'.indexOf(type.toLowerCase())];
-          textTransform = ['toString', 'toUpperCase']['eEfFgG'.indexOf(type) % 2];
-          value = prefix + Math.abs(number)[method](precision);
-          return justify(value, prefix, leftJustify, minWidth, zeroPad)[textTransform]();
-        default:
-          return substring;
-        }
-      };
-
-      return format.replace(regex, doFormat);
+            '2': '0b',
+            '8': '0',
+            '16': '0x'
+            }[base] || '';
+        value = prefix + pad_(number.toString(base), precision || 0, '0', false);
+        return justify_(value, prefix, leftJustify, minWidth, zeroPad);
     }
-    function ltrim (str, charlist) {
-      charlist = !charlist ? ' \\s\u00A0' : (charlist + '').replace(/([\[\]\(\)\.\?\/\*\{\}\+\$\^\:])/g, '$1');
-      var re = new RegExp('^[' + charlist + ']+', 'g');
-      return (str + '').replace(re, '');
+    // formatString()
+    function formatString_( value, leftJustify, minWidth, precision, zeroPad, customPadChar ) 
+    {
+        if ( null != precision )
+            value = value.slice(0, precision);
+        
+        return justify_(value, '', leftJustify, minWidth, zeroPad, customPadChar);
     }
-    function rtrim (str, charlist) {
-      charlist = !charlist ? ' \\s\u00A0' : (charlist + '').replace(/([\[\]\(\)\.\?\/\*\{\}\+\$\^\:])/g, '\\$1');
-      var re = new RegExp('[' + charlist + ']+$', 'g');
-      return (str + '').replace(re, '');
+    function sprintf( ) 
+    {
+        var a = arguments,
+        i = 0, format = a[i++];
+
+        // doFormat()
+        var doFormat = function( substring, valueIndex, flags, minWidth, _, precision, type ) {
+            var number, prefix, method, textTransform, value;
+
+            if ('%%' == substring) return '%';
+
+            // parse flags
+            var leftJustify = false, positivePrefix = '', zeroPad = false,
+                prefixBaseX = false, customPadChar = ' ',
+                flagsl = flags.length, j
+            ;
+            for (j = 0; flags && j < flagsl; j++) 
+            {
+                switch (flags.charAt(j)) 
+                {
+                    case ' ':
+                        positivePrefix = ' ';
+                        break;
+                    case '+':
+                        positivePrefix = '+';
+                        break;
+                    case '-':
+                        leftJustify = true;
+                        break;
+                    case "'":
+                        customPadChar = flags.charAt(j + 1);
+                        break;
+                    case '0':
+                        zeroPad = true;
+                        break;
+                    case '#':
+                        prefixBaseX = true;
+                        break;
+                }
+            }
+
+            // parameters may be null, undefined, empty-string or real valued
+            // we want to ignore null, undefined and empty-string values
+            if ( !minWidth ) 
+                minWidth = 0;
+            else if ( minWidth == '*' ) 
+                minWidth = +a[i++];
+            else if ( minWidth.charAt(0) == '*' ) 
+                minWidth = +a[minWidth.slice(1, -1)];
+            else 
+                minWidth = +minWidth;
+
+            // Note: undocumented perl feature:
+            if ( minWidth < 0 ) 
+            {
+                minWidth = -minWidth;
+                leftJustify = true;
+            }
+
+            if ( !isFinite(minWidth) ) 
+            {
+                throw new Error('sprintf: (minimum-)width must be finite');
+            }
+
+            if ( !precision ) 
+                precision = 'fFeE'.indexOf(type) > -1 ? 6 : (type == 'd') ? 0 : undefined;
+            else if ( precision == '*' )
+                precision = +a[i++];
+            else if ( precision.charAt(0) == '*' )
+                precision = +a[precision.slice(1, -1)];
+            else
+                precision = +precision;
+
+            // grab value using valueIndex if required?
+            value = valueIndex ? a[valueIndex.slice(0, -1)] : a[i++];
+
+            switch(type) 
+            {
+                case 's':
+                    return formatString_(String(value), leftJustify, minWidth, precision, zeroPad, customPadChar);
+                case 'c':
+                    return formatString_(String.fromCharCode(+value), leftJustify, minWidth, precision, zeroPad);
+                case 'b':
+                    return formatBaseX_(value, 2, prefixBaseX, leftJustify, minWidth, precision, zeroPad);
+                case 'o':
+                    return formatBaseX_(value, 8, prefixBaseX, leftJustify, minWidth, precision, zeroPad);
+                case 'x':
+                    return formatBaseX_(value, 16, prefixBaseX, leftJustify, minWidth, precision, zeroPad);
+                case 'X':
+                    return formatBaseX_(value, 16, prefixBaseX, leftJustify, minWidth, precision, zeroPad).toUpperCase();
+                case 'u':
+                    return formatBaseX_(value, 10, prefixBaseX, leftJustify, minWidth, precision, zeroPad);
+                case 'i':
+                case 'd':
+                    number = +value || 0;
+                    number = Math.round(number - number % 1); // Plain Math.round doesn't just truncate
+                    prefix = number < 0 ? '-' : positivePrefix;
+                    value = prefix + pad_(String(Math.abs(number)), precision, '0', false);
+                    return justify_(value, prefix, leftJustify, minWidth, zeroPad);
+                case 'e':
+                case 'E':
+                case 'f': // Should handle locales (as per setlocale)
+                case 'F':
+                case 'g':
+                case 'G':
+                    number = +value;
+                    prefix = number < 0 ? '-' : positivePrefix;
+                    method = ['toExponential', 'toFixed', 'toPrecision']['efg'.indexOf(type.toLowerCase())];
+                    textTransform = ['toString', 'toUpperCase']['eEfFgG'.indexOf(type) % 2];
+                    value = prefix + Math.abs(number)[method](precision);
+                    return justify_(value, prefix, leftJustify, minWidth, zeroPad)[textTransform]();
+                default:
+                    return substring;
+            }
+        };
+
+        return format.replace(re_8, doFormat);
     }
-    function trim (str, charlist) {
-      var whitespace, l = 0,
-        i = 0;
-      str += '';
+    function ltrim( str, charlist ) 
+    {
+        charlist = !charlist ? ' \\s\u00A0' : (charlist + '').replace(re_9, '\\$1');
+        return (str + '').replace(RE('^[' + charlist + ']+', 'g'), '');
+    }
+    function rtrim( str, charlist ) 
+    {
+        charlist = !charlist ? ' \\s\u00A0' : (charlist + '').replace(re_9, '\\$1');
+        return (str + '').replace(RE('[' + charlist + ']+$', 'g'), '');
+    }
+    function trim( str, charlist ) 
+    {
+        var whitespace, l = 0, i = 0; 
+        str += '';
 
-      if (!charlist) {
-        // default list
-        whitespace = " \n\r\t\f\x0b\xa0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u2028\u2029\u3000";
-      } else {
-        // preg_quote custom list
-        charlist += '';
-        whitespace = charlist.replace(/([\[\]\(\)\.\?\/\*\{\}\+\$\^\:])/g, '$1');
-      }
-
-      l = str.length;
-      for (i = 0; i < l; i++) {
-        if (whitespace.indexOf(str.charAt(i)) === -1) {
-          str = str.substring(i);
-          break;
+        if ( !charlist ) 
+        {
+            // default list
+            whitespace = " \n\r\t\f\x0b\xa0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u2028\u2029\u3000";
+        } 
+        else 
+        {
+            // preg_quote custom list
+            charlist += '';
+            whitespace = charlist.replace(re_9, '\\$1');
         }
-      }
 
-      l = str.length;
-      for (i = l - 1; i >= 0; i--) {
-        if (whitespace.indexOf(str.charAt(i)) === -1) {
-          str = str.substring(0, i + 1);
-          break;
+        l = str.length;
+        for (i = 0; i < l; i++) 
+        {
+            if ( whitespace.indexOf(str.charAt(i)) === -1 ) 
+            {
+                str = str.substring(i);
+                break;
+            }
         }
-      }
 
-      return whitespace.indexOf(str.charAt(0)) === -1 ? str : '';
+        l = str.length;
+        for (i = l - 1; i >= 0; i--) 
+        {
+            if (whitespace.indexOf(str.charAt(i)) === -1) 
+            {
+                str = str.substring(0, i + 1);
+                break;
+            }
+        }
+        return whitespace.indexOf(str.charAt(0)) === -1 ? str : '';
     }
-    function date (format, timestamp) {
+    function date( format, timestamp )
+    {
         var //that = this,
           jsdate,
           f,
@@ -717,20 +725,20 @@
       };
       return date(format, timestamp);
     }
-    function _localized_date($locale, $format, $timestamp) 
+    
+    function _localized_date( locale, format, timestamp ) 
     {
-        var $txt_words = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sun", "Mon", "Tues", "Wednes", "Thurs", "Fri", "Satur", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        
-        var $date = date($format, $timestamp);
+        var i, l = date_words.length, ldate = date(format, timestamp);
         
         // localize days/months
-        for (var i=0, l=$txt_words.length; i<l; i++)
+        for (i=0; i<l; i++)
         {
-            if ($locale[HAS]($txt_words[i])) $date = $date.replace($txt_words[i], $locale[$txt_words[i]]);
+            if ( locale[HAS](date_words[i]) ) 
+                ldate = ldate.split(date_words[i]).join(locale[date_words[i]]);
         }
         
         // return localized date
-        return $date;
+        return ldate;
     }
     
     
@@ -826,9 +834,9 @@
             $__extends = t[8]; $__locals = t[9]; $__variables = t[10]; $__currentblock = t[11];
         },
         
-        joinLines = function( ) {
-            return slice( arguments ).join( $__TEOL );
-        },
+        /*joinLines = function( args ) {
+            return args.join( $__TEOL );
+        },*/
         
         // pad lines to generate formatted code
         padLines = function( lines, level ) {
@@ -1028,6 +1036,7 @@
         // if
         t_if = function( cond ) { 
             var out = "';" + padLines( TT_IF({
+                    'EOL': $__TEOL,
                     'IFCOND': cond
                 }) );
             $__ifs++; 
@@ -1040,6 +1049,7 @@
         t_elseif = function( cond ) { 
             $__level--;
             var out = "';" + padLines( TT_ELSEIF({
+                    'EOL': $__TEOL,
                     'ELIFCOND': cond
                 }) );
             $__level++;
@@ -1050,7 +1060,9 @@
         // else
         t_else = function( ) { 
             $__level--;
-            var out = "';" + padLines( TT_ELSE( ) );
+            var out = "';" + padLines( TT_ELSE({ 
+                'EOL': $__TEOL
+            }) );
             $__level++;
             
             return out;
@@ -1060,7 +1072,9 @@
         t_endif = function( ) { 
             $__ifs--; 
             $__level--;
-            var out = "';" + padLines( TT_ENDIF( ) );
+            var out = "';" + padLines( TT_ENDIF({ 
+                'EOL': $__TEOL
+            }) );
             
             return out;
         },
@@ -1099,11 +1113,12 @@
                 ;
                 $__locals[$__currentblock][$__variables[$__currentblock][k]] = 1; 
                 $__locals[$__currentblock][$__variables[$__currentblock][v]] = 1;
-                out = "';" + padLines(TT_FOR({
+                out = "';" + padLines(TT_FOR2({
+                    'EOL': $__TEOL,
                     'O': o, '_O': _o, '_OK': _oK,
                     'K': k, '_K': _k, '_L': _l, 'V': v,
                     'ASSIGN1': ""+k+" = "+_oK+"["+_k+"]; "+v+" = "+_o+"["+k+"];"
-                }, 2));
+                }));
                 $__forType = 2;
                 $__level+=2;
             }
@@ -1114,11 +1129,12 @@
                     _l = '_loc_' + (++$__idcnt)
                 ;
                 $__locals[$__currentblock][$__variables[$__currentblock][v]] = 1;
-                out = "';" + padLines(TT_FOR({
+                out = "';" + padLines(TT_FOR1({
+                    'EOL': $__TEOL,
                     'O': o, '_O': _o,
                     '_K': _k, '_L': _l, 'V': v,
                     'ASSIGN1': ""+v+" = "+_o+"["+_k+"];"
-                }, 1));
+                }));
                 $__forType = 1;
                 $__level+=2;
             }
@@ -1135,14 +1151,18 @@
             {
                 $__loopifs--;  
                 $__level+=-2;
-                out = "';" + padLines( TT_ELSEFOR( null, 2 ) );
+                out = "';" + padLines( TT_ELSEFOR2( {
+                    'EOL': $__TEOL
+                } ) );
                 $__level+=1;
             }
             else
             {
                 $__loopifs--;  
                 $__level+=-2;
-                out = "';" + padLines( TT_ELSEFOR( null, 1 ) );
+                out = "';" + padLines( TT_ELSEFOR1( {
+                    'EOL': $__TEOL
+                } ) );
                 $__level+=1;
             }
             
@@ -1158,20 +1178,26 @@
                 {
                     $__loops--; $__loopifs--;  
                     $__level+=-2;
-                    out = "';" + padLines( TT_ENDFOR( null, 3 ) );
+                    out = "';" + padLines( TT_ENDFOR3( {
+                        'EOL': $__TEOL
+                    } ) );
                 }
                 else
                 {
                     $__loops--; $__loopifs--;  
                     $__level+=-2;
-                    out = "';" + padLines( TT_ENDFOR( null, 2 ) );
+                    out = "';" + padLines( TT_ENDFOR2( {
+                        'EOL': $__TEOL
+                    } ) );
                 }
             }
             else
             {
                 $__loops--; 
                 $__level+=-1;
-                out = "';" + padLines( TT_ENDFOR( null, 1 ) );
+                out = "';" + padLines( TT_ENDFOR1( {
+                    'EOL': $__TEOL
+                } ) );
             }
             return out;
         },
@@ -1397,6 +1423,7 @@
                 {
                     // 1st occurance, block definition
                     blocks.push([ block, TT_BLOCK({
+                            'EOL': $__TEOL,
                             'BLOCKCODE': s.slice( pos1+tl, pos2-tl-1 ) + "';"
                         })]);
                 }
@@ -1757,7 +1784,8 @@
                 parsed += s;
             }
         
-            if ( false !== withblocks ) return parseBlocks( parsed ); // render any blocks
+            if ( false !== withblocks ) 
+                return $__allblocks.length>0 ? parseBlocks( parsed ) : [parsed, []]; // render any blocks
             
             return parsed;
         },
@@ -1784,15 +1812,18 @@
             
             if ($__extends)
             {
-                func = TT_FUNC( null, 1 );
+                func = TT_FUNC1({
+                    'EOL': $__TEOL
+                });
             }
             else
             {
                 // Introduce the data as local variables using with(){}
                // Convert the template into pure JavaScript
-                func = TT_FUNC({
+                func = TT_FUNC2({
+                            'EOL': $__TEOL,
                             'FCODE': "__p__ += '" + renderf + "';"
-                        }, 2);
+                        });
             }
             
             // defined blocks
@@ -1821,6 +1852,7 @@
             for (b=0; b<bl; b++) 
             {
                 sblocks.push( $__TEOL + TT_BlockCode({
+                                    'EOL': $__TEOL,
                                     'BLOCKNAME': blocks[b][0],
                                     'BLOCKMETHODNAME': blocks[b][0],
                                     'BLOCKMETHODCODE': padLines(blocks[b][1], 1)
@@ -1845,14 +1877,17 @@
             if ($__extends) 
             {
                 extendCode = "this.extend( '" + $__extends + "' );";
-                renderCode = TT_RCODE( null, 1 );
+                renderCode = TT_RCODE1({
+                    'EOL': $__TEOL
+                });
             }
             else
             {
                 extendCode = '';
-                renderCode = TT_RCODE({
+                renderCode = TT_RCODE2({
+                                'EOL': $__TEOL,
                                 'RCODE': "__p__ += '" + renderf + "';"
-                            }, 2);
+                            });
             }
             
             if ( $__tplPrefixCode )  prefixCode = $__tplPrefixCode;
@@ -1860,6 +1895,7 @@
             
           // generate tpl class
             var classCode = TT_ClassCode({
+                                'EOL': $__TEOL,
                                 'CLASSNAME': classname,
                                 'TPLID': id,
                                 'PREFIXCODE': prefixCode,
@@ -1968,249 +2004,16 @@
         },
         
         // generated cached tpl class code as a "heredoc" template (for Node cached templates)
-        TT_ClassCode = function( r, t ) {
-            var j = joinLines;
-            return [
-                r['PREFIXCODE']
-                ,j(""
-                ,"!function (root, moduleName, moduleDefinition) {"
-                ,"    //"
-                ,"    // export the module"
-                ,"    // node, CommonJS, etc.."
-                ,"    if ( 'object' === typeof(module) && module.exports ) module.exports = moduleDefinition();"
-                ,"    // AMD, etc.."
-                ,"    else if ( 'function' === typeof(define) && define.amd ) define( moduleDefinition );"
-                ,"    // browser, etc.."
-                ,"    else root[ moduleName ] = moduleDefinition();"
-                ,""
-                ,"}(this, '"), r['CLASSNAME'], j("', function( ) {"
-                ,"    \"use strict\";"
-                ,"    return function( Contemplate ) {"
-                ,"    /* Contemplate cached template '"), r['TPLID'], j("' */"
-                ,"    "
-                ,"    /* constructor */"
-                ,"    function "), r['CLASSNAME'], j("(id)"
-                ,"    {"
-                ,"        /* initialize internal vars */"
-                ,"        "
-                ,"        this._renderer = id;"
-                ,"        this._blocks = null;"
-                ,"        this._extends = null;"
-                ,"        this.d = null;"
-                ,"        this.id = id;"
-                ,"        "
-                ,"        /* tpl-defined blocks render code starts here */"
-                ,""), r['BLOCKS'], j(""
-                ,"        /* tpl-defined blocks render code ends here */"
-                ,"        "
-                ,"        /* extend tpl assign code starts here */"
-                ,""), r['EXTENDCODE'], j(""
-                ,"        /* extend tpl assign code ends here */"
-                ,"    };"
-                ,"    "
-                ,"    /* extends main Contemplate.Template class */"
-                ,"    "), r['CLASSNAME'], j(".prototype = Object.create(Contemplate.Template.prototype);"
-                ,"    /* tpl render method */"
-                ,"    "), r['CLASSNAME'], j(".prototype.render = function( data, __i__ ) {"
-                ,"        if ( !__i__ ) __i__ = this;"
-                ,"        var __p__ = '';"
-                ,"        if ( this._extends )"
-                ,"        {"
-                ,"            __p__ = this._extends.render(data, __i__);"
-                ,"        }"
-                ,"        else"
-                ,"        {"
-                ,"            /* tpl main render code starts here */"
-                ,""), r['RENDERCODE'], j(""
-                ,"            /* tpl main render code ends here */"
-                ,"        }"
-                ,"        this.d = null;"
-                ,"        return __p__;"
-                ,"    };"
-                ,"    "
-                ,"    // export it"
-                ,"    return "), r['CLASSNAME'], j(";"
-                ,"    };"
-                ,"});"
-                ,"")
-            ].join( "" );
-        },   
+        TT_ClassCode,   
     
         // generated cached tpl block method code as a "heredoc" template (for Node cached templates)
-        TT_BlockCode = function( r, t ) { 
-            var j = joinLines;
-            return [
-                j(""
-                ,"/* tpl block render method for block '"), r['BLOCKNAME'], j("' */"
-                ,"'"), r['BLOCKMETHODNAME'], j("': function(Contemplate,__i__) {"
-                ,""), r['BLOCKMETHODCODE'], j(""
-                ,"}"
-                ,"")
-            ].join( "" );
-        },
+        TT_BlockCode, TT_BLOCK,
 
-        TT_BLOCK = function( r, t ) {
-            var j = joinLines;
-            return [
-                j(""
-                ,"var __p__ = '', data = __i__.d;"
-                ,""), r['BLOCKCODE'], j(""
-                ,"return __p__;"
-                ,"")
-            ].join( "" );
-        },
-
-        TT_IF = function( r, t ) {
-            var j = joinLines;
-            return [
-                j(""
-                ,"if ("), r['IFCOND'], j(")"
-                ,"{"
-                ,"")
-            ].join( "" );
-        },
+        TT_IF, TT_ELSEIF, TT_ELSE, TT_ENDIF,
     
-        TT_ELSEIF = function( r, t ) {
-            var j = joinLines;
-            return [
-                j(""
-                ,"}"
-                ,"else if ("), r['ELIFCOND'], j(")"
-                ,"{"
-                ,"")
-            ].join( "" );
-        },
+        TT_FOR1,TT_FOR2, TT_ELSEFOR1,TT_ELSEFOR2, TT_ENDFOR1,TT_ENDFOR2,TT_ENDFOR3,
     
-        TT_ELSE = function( r, t ) {
-            var j = joinLines;
-            return j(""
-                ,"}"
-                ,"else"
-                ,"{"
-                ,"");
-        },
-    
-        TT_ENDIF = function( r, t ) {
-            var j = joinLines;
-            return j(""
-                ,"}"
-                ,"");
-        },
-    
-        TT_FOR = function( r, t ) {
-            var j = joinLines;
-            if ( 2 === t )
-            {
-                return [
-                    j(""
-                    ,"var "), r['_O'], " = ", r['O'], ", ", r['_OK'], " = Contemplate.keys(", r['_O'], j("),"
-                    ,"    "), r['_K'], ", ", r['K'], ", ", r['V'], ", ", r['_L'], " = ", r['_OK'], " ? ", r['_OK'], ".length : 0", j(";"
-                    ,"if ("), r['_L'], j(")"
-                    ,"{"
-                    ,"    for ("), r['_K'], "=0; ", r['_K'], "<", r['_L'], "; ", r['_K'], j("++)"
-                    ,"    {"
-                    ,"        "), r['ASSIGN1'], j(""
-                    ,"        "
-                    ,"")
-                ].join( "" );
-            }
-            else
-            {
-                return [
-                    j(""
-                    ,"var "), r['_O'], " = Contemplate.values(", r['O'], j("),"
-                    ,"    "), r['_K'], ", ", r['V'], ", ", r['_L'], " = ", r['_O'], " ? ", r['_O'], ".length : 0", j(";"
-                    ,"if ("), r['_L'], j(")"
-                    ,"{"
-                    ,"    for ("), r['_K'], "=0; ", r['_K'], "<", r['_L'], "; ", r['_K'], j("++)"
-                    ,"    {"
-                    ,"        "), r['ASSIGN1'], j(""
-                    ,"        "
-                    ,"")
-                ].join( "" );
-            }
-        },
-    
-        TT_ELSEFOR = function( r, t ) {
-            var j = joinLines;
-            if ( 2 === t )
-            {
-                return j(""
-                    ,"    }"
-                    ,"}"
-                    ,"else"
-                    ,"{  "
-                    ,"");
-            }
-            else
-            {
-                return j(""
-                    ,"    }"
-                    ,"}"
-                    ,"else"
-                    ,"{  "
-                    ,"");
-            }
-        },
-    
-        TT_ENDFOR = function( r, t ){
-            var j = joinLines;
-            if ( 3 === t )
-            {
-                return j(""
-                    ,"    }"
-                    ,"}"
-                    ,"");
-            }
-            else if ( 2 === t )
-            {
-                return j(""
-                    ,"    }"
-                    ,"}"
-                    ,"");
-            }
-            else
-            {
-                return j(""
-                    ,"}"
-                    ,"");
-            }
-        },
-    
-        TT_FUNC = function( r, t ) { 
-            var j = joinLines;
-            if ( 1 === t )
-            {
-                return "return '';"; 
-            }
-            else
-            {
-                return [
-                    j(""
-                    ,"var __p__ = '', data = __i__.d;"
-                    ,""), r['FCODE'], j(""
-                    ,"return __p__;"
-                    ,"")
-                ].join( "" );
-            }
-        },
-        
-        TT_RCODE = function( r, t ) { 
-            var j = joinLines;
-            if ( 1 === t )
-            {
-                return "__p__ = '';"; 
-            }
-            else
-            {
-                return [
-                    j(""
-                    ,"__i__.d = data;"
-                    ,""), r['RCODE'], j(""
-                    ,"")
-                ].join( "" );
-            }
-        }
+        TT_FUNC1,TT_FUNC2, TT_RCODE1,TT_RCODE2
     ;
     
     
@@ -2225,7 +2028,7 @@
         this.id = null;
         this._renderer = null;
         this.tpl = InlineTemplate.multisplit( tpl||'', replacements||{} );
-        if ( false !== compiled )
+        if ( true === compiled )
         {
             this._renderer = InlineTemplate.compile( this.tpl );
         }
@@ -2244,18 +2047,14 @@
                     if ( 1 === a[ i ][ 0 ] )
                     {
                         b = a[ i ][ 1 ].split( sr ); bl = b.length;
+                        c.push( [1, b[0]] );
                         if ( bl > 1 )
                         {
                             for (j=0; j<bl-1; j++)
                             {
-                                c.push( [1, b[j]] );
                                 c.push( s );
                                 c.push( [1, b[j+1]] );
                             }
-                        }
-                        else
-                        {
-                            c.push( [1, b[0]] );
                         }
                     }
                     else
@@ -2270,7 +2069,7 @@
     };
     InlineTemplate.compile = function( tpl ) {
         var l = tpl.length, 
-            i, notIsSub, s, out = 'return ';
+            i, notIsSub, s, out = 'return (';
         ;
         
         for (i=0; i<l; i++)
@@ -2279,7 +2078,7 @@
             if ( notIsSub ) out += "'" + s.replace(SQUOTE, "\\'").replace(NEWLINE, "' + \"\\n\" + '") + "'";
             else out += " + String(args['" + s + "']) + ";
         }
-        out += ';';
+        out += ');';
         return FUNC('args', out);
     };
     InlineTemplate[PROTO] = {
@@ -2426,6 +2225,254 @@
             
             $__tplStart = "'; " + $__TEOL;
             $__tplEnd = $__TEOL + "__p__ += '";
+            
+            // make compilation templates
+            TT_ClassCode = InlineTemplate.compile(InlineTemplate.multisplit([
+                "#PREFIXCODE#"
+                ,""
+                ,"!function (root, moduleName, moduleDefinition) {"
+                ,"    // export the module"
+                ,"    // node, CommonJS, etc.."
+                ,"    if ( 'object' === typeof(module) && module.exports ) module.exports = moduleDefinition();"
+                ,"    // AMD, etc.."
+                ,"    else if ( 'function' === typeof(define) && define.amd ) define( moduleDefinition );"
+                ,"    // browser, etc.."
+                ,"    else root[ moduleName ] = moduleDefinition();"
+                ,""
+                ,"}(this, '#CLASSNAME#', function( ){"
+                ,"    \"use strict\";"
+                ,"    return function( Contemplate ) {"
+                ,"    /* Contemplate cached template '#TPLID#' */"
+                ,"    "
+                ,"    /* constructor */"
+                ,"    function #CLASSNAME#(id)"
+                ,"    {"
+                ,"        /* initialize internal vars */"
+                ,"        "
+                ,"        this._renderer = id;"
+                ,"        this._blocks = null;"
+                ,"        this._extends = null;"
+                ,"        this.d = null;"
+                ,"        this.id = id;"
+                ,"        "
+                ,"        /* tpl-defined blocks render code starts here */"
+                ,"#BLOCKS#"
+                ,"        /* tpl-defined blocks render code ends here */"
+                ,"        "
+                ,"        /* extend tpl assign code starts here */"
+                ,"#EXTENDCODE#"
+                ,"        /* extend tpl assign code ends here */"
+                ,"    };"
+                ,"    "
+                ,"    /* extends main Contemplate.Template class */"
+                ,"    #CLASSNAME#.prototype = Object.create(Contemplate.Template.prototype);"
+                ,"    /* tpl render method */"
+                ,"    #CLASSNAME#.prototype.render = function( data, __i__ ) {"
+                ,"        if ( !__i__ ) __i__ = this;"
+                ,"        var __p__ = '';"
+                ,"        if ( this._extends )"
+                ,"        {"
+                ,"            __p__ = this._extends.render(data, __i__);"
+                ,"        }"
+                ,"        else"
+                ,"        {"
+                ,"            /* tpl main render code starts here */"
+                ,"#RENDERCODE#"
+                ,"            /* tpl main render code ends here */"
+                ,"        }"
+                ,"        this.d = null;"
+                ,"        return __p__;"
+                ,"    };"
+                ,"    "
+                ,"    // export it"
+                ,"    return #CLASSNAME#;"
+                ,"    };"
+                ,"});"
+                ,""
+            ].join( "#EOL#" ), {
+                 "#EOL#":            "EOL"
+                ,"#PREFIXCODE#":     "PREFIXCODE"
+                ,"#CLASSNAME#":      "CLASSNAME"
+                ,"#TPLID#":          "TPLID"
+                ,"#BLOCKS#":         "BLOCKS"
+                ,"#EXTENDCODE#":     "EXTENDCODE"
+                ,"#RENDERCODE#":     "RENDERCODE"
+            }));
+        
+            TT_BlockCode = InlineTemplate.compile(InlineTemplate.multisplit([
+                ""
+                ,"/* tpl block render method for block '#BLOCKNAME#' */"
+                ,"'#BLOCKMETHODNAME#': function(Contemplate,__i__) {"
+                ,"#BLOCKMETHODCODE#"
+                ,"}"
+                ,""
+            ].join( "#EOL#" ), {
+                 "#EOL#":               "EOL"
+                ,"#BLOCKNAME#":         "BLOCKNAME"
+                ,"#BLOCKMETHODNAME#":   "BLOCKMETHODNAME"
+                ,"#BLOCKMETHODCODE#":   "BLOCKMETHODCODE"
+            }));
+
+            TT_BLOCK = InlineTemplate.compile(InlineTemplate.multisplit([
+                ""
+                ,"var __p__ = '', data = __i__.d;"
+                ,"#BLOCKCODE#"
+                ,"return __p__;"
+                ,""
+            ].join( "#EOL#" ), {
+                 "#EOL#":       "EOL"
+                ,"#BLOCKCODE#": "BLOCKCODE"
+            }));
+
+            TT_IF = InlineTemplate.compile(InlineTemplate.multisplit([
+                ""
+                ,"if (#IFCOND#)"
+                ,"{"
+                ,""
+            ].join( "#EOL#" ), {
+                 "#EOL#":       "EOL"
+                ,"#IFCOND#":    "IFCOND"
+            }));
+        
+            TT_ELSEIF = InlineTemplate.compile(InlineTemplate.multisplit([
+                ""
+                ,"}"
+                ,"else if (#ELIFCOND#)"
+                ,"{"
+                ,""
+            ].join( "#EOL#" ), {
+                 "#EOL#":       "EOL"
+                ,"#ELIFCOND#":  "ELIFCOND"
+            }));
+        
+            TT_ELSE = InlineTemplate.compile(InlineTemplate.multisplit([
+                ""
+                ,"}"
+                ,"else"
+                ,"{"
+                ,""
+            ].join( "#EOL#" ), {
+                "#EOL#":               "EOL"
+            }));
+        
+            TT_ENDIF = InlineTemplate.compile(InlineTemplate.multisplit([
+                ""
+                ,"}"
+                ,""
+            ].join( "#EOL#" ), {
+                "#EOL#":               "EOL"
+            }));
+        
+            TT_FOR2 = InlineTemplate.compile(InlineTemplate.multisplit([
+                ""
+                ,"var #_O# = #O#, #_OK# = Contemplate.keys(#_O#),"
+                ,"    #_K#, #K#, #V#, #_L# = #_OK# ? #_OK#.length : 0;"
+                ,"if (#_L#)"
+                ,"{"
+                ,"    for (#_K#=0; #_K#<#_L#; #_K#++)"
+                ,"    {"
+                ,"        #ASSIGN1#"
+                ,"        "
+                ,""
+            ].join( "#EOL#" ), {
+                 "#EOL#":   "EOL"
+                ,"#O#":     "O"
+                ,"#_O#":    "_O"
+                ,"#_OK#":   "_OK"
+                ,"#_K#":    "_K"
+                ,"#K#":     "K"
+                ,"#V#":     "V"
+                ,"#_L#":    "_L"
+                ,"#ASSIGN1#":"ASSIGN1"
+            }));
+            TT_FOR1 = InlineTemplate.compile(InlineTemplate.multisplit([
+                ""
+                ,"var #_O# = Contemplate.values(#O#),"
+                ,"    #_K#, #V#, #_L# = #_O# ? #_O#.length : 0;"
+                ,"if (#_L#)"
+                ,"{"
+                ,"    for (#_K#=0; #_K#<#_L#; #_K#++)"
+                ,"    {"
+                ,"        #ASSIGN1#"
+                ,"        "
+                ,""
+            ].join( "#EOL#" ), {
+                 "#EOL#":    "EOL"
+                ,"#O#":      "O"
+                ,"#_O#":    "_O"
+                ,"#_K#":    "_K"
+                ,"#V#":     "V"
+                ,"#_L#":    "_L"
+                ,"#ASSIGN1#":"ASSIGN1"
+            }));
+        
+            TT_ELSEFOR2 = InlineTemplate.compile(InlineTemplate.multisplit([
+                ""
+                ,"    }"
+                ,"}"
+                ,"else"
+                ,"{  "
+                ,""
+            ].join( "#EOL#" ), {
+                "#EOL#":               "EOL"
+            }));
+            TT_ELSEFOR1 = InlineTemplate.compile(InlineTemplate.multisplit([
+                ""
+                ,"    }"
+                ,"}"
+                ,"else"
+                ,"{  "
+                ,""
+            ].join( "#EOL#" ), {
+                "#EOL#":               "EOL"
+            }));
+        
+            TT_ENDFOR3 = InlineTemplate.compile(InlineTemplate.multisplit([
+                ""
+                ,"    }"
+                ,"}"
+                ,""
+            ].join( "#EOL#" ), {
+                "#EOL#":               "EOL"
+            }));
+            TT_ENDFOR2 = InlineTemplate.compile(InlineTemplate.multisplit([
+                ""
+                ,"    }"
+                ,"}"
+                ,""
+            ].join( "#EOL#" ), {
+                "#EOL#":               "EOL"
+            }));
+            TT_ENDFOR1 = InlineTemplate.compile(InlineTemplate.multisplit([
+                ""
+                ,"}"
+                ,""
+            ].join( "#EOL#" ), {
+                "#EOL#":               "EOL"
+            }));
+        
+            TT_FUNC1 = InlineTemplate.compile(InlineTemplate.multisplit("return '';"));
+            TT_FUNC2 = InlineTemplate.compile(InlineTemplate.multisplit([
+                ""
+                ,"var __p__ = '', data = __i__.d;"
+                ,"#FCODE#"
+                ,"return __p__;"
+                ,""
+            ].join( "#EOL#" ), {
+                 "#EOL#":     "EOL"
+                ,"#FCODE#":  "FCODE"
+            }));
+            
+            TT_RCODE1 = InlineTemplate.compile(InlineTemplate.multisplit("__p__ = '';"));
+            TT_RCODE2 = InlineTemplate.compile(InlineTemplate.multisplit([
+                ""
+                ,"__i__.d = data;"
+                ,"#RCODE#"
+                ,""
+            ].join( "#EOL#" ), {
+                 "#EOL#":     "EOL"
+                ,"#RCODE#":   "RCODE"
+            }));
             
             clearState();
             

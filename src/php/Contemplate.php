@@ -20,7 +20,7 @@ class ContemplateInlineTemplate
     public $tpl = '';
     private $_renderer = null;
     
-    public static function multisplit( $tpl, $reps, $as_array=false ) 
+    public static function multisplit( $tpl, $reps=array(), $as_array=false ) 
     {
         //$as_array = !Contemplate::is_assoc( $reps );
         $a = array( array(1, $tpl) );
@@ -32,18 +32,14 @@ class ContemplateInlineTemplate
                 if ( 1 === $a[ $i ][ 0 ] )
                 {
                     $b = explode($sr, $a[ $i ][ 1 ]); $bl = count($b);
+                    $c[] = array(1, $b[0]);
                     if ( $bl > 1 )
                     {
                         for ($j=0; $j<$bl-1; $j++)
                         {
-                            $c[] = array(1, $b[$j]);
                             $c[] = $s;
                             $c[] = array(1, $b[$j+1]);
                         }
-                    }
-                    else
-                    {
-                        $c[] = array(1, $b[0]);
                     }
                 }
                 else
@@ -59,24 +55,24 @@ class ContemplateInlineTemplate
     public static function compile( $tpl ) 
     {
         $l = count($tpl);
-        $out = 'return ';
+        $out = 'return (';
         for ($i=0; $i<$l; $i++)
         {
             $notIsSub = $tpl[ $i ][ 0 ]; $s = $tpl[ $i ][ 1 ];
             if ( $notIsSub ) $out .= "'" . preg_replace(Contemplate::$NEWLINE, "' . \"\\n\" . '", preg_replace(Contemplate::$SQUOTE, "\\'", $s)) . "'";
             else $out .= " . \$args['" . $s . "'] . ";
         }
-        $out .= ';';
+        $out .= ');';
         return create_function('$args', $out);
     }
     
-    public function __construct( $tpl='', $replacements=null, $compiled=true ) 
+    public function __construct( $tpl='', $replacements=null, $compiled=false ) 
     {
         if ( !$replacements ) $replacements = array();
         $this->id = null;
         $this->_renderer = null;
         $this->tpl = self::multisplit( $tpl, (array)$replacements );
-        if ( false !== $compiled )
+        if ( true === $compiled )
         {
             $this->_renderer = self::compile( $this->tpl );
         }
@@ -106,8 +102,7 @@ class ContemplateInlineTemplate
         for ($i=0; $i<$l; $i++)
         {
             $notIsSub = $tpl[ $i ][ 0 ]; $s = $tpl[ $i ][ 1 ];
-            if ( $notIsSub ) $out .= $s;
-            else $out .= $args[ $s ];
+            $out .= ($notIsSub ? $s : $args[ $s ]);
         }
         return $out;
     }
@@ -265,6 +260,27 @@ class Contemplate
     private static $__variables;
     private static $__currentblock;
     
+    private static $TT_ClassCode = null;
+
+    private static $TT_BlockCode = null;
+    private static $TT_BLOCK = null;
+    
+    private static $TT_IF = null;
+    private static $TT_ELSEIF = null;
+    private static $TT_ELSE = null;
+    private static $TT_ENDIF = null;
+    
+    private static $TT_FOR1 = null;
+    private static $TT_FOR2 = null;
+    private static $TT_ELSEFOR = null;
+    private static $TT_ENDFOR1 = null;
+    private static $TT_ENDFOR2 = null;
+    
+    private static $TT_FUNC1 = null;
+    private static $TT_FUNC2 = null;
+    private static $TT_RCODE1 = null;
+    private static $TT_RCODE2 = null;
+    
     private static $__regExps = array(
         'specials' => null,
         'replacements' => null,
@@ -303,15 +319,15 @@ class Contemplate
         return new ContemplateTemplate( $id );
     }
     
-    public static function InlineTemplate( $tpl, $reps=array(), $compiled=true )
+    public static function InlineTemplate( $tpl, $reps=array(), $compiled=false )
     {
         return new ContemplateInlineTemplate( $tpl, $reps, $compiled );
     }
     
-    public static function is_assoc( $arr )
+    /*public static function is_assoc( $arr )
     {
         return array_keys($arr) !== range(0, count($arr) - 1);
-    }
+    }*/
 
 
     public static function init( )
@@ -332,6 +348,227 @@ class Contemplate
         
         self::$__tplStart = "'; " . self::$__TEOL;
         self::$__tplEnd = self::$__TEOL . "\$__p__ .= '";
+        
+        // make compilation templates
+        self::$TT_ClassCode = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+            "#PREFIXCODE#"
+            ,""
+            ,"/* Contemplate cached template '#TPLID#' */"
+            ,"if (!class_exists('#CLASSNAME#'))"
+            ,"{"
+            ,"final class #CLASSNAME# extends ContemplateTemplate"
+            ,"{    "
+            ,"    /* constructor */"
+            ,"    public function __construct(\$id=null)"
+            ,"    {"
+            ,"        /* initialize internal vars */"
+            ,"        \$this->id = null; "
+            ,"        \$this->d = null;"
+            ,"        \$this->_renderer = null;"
+            ,"        \$this->_extends = null;"
+            ,"        \$this->_blocks = null;"
+            ,"        "
+            ,"        \$this->id = \$id;"
+            ,"        "
+            ,"        /* extend tpl assign code starts here */"
+            ,"#EXTENDCODE#"
+            ,"        /* extend tpl assign code ends here */"
+            ,"    }    "
+            ,"    "
+            ,"    /* tpl-defined blocks render code starts here */"
+            ,"#BLOCKS#"
+            ,"    /* tpl-defined blocks render code ends here */"
+            ,"    "
+            ,"    /* tpl renderBlock method */"
+            ,"    public function renderBlock( \$block, \$__i__=null )"
+            ,"    {"
+            ,"        \$__p__ = '';"
+            ,"        if ( !\$__i__ ) \$__i__ = \$this;"
+            ,"        "
+            ,"        \$method = '_blockfn_' . \$block;"
+            ,"        if ( method_exists(\$this, \$method) ) return \$this->{\$method}(\$__i__);"
+            ,"        elseif ( \$this->_extends ) return \$this->_extends->renderBlock(\$block, \$__i__);"
+            ,"        return \$__p__;"
+            ,"    }"
+            ,"    "
+            ,"    /* tpl render method */"
+            ,"    public function render(\$data, \$__i__=null)"
+            ,"    {"
+            ,"        \$__p__ = '';"
+            ,"        if ( !\$__i__ ) \$__i__ = \$this;"
+            ,"        "
+            ,"        if ( \$this->_extends )"
+            ,"        {"
+            ,"            \$__p__ = \$this->_extends->render(\$data, \$__i__);"
+            ,"        }"
+            ,"        else"
+            ,"        {"
+            ,"            /* tpl main render code starts here */"
+            ,"#RENDERCODE#"
+            ,"            /* tpl main render code ends here */"
+            ,"        }"
+            ,"        \$this->d = null;"
+            ,"        return \$__p__;"
+            ,"    }"
+            ,"}"
+            ,"}"
+            ,""
+        )), array(
+             "#EOL#"=>            "EOL"
+            ,"#PREFIXCODE#"=>     "PREFIXCODE"
+            ,"#CLASSNAME#"=>      "CLASSNAME"
+            ,"#TPLID#"=>          "TPLID"
+            ,"#BLOCKS#"=>         "BLOCKS"
+            ,"#EXTENDCODE#"=>     "EXTENDCODE"
+            ,"#RENDERCODE#"=>     "RENDERCODE"
+        )));
+        
+        self::$TT_BlockCode = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+            ""
+            ,"/* tpl block render method for block '#BLOCKNAME#' */"
+            ,"private function #BLOCKMETHODNAME#(\$__i__) "
+            ,"{ "
+            ,"#BLOCKMETHODCODE#"
+            ,"}"
+            ,""
+        )), array(
+             "#EOL#"=>                  "EOL"
+            ,"#BLOCKNAME#"=>            "BLOCKNAME"
+            ,"#BLOCKMETHODNAME#"=>      "BLOCKMETHODNAME"
+            ,"#BLOCKMETHODCODE#"=>      "BLOCKMETHODCODE"
+        )));
+        
+        self::$TT_BLOCK = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+            ""
+            ,"\$__p__ = ''; \$data =& \$__i__->d;"
+            ,"#BLOCKCODE#"
+            ,"return \$__p__;"
+            ,""
+        )), array(
+             "#EOL#"=>      "EOL"
+            ,"#BLOCKCODE#"=>   "BLOCKCODE"
+        )));
+        
+        self::$TT_IF = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+            ""
+            ,"if (#IFCOND#)"
+            ,"{"
+            ,""
+        )), array(
+             "#EOL#"=>      "EOL"
+            ,"#IFCOND#"=>   "IFCOND"
+        )));
+        
+        self::$TT_ELSEIF = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+            ""
+            ,"}"
+            ,"elseif (#ELIFCOND#)"
+            ,"{"
+            ,""
+        )), array(
+             "#EOL#"=>      "EOL"
+            ,"#ELIFCOND#"=>   "ELIFCOND"
+        )));
+
+        self::$TT_ELSE = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+            ""
+            ,"}"
+            ,"else"
+            ,"{"
+            ,""
+        )), array(
+             "#EOL#"=>      "EOL"
+        )));
+        
+        self::$TT_ENDIF = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+            ""
+            ,"}"
+            ,""
+        )), array(
+             "#EOL#"=>      "EOL"
+        )));
+        
+        self::$TT_FOR2 = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+            ""
+            ,"#_O# = #O#;"
+            ,"if (!empty(#_O#))"
+            ,"{"
+            ,"    foreach (#_O# as #K#=>#V#)"
+            ,"    {"
+            //,"        #ASSIGN1#"
+            ,""
+        )), array(
+             "#EOL#"=>      "EOL"
+            ,"#O#"=>   "O"
+            ,"#_O#"=>   "_O"
+            ,"#K#"=>   "K"
+            ,"#V#"=>   "V"
+        )));
+        self::$TT_FOR1 = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+            ""
+            ,"#_O# = #O#;"
+            ,"if (!empty(#_O#))"
+            ,"{"
+            ,"    foreach (#_O# as #V#)"
+            ,"    {"
+            //,"        #ASSIGN1#"
+            ,""
+        )), array(
+             "#EOL#"=>      "EOL"
+            ,"#O#"=>   "O"
+            ,"#_O#"=>   "_O"
+            ,"#V#"=>   "V"
+        )));
+        
+        self::$TT_ELSEFOR = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+            ""
+            ,"    }"
+            ,"}"
+            ,"else"
+            ,"{"
+            ,""
+        )), array(
+             "#EOL#"=>      "EOL"
+        )));
+        
+        self::$TT_ENDFOR2 = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+            ""
+            ,"}"
+            ,""
+        )), array(
+             "#EOL#"=>      "EOL"
+        )));
+        self::$TT_ENDFOR1 = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+            ""
+            ,"    }"
+            ,"}"
+            ,""
+        )), array(
+             "#EOL#"=>      "EOL"
+        )));
+        
+        self::$TT_FUNC1 = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit("return '';"));
+        self::$TT_FUNC2 = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+            ""
+            ,"\$__p__ = ''; \$data =& \$__i__->d;"  
+            ,"#FCODE#"
+            ,"return \$__p__;"
+            ,""
+        )), array(
+             "#EOL#"=>      "EOL"
+            ,"#FCODE#"=>   "FCODE"
+        )));
+
+        self::$TT_RCODE1 = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit("\$__p__ = '';"));
+        self::$TT_RCODE2 = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+            ""
+            ,"\$__i__->d =& \$data;" 
+            ,"#RCODE#"
+            ,""
+        )), array(
+             "#EOL#"=>      "EOL"
+            ,"#RCODE#"=>   "RCODE"
+        )));
         
         self::clearState();
         
@@ -962,7 +1199,9 @@ class Contemplate
     // if
     private static function t_if( $cond='false' ) 
     {  
-        $out = "';" . self::padLines( self::TT_IF(array(
+        $renderer = self::$TT_IF;
+        $out = "';" . self::padLines( $renderer(array(
+                'EOL'=>     self::$__TEOL,
                 'IFCOND'=> $cond
             )) );
         self::$__ifs++;  
@@ -974,8 +1213,10 @@ class Contemplate
     // elseif    
     private static function t_elseif( $cond='false' ) 
     { 
+        $renderer = self::$TT_ELSEIF;
         self::$__level--;
-        $out = "';" . self::padLines( self::TT_ELSEIF(array(
+        $out = "';" . self::padLines( $renderer(array(
+                'EOL'=>     self::$__TEOL,
                 'ELIFCOND'=> $cond
             )) );
         self::$__level++;
@@ -986,8 +1227,11 @@ class Contemplate
     // else
     private static function t_else( ) 
     { 
+        $renderer = self::$TT_ELSE;
         self::$__level--;
-        $out = "';" . self::padLines( self::TT_ELSE( ) );
+        $out = "';" . self::padLines( $renderer(array( 
+            'EOL'=>     self::$__TEOL
+        )) );
         self::$__level++;
         
         return $out;
@@ -996,9 +1240,12 @@ class Contemplate
     // endif
     private static function t_endif( ) 
     { 
+        $renderer = self::$TT_ENDIF;
         self::$__ifs--;  
         self::$__level--;
-        $out = "';" . self::padLines( self::TT_ENDIF( ) );
+        $out = "';" . self::padLines( $renderer(array( 
+            'EOL'=>     self::$__TEOL
+        )) );
         
         return $out;
     }
@@ -1032,11 +1279,13 @@ class Contemplate
 
             self::$__locals[self::$__currentblock][self::$__variables[self::$__currentblock][$k]] = 1; 
             self::$__locals[self::$__currentblock][self::$__variables[self::$__currentblock][$v]] = 1;
-            $out = "';" . self::padLines( self::TT_FOR(array(
+            $renderer = self::$TT_FOR2;
+            $out = "';" . self::padLines( $renderer(array(
+                    'EOL'=>     self::$__TEOL,
                     'O'=> $o, '_O'=> $_o, 
-                    'K'=> $k, 'V'=> $v,
-                    'ASSIGN1'=> ""
-                ), 2) );
+                    'K'=> $k, 'V'=> $v
+                    //,'ASSIGN1'=> ""
+                )) );
             self::$__level+=2;
         }
         else
@@ -1044,11 +1293,13 @@ class Contemplate
             $v = trim($kv[0]); 
 
             self::$__locals[self::$__currentblock][self::$__variables[self::$__currentblock][$v]] = 1;
-            $out = "';" . self::padLines( self::TT_FOR(array(
+            $renderer = self::$TT_FOR1;
+            $out = "';" . self::padLines( $renderer(array(
+                    'EOL'=>     self::$__TEOL,
                     'O'=> $o, '_O'=> $_o, 
-                    'V'=> $v,
-                    'ASSIGN1'=> ""
-                ), 1) );
+                    'V'=> $v
+                    //,'ASSIGN1'=> ""
+                )) );
             self::$__level+=2;
         }
         self::$__loops++;  self::$__loopifs++;
@@ -1060,9 +1311,12 @@ class Contemplate
     private static function t_elsefor( ) 
     { 
         /* else attached to  for loop */ 
+        $renderer = self::$TT_ELSEFOR;
         self::$__loopifs--;  
         self::$__level+=-2;
-        $out = "';" . self::padLines( self::TT_ELSEFOR( ) );
+        $out = "';" . self::padLines( $renderer(array( 
+            'EOL'=>     self::$__TEOL
+        )) );
         self::$__level+=1;
         
         return $out;
@@ -1075,13 +1329,19 @@ class Contemplate
         { 
             self::$__loops--; self::$__loopifs--;  
             self::$__level+=-2;
-            $out = "';" . self::padLines( self::TT_ENDFOR( null, 1 ) );
+            $renderer = self::$TT_ENDFOR1;
+            $out = "';" . self::padLines( $renderer( array(
+                'EOL'=>     self::$__TEOL
+            ) ) );
         }
         else
         {
             self::$__loops--;  
             self::$__level+=-1;
-            $out = "';" . self::padLines( self::TT_ENDFOR( null, 2 ) );
+            $renderer = self::$TT_ENDFOR2;
+            $out = "';" . self::padLines( $renderer( array(
+                'EOL'=>     self::$__TEOL
+            ) ) );
         }
         return $out;
     }
@@ -1259,7 +1519,7 @@ class Contemplate
     {
         $blocks = array(); 
         $bl = count(self::$__allblocks);
-        
+        $renderer = self::$TT_BLOCK;
         while ($bl--)
         {
             $delims = self::$__allblocks[ $bl ];
@@ -1286,7 +1546,8 @@ class Contemplate
             if ( 1 === self::$__allblockscnt[ $block ] )
             {
                 // 1st occurance, block definition
-                array_push($blocks, array($block, self::TT_BLOCK(array(
+                array_push($blocks, array($block, $renderer(array(
+                        'EOL'=>     self::$__TEOL,
                         'BLOCKCODE'=> substr($s, $pos1+$tl, $pos2-$tl-1-$pos1-$tl) ."';"
                     ))));
             }
@@ -1654,7 +1915,11 @@ class Contemplate
             $parsed .= $s;
         }
         
-        if ( false !== $withblocks ) return self::parseBlocks($parsed);
+        if ( false !== $withblocks ) 
+        {
+            if ( !empty(self::$__allblocks) ) return self::parseBlocks($parsed);
+            else return array($parsed, array());
+        }
         
         return $parsed;
     }
@@ -1718,13 +1983,18 @@ class Contemplate
         
         if ( self::$__extends )
         {
-            $func = self::TT_FUNC( null, 1 );
+            $renderer = self::$TT_FUNC1;
+            $func = $renderer(array(
+                        'EOL'=>     self::$__TEOL
+                    ));
         }
         else
         {
-            $func = self::TT_FUNC(array(
+            $renderer = self::$TT_FUNC2;
+            $func = $renderer(array(
+                        'EOL'=>     self::$__TEOL,
                         'FCODE'=> "\$__p__ .= '" . $renderf . "';"
-                    ), 2);
+                    ));
         }
         
         $fn = create_function('$__i__', $func);
@@ -1751,10 +2021,12 @@ class Contemplate
         $bl = count($blocks);
         
         // tpl-defined blocks
+        $renderer = self::$TT_BlockCode;
         $sblocks = '';
         for($b=0; $b<$bl; $b++) 
         {
-            $sblocks .= self::$__TEOL . self::TT_BlockCode(array(
+            $sblocks .= self::$__TEOL . $renderer(array(
+                            "EOL"=>    self::$__TEOL,
                             'BLOCKNAME'=> $blocks[$b][0],
                             'BLOCKMETHODNAME'=> "_blockfn_" . $blocks[$b][0],
                             'BLOCKMETHODCODE'=> self::padLines($blocks[$b][1], 1)
@@ -1765,21 +2037,28 @@ class Contemplate
         if (self::$__extends)
         {
             $extendCode = "\$this->extend( '".self::$__extends."' );";
-            $renderCode = self::TT_RCODE( null, 1 );
+            $renderer = self::$TT_RCODE1;
+            $renderCode = $renderer(array(
+                            'EOL'=>     self::$__TEOL
+                        ));
         }
         else
         {
             $extendCode = '';
-            $renderCode = self::TT_RCODE(array(
+            $renderer = self::$TT_RCODE2;
+            $renderCode = $renderer(array(
+                            'EOL'=>     self::$__TEOL,
                             'RCODE'=> "\$__p__ .= '" . $renderf . "';"
-                        ), 2);
+                        ));
         }
         
         if ( self::$__tplPrefixCode ) $prefixCode = self::$__tplPrefixCode;
         else  $prefixCode = '';
             
         // generate tpl class
-        $class = '<?php ' .self::$__TEOL . self::TT_ClassCode(array(
+        $renderer = self::$TT_ClassCode;
+        $class = '<?php ' .self::$__TEOL . $renderer(array(
+                                "EOL"=>    self::$__TEOL,
                                 'PREFIXCODE'=> $prefixCode,
                                 'TPLID'=> $id,
                                 'CLASSNAME'=> $classname,
@@ -1951,244 +2230,11 @@ class Contemplate
         return $lines;
     }
     
-    private static function j( ) /* joinLines */
+    /*private static function j( ) /* joinLines * /
     {
         $args = func_get_args( );
         return implode(self::$__TEOL, $args);
-    }
-    
-    // generated cached tpl class code as a heredoc template
-    private static function TT_ClassCode( $r=null, $t = 1 )
-    {
-        return implode("", array(
-            $r['PREFIXCODE'],
-            self::j(""
-            ,"/* Contemplate cached template '"), $r['TPLID'], self::j("' */"
-            ,"if (!class_exists('"), $r['CLASSNAME'], self::j("'))"
-            ,"{"
-            ,"final class "), $r['CLASSNAME'], self::j(" extends ContemplateTemplate"
-            ,"{    "
-            ,"    /* constructor */"
-            ,"    public function __construct(\$id=null)"
-            ,"    {"
-            ,"        /* initialize internal vars */"
-            ,"        \$this->id = null; "
-            ,"        \$this->d = null;"
-            ,"        \$this->_renderer = null;"
-            ,"        \$this->_extends = null;"
-            ,"        \$this->_blocks = null;"
-            ,"        "
-            ,"        \$this->id = \$id;"
-            ,"        "
-            ,"        /* extend tpl assign code starts here */"
-            ,""), $r['EXTENDCODE'], self::j(""
-            ,"        /* extend tpl assign code ends here */"
-            ,"    }    "
-            ,"    "
-            ,"    /* tpl-defined blocks render code starts here */"
-            ,""), $r['BLOCKS'], self::j(""
-            ,"    /* tpl-defined blocks render code ends here */"
-            ,"    "
-            ,"    /* tpl renderBlock method */"
-            ,"    public function renderBlock( \$block, \$__i__=null )"
-            ,"    {"
-            ,"        \$__p__ = '';"
-            ,"        if ( !\$__i__ ) \$__i__ = \$this;"
-            ,"        "
-            ,"        \$method = '_blockfn_' . \$block;"
-            ,"        if ( method_exists(\$this, \$method) ) return \$this->{\$method}(\$__i__);"
-            ,"        elseif ( \$this->_extends ) return \$this->_extends->renderBlock(\$block, \$__i__);"
-            ,"        return \$__p__;"
-            ,"    }"
-            ,"    "
-            ,"    /* tpl render method */"
-            ,"    public function render(\$data, \$__i__=null)"
-            ,"    {"
-            ,"        \$__p__ = '';"
-            ,"        if ( !\$__i__ ) \$__i__ = \$this;"
-            ,"        "
-            ,"        if ( \$this->_extends )"
-            ,"        {"
-            ,"            \$__p__ = \$this->_extends->render(\$data, \$__i__);"
-            ,"        }"
-            ,"        else"
-            ,"        {"
-            ,"            /* tpl main render code starts here */"
-            ,""), $r['RENDERCODE'], self::j(""
-            ,"            /* tpl main render code ends here */"
-            ,"        }"
-            ,"        \$this->d = null;"
-            ,"        return \$__p__;"
-            ,"    }"
-            ,"}"
-            ,"}"
-            ,"")
-        ));
-    }
-    
-    // generated tpl block method code as a heredoc template
-    private static function TT_BlockCode( $r=null, $t = 1 )
-    {
-        return implode("", array(
-            self::j(""
-            ,"/* tpl block render method for block '"), $r['BLOCKNAME'], self::j("' */"
-            ,"private function "), $r['BLOCKMETHODNAME'], self::j("(\$__i__) "
-            ,"{ "
-            ,""), $r['BLOCKMETHODCODE'], self::j(""
-            ,"}"
-            ,"")
-        ));
-    }
-    
-    // generated IF code
-    private static function TT_IF( $r=null, $t = 1 )
-    {
-        return implode("", array(
-            self::j(""
-            ,"if ("), $r['IFCOND'], self::j(")"
-            ,"{"
-            ,"")
-        ));
-    }
-    
-    // generated ELSEIF code
-    private static function TT_ELSEIF( $r=null, $t = 1 )
-    {
-        return implode("", array(
-            self::j(""
-            ,"}"
-            ,"elseif ("), $r['ELIFCOND'], self::j(")"
-            ,"{"
-            ,"")
-        ));
-    }
-
-    // generated ELSE code
-    private static function TT_ELSE( $r=null, $t = 1 ) 
-    {
-        return self::j(""
-            ,"}"
-            ,"else"
-            ,"{"
-            ,"");
-    }
-    
-    // generated ENDIF code
-    private static function TT_ENDIF( $r=null, $t = 1 )
-    {
-        return self::j(""
-            ,"}"
-            ,"");
-    }
-    
-    // generated FOR code
-    private static function TT_FOR( $r=null, $t = 2 )
-    {
-        if ( 2 === $t )
-        {
-            return implode("", array(
-                self::j(""
-                ,""), $r['_O'], " = ", $r['O'], self::j(";"
-                ,"if (!empty("), $r['_O'], self::j("))"
-                ,"{"
-                ,"    foreach ("), $r['_O'], " as ", $r['K'], "=>", $r['V'], self::j(")"
-                ,"    {"
-                //,"        "), $r['ASSIGN1'], self::j(""
-                ,"")
-            ));
-        }
-        else
-        {
-            return implode("", array(
-                self::j(""
-                ,""), $r['_O'], " = ", $r['O'], self::j(";"
-                ,"if (!empty("), $r['_O'], self::j("))"
-                ,"{"
-                ,"    foreach ("), $r['_O'], " as ", $r['V'], self::j(")"
-                ,"    {"
-                //,"        "), $r['ASSIGN1'], self::j(""
-                ,"")
-            ));
-        }
-    }
-    
-    // generated ELSEFOR code
-    private static function TT_ELSEFOR( $r=null, $t = 1 )
-    {
-        return self::j(""
-            ,"    }"
-            ,"}"
-            ,"else"
-            ,"{"
-            ,"");
-    }
-    
-    // generated ENDFOR code
-    private static function TT_ENDFOR( $r=null, $t = 1 ) 
-    {
-        if ( 1 === $t )
-        {
-            return self::j(""
-                ,"    }"
-                ,"}"
-                ,"");
-        }
-        else
-        {
-            return self::j(""
-                ,"}"
-                ,"");
-            }
-    }
-    
-    // generated block code snippet
-    private static function TT_BLOCK( $r=null, $t = 1 )
-    {
-        return implode("", array(
-            self::j(""
-            ,"\$__p__ = ''; \$data =& \$__i__->d;"
-            ,""), $r['BLOCKCODE'], self::j(""
-            ,"return \$__p__;"
-            ,"")
-        ));
-    }
-
-    
-    // generated dynamic render code
-    private static function TT_FUNC( $r=null, $t = 1 )
-    {
-        if ( 1 === $t )
-        {
-            return "return '';";
-        }
-        else
-        {
-            return implode("", array(
-                self::j(""
-                ,"\$__p__ = ''; \$data =& \$__i__->d;"  
-                ,""), $r['FCODE'], self::j(""
-                ,"return \$__p__;"
-                ,"")
-            ));
-        }
-    }
-
-    private static function TT_RCODE( $r=null, $t = 1 )
-    {
-        if ( 1 === $t )
-        {
-            return "\$__p__ = '';";
-        }
-        else
-        {
-            return implode("", array(
-                self::j(""
-                ,"\$__i__->d =& \$data;" 
-                ,""), $r['RCODE'], self::j(""
-                ,"")
-            ));
-        }
-    }
+    }*/
     
     public static function data($d)
     {

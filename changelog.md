@@ -2,7 +2,8 @@
 
 __0.7.1__
 * handle loop variables as local (block-scoped) variables (not added or accessed to/from passed data)
-* minor optimisations
+* various optimisations
+* (re-uploaded) fix inline templates rendering issue
 
 __0.7__
 * inline templates both in Contemplate templates (e.g as parameters to other functions) or in code

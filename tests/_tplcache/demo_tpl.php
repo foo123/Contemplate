@@ -1,5 +1,6 @@
 <?php 
 
+
 /* Contemplate cached template 'demo' */
 if (!class_exists('Contemplate_demo_Cached'))
 {
@@ -171,7 +172,7 @@ final class Contemplate_demo_Cached extends ContemplateTemplate
             }
         }
          
-        $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>A select box</strong><br />' . "\n" . '    ' . ( Contemplate::htmlselect($data['select_data'], $data['select_options']) ) . '' . "\n" . '' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>A table with alternative format</strong><br />' . "\n" . '    ' . ( Contemplate::htmltable($data['table_data'], array("header" => true, "tpl_cell"=> Contemplate::inline("<td>{{value}} (inline tpl)</td>",array("{{value}}"=>"cell"), false))) ) . '' . "\n" . '' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>A select box with alternative format</strong><br />' . "\n" . '    ' . ( Contemplate::htmlselect($data['select_data'], array(             "foo123" => ":,=>",             "optgroups" => array("group1", "group2", "group3"),             "selected" => 3,             "multiple" => false,             "style" => "width:200px;",             "tpl_option"=> '<option value="$value" $selected>$option (inline compiled tpl)</option>'         )) ) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    <!-- include a (sub-)template file -->' . "\n" . '     <!-- print a localized date php-style -->' . "\n" . '<strong>A (localized) date, PHP-style</strong><br />' . "\n" . '' . ( Contemplate::ldate("M, d", Contemplate::now()) ) . '' . "\n" . ''; 
+        $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>A select box</strong><br />' . "\n" . '    ' . ( Contemplate::htmlselect($data['select_data'], $data['select_options']) ) . '' . "\n" . '' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>A table with alternative format</strong><br />' . "\n" . '    ' . ( Contemplate::htmltable($data['table_data'], array("header" => true, "tpl_cell"=> Contemplate::inline("<td>{{value}} (inline compiled tpl)</td>",array("{{value}}"=>"cell"), true))) ) . '' . "\n" . '' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>A select box with alternative format</strong><br />' . "\n" . '    ' . ( Contemplate::htmlselect($data['select_data'], array(             "foo123" => ":,=>",             "optgroups" => array("group1", "group2", "group3"),             "selected" => 3,             "multiple" => false,             "style" => "width:200px;",             "tpl_option"=> '<option value="$value" $selected>$option (inline tpl)</option>'         )) ) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    <!-- include a (sub-)template file -->' . "\n" . '     <!-- print a localized date php-style -->' . "\n" . '<strong>A (localized) date, PHP-style</strong><br />' . "\n" . '' . ( Contemplate::ldate("M, d", Contemplate::now()) ) . '' . "\n" . ''; 
          
         $__p__ .= '' . "\n" . '' . "\n" . '';
         return $__p__;

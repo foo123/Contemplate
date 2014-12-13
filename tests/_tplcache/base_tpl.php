@@ -1,5 +1,6 @@
 <?php 
 
+
 /* Contemplate cached template 'base' */
 if (!class_exists('Contemplate_base_Cached'))
 {

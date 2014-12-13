@@ -1,6 +1,6 @@
 
+
 !function (root, moduleName, moduleDefinition) {
-    //
     // export the module
     // node, CommonJS, etc..
     if ( 'object' === typeof(module) && module.exports ) module.exports = moduleDefinition();
@@ -9,7 +9,7 @@
     // browser, etc..
     else root[ moduleName ] = moduleDefinition();
 
-}(this, 'Contemplate_sub_Cached', function( ) {
+}(this, 'Contemplate_sub_Cached', function( ){
     "use strict";
     return function( Contemplate ) {
     /* Contemplate cached template 'sub' */

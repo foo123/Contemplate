@@ -9,7 +9,7 @@
 
 def __getTplClass__(Contemplate):
 
-    # extends the main Contemplate class
+    # extends the main Contemplate.Template class
     class Contemplate_base_Cached(Contemplate.Template):
         'Contemplate cached template base'
 
@@ -27,8 +27,6 @@ def __getTplClass__(Contemplate):
             # extend tpl assign code starts here
             
             # extend tpl assign code ends here
-
-
 
         # tpl-defined blocks render code starts here
         

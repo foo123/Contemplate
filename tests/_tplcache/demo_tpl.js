@@ -1,6 +1,6 @@
 
+
 !function (root, moduleName, moduleDefinition) {
-    //
     // export the module
     // node, CommonJS, etc..
     if ( 'object' === typeof(module) && module.exports ) module.exports = moduleDefinition();
@@ -9,7 +9,7 @@
     // browser, etc..
     else root[ moduleName ] = moduleDefinition();
 
-}(this, 'Contemplate_demo_Cached', function( ) {
+}(this, 'Contemplate_demo_Cached', function( ){
     "use strict";
     return function( Contemplate ) {
     /* Contemplate cached template 'demo' */
@@ -202,7 +202,7 @@
                     }
                 }
                  
-                __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A select box</strong><br />' + "\n" + '    ' + (Contemplate.htmlselect(data['select_data'], data['select_options'])) + '' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A table with alternative format</strong><br />' + "\n" + '    ' + (Contemplate.htmltable(data['table_data'], {"header" : true, "tpl_cell": Contemplate.inline("<td>{{value}} (inline tpl)</td>",{"{{value}}":"cell"}, false)})) + '' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A select box with alternative format</strong><br />' + "\n" + '    ' + (Contemplate.htmlselect(data['select_data'], {             "foo123" : ":,=>",             "optgroups" : ["group1", "group2", "group3"],             "selected" : 3,             "multiple" : false,             "style" : "width:200px;",             "tpl_option": '<option value="$value" $selected>$option (inline compiled tpl)</option>'         })) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    <!-- include a (sub-)template file -->' + "\n" + '     <!-- print a localized date php-style -->' + "\n" + '<strong>A (localized) date, PHP-style</strong><br />' + "\n" + '' + (Contemplate.ldate("M, d", Contemplate.now())) + '' + "\n" + ''; 
+                __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A select box</strong><br />' + "\n" + '    ' + (Contemplate.htmlselect(data['select_data'], data['select_options'])) + '' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A table with alternative format</strong><br />' + "\n" + '    ' + (Contemplate.htmltable(data['table_data'], {"header" : true, "tpl_cell": Contemplate.inline("<td>{{value}} (inline compiled tpl)</td>",{"{{value}}":"cell"}, true)})) + '' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A select box with alternative format</strong><br />' + "\n" + '    ' + (Contemplate.htmlselect(data['select_data'], {             "foo123" : ":,=>",             "optgroups" : ["group1", "group2", "group3"],             "selected" : 3,             "multiple" : false,             "style" : "width:200px;",             "tpl_option": '<option value="$value" $selected>$option (inline tpl)</option>'         })) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    <!-- include a (sub-)template file -->' + "\n" + '     <!-- print a localized date php-style -->' + "\n" + '<strong>A (localized) date, PHP-style</strong><br />' + "\n" + '' + (Contemplate.ldate("M, d", Contemplate.now())) + '' + "\n" + ''; 
                  
                 __p__ += '' + "\n" + '' + "\n" + '';
                 return __p__;

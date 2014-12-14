@@ -1,6 +1,5 @@
 <?php 
 
-
 /* Contemplate cached template 'demo' */
 if (!class_exists('Contemplate_demo_Cached'))
 {
@@ -19,7 +18,7 @@ final class Contemplate_demo_Cached extends ContemplateTemplate
         $this->id = $id;
         
         /* extend tpl assign code starts here */
-        $this->extend( 'base' );
+        $this->extend('base');
         /* extend tpl assign code ends here */
     }    
     
@@ -31,20 +30,18 @@ final class Contemplate_demo_Cached extends ContemplateTemplate
     { 
         
         $__p__ = ''; $data =& $__i__->d;
-         
-        $__p__ .= '' . "\n" . '' . "\n" . '    <strong>Block3 is overriden by the demo template</strong>' . "\n" . '' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>Functions</strong><br />' . "\n" . '    <ul>' . "\n" . '    <li>%e(&lt;ok k=&quot;v&quot;&gt;) = ' . ( Contemplate::e('<ok k="v">') ) . '</li>' . "\n" . '    <li>%html(&lt;ok k=&quot;v&quot;&gt;) = ' . ( Contemplate::html('<ok k="v">') ) . '</li>' . "\n" . '    <li>trim(__FOO__, _) = ' . ( Contemplate::trim("__FOO__", "_") ) . '</li>' . "\n" . '    <li>trim(  FOO  ) = ' . ( Contemplate::trim("  FOO  ") ) . '</li>' . "\n" . '    <li>lowercase(FOO) = ' . ( Contemplate::lowercase("FOO") ) . '</li>' . "\n" . '    <li>lowercase(fOo) = ' . ( Contemplate::lowercase("fOo") ) . '</li>' . "\n" . '    <li>uppercase(foo) = ' . ( Contemplate::uppercase("foo") ) . '</li>' . "\n" . '    <li>uppercase(FoO) = ' . ( Contemplate::uppercase("FoO") ) . '</li>' . "\n" . '    <li>camelcase(camel_case, _) = ' . ( Contemplate::camelcase("camel_case", "_") ) . '</li>' . "\n" . '    <li>camelcase(camelCase) = ' . ( Contemplate::camelcase("camelCase") ) . '</li>' . "\n" . '    <li>snakecase(snakeCase, _) = ' . ( Contemplate::snakecase("snakeCase", "_") ) . '</li>' . "\n" . '    <li>snakecase(snake_case) = ' . ( Contemplate::snakecase("snake_case") ) . '</li>' . "\n" . '    <li>l(locale) = ' . ( Contemplate::l("locale") ) . '</li>' . "\n" . '    <li>locale(locale) = ' . ( Contemplate::locale("locale") ) . '</li>' . "\n" . '    <li>pluralise(item, 1) = ' . ( Contemplate::pluralise("item", 1) ) . '</li>' . "\n" . '    <li>pluralise(item, 2) = ' . ( Contemplate::pluralise("item", 2) ) . '</li>' . "\n" . '    <li>sprintf("%02d : %02d : %02d", 2, 0, 12) = ' . ( Contemplate::sprintf("%02d : %02d : %02d", 2, 0, 12) ) . '</li>' . "\n" . '    <li>addslashes("this string\'s s\\"s s\\\\"s s\\\\\\"s") = ' . ( Contemplate::addslashes("this string's s\'s s\\'s s\\\'s") ) . '</li>' . "\n" . '    <li>stripslashes("this string\'s s\\"s s\\\\"s s\\\\\\"s") = ' . ( Contemplate::stripslashes("this string's s\'s s\\'s s\\\'s") ) . '</li>' . "\n" . '    <li>uuid(namespace) = ' . ( Contemplate::uuid("namespace") ) . '</li>' . "\n" . '    </ul>' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    ';
-        $_loc_131 = $data['users'];
-        if (!empty($_loc_131))
+        
+        $__p__ .= '' . "\n" . '' . "\n" . '    <strong>Block3 is overriden by the demo template</strong>' . "\n" . '' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>Functions</strong><br />' . "\n" . '    <ul>' . "\n" . '    <li>%uuid(&quot;namespace&quot;) = ' . (Contemplate::uuid("namespace")) . '</li>' . "\n" . '    <li>%echo(&quot;123&quot;) = ' . (strval("123")) . '</li>' . "\n" . '    <li>%q(123) = ' . ("'".(123)."'") . '</li>' . "\n" . '    <li>%dq(123) = ' . ('"'.(123).'"') . '</li>' . "\n" . '    <li>%trim(&quot;__FOO__&quot;, &quot;_&quot;) = ' . (Contemplate::trim("__FOO__", "_")) . '</li>' . "\n" . '    <li>%trim(&quot;  FOO  &quot;) = ' . (Contemplate::trim("  FOO  ")) . '</li>' . "\n" . '    <li>%lowercase(&quot;FOO&quot;) = ' . (strtolower("FOO")) . '</li>' . "\n" . '    <li>%lowercase(&quot;fOo&quot;) = ' . (strtolower("fOo")) . '</li>' . "\n" . '    <li>%uppercase(&quot;foo&quot;) = ' . (strtoupper("foo")) . '</li>' . "\n" . '    <li>%uppercase(&quot;FoO&quot;) = ' . (strtoupper("FoO")) . '</li>' . "\n" . '    <li>%camelcase(&quot;camel_case&quot;, &quot;_&quot;) = ' . (Contemplate::camelcase("camel_case", "_")) . '</li>' . "\n" . '    <li>%camelcase(&quot;camelCase&quot;) = ' . (Contemplate::camelcase("camelCase")) . '</li>' . "\n" . '    <li>%snakecase(&quot;snakeCase&quot;, &quot;_&quot;) = ' . (Contemplate::snakecase("snakeCase", "_")) . '</li>' . "\n" . '    <li>%snakecase(&quot;snake_case&quot;) = ' . (Contemplate::snakecase("snake_case")) . '</li>' . "\n" . '    <li>%sprintf(&quot;%02d : %02d : %02d&quot;, 2, 0, 12) = ' . (sprintf("%02d : %02d : %02d", 2, 0, 12)) . '</li>' . "\n" . '    <li>%addslashes(&quot;this string\'s s\\&quot;s s\\\\&quot;s s\\\\\\&quot;s&quot;) = ' . (Contemplate::addslashes("this string's s\'s s\\'s s\\\'s")) . '</li>' . "\n" . '    <li>%stripslashes(&quot;this string\'s s\\&quot;s s\\\\&quot;s s\\\\\\&quot;s&quot;) = ' . (Contemplate::stripslashes("this string's s\'s s\\'s s\\\'s")) . '</li>' . "\n" . '    <li>%l(&quot;locale&quot;) = %locale(&quot;locale&quot;) = ' . (Contemplate::locale("locale")) . ' = ' . (Contemplate::locale("locale")) . '</li>' . "\n" . '    <li>%pluralise(&quot;item&quot;, 1) = ' . (Contemplate::pluralise("item", 1)) . '</li>' . "\n" . '    <li>%pluralise(&quot;item&quot;, 2) = ' . (Contemplate::pluralise("item", 2)) . '</li>' . "\n" . '    <li>%e(&#39;&lt;ok k=&quot;v&quot;&gt;&#39;) = ' . (Contemplate::e('<ok k="v">')) . '</li>' . "\n" . '    <li>%html(&#39;&lt;ok k=&quot;v&quot;&gt;&#39;) = ' . (Contemplate::html('<ok k="v">')) . '</li>' . "\n" . '    </ul>' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    ';
+        $_loc_136 = $data['users'];
+        if (!empty($_loc_136))
         {
-            foreach ($_loc_131 as $_loc_i=>$_loc_usergroup)
+            foreach ($_loc_136 as $_loc_i=>$_loc_usergroup)
             {
-                 
-                $__p__ .= '' . "\n" . '        <!-- call a (sub-)template -->' . "\n" . '        ' . Contemplate::tpl( "sub",  array("i" => $_loc_i, "users" => $data['users']) ); 
-                 
-                $__p__ .= '' . "\n" . '    ';
+                
+                $__p__ .= '' . "\n" . '        <!-- call a (sub-)template -->' . "\n" . '        ' . (Contemplate::tpl("sub", array("i" => $_loc_i, "users" => $data['users']))) . '' . "\n" . '    ';
             }
         }
-         
+        
         $__p__ .= '' . "\n" . '' . "\n" . '';
         return $__p__;
         
@@ -56,124 +53,124 @@ final class Contemplate_demo_Cached extends ContemplateTemplate
     { 
         
         $__p__ = ''; $data =& $__i__->d;
-         
-        $__p__ .= '' . "\n" . '' . "\n" . '    <strong>Block2 is overriden by the demo template</strong>' . "\n" . '' . "\n" . '    <br /><br />' . "\n" . '' . "\n" . '    <strong>A table</strong><br />' . "\n" . '    ' . ( Contemplate::htmltable($data['table_data'], $data['table_options']) ) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>Test inlined plugin</strong><br />' . "\n" . '    ' . ( bracket( "inlined" ) ) . '' . "\n" . '    <br />' . "\n" . '    <br />' . "\n" . '    ' . "\n" . '    <strong>Test if variable is set</strong><br />' . "\n" . '    ';
-        if (  (isset($data['foo']))  )
+        
+        $__p__ .= '' . "\n" . '' . "\n" . '    <strong>Block2 is overriden by the demo template</strong>' . "\n" . '' . "\n" . '    <br /><br />' . "\n" . '' . "\n" . '    <strong>A table</strong><br />' . "\n" . '    ' . (Contemplate::htmltable($data['table_data'], $data['table_options'])) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>Test inlined plugin</strong><br />' . "\n" . '    ' . (bracket( "inlined" )) . '' . "\n" . '    <br />' . "\n" . '    <br />' . "\n" . '    ' . "\n" . '    <strong>Test if variable is set</strong><br />' . "\n" . '    ';
+        if ((isset($data['foo'])) )
         {
-             
+            
             $__p__ .= '' . "\n" . '        $foo is set' . "\n" . '    ';
         }
         else
         {
-             
+            
             $__p__ .= '' . "\n" . '        $foo is NOT set' . "\n" . '    ';
         }
-         
+        
         $__p__ .= '' . "\n" . '    <br />' . "\n" . '    <br />' . "\n" . '' . "\n" . '    <strong>Set a new tpl variable and use it in a custom test plugin</strong><br />' . "\n" . '    ';
-        $data['foo'] = ( "123" );
-         
+        $data['foo'] = ("123");
+        
         $__p__ .= '' . "\n" . '    <br />' . "\n" . '    <br />' . "\n" . '    ' . "\n" . '    <strong>Test if variable is set</strong><br />' . "\n" . '    ';
-        if (  (isset($data['foo']))  )
+        if ((isset($data['foo'])) )
         {
-             
+            
             $__p__ .= '' . "\n" . '        $foo is set' . "\n" . '    ';
         }
         else
         {
-             
+            
             $__p__ .= '' . "\n" . '        $foo is NOT set' . "\n" . '    ';
         }
-         
-        $__p__ .= '' . "\n" . '    <br />' . "\n" . '    ' . "\n" . '    ' . ( Contemplate::plg_test($data['foo']) ) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <!-- use contemplate literal data with template function, in this case a print test plugin -->' . "\n" . '    <strong>use literal data with template function, in this case a print plugin</strong><br />' . "\n" . '    ' . ( Contemplate::plg_print(array(          "stringVar"     => "stringValue",          "numericVar"    => 123,          "arrayVar"      => array(             0, 1, "astring", 3,              array( "prop"=> 1 )          )      )) ) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>use literal array data in associative loop (php-style)</strong><br />' . "\n" . '    ';
-        $_loc_20 = array("a", "b", "c");
-        if (!empty($_loc_20))
+        
+        $__p__ .= '' . "\n" . '    <br />' . "\n" . '    ' . "\n" . '    ' . (Contemplate::plg_test($data['foo'])) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <!-- use contemplate literal data with template function, in this case a print test plugin -->' . "\n" . '    <strong>use literal data with template function, in this case a print plugin</strong><br />' . "\n" . '    ' . (Contemplate::plg_print(array( "stringVar" => "stringValue", "numericVar" => 123, "arrayVar" => array( 0, 1, "astring", 3, array( "prop"=> 1 ) ) ))) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>use literal array data in associative loop (php-style)</strong><br />' . "\n" . '    ';
+        $_loc_23 = array("a", "b", "c");
+        if (!empty($_loc_23))
         {
-            foreach ($_loc_20 as $_loc_index=>$_loc_value)
+            foreach ($_loc_23 as $_loc_index=>$_loc_value)
             {
-                 
-                $__p__ .= '' . "\n" . '        [' . ( $_loc_index ) . '] = <strong>' . ( $_loc_value ) . '</strong><br /> ' . "\n" . '    ';
+                
+                $__p__ .= '' . "\n" . '        [' . ( $_loc_index) . '] = <strong>' . ( $_loc_value) . '</strong><br /> ' . "\n" . '    ';
             }
         }
-         
+        
         $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>use literal array data in non-associative loop (php-style)</strong><br />' . "\n" . '    ';
-        $_loc_27 = array("a", "b", "c");
-        if (!empty($_loc_27))
+        $_loc_30 = array("a", "b", "c");
+        if (!empty($_loc_30))
         {
-            foreach ($_loc_27 as $_loc_value2)
+            foreach ($_loc_30 as $_loc_value2)
             {
-                 
-                $__p__ .= '' . "\n" . '        <strong>' . ( $_loc_value2 ) . '</strong><br /> ' . "\n" . '    ';
+                
+                $__p__ .= '' . "\n" . '        <strong>' . ( $_loc_value2) . '</strong><br /> ' . "\n" . '    ';
             }
         }
-         
+        
         $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>use literal object data in associative loop (php-style)</strong><br />' . "\n" . '    ';
-        $_loc_37 = array("k1"=>"a", "k2"=>"b", "k3"=>"c");
-        if (!empty($_loc_37))
+        $_loc_40 = array("k1"=>"a", "k2"=>"b", "k3"=>"c");
+        if (!empty($_loc_40))
         {
-            foreach ($_loc_37 as $_loc_index3=>$_loc_value3)
+            foreach ($_loc_40 as $_loc_index3=>$_loc_value3)
             {
-                 
-                $__p__ .= '' . "\n" . '        [' . ( $_loc_index3 ) . '] = <strong>' . ( $_loc_value3 ) . '</strong><br /> ' . "\n" . '    ';
+                
+                $__p__ .= '' . "\n" . '        [' . ( $_loc_index3) . '] = <strong>' . ( $_loc_value3) . '</strong><br /> ' . "\n" . '    ';
             }
         }
-         
+        
         $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>use literal object data in non-associative loop (php-style)</strong><br />' . "\n" . '    ';
-        $_loc_47 = array("k1"=>"a", "k2"=>"b", "k3"=>"c");
-        if (!empty($_loc_47))
+        $_loc_50 = array("k1"=>"a", "k2"=>"b", "k3"=>"c");
+        if (!empty($_loc_50))
         {
-            foreach ($_loc_47 as $_loc_value4)
+            foreach ($_loc_50 as $_loc_value4)
             {
-                 
-                $__p__ .= '' . "\n" . '        <strong>' . ( $_loc_value4 ) . '</strong><br /> ' . "\n" . '    ';
+                
+                $__p__ .= '' . "\n" . '        <strong>' . ( $_loc_value4) . '</strong><br /> ' . "\n" . '    ';
             }
         }
-         
+        
         $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>use literal array data in associative loop (python-style)</strong><br />' . "\n" . '    ';
-        $_loc_54 = array("a", "b", "c");
-        if (!empty($_loc_54))
+        $_loc_57 = array("a", "b", "c");
+        if (!empty($_loc_57))
         {
-            foreach ($_loc_54 as $_loc_index4=>$_loc_value4)
+            foreach ($_loc_57 as $_loc_index4=>$_loc_value4)
             {
-                 
-                $__p__ .= '' . "\n" . '        [' . ( $_loc_index4 ) . '] = <strong>' . ( $_loc_value4 ) . '</strong><br /> ' . "\n" . '    ';
+                
+                $__p__ .= '' . "\n" . '        [' . ( $_loc_index4) . '] = <strong>' . ( $_loc_value4) . '</strong><br /> ' . "\n" . '    ';
             }
         }
-         
+        
         $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>use literal array data in non-associative loop (python-style)</strong><br />' . "\n" . '    ';
-        $_loc_61 = array("a", "b", "c");
-        if (!empty($_loc_61))
+        $_loc_64 = array("a", "b", "c");
+        if (!empty($_loc_64))
         {
-            foreach ($_loc_61 as $_loc_value5)
+            foreach ($_loc_64 as $_loc_value5)
             {
-                 
-                $__p__ .= '' . "\n" . '        <strong>' . ( $_loc_value5 ) . '</strong><br /> ' . "\n" . '    ';
+                
+                $__p__ .= '' . "\n" . '        <strong>' . ( $_loc_value5) . '</strong><br /> ' . "\n" . '    ';
             }
         }
-         
+        
         $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>use literal object data in associative loop (python-style)</strong><br />' . "\n" . '    ';
-        $_loc_71 = array("k1"=>"a", "k2"=>"b", "k3"=>"c");
-        if (!empty($_loc_71))
+        $_loc_74 = array("k1"=>"a", "k2"=>"b", "k3"=>"c");
+        if (!empty($_loc_74))
         {
-            foreach ($_loc_71 as $_loc_index6=>$_loc_value7)
+            foreach ($_loc_74 as $_loc_index6=>$_loc_value7)
             {
-                 
-                $__p__ .= '' . "\n" . '        [' . ( $_loc_index6 ) . '] = <strong>' . ( $_loc_value7 ) . '</strong><br /> ' . "\n" . '    ';
+                
+                $__p__ .= '' . "\n" . '        [' . ( $_loc_index6) . '] = <strong>' . ( $_loc_value7) . '</strong><br /> ' . "\n" . '    ';
             }
         }
-         
+        
         $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>use literal object data in non-associative loop (python-style)</strong><br />' . "\n" . '    ';
-        $_loc_81 = array("k1"=>"a", "k2"=>"b", "k3"=>"c");
-        if (!empty($_loc_81))
+        $_loc_84 = array("k1"=>"a", "k2"=>"b", "k3"=>"c");
+        if (!empty($_loc_84))
         {
-            foreach ($_loc_81 as $_loc_value8)
+            foreach ($_loc_84 as $_loc_value8)
             {
-                 
-                $__p__ .= '' . "\n" . '        <strong>' . ( $_loc_value8 ) . '</strong><br /> ' . "\n" . '    ';
+                
+                $__p__ .= '' . "\n" . '        <strong>' . ( $_loc_value8) . '</strong><br /> ' . "\n" . '    ';
             }
         }
-         
-        $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>A select box</strong><br />' . "\n" . '    ' . ( Contemplate::htmlselect($data['select_data'], $data['select_options']) ) . '' . "\n" . '' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>A table with alternative format</strong><br />' . "\n" . '    ' . ( Contemplate::htmltable($data['table_data'], array("header" => true, "tpl_cell"=> Contemplate::inline("<td>{{value}} (inline compiled tpl)</td>",array("{{value}}"=>"cell"), true))) ) . '' . "\n" . '' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>A select box with alternative format</strong><br />' . "\n" . '    ' . ( Contemplate::htmlselect($data['select_data'], array(             "foo123" => ":,=>",             "optgroups" => array("group1", "group2", "group3"),             "selected" => 3,             "multiple" => false,             "style" => "width:200px;",             "tpl_option"=> '<option value="$value" $selected>$option (inline tpl)</option>'         )) ) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    <!-- include a (sub-)template file -->' . "\n" . '     <!-- print a localized date php-style -->' . "\n" . '<strong>A (localized) date, PHP-style</strong><br />' . "\n" . '' . ( Contemplate::ldate("M, d", Contemplate::now()) ) . '' . "\n" . ''; 
-         
+        
+        $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>A select box</strong><br />' . "\n" . '    ' . (Contemplate::htmlselect($data['select_data'], $data['select_options'])) . '' . "\n" . '' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>A table with alternative format</strong><br />' . "\n" . '    ' . (Contemplate::htmltable($data['table_data'], array("header" => true, "tpl_cell"=> Contemplate::inline("<td>{{value}} (inline compiled tpl)</td>",array("{{value}}"=>"cell"), true)))) . '' . "\n" . '' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>A select box with alternative format</strong><br />' . "\n" . '    ' . (Contemplate::htmlselect($data['select_data'], array( "foo123" => ":,=>", "optgroups" => array("group1", "group2", "group3"), "selected" => 3, "multiple" => false, "style" => "width:200px;", "tpl_option"=> '<option value="$value" $selected>$option (inline tpl)</option>' ))) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    <!-- include a (sub-)template file -->' . "\n" . '     <!-- print a localized date php-style -->' . "\n" . '<strong>A (localized) date, PHP-style</strong><br />' . "\n" . '' . (Contemplate::ldate("M, d", time())) . '' . "\n" . '';
+        
         $__p__ .= '' . "\n" . '' . "\n" . '';
         return $__p__;
         
@@ -185,7 +182,7 @@ final class Contemplate_demo_Cached extends ContemplateTemplate
     { 
         
         $__p__ = ''; $data =& $__i__->d;
-         
+        
         $__p__ .= 'Demo template nested Block12';
         return $__p__;
         

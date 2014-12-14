@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.7.1
+#  @version 0.8
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -108,6 +108,7 @@ class _G:
     blockptr = -1
     locals = None 
     variables = None
+    strings = None
     currentblock = None
     
     extends = None
@@ -116,15 +117,17 @@ class _G:
     stack = None
     uuid = 0
 
-    NEWLINE = None
-    SQUOTE = None
-    NL = None
+    NEWLINE = re.compile(r'\n\r|\r\n|\n|\r')
+    SQUOTE = re.compile(r"'")
+    NL = re.compile(r'\n')
 
-    UNDERL = r'[\W]+'
-    ALPHA = r'^[a-zA-Z_]'
-    NUM = r'^[0-9]'
-    ALPHANUM = r'^[a-zA-Z0-9_]'
-    SPACE = r'^\s'
+    UNDERL = re.compile(r'[\W]+')
+    ALPHA = re.compile(r'^[a-zA-Z_]')
+    NUM = re.compile(r'^[0-9]')
+    ALPHANUM = re.compile(r'^[a-zA-Z0-9_]')
+    SPACE = re.compile(r'^\s')
+    
+    date_words = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sun", "Mon", "Tues", "Wednes", "Thurs", "Fri", "Satur", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
     
     TT_ClassCode = None
 
@@ -146,35 +149,186 @@ class _G:
     TT_RCODE1 = None
     TT_RCODE2 = None
     
-    regExps = {
-        'specials' : None,
-        'replacements' : None,
-        'functions' : None,
-        'controls' : None,
-        'controls2' : None
-    }
-
+    re_plugin = re.compile(r'^(plg_|plugin_)([a-zA-Z0-9_]+)')
+    re_controls = re.compile(r'(\t|[ ]?)[ ]*%([a-zA-Z_][a-zA-Z0-9_]*)\b[ ]*(\()(.*)$')
+    
     controlConstructs = [
-        'include', 'template', 
-        'extends', 'endblock', 'block',
-        'elsefor', 'endfor', 'for',
         'set', 'unset', 'isset',
-        'elseif', 'else', 'endif', 'if'
+        'if', 'elseif', 'else', 'endif',
+        'for', 'elsefor', 'endfor',
+        'extends', 'block', 'endblock',
+        'include'
     ]
 
     funcs = [
-        'htmlselect', 'htmltable',
-        '(plg_|plugin_)([a-zA-Z0-9_]+)', 'haskey',
-        'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
-        'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'addslashes', 'stripslashes',
-        'inline', 'tpl', 'uuid',
-        'html', 'url', 'count', 
-        'ldate', 'date', 'now', 'locale',
-        'dq', 'q', 'l', 's', 'n', 'f', 'e' 
+        's', 'n', 'f', 'q', 'dq', 
+        'echo', 'time', 'count',
+        'lowercase', 'uppercase', 'ucfirst', 'lcfirst', 'sprintf',
+        'date', 'ldate', 'locale', 'pluralise',
+        'inline', 'tpl', 'uuid', 'haskey',
+        'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
+        'camelcase', 'snakecase', 
+        'e','html', 'url',
+        'htmlselect', 'htmltable'
     ]
+    func_aliases = {
+        'l': 'locale',
+        'now': 'time',
+        'template': 'tpl'
+    }
 
     plugins = {}
     
+
+#
+#  Auxilliary methods 
+# (mostly methods to simulate php-like functionality needed by the engine)
+#
+# static
+def include( filename, classname, doReload=False ):
+    # http://www.php2python.com/wiki/function.include/
+    # http://docs.python.org/dev/3.0/whatsnew/3.0.html
+    # http://stackoverflow.com/questions/4821104/python-dynamic-instantiation-from-string-name-of-a-class-in-dynamically-imported
+    
+    #_locals_ = {'Contemplate': Contemplate}
+    #_globals_ = {'Contemplate': Contemplate}
+    #if 'execfile' in globals():
+    #    # Python 2.x
+    #    execfile(filename, _globals_, _locals_)
+    #    return _locals_[classname]
+    #else:
+    #    # Python 3.x
+    #    exec(Contemplate.read(filename), _globals_, _locals_)
+    #    return _locals_[classname]
+    
+    # http://docs.python.org/2/library/imp.html
+    # http://docs.python.org/2/library/functions.html#__import__
+    # http://docs.python.org/3/library/functions.html#__import__
+    # http://stackoverflow.com/questions/301134/dynamic-module-import-in-python
+    # http://stackoverflow.com/questions/11108628/python-dynamic-from-import
+    # also: http://code.activestate.com/recipes/473888-lazy-module-imports/
+    # using import instead of execfile, usually takes advantage of Python cached compiled code
+    
+    global _G
+    getTplClass = None
+    directory = _G.cacheDir
+    # add the dynamic import path to sys
+    os.sys.path.append(directory)
+    currentcwd = os.getcwd()
+    os.chdir(directory)   # change working directory so we know import will work
+    
+    if os.path.exists(filename):
+        
+        modname = filename[:-3]  # remove .py extension
+        mod = __import__(modname)
+        if doReload: reload(mod) # Might be out of date
+        # a trick in-order to pass the Contemplate super-class in a cross-module way
+        getTplClass = getattr( mod, '__getTplClass__' )
+    
+    # restore current dir
+    os.chdir(currentcwd)
+    # remove the dynamic import path from sys
+    del os.sys.path[-1]
+    
+    # return the tplClass if found
+    if getTplClass:  return getTplClass(Contemplate)
+    return None
+
+# static
+def createFunction( funcName, args, sourceCode, additional_symbols=dict() ):
+    # http://code.activestate.com/recipes/550804-create-a-restricted-python-function-from-a-string/
+
+    # The list of symbols that are included by default in the generated
+    # function's environment
+    SAFE_SYMBOLS = [
+        "list", "dict", "enumerate", "tuple", "set", "long", "float", "object",
+        "bool", "callable", "True", "False", "dir",
+        "frozenset", "getattr", "hasattr", "abs", "cmp", "complex",
+        "divmod", "id", "pow", "round", "slice", "vars",
+        "hash", "hex", "int", "isinstance", "issubclass", "len",
+        "map", "filter", "max", "min", "oct", "chr", "ord", "range",
+        "reduce", "repr", "str", "type", "zip", "xrange", "None",
+        "Exception", "KeyboardInterrupt"
+    ]
+    
+    # Also add the standard exceptions
+    __bi = __builtins__
+    if type(__bi) is not dict:
+        __bi = __bi.__dict__
+    for k in __bi:
+        if k.endswith("Error") or k.endswith("Warning"):
+            SAFE_SYMBOLS.append(k)
+    del __bi
+    
+    # Include the sourcecode as the code of a function funcName:
+    s = "def " + funcName + "(%s):\n" % args
+    s += sourceCode # this should be already properly padded
+
+    # Byte-compilation (optional)
+    byteCode = compile(s, "<string>", 'exec')  
+
+    # Setup the local and global dictionaries of the execution
+    # environment for __TheFunction__
+    bis   = dict() # builtins
+    globs = dict()
+    locs  = dict()
+
+    # Setup a standard-compatible python environment
+    bis["locals"]  = lambda: locs
+    bis["globals"] = lambda: globs
+    globs["__builtins__"] = bis
+    globs["__name__"] = "SUBENV"
+    globs["__doc__"] = sourceCode
+
+    # Determine how the __builtins__ dictionary should be accessed
+    if type(__builtins__) is dict:
+        bi_dict = __builtins__
+    else:
+        bi_dict = __builtins__.__dict__
+
+    # Include the safe symbols
+    for k in SAFE_SYMBOLS:
+        
+        # try from current locals
+        try:
+          locs[k] = locals()[k]
+          continue
+        except KeyError:
+          pass
+        
+        # Try from globals
+        try:
+          globs[k] = globals()[k]
+          continue
+        except KeyError:
+          pass
+        
+        # Try from builtins
+        try:
+          bis[k] = bi_dict[k]
+        except KeyError:
+          # Symbol not available anywhere: silently ignored
+          pass
+
+    # Include the symbols added by the caller, in the globals dictionary
+    globs.update(additional_symbols)
+
+    # Finally execute the Function statement:
+    eval(byteCode, globs, locs)
+    
+    # As a result, the function is defined as the item funcName
+    # in the locals dictionary
+    fct = locs[funcName]
+    # Attach the function to the globals so that it can be recursive
+    del locs[funcName]
+    globs[funcName] = fct
+    
+    # Attach the actual source code to the docstring
+    fct.__doc__ = sourceCode
+    
+    # return the compiled function object
+    return fct
+
 
 
 # can use inline templates for plugins etc.. to enable non-linear plugin compile-time replacement
@@ -388,6 +542,7 @@ def clearState( ):
     
     _G.id = 0
     _G.stack = []
+    _G.strings = None
     #_G.funcId = 0
 
 
@@ -432,12 +587,6 @@ def padLines( lines, level=None ):
     return lines
 
 
-#def j(*args): # joinLines
-#    global _G
-#    return str(_G.TEOL).join( args )
-    
-            
-    
 def getSeparators( text, separators=None ):
     global _G
     if separators:
@@ -463,7 +612,7 @@ def getSeparators( text, separators=None ):
 
 # whether var is set
 def t_isset( varname ):
-    return ' ("' + varname + '__RAW__" in data) '
+    return '("' + varname + '__RAW__" in data)'
         
 # set/create/update tpl var
 def t_set( args ):
@@ -485,7 +634,7 @@ def t_unset( varname=None ):
 # static
 def t_if( cond='False' ):
     global _G
-    out = "' " + padLines( _G.TT_IF({
+    out = "'" + padLines( _G.TT_IF({
             "EOL":  _G.TEOL,
             'IFCOND': cond
         }) )
@@ -499,7 +648,7 @@ def t_if( cond='False' ):
 def t_elseif( cond='False' ):
     global _G
     _G.level -= 1
-    out = "' " + padLines( _G.TT_ELSEIF({
+    out = "'" + padLines( _G.TT_ELSEIF({
             "EOL":  _G.TEOL,
             'ELIFCOND': cond
         }) )
@@ -512,7 +661,7 @@ def t_elseif( cond='False' ):
 def t_else( args='' ):
     global _G
     _G.level -= 1
-    out = "' " + padLines( _G.TT_ELSE({ 
+    out = "'" + padLines( _G.TT_ELSE({ 
         "EOL":  _G.TEOL
     }) )
     _G.level += 1
@@ -525,7 +674,7 @@ def t_endif( args='' ):
     global _G
     _G.ifs -= 1
     _G.level -= 1
-    out = "' " + padLines( _G.TT_ENDIF({ 
+    out = "'" + padLines( _G.TT_ENDIF({ 
         "EOL":  _G.TEOL
     }) )
     
@@ -559,7 +708,7 @@ def t_for( for_expr ):
         
         _G.locals[_G.currentblock][_G.variables[_G.currentblock][k]] = 1
         _G.locals[_G.currentblock][_G.variables[_G.currentblock][v]] = 1
-        out = "' " + padLines( _G.TT_FOR2({
+        out = "'" + padLines( _G.TT_FOR2({
             "EOL":  _G.TEOL,
             'O': o, '_O': _o, 
             'K': k, 'V': v,
@@ -572,7 +721,7 @@ def t_for( for_expr ):
         v = kv[0].strip()
         
         _G.locals[_G.currentblock][_G.variables[_G.currentblock][v]] = 1
-        out = "' " + padLines( _G.TT_FOR1({
+        out = "'" + padLines( _G.TT_FOR1({
             "EOL":  _G.TEOL,
             'O': o, '_O': _o, 
             'V': v,
@@ -592,7 +741,7 @@ def t_elsefor( args='' ):
     global _G
     _G.loopifs -= 1
     _G.level += -2
-    out = "' " + padLines( _G.TT_ELSEFOR({ 
+    out = "'" + padLines( _G.TT_ELSEFOR({ 
         "EOL":  _G.TEOL
     }) )
     _G.level += 1
@@ -607,13 +756,13 @@ def t_endfor( args='' ):
         _G.loops -= 1 
         _G.loopifs -= 1
         _G.level += -2
-        out = "' " + padLines( _G.TT_ENDFOR({ 
+        out = "'" + padLines( _G.TT_ENDFOR({ 
             "EOL":  _G.TEOL
         }) )
     else:
         _G.loops -= 1
         _G.level += -1
-        out = "' " + padLines( _G.TT_ENDFOR({ 
+        out = "'" + padLines( _G.TT_ENDFOR({ 
             "EOL":  _G.TEOL
         }) )
     
@@ -623,36 +772,41 @@ def t_endfor( args='' ):
 # static
 def t_include( id ):
     global _G
+    id = id.strip()
+    if _G.strings and (id in _G.strings): id = _G.strings[id]
+    ch = id[0]
+    if '"' == ch or "'" == ch: id = id[1:-1] # quoted id
+    
     # cache it
     if id not in _G.partials:
         pushState()
         resetState()
-        _G.partials[id] = " " + parse(getSeparators( Contemplate.getTemplateContents(id) ), False) + "' " + _G.TEOL
+        _G.partials[id] = " " + parse(getSeparators( Contemplate.getTemplateContents(id) ), False) + "'" + _G.TEOL
         popState()
     
     return padLines( _G.partials[id] )
 
-# include template
-# static
-def t_template( args ):
-    global _G
-    args = args.split(',')
-    id = args.pop(0).strip()
-    obj = ','.join(args)
-    return '\' + %tpl( "'+id+'", '+obj+' ) ' + _G.TEOL
-
 # extend another template
 # static
-def t_extends( tpl ):
+def t_extends( id ):
     global _G
-    _G.extends = tpl.strip( )
-    return "' " + _G.TEOL
+    id = id.strip()
+    if _G.strings and (id in _G.strings): id = _G.strings[id]
+    ch = id[0]
+    if '"' == ch or "'" == ch: id = id[1:-1] # quoted id
+    
+    _G.extends = id
+    return "'" + _G.TEOL
     
 # define (overridable) block
 # static
 def t_block( block ):
     global _G
-    block = block.strip( )
+    block = block.strip()
+    if _G.strings and (block in _G.strings): block = _G.strings[block]
+    ch = block[0]
+    if '"' == ch or "'" == ch: block = block[1:-1] # quoted block
+    
     _G.allblocks.append( [block, -1, -1, 0, _G.openblocks[ 0 ][ 1 ]] )
     if block in _G.allblockscnt: _G.allblockscnt[ block ] += 1
     else: _G.allblockscnt[ block ] = 1
@@ -660,7 +814,7 @@ def t_block( block ):
     _G.openblocks[:0] = [[block, _G.blockptr-1]]
     _G.startblock = block
     _G.endblock = None
-    return "' +  __||" + block + "||__"
+    return "' +  #|" + block + "|#"
     
 # end define (overridable) block
 # static
@@ -671,7 +825,7 @@ def t_endblock( args='' ):
         _G.endblock = block[ 0 ]
         _G.blockptr = block[ 1 ]+1
         _G.startblock = None
-        return "__||/" + block[0] + "||__"
+        return "#|/" + block[0] + "|#"
     return ''
 
 
@@ -708,71 +862,163 @@ def split( s, leftTplSep, rightTplSep ):
 
 
 # static
-def parseControlConstructs( m ):
+def parseConstructs( match ):
     global _G
-    ctrl = m.group(1) 
-    args = m.group(2)
+    re_controls = _G.re_controls
+    prefix = match.group(1)
+    ctrl = match.group(2) 
+    startParen = match.group(3)
+    rest = match.group(4)
+    out = ''
+    args = ''
+    paren = 1 
+    l = len(rest)
+    i = 0
     
-    if ('isset'==ctrl): 
-        # constructs in args, eg. isset
-        args = re.sub(_G.regExps['controls2'], parseControlConstructs, args)
-        return t_isset(args)
+    # parse parentheses and arguments, accurately
+    while i < l and paren > 0:
     
-    elif ('set'==ctrl): 
-        # constructs in args, eg. isset
-        args = re.sub(_G.regExps['controls2'], parseControlConstructs, args)
-        return t_set(args)
+        ch = rest[i]
+        i += 1
+        if '(' == ch: paren += 1
+        elif ')' == ch: paren -= 1
+        if paren > 0: args += ch
     
-    elif ('unset'==ctrl): 
-        # constructs in args, eg. isset
-        args = re.sub(_G.regExps['controls2'], parseControlConstructs, args)
-        return t_unset(args)
+    rest = rest[len(args)+1:]
     
-    elif ('if'==ctrl): 
-        # constructs in args, eg. isset
-        args = re.sub(_G.regExps['controls2'], parseControlConstructs, args)
-        return t_if(args)
+    try:
+        m = _G.controlConstructs.index( ctrl )
+    except:
+        m = -1
+    if m > -1:
+        if 0==m: # set
+            args = re.sub(re_controls, parseConstructs, args)
+            out = t_set(args)
+            rest = re.sub(re_controls, parseConstructs, rest)
+            return out + rest
+        
+        elif 1==m: # unset
+            args = re.sub(re_controls, parseConstructs, args)
+            out = t_unset(args)
+            rest = re.sub(re_controls, parseConstructs, rest)
+            return out + rest
+        
+        elif 2==m: # isset
+            args = re.sub(re_controls, parseConstructs, args)
+            out = t_isset(args)
+            rest = re.sub(re_controls, parseConstructs, rest)
+            return out + rest
+        
+        elif 3==m: # if
+            args = re.sub(re_controls, parseConstructs, args)
+            out = t_if(args)
+            rest = re.sub(re_controls, parseConstructs, rest)
+            return out + rest
+        
+        elif 4==m: # elseif
+            args = re.sub(re_controls, parseConstructs, args)
+            out = t_elseif(args)
+            rest = re.sub(re_controls, parseConstructs, rest)
+            return out + rest
+        
+        elif 5==m: # else
+            out = t_else(args)
+            rest = re.sub(re_controls, parseConstructs, rest)
+            return out + rest
+        
+        elif 6==m: # endif
+            out = t_endif(args)
+            rest = re.sub(re_controls, parseConstructs, rest)
+            return out + rest
+        
+        elif 7==m: # for
+            args = re.sub(re_controls, parseConstructs, args)
+            out = t_for(args)
+            rest = re.sub(re_controls, parseConstructs, rest)
+            return out + rest
+        
+        elif 8==m: # elsefor
+            out = t_elsefor(args)
+            rest = re.sub(re_controls, parseConstructs, rest)
+            return out + rest
+        
+        elif 9==m: # endfor
+            out = t_endfor(args)
+            rest = re.sub(re_controls, parseConstructs, rest)
+            return out + rest
+        
+        elif 10==m: # extends
+            out = t_extends(args)
+            rest = re.sub(re_controls, parseConstructs, rest)
+            return out + rest
+        
+        elif 11==m: # block
+            out = t_block(args)
+            rest = re.sub(re_controls, parseConstructs, rest)
+            return out + rest
+        
+        elif 12==m: # endblock
+            out = t_endblock(args)
+            rest = re.sub(re_controls, parseConstructs, rest)
+            return out + rest
+        
+        elif 13==m: # include
+            out = t_include(args)
+            rest = re.sub(re_controls, parseConstructs, rest)
+            return out + rest
     
-    elif ('elseif'==ctrl): 
-        # constructs in args, eg. isset
-        args = re.sub(_G.regExps['controls2'], parseControlConstructs, args)
-        return t_elseif(args)
+    if ctrl in _G.func_aliases:
+        ctrl = _G.func_aliases[ctrl]
+    try:
+        m = _G.funcs.index( ctrl )
+    except:
+        m = -1
+    if m > -1:
+        args = re.sub(re_controls, parseConstructs, args)
+        # aliases and builtin functions
+        if 0 ==m or 5 == m:
+            out = 'str(' + args + ')'
+        elif 1==m:
+            out = 'int(' + args + ')'
+        elif 2==m:
+            out = 'float(' + args + ')'
+        elif 3==m:
+            out = '"\'"+str(' + args + ')+"\'"'
+        elif 4==m:
+            out = '\'"\'+str(' + args + ')+\'"\''
+        elif 6==m:
+            out = 'Contemplate.time()'
+        elif 7==m:
+            out = 'Contemplate.count(' + args + ')'
+        elif 8==m:
+            out = 'str(' + args + ').lower()'
+        elif 9==m:
+            out = 'str(' + args + ').upper()'
+        elif 10==m:
+            out = 'Contemplate.ucfirst(' + args + ')'
+        elif 11==m:
+            out = 'Contemplate.lcfirst(' + args + ')'
+        elif 12==m:
+            out = 'Contemplate.sprintf(' + args + ')'
+        else:
+            out = 'Contemplate.' + ctrl + '(' + args + ')'
+        rest = re.sub(re_controls, parseConstructs, rest)
+        return prefix + out + rest
     
-    elif ('else'==ctrl): 
-        return t_else(args)
+    m = _G.re_plugin.match( ctrl )
+    if m:
+        plugin = m.group(2) 
+        if plugin and plugin in _G.plugins:
+            pl = _G.plugins[plugin]
+            args = re.sub(re_controls, parseConstructs, args)
+            if isinstance(pl,Contemplate.InlineTemplate):
+                out = pl.render() + '(' + args + ')'
+            else: 
+                out = pl + '(' + args + ')'
+            rest = re.sub(re_controls, parseConstructs, rest)
+            return prefix + out + rest
     
-    elif ('endif'==ctrl): 
-        return t_endif(args)
-    
-    elif ('for'==ctrl): 
-        # constructs in args, eg. isset
-        args = re.sub(_G.regExps['controls2'], parseControlConstructs, args)
-        return t_for(args)
-    
-    elif ('elsefor'==ctrl): 
-        return t_elsefor(args)
-    
-    elif ('endfor'==ctrl): 
-        return t_endfor(args)
-    
-    elif ('template'==ctrl): 
-        # constructs in args, eg. isset
-        args = re.sub(_G.regExps['controls2'], parseControlConstructs, args)
-        return t_template(args)
-    
-    elif ('extends'==ctrl): 
-        return t_extends(args)
-    
-    elif ('block'==ctrl): 
-        return t_block(args)
-    
-    elif ('endblock'==ctrl): 
-        return t_endblock(args)
-    
-    elif ('include'==ctrl): 
-        return t_include(args)
-    
-    return m.group(0)
+    return match.group(0)
 
 
 # static
@@ -790,8 +1036,8 @@ def parseBlocks( s ):
         pos2 = delims[ 2 ]
         off = delims[ 3 ]
         containerblock = delims[ 4 ]
-        tag = "__||" + block + "||__"
-        rep = "__i__.renderBlock( '" + block + "' ) "
+        tag = "#|" + block + "|#"
+        rep = "__i__.renderBlock('" + block + "') "
         tl = len(tag) 
         rl = len(rep)
         
@@ -809,7 +1055,7 @@ def parseBlocks( s ):
             # 1st occurance, block definition
             blocks.append([ block, _G.TT_BLOCK({
                     "EOL":  _G.TEOL,
-                    'BLOCKCODE': s[pos1+tl:pos2-tl-1] + "';"
+                    'BLOCKCODE': s[pos1+tl:pos2-tl-1] + "'"
                 })])
         
         s = s[0:pos1] + rep + s[pos2+1:]
@@ -821,29 +1067,16 @@ def parseBlocks( s ):
     
     return [ s, blocks ]
 
-def parseString( s, q, i, l ):
-    string = q
-    escaped = False
-    ch = ''
-    while ( i < l ):
-        ch = s[i]
-        i += 1
-        string += ch
-        if ( q == ch and not escaped ):  break
-        escaped = (not escaped and '\\' == ch)
-    return string
-
 
 def parseVariable( s, i, l ):
     global _G
     
     if ( _G.ALPHA.match(s[i]) ):
     
-        #cnt = 0
         strings = {}
         variables = []
         space = 0
-        
+        hasStrings = False
         
         # main variable
         variable = s[i]
@@ -859,7 +1092,7 @@ def parseVariable( s, i, l ):
         variable_main = "data['" + variable_raw + "']"
         variable_rest = ""
         _G.id += 1
-        id = "__##VAR"+str(_G.id)+"##__"
+        id = "#VAR"+str(_G.id)+"#"
         _len = len(variable_raw)
         
         # extra space
@@ -919,15 +1152,27 @@ def parseVariable( s, i, l ):
                 # literal string property
                 if ( '"' == ch or "'" == ch ):
                 
-                    property = parseString( s, ch, i+1, l )
+                    #property = parseString( s, ch, i+1, l )
+                    q = ch
+                    str_ = q
+                    escaped = False
+                    si = i+1
+                    while si < l:
+                        ch = s[si]
+                        si += 1
+                        str_ += ch
+                        if ( q == ch and not escaped ):  break
+                        escaped = (not escaped and '\\' == ch)
+                    property = str_
                     _G.id += 1
-                    strid = "__##STR"+str(_G.id)+"##__"
+                    strid = "#STR"+str(_G.id)+"#"
                     strings[strid] = property
                     variable_rest += delim + strid
                     lp = len(property)
                     i += lp
                     _len += space + 1 + lp
                     space = 0
+                    hasStrings = True
                 
                 
                 # numeric array property
@@ -961,6 +1206,7 @@ def parseVariable( s, i, l ):
                         _len += space + 2 + lp
                         space = 0
                         variables = variables + subvariables
+                        hasStrings = hasStrings or property[5]
                     
                 
                 
@@ -1020,25 +1266,17 @@ def parseVariable( s, i, l ):
             
         
         
-        variables.append( [id, variable_raw, variable_main, variable_rest, _len, strings] )
+        variables.append( [id, variable_raw, variable_main, variable_rest, _len, hasStrings, strings] )
         return variables
     
     return None
-
-def funcReplace( m ):
-    global _G
-    plugin = m.group(3) 
-    if plugin and plugin in _G.plugins:
-        pl = _G.plugins[plugin]
-        return pl.render() if isinstance(pl,Contemplate.InlineTemplate) else pl
-    
-    return 'Contemplate.' + m.group(1) 
 
 # static
 def parse( tpl, withblocks=True ):
     global _G
     
     parts = split( tpl, _G.leftTplSep, _G.rightTplSep )
+    re_controls = _G.re_controls
     l = len(parts)
     isTag = False
     parsed = ''
@@ -1048,20 +1286,20 @@ def parse( tpl, withblocks=True ):
         
         if isTag:
             
-            tag = "\t" + re.sub( _G.regExps['specials'], " ", s ) + "\v" # replace special chars
-            
             # parse each template tag section accurately
             # refined parsing
-            count = len( tag )
+            count = len( s )
             index = 0
             ch = ''
             out = ''
-            #cnt = 0
             variables = []
             strings = {}
+            hasVariables = False
+            hasStrings = False
+            
             while ( index < count ):
             
-                ch = tag[index]
+                ch = s[index]
                 index  += 1
                 
                 # parse mainly literal strings and variables
@@ -1069,31 +1307,51 @@ def parse( tpl, withblocks=True ):
                 # literal string
                 if ( '"' == ch or "'" == ch ):
                 
-                    tok = parseString( tag, ch, index, count )
+                    #tok = parseString(s, ch, index, count)
+                    q = ch
+                    str_ = q
+                    escaped = False
+                    si = index
+                    while si < count:
+                        ch = s[si]
+                        si += 1
+                        str_ += ch
+                        if ( q == ch and not escaped ):  break
+                        escaped = (not escaped and '\\' == ch)
+                    tok = str_
                     _G.id += 1
-                    id = "__##STR"+str(_G.id)+"##__"
+                    id = "#STR"+str(_G.id)+"#"
                     strings[id] = tok
                     out += id
                     index += len(tok)-1
+                    hasStrings = True
                 
                 # variable
                 elif ( '$' == ch ):
                 
-                    tok = parseVariable(tag, index, count)
+                    tok = parseVariable(s, index, count)
                     if tok:
                     
                         for tokv in tok:
                             id = tokv[ 0 ]
                             _G.variables[_G.currentblock][ id ] = tokv[ 1 ]
-                            strings.update(tokv[ 5 ])
+                            if tokv[ 6 ]: strings.update(tokv[ 6 ])
                         out += id
                         index += tokv[ 4 ]
                         variables = variables + tok
+                        hasVariables = True
+                        hasStrings = hasStrings or tokv[ 6 ]
                     
                     else:
                     
                         out += '$'
                     
+                
+                # special chars
+                elif ( "\n" == ch or "\r" == ch or "\t" == ch or "\v" == ch ):
+                
+                    out += " "
+                
                 
                 # rest, bypass
                 else:
@@ -1101,48 +1359,57 @@ def parse( tpl, withblocks=True ):
                     out += ch
                 
             
-            tag = out
-                
             # fix literal data notation python-style
-            tag = tag.replace('true', 'True').replace('false', 'False').replace('null', 'None').replace(' && ', ' and ').replace(' || ', ' or ').replace(' ! ', ' not ')
+            out = out.replace('true', 'True').replace('false', 'False').replace('null', 'None').replace('&&', ' and ').replace(' || ', ' or ').replace('!', ' not ')
             
+            tag = "\t" + out + "\v"
+                
             _G.startblock = None  
             _G.endblock = None 
             _G.blockptr = -1
-            tag = re.sub(_G.regExps['controls'], parseControlConstructs, tag)
-
-            tag = re.sub( _G.regExps['functions'], funcReplace, tag )
+            _G.strings = strings
             
-            tag = re.sub( _G.regExps['replacements'], r"' + str( \1 ) + '", tag )
+            # replace constructs, functions, etc..
+            tag = re.sub(re_controls, parseConstructs, tag)
+            
+            # replacements
+            if "\t" == tag[0] and "\v" == tag[-1]: 
+                tag = "' + str("+tag[1:-1]+") + '"
             
             # replace variables
-            for v in reversed(variables):
-                id = v[0]
-                varname = v[1]
-                tag = tag.replace( id+'__RAW__', varname )
-                if varname in _G.locals[_G.currentblock]: # local (loop) variable
-                    tag = tag.replace( id, '_loc_'+varname+v[3] )
-                else: # default (data) variable
-                    tag = tag.replace( id, v[2]+v[3] )
+            if hasVariables:
+                for v in reversed(variables):
+                    id = v[0]
+                    varname = v[1]
+                    tag = tag.replace( id+'__RAW__', varname )
+                    if varname in _G.locals[_G.currentblock]: # local (loop) variable
+                        tag = tag.replace( id, '_loc_'+varname+v[3] )
+                    else: # default (data) variable
+                        tag = tag.replace( id, v[2]+v[3] )
+            
             
             # replace strings (accurately)
-            tagTpl = Contemplate.InlineTemplate.multisplit(tag, list(strings.keys()), 1)
-            tag = ''
-            for v in tagTpl:
-                tag += (v[1] if v[0] else strings[ v[1] ])
+            if hasStrings:
+                tagTpl = Contemplate.InlineTemplate.multisplit(tag, list(strings.keys()), 1)
+                tag = ''
+                for v in tagTpl:
+                    tag += (v[1] if v[0] else strings[ v[1] ])
             
             
-            tag = tag.replace( "\t", _G.tplStart ).replace( "\v", padLines(_G.tplEnd) )
+            # replace tpl separators
+            if "\v" == tag[-1]: tag = tag[0:-1] + padLines(_G.tplEnd)
+            if "\t" == tag[0]: tag = _G.tplStart + tag[1:]
             
-            s = tag
-            
+            # replace blocks
             if _G.startblock:
-                _G.startblock = "__||"+_G.startblock+"||__"
+                _G.startblock = "#|"+_G.startblock+"|#"
                 _G.allblocks[ _G.blockptr-1 ][ 1 ] = len(parsed) + tag.find( _G.startblock )
             elif _G.endblock:
-                _G.endblock = "__||/"+_G.endblock+"||__"
+                _G.endblock = "#|/"+_G.endblock+"|#"
                 _G.allblocks[ _G.blockptr-1 ][ 2 ] = len(parsed) + tag.find( _G.endblock ) + len(_G.endblock)
                     
+            s = tag
+            
             isTag = False
             
         else:
@@ -1233,7 +1500,7 @@ def createCachedTemplate( id, filename, classname, seps=None ):
     
     # tpl render code
     if _G.extends:
-        extendCode = "self.extend( '"+_G.extends+"' )"
+        extendCode = "self.extend('"+_G.extends+"')"
         renderCode = _G.TT_RCODE1({
             "EOL":  _G.TEOL
         })
@@ -1400,165 +1667,16 @@ def _get_php_date( format, time ):
     
 # static
 def _localized_date( locale, format, timestamp ):
-    txt_words = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sun", "Mon", "Tues", "Wednes", "Thurs", "Fri", "Satur", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-    
+    global _G
     date = _get_php_date(format, timestamp)
+    date_words = _G.date_words
     
     # localize days/months
-    for word in txt_words: 
+    for word in date_words: 
         if word in locale: date = date.replace(word, locale[word])
         
     # return localized date
     return date
-
-#
-#  Auxilliary methods 
-# (mostly methods to simulate php-like functionality needed by the engine)
-#
-# static
-def include( filename, classname, doReload=False ):
-    # http://www.php2python.com/wiki/function.include/
-    # http://docs.python.org/dev/3.0/whatsnew/3.0.html
-    # http://stackoverflow.com/questions/4821104/python-dynamic-instantiation-from-string-name-of-a-class-in-dynamically-imported
-    
-    #_locals_ = {'Contemplate': Contemplate}
-    #_globals_ = {'Contemplate': Contemplate}
-    #if 'execfile' in globals():
-    #    # Python 2.x
-    #    execfile(filename, _globals_, _locals_)
-    #    return _locals_[classname]
-    #else:
-    #    # Python 3.x
-    #    exec(Contemplate.read(filename), _globals_, _locals_)
-    #    return _locals_[classname]
-    
-    # http://docs.python.org/2/library/imp.html
-    # http://docs.python.org/2/library/functions.html#__import__
-    # http://docs.python.org/3/library/functions.html#__import__
-    # http://stackoverflow.com/questions/301134/dynamic-module-import-in-python
-    # http://stackoverflow.com/questions/11108628/python-dynamic-from-import
-    # also: http://code.activestate.com/recipes/473888-lazy-module-imports/
-    # using import instead of execfile, usually takes advantage of Python cached compiled code
-    
-    global _G
-    getTplClass = None
-    directory = _G.cacheDir
-    # add the dynamic import path to sys
-    os.sys.path.append(directory)
-    currentcwd = os.getcwd()
-    os.chdir(directory)   # change working directory so we know import will work
-    
-    if os.path.exists(filename):
-        
-        modname = filename[:-3]  # remove .py extension
-        mod = __import__(modname)
-        if doReload: reload(mod) # Might be out of date
-        # a trick in-order to pass the Contemplate super-class in a cross-module way
-        getTplClass = getattr( mod, '__getTplClass__' )
-    
-    # restore current dir
-    os.chdir(currentcwd)
-    # remove the dynamic import path from sys
-    del os.sys.path[-1]
-    
-    # return the tplClass if found
-    if getTplClass:  return getTplClass(Contemplate)
-    return None
-
-# static
-def createFunction( funcName, args, sourceCode, additional_symbols=dict() ):
-    # http://code.activestate.com/recipes/550804-create-a-restricted-python-function-from-a-string/
-
-    # The list of symbols that are included by default in the generated
-    # function's environment
-    SAFE_SYMBOLS = [
-        "list", "dict", "enumerate", "tuple", "set", "long", "float", "object",
-        "bool", "callable", "True", "False", "dir",
-        "frozenset", "getattr", "hasattr", "abs", "cmp", "complex",
-        "divmod", "id", "pow", "round", "slice", "vars",
-        "hash", "hex", "int", "isinstance", "issubclass", "len",
-        "map", "filter", "max", "min", "oct", "chr", "ord", "range",
-        "reduce", "repr", "str", "type", "zip", "xrange", "None",
-        "Exception", "KeyboardInterrupt"
-    ]
-    
-    # Also add the standard exceptions
-    __bi = __builtins__
-    if type(__bi) is not dict:
-        __bi = __bi.__dict__
-    for k in __bi:
-        if k.endswith("Error") or k.endswith("Warning"):
-            SAFE_SYMBOLS.append(k)
-    del __bi
-    
-    # Include the sourcecode as the code of a function funcName:
-    s = "def " + funcName + "(%s):\n" % args
-    s += sourceCode # this should be already properly padded
-
-    # Byte-compilation (optional)
-    byteCode = compile(s, "<string>", 'exec')  
-
-    # Setup the local and global dictionaries of the execution
-    # environment for __TheFunction__
-    bis   = dict() # builtins
-    globs = dict()
-    locs  = dict()
-
-    # Setup a standard-compatible python environment
-    bis["locals"]  = lambda: locs
-    bis["globals"] = lambda: globs
-    globs["__builtins__"] = bis
-    globs["__name__"] = "SUBENV"
-    globs["__doc__"] = sourceCode
-
-    # Determine how the __builtins__ dictionary should be accessed
-    if type(__builtins__) is dict:
-        bi_dict = __builtins__
-    else:
-        bi_dict = __builtins__.__dict__
-
-    # Include the safe symbols
-    for k in SAFE_SYMBOLS:
-        
-        # try from current locals
-        try:
-          locs[k] = locals()[k]
-          continue
-        except KeyError:
-          pass
-        
-        # Try from globals
-        try:
-          globs[k] = globals()[k]
-          continue
-        except KeyError:
-          pass
-        
-        # Try from builtins
-        try:
-          bis[k] = bi_dict[k]
-        except KeyError:
-          # Symbol not available anywhere: silently ignored
-          pass
-
-    # Include the symbols added by the caller, in the globals dictionary
-    globs.update(additional_symbols)
-
-    # Finally execute the Function statement:
-    eval(byteCode, globs, locs)
-    
-    # As a result, the function is defined as the item funcName
-    # in the locals dictionary
-    fct = locs[funcName]
-    # Attach the function to the globals so that it can be recursive
-    del locs[funcName]
-    globs[funcName] = fct
-    
-    # Attach the actual source code to the docstring
-    fct.__doc__ = sourceCode
-    
-    # return the compiled function object
-    return fct
 
 
 #
@@ -1571,7 +1689,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.7.1"
+    VERSION = "0.8"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -1595,25 +1713,6 @@ class Contemplate:
         if _G.isInited: return
             
         # pre-compute the needed regular expressions
-        _G.regExps['specials'] = re.compile(r'[\n\r\v\t]')
-        
-        _G.regExps['replacements'] = re.compile(r'\t[ ]*(.*?)[ ]*\v')
-        
-        _G.regExps['controls'] = re.compile(r'\t[ ]*%(' + '|'.join(_G.controlConstructs) + ')[ ]*\((.*)\)')
-        _G.regExps['controls2'] = re.compile(r'%(' + '|'.join(_G.controlConstructs) + ')[ ]*\((.*)\)')
-        
-        _G.regExps['functions'] = re.compile(r'%(' + '|'.join(_G.funcs) + ')')
-            
-        _G.NEWLINE = re.compile(r'\n\r|\r\n|\n|\r')
-        _G.SQUOTE = re.compile(r"'")
-        _G.NL = re.compile(r'\n')
-        
-        _G.UNDERL = re.compile( _G.UNDERL )
-        _G.ALPHA = re.compile( _G.ALPHA )
-        _G.NUM = re.compile( _G.NUM )
-        _G.ALPHANUM = re.compile( _G.ALPHANUM )
-        _G.SPACE = re.compile( _G.SPACE )
-        
         _G.preserveLines = _G.preserveLinesDefault
         
         _G.tplStart = "' " + _G.TEOL
@@ -2021,31 +2120,6 @@ class Contemplate:
         
         return True
         
-    # quote
-    # static
-    def q( e ):
-        return "'" + e + "'"
-    
-    # double quote
-    # static
-    def dq( e ):
-        return '"' + e + '"'
-    
-    # to String
-    # static
-    def s( e ):
-        return str(e)
-    
-    # to Integer
-    # static
-    def n( e ):
-        return int(e)
-    
-    # to Float
-    # static
-    def f( e ):
-        return float(e)
-    
     # basic custom faster html escaping
     # static
     def e( s ):
@@ -2089,18 +2163,15 @@ class Contemplate:
     # Trim strings in templates
     # static
     def trim( s, charlist=None ):
-        if charlist: return s.strip(charlist)
-        else: return s.strip()
+        return s.strip(charlist) if charlist else s.strip()
     
     # static
     def ltrim( s, charlist=None ):
-        if charlist: return s.lstrip(charlist)
-        else: return s.lstrip()
+        return s.lstrip(charlist) if charlist else s.lstrip()
     
     # static
     def rtrim( s, charlist=None ):
-        if charlist: return s.rstrip(charlist)
-        else: return s.rstrip()
+        return s.rstrip(charlist) if charlist else s.rstrip()
     
     def ucfirst( s ):
         return s[0].upper() + s[1:]#.lower()
@@ -2108,12 +2179,6 @@ class Contemplate:
     def lcfirst( s ):
         return s[0].lower() + s[1:]#.upper()
         
-    def lowercase( s ):
-        return str(s).lower()
-    
-    def uppercase( s ):
-        return str(s).upper()
-    
     def camelcase( s, sep="_", capitalizeFirst=False ):
         _self = Contemplate
         sep = str(sep)
@@ -2470,11 +2535,6 @@ class Contemplate:
         with Contemplate.open(file, 'w') as f:
             f.write(text)
 
-
-
-# aliases
-Contemplate.now = Contemplate.time
-Contemplate.l = Contemplate.locale
 
 # init the engine on load
 Contemplate.init()

@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.7.1
+*  @version: 0.8
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -208,7 +208,7 @@ class ContemplateTemplate
 
 class Contemplate
 {
-    const VERSION = "0.7.1";
+    const VERSION = "0.8";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -221,6 +221,8 @@ class Contemplate
     public static $NEWLINE = '/\\n\\r|\\r\\n|\\n|\\r/';
     public static $SQUOTE = "/'/";
     
+    public static $date_words = null;
+        
     private static $__isInited = false;
     private static $__cacheDir = './';
     private static $__cacheMode = 0;
@@ -253,6 +255,7 @@ class Contemplate
     private static $__endblock = null; 
     private static $__blockptr = -1;
     private static $__extends = null;
+    private static $__strings = null;
     private static $__stack = null;
     private static $__uuid = 0;
     private static $__idcnt = 0;
@@ -281,31 +284,32 @@ class Contemplate
     private static $TT_RCODE1 = null;
     private static $TT_RCODE2 = null;
     
-    private static $__regExps = array(
-        'specials' => null,
-        'replacements' => null,
-        'functions' => null,
-        'controls' => null,
-        'controls2' => null
-    );
-    
+    private static $re_plugin = '/^(plg_|plugin_)([a-zA-Z0-9_]+)/';
+    private static $re_controls = '/(\\t|[ ]?)[ ]*%([a-zA-Z_][a-zA-Z0-9_]*)\\b[ ]*(\\()(.*)$/';
+        
     private static $__controlConstructs = array(
-        'include', 'template', 
-        'extends', 'endblock', 'block',
-        'elsefor', 'endfor', 'for',
         'set', 'unset', 'isset',
-        'elseif', 'else', 'endif', 'if'
+        'if', 'elseif', 'else', 'endif',
+        'for', 'elsefor', 'endfor',
+        'extends', 'block', 'endblock',
+        'include'
     );
     
     private static $__funcs = array( 
-        'htmlselect', 'htmltable',
-        '(plg_|plugin_)([a-zA-Z0-9_]+)', 'haskey', 
-        'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
-        'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'addslashes', 'stripslashes',
-        'inline', 'tpl', 'uuid',
-        'html', 'url', 'count', 
-        'ldate', 'date', 'now', 'locale',
-        'dq', 'q', 'l', 's', 'n', 'f', 'e' 
+        's', 'n', 'f', 'q', 'dq', 
+        'echo', 'time', 'count',
+        'lowercase', 'uppercase', 'ucfirst', 'lcfirst', 'sprintf',
+        'date', 'ldate', 'locale', 'pluralise',
+        'inline', 'tpl', 'uuid', 'haskey',
+        'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
+        'camelcase', 'snakecase', 
+        'e','html', 'url',
+        'htmlselect', 'htmltable'
+    );
+    private static $__func_aliases = array(
+        'l'=> 'locale',
+        'now'=> 'time',
+        'template'=> 'tpl'
     );
     
     private static $__plugins = array();
@@ -335,15 +339,6 @@ class Contemplate
         if ( self::$__isInited ) return;
         
         // pre-compute the needed regular expressions
-        self::$__regExps[ 'specials' ] = '/[\\n\\r\\v\\t]/';
-        
-        self::$__regExps[ 'replacements' ] = '/\\t[ ]*(.*?)[ ]*\\v/';
-        
-        self::$__regExps[ 'controls' ] = '/\\t[ ]*%(' . implode('|', self::$__controlConstructs) . ')\\b[ ]*\\((.*)\\)/';
-        self::$__regExps[ 'controls2' ] = '/%(' . implode('|', self::$__controlConstructs) . ')\\b[ ]*\\((.*)\\)/';
-        
-        self::$__regExps[ 'functions' ] = '/%(' . implode('|', self::$__funcs) . ')\\b/';
-        
         self::$__preserveLines = self::$__preserveLinesDefault;
         
         self::$__tplStart = "'; " . self::$__TEOL;
@@ -352,7 +347,6 @@ class Contemplate
         // make compilation templates
         self::$TT_ClassCode = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
             "#PREFIXCODE#"
-            ,""
             ,"/* Contemplate cached template '#TPLID#' */"
             ,"if (!class_exists('#CLASSNAME#'))"
             ,"{"
@@ -570,6 +564,8 @@ class Contemplate
             ,"#RCODE#"=>   "RCODE"
         )));
         
+        self::$date_words = array("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sun", "Mon", "Tues", "Wednes", "Thurs", "Fri", "Satur", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec");
+        
         self::clearState();
         
         self::$__isInited = true;
@@ -770,7 +766,7 @@ class Contemplate
     //
     
     // inline tpls, both inside Contemplate templates (i.e as parameters) and in code
-    public static function inline( $tpl, $reps=array(), $compiled=true )
+    public static function inline( $tpl, $reps=array(), $compiled=false )
     {
         if ( $tpl && ($tpl instanceof ContemplateInlineTemplate) ) return $tpl->render( (array)$reps );
         return new ContemplateInlineTemplate( $tpl, $reps, $compiled );
@@ -791,36 +787,6 @@ class Contemplate
         return true;
     }
         
-    // quote
-    public static function q( $e ) 
-    { 
-        return "'" . $e . "'"; 
-    }
-    
-    // double quote
-    public static function dq( $e ) 
-    { 
-        return '"' . $e . '"'; 
-    }
-    
-    // to String
-    public static function s( $e ) 
-    { 
-        return strval($e); 
-    }
-    
-    // to Integer
-    public static function n( $e ) 
-    { 
-        return intval($e); 
-    }
-    
-    // to Float
-    public static function f( $e ) 
-    { 
-        return floatval($e); 
-    }
-    
     // basic custom faster html escaping
     public static function e( $s ) 
     {
@@ -881,26 +847,6 @@ class Contemplate
         else return rtrim($s); 
     }
     
-    public static function ucfirst( $s )
-    {
-        return ucfirst($s);
-    }
-    
-    public static function lcfirst( $s )
-    {
-        return lcfirst($s);
-    }
-    
-    public static function lowercase( $s )
-    {
-        return strtolower($s);
-    }
-    
-    public static function uppercase( $s )
-    {
-        return strtoupper($s);
-    }
-    
     public static function camelcase( $s, $sep="_", $capitalizeFirst=false )
     {
         if ( $capitalizeFirst )
@@ -914,27 +860,9 @@ class Contemplate
         return strtolower( preg_replace( '/([A-Z])/', $sep . '$1', $s ) );
     }
     
-    // Sprintf in templates
-    public static function sprintf( ) 
-    { 
-        $args = func_get_args(); 
-        $format = array_shift($args); 
-        return vsprintf($format, $args); 
-    }
-    
     //
     //  Localization functions
     //
-    
-    // current time in seconds
-    public static function time( ) 
-    { 
-        return time(); 
-    }
-    public static function now( ) 
-    { 
-        return time(); 
-    }
     
     // formatted date
     public static function date( $format, $time=false ) 
@@ -1173,7 +1101,7 @@ class Contemplate
     // whether var is set
     private static function t_isset( $varname ) 
     {
-        return ' (isset(' . $varname . ')) ';
+        return '(isset(' . $varname . '))';
     }
         
     // set/create/update tpl var
@@ -1182,7 +1110,7 @@ class Contemplate
         $args = explode(',', $args);
         $varname = trim( array_shift($args) );
         $expr = trim(implode(',', $args));
-        return "';" . self::$__TEOL . self::padLines( "$varname = ( $expr );" ) . self::$__TEOL;
+        return "';" . self::$__TEOL . self::padLines( "$varname = ($expr);" ) . self::$__TEOL;
     }
     
     // unset/remove/delete tpl var
@@ -1193,7 +1121,7 @@ class Contemplate
             $varname = trim( $varname );
             return "';" . self::$__TEOL . self::padLines( "if (isset($varname)) unset( $varname );" ) . self::$__TEOL;
         }
-        return "'; " . self::$__TEOL; 
+        return "';" . self::$__TEOL; 
     }
         
     // if
@@ -1349,37 +1277,42 @@ class Contemplate
     // include file
     private static function t_include( $id ) 
     { 
+        $id = trim( $id );
+        if ( self::$__strings && isset(self::$__strings[$id]) ) $id = self::$__strings[$id];
+        $ch = $id[0];
+        if ( '"' === $ch || "'" === $ch ) $id = substr($id,1,-1); // quoted id
+        
         /* cache it */ 
         if ( !isset(self::$__partials[$id]) )
         {
             self::pushState();
             self::resetState();
-            self::$__partials[$id]=" " . self::parse(self::getSeparators( self::getTemplateContents($id) ), false) . "'; " . self::$__TEOL;
+            self::$__partials[$id]=" " . self::parse(self::getSeparators( self::getTemplateContents($id) ), false) . "';" . self::$__TEOL;
             self::popState();
         }
         return self::padLines( self::$__partials[$id] );
     }
     
-    // include template
-    private static function t_template( $args )
-    {
-        $args = explode(',', $args); 
-        $id = trim(array_shift($args));
-        $obj = implode(',', $args);
-        return '\' . %tpl( "'.$id.'", '.$obj.' ); ' . self::$__TEOL;
-    }
-    
     // extend another template
-    private static function t_extends( $tpl ) 
+    private static function t_extends( $id ) 
     { 
-        self::$__extends = trim( $tpl );
-        return "'; " . self::$__TEOL; 
+        $id = trim( $id );
+        if ( self::$__strings && isset(self::$__strings[$id]) ) $id = self::$__strings[$id];
+        $ch = $id[0];
+        if ( '"' === $ch || "'" === $ch ) $id = substr($id,1,-1); // quoted id
+        
+        self::$__extends = $id;
+        return "';" . self::$__TEOL; 
     }
     
     // define (overridable) block
     private static function t_block( $block ) 
     { 
         $block = trim( $block );
+        if ( self::$__strings && isset(self::$__strings[$block]) ) $block = self::$__strings[$block];
+        $ch = $block[0];
+        if ( '"' === $ch || "'" === $ch ) $block = substr($block,1,-1); // quoted block
+        
         array_push(self::$__allblocks, array($block, -1, -1, 0, self::$__openblocks[ 0 ][ 1 ]));
         self::$__allblockscnt[ $block ] = isset(self::$__allblockscnt[ $block ]) ? (self::$__allblockscnt[ $block ]+1) : 1;
         self::$__blockptr = count(self::$__allblocks);
@@ -1389,7 +1322,7 @@ class Contemplate
         self::$__currentblock = $block;
         if ( !isset(self::$__locals[self::$__currentblock]) ) self::$__locals[self::$__currentblock] = array();
         if ( !isset(self::$__variables[self::$__currentblock]) ) self::$__variables[self::$__currentblock] = array();
-        return "' .  __||" . $block . "||__";  
+        return "' .  #|" . $block . "|#";
     }
     
     // end define (overridable) block
@@ -1402,7 +1335,7 @@ class Contemplate
             self::$__blockptr = $block[1]+1;
             self::$__startblock = null;
             self::$__currentblock = empty(self::$__openblocks) ? '_' : self::$__openblocks[0][0];
-            return "__||/" . $block[0] . "||__";
+            return "#|/" . $block[0] . "|#";
         }
         else
         {
@@ -1428,90 +1361,160 @@ class Contemplate
         return $parts;
     }
     
-    private static function parseControlConstructs( $m )
+    private static function parseConstructs( $m )
     {
-        if (isset($m[1]))
+        $re_controls = self::$re_controls;
+        $prefix = $m[1];
+        $ctrl = $m[2];
+        $startParen = $m[3];
+        $rest = isset($m[4]) ? $m[4] : '';
+        $l = strlen($rest);
+        $args = '';
+        $out = '';
+        $paren = 1;
+        $i = 0;
+        
+        $parseConstructs = array(__CLASS__, 'parseConstructs');
+        
+        // parse parentheses and arguments, accurately
+        while ( $i < $l && $paren > 0 )
         {
-            $ctrl = $m[1];
-            $args = isset($m[2]) ? $m[2] : '';
-            
-            switch($ctrl)
+            $ch = $rest[$i++];
+            if ( '(' === $ch ) $paren++;
+            else if ( ')' === $ch ) $paren--;
+            if ( $paren > 0 ) $args .= $ch;
+        }
+        $rest = substr($rest, strlen($args)+1);
+        
+        $m = array_search($ctrl, self::$__controlConstructs);
+        if ( false !== $m )
+        {
+            switch( $m )
             {
-                case 'isset': 
-                    // constructs in args, eg. isset
-                    $args = preg_replace_callback( self::$__regExps['controls2'], array(__CLASS__, 'parseControlConstructs'), $args );
-                    return self::t_isset($args);  
-                    break;
+                case 0 /*'set'*/:
+                    $args = preg_replace_callback( $re_controls, $parseConstructs, $args );
+                    $out = self::t_set($args);  
+                    $rest = preg_replace_callback( $re_controls, $parseConstructs, $rest );
+                    return $out . $rest;
                 
-                case 'set':  
-                    // constructs in args, eg. isset
-                    $args = preg_replace_callback( self::$__regExps['controls2'], array(__CLASS__, 'parseControlConstructs'), $args );
-                    return self::t_set($args);  
-                    break;
+                case 1 /*'unset'*/:
+                    $args = preg_replace_callback( $re_controls, $parseConstructs, $args );
+                    $out = self::t_unset($args);  
+                    $rest = preg_replace_callback( $re_controls, $parseConstructs, $rest );
+                    return $out . $rest;
                 
-                case 'unset': 
-                    // constructs in args, eg. isset
-                    $args = preg_replace_callback( self::$__regExps['controls2'], array(__CLASS__, 'parseControlConstructs'), $args );
-                    return self::t_unset($args);  
-                    break;
+                case 2 /*'isset'*/:
+                    $args = preg_replace_callback( $re_controls, $parseConstructs, $args );
+                    $out = self::t_isset($args);
+                    $rest = preg_replace_callback( $re_controls, $parseConstructs, $rest );
+                    return $out . $rest;
                 
-                case 'if': 
-                    // constructs in args, eg. isset
-                    $args = preg_replace_callback( self::$__regExps['controls2'], array(__CLASS__, 'parseControlConstructs'), $args );
-                    return self::t_if($args);  
-                    break;
+                case 3 /*'if'*/:
+                    $args = preg_replace_callback( $re_controls, $parseConstructs, $args );
+                    $out = self::t_if($args);  
+                    $rest = preg_replace_callback( $re_controls, $parseConstructs, $rest );
+                    return $out . $rest;
                 
-                case 'elseif': 
-                    // constructs in args, eg. isset
-                    $args = preg_replace_callback( self::$__regExps['controls2'], array(__CLASS__, 'parseControlConstructs'), $args );
-                    return self::t_elseif($args); 
-                    break;
+                case 4 /*'elseif'*/:
+                    $args = preg_replace_callback( $re_controls, $parseConstructs, $args );
+                    $out = self::t_elseif($args); 
+                    $rest = preg_replace_callback( $re_controls, $parseConstructs, $rest );
+                    return $out . $rest;
                 
-                case 'else': 
-                    return self::t_else($args);  
-                    break;
+                case 5 /*'else'*/:
+                    $out = self::t_else($args);  
+                    $rest = preg_replace_callback( $re_controls, $parseConstructs, $rest );
+                    return $out . $rest;
                 
-                case 'endif': 
-                    return self::t_endif($args);  
-                    break;
+                case 6 /*'endif'*/:
+                    $out = self::t_endif($args);  
+                    $rest = preg_replace_callback( $re_controls, $parseConstructs, $rest );
+                    return $out . $rest;
                 
-                case 'for': 
-                    // constructs in args, eg. isset
-                    $args = preg_replace_callback( self::$__regExps['controls2'], array(__CLASS__, 'parseControlConstructs'), $args );
-                    return self::t_for($args);  
-                    break;
+                case 7 /*'for'*/:
+                    $args = preg_replace_callback( $re_controls, $parseConstructs, $args );
+                    $out = self::t_for($args);  
+                    $rest = preg_replace_callback( $re_controls, $parseConstructs, $rest );
+                    return $out . $rest;
                 
-                case 'elsefor': 
-                    return self::t_elsefor($args); 
-                    break;
+                case 8 /*'elsefor'*/:
+                    $out = self::t_elsefor($args); 
+                    $rest = preg_replace_callback( $re_controls, $parseConstructs, $rest );
+                    return $out . $rest;
                 
-                case 'endfor': 
-                    return self::t_endfor($args); 
-                    break;
+                case 9 /*'endfor'*/:
+                    $out = self::t_endfor($args); 
+                    $rest = preg_replace_callback( $re_controls, $parseConstructs, $rest );
+                    return $out . $rest;
                 
-                case 'template': 
-                    // constructs in args, eg. isset
-                    $args = preg_replace_callback( self::$__regExps['controls2'], array(__CLASS__, 'parseControlConstructs'), $args );
-                    return self::t_template($args); 
-                    break;
+                case 10 /*'extends'*/:
+                    $out = self::t_extends($args); 
+                    $rest = preg_replace_callback( $re_controls, $parseConstructs, $rest );
+                    return $out . $rest;
                 
-                case 'extends': 
-                    return self::t_extends($args); 
-                    break;
+                case 11 /*'block'*/:
+                    $out = self::t_block($args); 
+                    $rest = preg_replace_callback( $re_controls, $parseConstructs, $rest );
+                    return $out . $rest;
                 
-                case 'block': 
-                    return self::t_block($args); 
-                    break;
+                case 12 /*'endblock'*/:
+                    $out = self::t_endblock($args); 
+                    $rest = preg_replace_callback( $re_controls, $parseConstructs, $rest );
+                    return $out . $rest;
                 
-                case 'endblock': 
-                    return self::t_endblock($args); 
-                    break;
-                
-                case 'include': 
-                    return self::t_include($args); 
-                    break;
+                case 13 /*'include'*/:
+                    $out = self::t_include($args); 
+                    $rest = preg_replace_callback( $re_controls, $parseConstructs, $rest );
+                    return $out . $rest;
             }
         }
+        
+        if ( isset(self::$__func_aliases[$ctrl]) ) 
+            $ctrl = self::$__func_aliases[$ctrl];
+        $m = array_search($ctrl, self::$__funcs);
+        if ( false !== $m )
+        {
+            $args = preg_replace_callback( $re_controls, array(__CLASS__, 'parseConstructs'), $args );
+            // aliases and builtin functions
+            switch( $m )
+            {
+                case 0: case 5: $out = 'strval(' . $args . ')'; break;
+                case 1: $out = 'intval(' . $args . ')'; break;
+                case 2: $out = 'floatval(' . $args . ')'; break;
+                case 3: $out = '"\'".(' . $args . ')."\'"'; break;
+                case 4: $out = '\'"\'.(' . $args . ').\'"\''; break;
+                case 6: $out = 'time()'; break;
+                case 7: $out = 'count(' . $args . ')'; break;
+                case 8: $out = 'strtolower(' . $args . ')'; break;
+                case 9: $out = 'strtoupper(' . $args . ')'; break;
+                case 10: $out = 'ucfirst(' . $args . ')'; break;
+                case 11: $out = 'lcfirst(' . $args . ')'; break;
+                case 12: $out = 'sprintf(' . $args . ')'; break;
+                default: $out = 'Contemplate::' . $ctrl . '(' . $args . ')';
+            }
+            $rest = preg_replace_callback( $re_controls, array(__CLASS__, 'parseConstructs'), $rest );
+            return $prefix . $out . $rest;
+        }
+        
+        if ( preg_match(self::$re_plugin, $ctrl, $m) && isset($m[2]) && isset(self::$__plugins[$m[2]]) )
+        {
+            // allow custom plugins as template functions
+            $pl = self::$__plugins[$m[2]];
+            $args = preg_replace_callback( $re_controls, array(__CLASS__, 'parseConstructs'), $args );
+            if ( $pl instanceof ContemplateInlineTemplate )
+            {
+                $out = $pl->render( ) . '(' . $args . ')';
+            }
+            else
+            {
+                self::$__plugins['plg_' . $m[2]] = $pl;
+                unset(self::$__plugins[$m[2]]);
+                $out = 'Contemplate::plg_' . $m[2] . '(' . $args . ')';
+            }
+            $rest = preg_replace_callback( $re_controls, array(__CLASS__, 'parseConstructs'), $rest );
+            return $prefix . $out . $rest;
+        }
+        
         return $m[0];
     }
     
@@ -1529,8 +1532,8 @@ class Contemplate
             $pos2 = $delims[ 2 ];
             $off = $delims[ 3 ];
             $containerblock = $delims[ 4 ];
-            $tag = "__||" . $block . "||__";
-            $rep = "\$__i__->renderBlock( '" . $block . "' ); ";
+            $tag = "#|" . $block . "|#";
+            $rep = "\$__i__->renderBlock('" . $block . "');";
             $tl = strlen($tag); $rl = strlen($rep);
             
             if ( -1 < $containerblock )
@@ -1565,27 +1568,13 @@ class Contemplate
         return array($s, $blocks);
     }
 
-    private static function parseString( $s, $q, $i, $l )
-    {
-        $string = $q;
-        $escaped = false;
-        $ch = '';
-        while ( $i < $l )
-        {
-            $ch = $s[$i++];
-            $string .= $ch;
-            if ( $q == $ch && !$escaped )  break;
-            $escaped = (!$escaped && '\\' == $ch);
-        }
-        return $string;
-    }
-    
     private static function parseVariable( $s, $i, $l )
     {
         if ( preg_match(self::$ALPHA, $s[$i], $m) )
         {
             $strings = array();
             $variables = array();
+            $hasStrings = false;
             
             // main variable
             $variable = $s[$i++];
@@ -1599,7 +1588,7 @@ class Contemplate
             $variable_main = "\$data['" . $variable_raw . "']";
             $variable_rest = "";
             self::$__idcnt++;
-            $id = "__##VAR" . self::$__idcnt . "##__";
+            $id = "#VAR" . self::$__idcnt . "#";
             $len = strlen($variable_raw);
             
             // extra space
@@ -1657,15 +1646,27 @@ class Contemplate
                     // literal string property
                     if ( '"' == $ch || "'" == $ch )
                     {
-                        $property = self::parseString( $s, $ch, $i+1, $l );
+                        //$property = self::parseString( $s, $ch, $i+1, $l );
+                        $str_ = $q = $ch;
+                        $si = $i+1;
+                        $escaped = false;
+                        while ( $si < $l )
+                        {
+                            $ch = $s[$si++];
+                            $str_ .= $ch;
+                            if ( $q == $ch && !$escaped )  break;
+                            $escaped = (!$escaped && '\\' == $ch);
+                        }
+                        $property = $str_;
                         self::$__idcnt++;
-                        $strid = "__##STR" .self::$__idcnt . "##__";
+                        $strid = "#STR" .self::$__idcnt . "#";
                         $strings[$strid] = $property;
                         $variable_rest .= $delim . $strid;
                         $lp = strlen($property);
                         $i += $lp;
                         $len += $space + 1 + $lp;
                         $space = 0;
+                        $hasStrings = true;
                     }
                     
                     // numeric array property
@@ -1697,6 +1698,7 @@ class Contemplate
                             $len += $space + 2 + $lp;
                             $space = 0;
                             $variables = array_merge($variables, $subvariables);
+                            $hasStrings = $hasStrings || $property[5];
                         }
                     }
                     
@@ -1754,39 +1756,17 @@ class Contemplate
                 }
             }
             
-            $variables[] = array($id, $variable_raw, $variable_main, $variable_rest, $len, $strings);
+            $variables[] = array($id, $variable_raw, $variable_main, $variable_rest, $len, $hasStrings, $strings);
             return $variables;
         }
         return null;
     }
     
-    private static function funcReplace( $m )
-    {
-        $plugin = !empty($m[3]) ? $m[3] : null; 
-        if ( $plugin && isset(self::$__plugins[$plugin]) )
-        {
-            $pl = self::$__plugins[$plugin];
-            
-            if ( $pl instanceof ContemplateInlineTemplate )
-            {
-                return $pl->render( );
-            }
-            else
-            {
-                self::$__plugins['plg_' . $plugin] = $pl;
-                unset(self::$__plugins[$plugin]);
-                return 'Contemplate::plg_' . $plugin; 
-            }
-        }
-        else
-        {
-            return 'Contemplate::' . $m[1];
-        }
-    }
-    
     private static function parse( $tpl, $withblocks=true ) 
     {
         $parts = self::split($tpl, self::$__leftTplSep, self::$__rightTplSep);
+        $re_controls = self::$re_controls;
+        $parseConstructs = array(__CLASS__, 'parseConstructs');
         $len = count($parts);
         $isTag = false;
         $parsed = '';
@@ -1796,108 +1776,155 @@ class Contemplate
             
             if ( $isTag )
             {
-                $tag = "\t" . preg_replace( self::$__regExps['specials'], " ", $s ) . "\v"; // replace special chars
-                
                 // parse each template tag section accurately
                 // refined parsing of strings and variables
-                $count = strlen( $tag );
+                $count = strlen( $s );
                 $index = 0;
                 $ch = '';
                 $out = '';
                 $variables = array();
                 $strings = array();
+                $hasVariables = false;
+                $hasStrings = false;
+                $space = 0;
+                
                 while ( $index < $count )
                 {
-                    $ch = $tag[$index++];
+                    $ch = $s[$index++];
                     
                     // parse mainly literal strings and variables
                     
                     // literal string
                     if ( '"' == $ch || "'" == $ch )
                     {
-                        $tok = self::parseString( $tag, $ch, $index, $count );
+                        if ( $space > 0 )
+                        {
+                            $out .= " ";
+                            $space = 0;
+                        }
+                        //$tok = self::parseString($s, $ch, $index, $count);
+                        $str_ = $q = $ch;
+                        $si = $index;
+                        $escaped = false;
+                        while ( $si < $count )
+                        {
+                            $ch = $s[$si++];
+                            $str_ .= $ch;
+                            if ( $q == $ch && !$escaped )  break;
+                            $escaped = (!$escaped && '\\' == $ch);
+                        }
+                        $tok = $str_;
                         self::$__idcnt++;
-                        $id = "__##STR" . self::$__idcnt . "##__";
+                        $id = "#STR" . self::$__idcnt . "#";
                         $strings[ $id ] = $tok;
                         $out .= $id;
                         $index += strlen($tok)-1;
+                        $hasStrings = true;
                     }
                     // variable
                     elseif ( '$' == $ch )
                     {
-                        $tok = self::parseVariable($tag, $index, $count);
+                        if ( $space > 0 )
+                        {
+                            $out .= " ";
+                            $space = 0;
+                        }
+                        $tok = self::parseVariable($s, $index, $count);
                         if ( $tok )
                         {
                             foreach ($tok as $tokv)
                             {
                                 $id = $tokv[ 0 ];
                                 self::$__variables[self::$__currentblock][ $id ] = $tokv[ 1 ];
-                                $strings = array_merge( $strings, $tokv[ 5 ] );
+                                if ( $tokv[ 5 ] ) $strings = array_merge( $strings, $tokv[ 6 ] );
                             }
                             $out .= $id;
                             $index += $tokv[ 4 ];
                             $variables = array_merge( $variables, $tok );
+                            $hasVariables = true;
+                            $hasStrings = $hasStrings || $tokv[ 5 ];
                         }
                         else
                         {
                             $out .= '$';
                         }
                     }
+                    // special chars
+                    elseif ( " " === $ch || "\n" === $ch || "\r" === $ch || "\t" === $ch || "\v" === $ch )
+                    {
+                        $space++;
+                    }
                     // rest, bypass
                     else
                     {
+                        if ( $space > 0 )
+                        {
+                            $out .= " ";
+                            $space = 0;
+                        }
                         $out .= $ch;
                     }
                 }
-                $tag = $out;
                 
                 // fix literal data notation
-                $tag = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), $tag);
+                $out = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), $out);
+                
+                $tag = "\t" . $out . "\v";
                 
                 self::$__startblock = null;  self::$__endblock = null; self::$__blockptr = -1;
-                // directives and control constructs
-                $tag = preg_replace_callback( self::$__regExps['controls'], array(__CLASS__, 'parseControlConstructs'), $tag );
+                self::$__strings =& $strings;
                 
-                // functions
-                $tag = preg_replace_callback( self::$__regExps['functions'], array(__CLASS__, 'funcReplace')/*'Contemplate::${1}'*/, $tag );
+                // directives and control constructs, functions, etc..
+                $tag = preg_replace_callback( $re_controls, $parseConstructs, $tag );
                 
                 // other replacements
-                $tag = preg_replace( self::$__regExps['replacements'], '\' . ( $1 ) . \'', $tag );
+                if ( "\t" === $tag[0] && "\v" === $tag[strlen($tag)-1] ) 
+                    $tag = '\' . (' . substr($tag,1,-1) . ') . \'';
                 
                 // replace variables
-                $lr = count($variables);
-                for($v=$lr-1; $v>=0; $v--)
+                if ( $hasVariables )
                 {
-                    $id = $variables[ $v ][ 0 ]; $varname = $variables[ $v ][ 1 ];
-                    $tag = str_replace( $id.'__RAW__', $varname, $tag );
-                    if ( isset(self::$__locals[self::$__currentblock][$varname]) ) /* local (loop) variable */
-                        $tag = str_replace( $id, '$_loc_' . $varname . $variables[ $v ][ 3 ], $tag );
-                    else /* default (data) variable */
-                        $tag = str_replace( $id, $variables[ $v ][ 2 ] . $variables[ $v ][ 3 ], $tag );
+                    $lr = count($variables);
+                    for($v=$lr-1; $v>=0; $v--)
+                    {
+                        $id = $variables[ $v ][ 0 ]; $varname = $variables[ $v ][ 1 ];
+                        $tag = str_replace( $id.'__RAW__', $varname, $tag );
+                        if ( isset(self::$__locals[self::$__currentblock][$varname]) ) /* local (loop) variable */
+                            $tag = str_replace( $id, '$_loc_' . $varname . $variables[ $v ][ 3 ], $tag );
+                        else /* default (data) variable */
+                            $tag = str_replace( $id, $variables[ $v ][ 2 ] . $variables[ $v ][ 3 ], $tag );
+                    }
                 }
+                
                 // replace strings (accurately)
-                $tagTpl = ContemplateInlineTemplate::multisplit($tag, array_keys($strings), 1);
-                $tag = '';
-                foreach ($tagTpl as $v)
+                if ( $hasStrings )
                 {
-                    $tag .= $v[0] ? $v[1] : $strings[ $v[1] ];
+                    $tagTpl = ContemplateInlineTemplate::multisplit($tag, array_keys($strings), 1);
+                    $tag = '';
+                    foreach ($tagTpl as $v)
+                    {
+                        $tag .= $v[0] ? $v[1] : $strings[ $v[1] ];
+                    }
                 }
                 
-                $tag = str_replace( array("\t", "\v"), array(self::$__tplStart, self::padLines( self::$__tplEnd )), $tag );
+                // replace tpl separators
+                if ( "\v" === $tag[strlen($tag)-1] ) $tag = substr($tag,0,-1) . self::padLines( self::$__tplEnd );
+                if ( "\t" === $tag[0] ) $tag = self::$__tplStart . substr($tag,1);
                 
-                $s  = $tag;
-                
+                // replace blocks
                 if ( self::$__startblock )
                 {
-                    self::$__startblock = "__||".self::$__startblock."||__";
+                    self::$__startblock = "#|".self::$__startblock."|#";
                     self::$__allblocks[ self::$__blockptr-1 ][ 1 ] = strlen($parsed) + strpos($tag, self::$__startblock);
                 }
                 elseif ( self::$__endblock )
                 {
-                    self::$__endblock = "__||/".self::$__endblock."||__";
+                    self::$__endblock = "#|/".self::$__endblock."|#";
                     self::$__allblocks[ self::$__blockptr-1 ][ 2 ] = strlen($parsed) + strpos($tag, self::$__endblock) + strlen(self::$__endblock);
                 }
                     
+                $s = $tag;
+                
                 $isTag = false;
             }
             else
@@ -2036,7 +2063,7 @@ class Contemplate
         // tpl render code
         if (self::$__extends)
         {
-            $extendCode = "\$this->extend( '".self::$__extends."' );";
+            $extendCode = "\$this->extend('".self::$__extends."');";
             $renderer = self::$TT_RCODE1;
             $renderCode = $renderer(array(
                             'EOL'=>     self::$__TEOL
@@ -2176,6 +2203,7 @@ class Contemplate
         self::$__allblocks = null; self::$__allblockscnt = null; self::$__openblocks = null;
         /*self::$__extends = null;*/ self::$__locals = null; self::$__variables = null; self::$__currentblock = null;
         self::$__idcnt = 0; self::$__stack = array();
+        self::$__strings = null;
     }
     
     private static function pushState( ) 
@@ -2196,14 +2224,13 @@ class Contemplate
     
     private static function _localized_date( $locale, $format, $timestamp ) 
     {
-        $txt_words = array("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sun", "Mon", "Tues", "Wednes", "Thurs", "Fri", "Satur", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec");
-        
         $date = date($format, $timestamp);
+        $date_words =& self::$date_words;
         
         // localize days/months
         $replace = array();
         
-        foreach ($txt_words as $word) 
+        foreach ($date_words as $word) 
             if ( isset($locale[$word]) ) 
                 $replace[$word] = $locale[$word]; 
             
@@ -2218,8 +2245,6 @@ class Contemplate
     {
         if ( null === $level )  $level = self::$__level;
         
-        //$NLRX = '/\n\r|\r\n|\n|\r/';
-        
         if ($level>=0)
         {
             //$pad=implode("", array_fill(0, $level, "    "));
@@ -2229,12 +2254,6 @@ class Contemplate
         
         return $lines;
     }
-    
-    /*private static function j( ) /* joinLines * /
-    {
-        $args = func_get_args( );
-        return implode(self::$__TEOL, $args);
-    }*/
     
     public static function data($d)
     {

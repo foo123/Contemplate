@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.7.1
+*  @version: 0.8
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -36,7 +36,7 @@
         
     "use strict";
     
-    var __version__ = "0.7.1", Contemplate, Template, InlineTemplate, 
+    var __version__ = "0.8", Contemplate, Template, InlineTemplate, 
     
         // auxilliaries
         PROTO = 'prototype', HAS = 'hasOwnProperty', 
@@ -764,7 +764,7 @@
         $__locals, $__variables, $__loops = 0, $__ifs = 0, $__loopifs = 0, $__forType = 2,
         $__allblocks = null, $__allblockscnt = null,  $__openblocks = null,
         $__currentblock, $__startblock = null, $__endblock = null, $__blockptr = -1,
-        $__extends = null,
+        $__extends = null, $__strings = null,
     
         $__uuid = 0,
         
@@ -773,32 +773,33 @@
         
         re_amp = /&/g, re_lt = /</g, re_gt = />/g, re_quot = /"/g, re_quot_s = SQUOTE,
         
-        $__regExps = {
-            'specials' : null,
-            'replacements' : null,
-            'functions' : null,
-            'controls' : null,
-            'controls2' : null
-        },
+        re_plugin = /^(plg_|plugin_)([a-zA-Z0-9_]+)/,
+        re_controls = /(\t|[ ]?)[ ]*%([a-zA-Z_][a-zA-Z0-9_]*)\b[ ]*(\()(.*)$/g,
         
         $__controlConstructs = [
-            'include', 'template',
-            'extends', 'endblock', 'block',
-            'elsefor', 'endfor', 'for',
             'set', 'unset', 'isset',
-            'elseif', 'else', 'endif', 'if'
+            'if', 'elseif', 'else', 'endif',
+            'for', 'elsefor', 'endfor',
+            'extends', 'block', 'endblock',
+            'include'
         ],
         
         $__funcs = [ 
-            'htmlselect', 'htmltable', 
-            '(plg_|plugin_)([a-zA-Z0-9_]+)', 'haskey', 
-            'lowercase', 'uppercase', 'camelcase', 'snakecase', 'pluralise',
-            'concat', 'ltrim', 'rtrim', 'trim', 'sprintf', 'addslashes', 'stripslashes',
-            'inline', 'tpl', 'uuid',
-            'html', 'url', 'count', 
-            'ldate', 'date', 'now', 'locale',
-            'dq', 'q', 'l', 's', 'n', 'f', 'e' 
+            's', 'n', 'f', 'q', 'dq', 
+            'echo', 'time', 'count',
+            'lowercase', 'uppercase', 'ucfirst', 'lcfirst', 'sprintf',
+            'date', 'ldate', 'locale', 'pluralise',
+            'inline', 'tpl', 'uuid', 'haskey',
+            'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
+            'camelcase', 'snakecase', 
+            'e','html', 'url',
+            'htmlselect', 'htmltable'
         ],
+        $__func_aliases = {
+            'l': 'locale',
+            'now': 'time',
+            'template': 'tpl'
+        },
         
         $__plugins = { },
         
@@ -818,6 +819,7 @@
             $__allblocks = null; $__allblockscnt = null; $__openblocks = null;
             /*$__extends = null;*/ $__locals = null; $__variables = null; $__currentblock = null;
             $__idcnt = 0; $__stack = [];
+            $__strings = null;
         },
         
         pushState = function( ) {
@@ -833,10 +835,6 @@
             $__allblocks = t[5]; $__allblockscnt = t[6]; $__openblocks = t[7];
             $__extends = t[8]; $__locals = t[9]; $__variables = t[10]; $__currentblock = t[11];
         },
-        
-        /*joinLines = function( args ) {
-            return args.join( $__TEOL );
-        },*/
         
         // pad lines to generate formatted code
         padLines = function( lines, level ) {
@@ -1011,7 +1009,7 @@
     
         // whether var is set
         t_isset = function( varname ) {
-            return ' ("undefined" !== typeof(' + varname + ')) ';
+            return '("undefined" !== typeof(' + varname + '))';
         },
         
         // set/create/update tpl var
@@ -1030,7 +1028,7 @@
                 varname = trim( varname );
                 return "';" + $__TEOL + padLines( 'if ("undefined" !== typeof(' + varname + ')) delete ' + varname + ';' ) + $__TEOL;
             }
-            return "'; " + $__TEOL; 
+            return "';" + $__TEOL; 
         },
         
         // if
@@ -1151,7 +1149,7 @@
             {
                 $__loopifs--;  
                 $__level+=-2;
-                out = "';" + padLines( TT_ELSEFOR2( {
+                out = "';" + padLines( TT_ELSEFOR( {
                     'EOL': $__TEOL
                 } ) );
                 $__level+=1;
@@ -1160,7 +1158,7 @@
             {
                 $__loopifs--;  
                 $__level+=-2;
-                out = "';" + padLines( TT_ELSEFOR1( {
+                out = "';" + padLines( TT_ELSEFOR( {
                     'EOL': $__TEOL
                 } ) );
                 $__level+=1;
@@ -1178,7 +1176,7 @@
                 {
                     $__loops--; $__loopifs--;  
                     $__level+=-2;
-                    out = "';" + padLines( TT_ENDFOR3( {
+                    out = "';" + padLines( TT_ENDFOR2( {
                         'EOL': $__TEOL
                     } ) );
                 }
@@ -1204,6 +1202,11 @@
         
         // include file
         t_include = function( id/*, asyncCB*/ ) {
+            id = trim( id );
+            if ( $__strings && $__strings[HAS](id) ) id = $__strings[id];
+            var ch = id.charAt(0);
+            if ( '"' === ch || "'" === ch ) id = id.slice(1,-1); // quoted id
+            
             /*
             // async
             if ( asyncCB )
@@ -1233,31 +1236,31 @@
                 {
                     pushState();
                     resetState();
-                    $__partials[id] = " " + parse( getSeparators( getTemplateContents( id ) ), false ) + "'; " + $__TEOL;
+                    $__partials[id] = " " + parse( getSeparators( getTemplateContents( id ) ), false ) + "';" + $__TEOL;
                     popState();
                 }
                 return padLines( $__partials[id] );
             /*}*/
         },
         
-        // include template
-        t_template = function( args ) {
-            args = args.split(',');
-            var id = trim( args.shift( ) ),
-                obj = args.join( ',' )
-            ;
-            return '\' + %tpl( "'+id+'", '+obj+' ); ' + $__TEOL;
-        },
-        
         // extend another template
-        t_extends = function( tpl ) { 
-            $__extends = trim( tpl ); 
-            return "'; " + $__TEOL; 
+        t_extends = function( id ) { 
+            id = trim( id );
+            if ( $__strings && $__strings[HAS](id) ) id = $__strings[id];
+            var ch = id.charAt(0);
+            if ( '"' === ch || "'" === ch ) id = id.slice(1,-1); // quoted id
+            
+            $__extends = id;
+            return "';" + $__TEOL; 
         },
         
         // define (overridable) block
         t_block = function( block ) { 
             block = trim( block );
+            if ( $__strings && $__strings[HAS](block) ) block = $__strings[block];
+            var ch = block.charAt(0);
+            if ( '"' === ch || "'" === ch ) block = block.slice(1,-1); // quoted block
+            
             $__allblocks.push( [block, -1, -1, 0, $__openblocks[ 0 ][ 1 ]] );
             $__allblockscnt[ block ] = $__allblockscnt[ block ] ? ($__allblockscnt[ block ]+1) : 1;
             $__blockptr = $__allblocks.length;
@@ -1267,7 +1270,7 @@
             $__currentblock = block;
             $__locals[$__currentblock] = $__locals[$__currentblock] || {};
             $__variables[$__currentblock] = $__variables[$__currentblock] || {};
-            return "' +  __||" + block + "||__";  
+            return "' +  #|" + block + "|#";
         },
         
         // end define (overridable) block
@@ -1279,7 +1282,7 @@
                 $__blockptr = block[1]+1;
                 $__startblock = null;
                 $__currentblock = $__openblocks.length ? $__openblocks[0][0] : '_';
-                return "__||/" + block[0] + "||__";
+                return "#|/" + block[0] + "|#";
             }
             else
             {
@@ -1305,87 +1308,144 @@
             return parts;
         },
     
-        parseControlConstructs = function parseControlConstructs( match, ctrl, args )  {
-            if ( ctrl )
-            {
-                args = args || '';
+        parseConstructs = function parseConstructs( match, prefix, ctrl, startParen, rest )  {
+            rest = rest || '';
+            var out = '', args = '', 
+                paren = 1, l = rest.length, 
+                i = 0, ch, m
+            ;
             
-                switch ( ctrl )
+            // parse parentheses and arguments, accurately
+            while ( i < l && paren > 0 )
+            {
+                ch = rest.charAt(i++);
+                if ( '(' === ch ) paren++;
+                else if ( ')' === ch ) paren--;
+                if ( paren > 0 ) args += ch;
+            }
+            rest = rest.slice(args.length+1);
+            
+            m = $__controlConstructs.indexOf( ctrl );
+            if ( -1 < m )
+            {
+                switch ( m )
                 {
-                    case 'isset': 
-                        // constructs in args, eg. isset
-                        args = args.replace( $__regExps['controls2'], parseControlConstructs );
-                        return t_isset( args );  
-                        break;
+                    case 0 /*'set'*/: 
+                        args = args.replace( re_controls, parseConstructs );
+                        out = t_set( args );
+                        rest = rest.replace( re_controls, parseConstructs );
+                        return out + rest;
                     
-                    case 'set': 
-                        // constructs in args, eg. isset
-                        args = args.replace( $__regExps['controls2'], parseControlConstructs );
-                        return t_set( args );  
-                        break;
+                    case 1 /*'unset'*/: 
+                        args = args.replace( re_controls, parseConstructs );
+                        out = t_unset( args );
+                        rest = rest.replace( re_controls, parseConstructs );
+                        return out + rest;
                     
-                    case 'unset': 
-                        // constructs in args, eg. isset
-                        args = args.replace( $__regExps['controls2'], parseControlConstructs );
-                        return t_unset( args );  
-                        break;
+                    case 2 /*'isset'*/: 
+                        args = args.replace( re_controls, parseConstructs );
+                        out = t_isset( args );
+                        rest = rest.replace( re_controls, parseConstructs );
+                        return out + rest;
                     
-                    case 'if': 
-                        // constructs in args, eg. isset
-                        args = args.replace( $__regExps['controls2'], parseControlConstructs );
-                        return t_if( args );  
-                        break;
+                    case 3 /*'if'*/: 
+                        args = args.replace( re_controls, parseConstructs );
+                        out = t_if( args );
+                        rest = rest.replace( re_controls, parseConstructs );
+                        return out + rest;
                     
-                    case 'elseif':  
-                        // constructs in args, eg. isset
-                        args = args.replace( $__regExps['controls2'], parseControlConstructs );
-                        return t_elseif( args );  
-                        break;
+                    case 4 /*'elseif'*/:  
+                        args = args.replace( re_controls, parseConstructs );
+                        out = t_elseif( args );
+                        rest = rest.replace( re_controls, parseConstructs );
+                        return out + rest;
                     
-                    case 'else': 
-                        return t_else( args );  
-                        break;
+                    case 5 /*'else'*/: 
+                        out = t_else( args );
+                        rest = rest.replace( re_controls, parseConstructs );
+                        return out + rest;
                     
-                    case 'endif': 
-                        return t_endif( args ); 
-                        break;
+                    case 6 /*'endif'*/: 
+                        out = t_endif( args );
+                        rest = rest.replace( re_controls, parseConstructs );
+                        return out + rest;
                     
-                    case 'for': 
-                        // constructs in args, eg. isset
-                        args = args.replace( $__regExps['controls2'], parseControlConstructs );
-                        return t_for( args ); 
-                        break;
+                    case 7 /*'for'*/: 
+                        args = args.replace( re_controls, parseConstructs );
+                        out = t_for( args );
+                        rest = rest.replace( re_controls, parseConstructs );
+                        return out + rest;
                     
-                    case 'elsefor': 
-                        return t_elsefor( args ); 
-                        break;
+                    case 8 /*'elsefor'*/: 
+                        out = t_elsefor( args );
+                        rest = rest.replace( re_controls, parseConstructs );
+                        return out + rest;
                     
-                    case 'endfor':  
-                        return t_endfor( args );  
-                        break;
+                    case 9 /*'endfor'*/:  
+                        out = t_endfor( args );
+                        rest = rest.replace( re_controls, parseConstructs );
+                        return out + rest;
                     
-                    case 'extends':  
-                        return t_extends( args );  
-                        break;
+                    case 10 /*'extends'*/:  
+                        out = t_extends( args );
+                        rest = rest.replace( re_controls, parseConstructs );
+                        return out + rest;
                     
-                    case 'block':  
-                        return t_block( args );  
-                        break;
+                    case 11 /*'block'*/:  
+                        out = t_block( args );
+                        rest = rest.replace( re_controls, parseConstructs );
+                        return out + rest;
                     
-                    case 'endblock':  
-                        return t_endblock( args );  
-                        break;
+                    case 12 /*'endblock'*/:  
+                        out = t_endblock( args );
+                        rest = rest.replace( re_controls, parseConstructs );
+                        return out + rest;
                     
-                    case 'template': 
-                        // constructs in args, eg. isset
-                        args = args.replace( $__regExps['controls2'], parseControlConstructs );
-                        return t_template( args );  
-                        break;
-                    
-                    case 'include':  
-                        return t_include( args );  
-                        break;
+                    case 13 /*'include'*/:  
+                        out = t_include( args );
+                        rest = rest.replace( re_controls, parseConstructs );
+                        return out + rest;
                 }
+            }
+            
+            if ( $__func_aliases[HAS](ctrl) ) 
+                ctrl = $__func_aliases[ctrl];
+            m = $__funcs.indexOf( ctrl );
+            if ( -1 < m )
+            {
+                prefix = prefix || '';
+                args = args.replace( re_controls, parseConstructs );
+                // aliases and builtin functions
+                switch( m )
+                {
+                    case 0: case 5: out = 'String(' + args + ')'; break;
+                    case 1: out = 'parseInt(' + args + ')'; break;
+                    case 2: out = 'parseFloat(' + args + ')'; break;
+                    case 3: out = '"\'"+(' + args + ')+"\'"'; break;
+                    case 4: out = '\'"\'+(' + args + ')+\'"\''; break;
+                    case 6: out = 'Contemplate.time()'; break;
+                    case 7: out = 'Contemplate.count(' + args + ')'; break;
+                    case 8: out = '(' + args + ').toLowerCase()'; break;
+                    case 9: out = '(' + args + ').toUpperCase()'; break;
+                    case 10: out = 'Contemplate.ucfirst(' + args + ')'; break;
+                    case 11: out = 'Contemplate.lcfirst(' + args + ')'; break;
+                    case 12: out = 'Contemplate.sprintf(' + args + ')'; break;
+                    default: out = 'Contemplate.' + ctrl + '(' + args + ')';
+                }
+                rest = rest.replace( re_controls, parseConstructs );
+                return prefix + out + rest;
+            }
+            
+            m = ctrl.match( re_plugin );
+            if ( m && m[2] && $__plugins[HAS](m[2]) )
+            {
+                // allow custom plugins as template functions
+                prefix = prefix || '';
+                var pl = $__plugins[ m[2] ];
+                args = args.replace( re_controls, parseConstructs );
+                out = ((pl instanceof Contemplate.InlineTemplate) ? pl.render( ) : pl) + '(' + args + ')';
+                rest = rest.replace( re_controls, parseConstructs );
+                return prefix + out + rest;
             }
             return match;
         },
@@ -1405,8 +1465,8 @@
                 pos2 = delims[ 2 ];
                 off = delims[ 3 ];
                 containerblock = delims[ 4 ];
-                tag = "__||" + block + "||__";
-                rep = "__i__.renderBlock( '" + block + "' ); ";
+                tag = "#|" + block + "|#";
+                rep = "__i__.renderBlock('" + block + "');";
                 tl = tag.length; rl = rep.length;
                 
                 if ( -1 < containerblock )
@@ -1435,24 +1495,14 @@
             return [s, blocks];
         },
         
-        parseString = function( s, q, i, l ) {
-            var string = q, escaped = false, ch = '';
-            while ( i < l )
-            {
-                string += (ch=s[i++]);
-                if ( q === ch && !escaped )  break;
-                escaped = (!escaped && '\\' === ch);
-            }
-            return string;
-        },
-        
         parseVariable = function parseVariable( s, i, l )  {
             if ( ALPHA.test(s[i]) )
             {
-                var /*cnt = 0,*/ strings = {}, variables = [], subvariables,
+                var strings = {}, variables = [], subvariables,
                     id, variable, property, variable_raw, variable_main, variable_rest,
                     len, lp, bracketcnt, delim, ch, 
-                    strid, sub, space = 0
+                    str_, q, escaped, si,
+                    strid, sub, space = 0, hasStrings = false
                 ;
                 
                 // main variable
@@ -1467,7 +1517,7 @@
                 variable_main = "data['"+variable_raw+"']";
                 variable_rest = '';
                 $__idcnt++;
-                id = "__##VAR"+$__idcnt+"##__";
+                id = "#VAR"+$__idcnt+"#";
                 len = variable_raw.length;
                 
                 // extra space
@@ -1523,21 +1573,31 @@
                         ch = s[i];
                         
                         // literal string property
+                        /*'"' === ch || "'" === ch*/
                         if ( '"' === ch || "'" === ch )
                         {
-                            property = parseString( s, ch, i+1, l );
+                            //property = parseString(s, ch, i+1, l);
+                            str_ = q = ch; escaped = false; si = i+1;
+                            while ( si < l )
+                            {
+                                str_ += (ch=s[si++]);
+                                if ( q === ch && !escaped )  break;
+                                escaped = (!escaped && '\\' === ch);
+                            }
+                            property = str_;
                             $__idcnt++;
-                            strid = "__##STR"+$__idcnt+"##__";
+                            strid = "#STR"+$__idcnt+"#";
                             strings[strid] = property;
                             variable_rest += delim + strid;
                             lp = property.length;
                             i += lp;
                             len += space + 1 + lp;
                             space = 0;
+                            hasStrings = true;
                         }
                         
                         // numeric array property
-                        else if ( NUM.test(ch) )
+                        else if ( NUM.test( ch ) )
                         {
                             property = s[i++];
                             while ( i < l && NUM.test(s[i]) )
@@ -1565,6 +1625,7 @@
                                 len += space + 2 + lp;
                                 space = 0;
                                 variables = variables.concat(subvariables);
+                                hasStrings = hasStrings || property[5];
                             }
                         }
                         
@@ -1591,7 +1652,7 @@
                         
                         
                         // extra space
-                        while ( i < l && SPACE.test(s[i]) )
+                        while ( i < l && SPACE.test( s[i] ) )
                         {
                             space++;
                             i++;
@@ -1622,27 +1683,19 @@
                     }
                 }
                 
-                variables.push( [id, variable_raw, variable_main, variable_rest, len, strings] );
+                variables.push( [id, variable_raw, variable_main, variable_rest, len, hasStrings, strings] );
                 return variables
             }
             return null;
         },
         
-        funcReplace = function( m, func, plg, plugin ) {
-            // allow custom plugins as template functions
-            if ( plugin && $__plugins[HAS](plugin) )
-            {
-                var pl = $__plugins[ plugin ];
-                return (pl instanceof Contemplate.InlineTemplate) ? pl.render( ) : pl;
-            }
-            return ('Contemplate.' + func);
-        },
-            
         parse = function( tpl, withblocks ) {
             var parts, len, parsed, s, i, isTag,
-                tag, strings, variables, varname, id,
-                countl, index, ch, out, tok, v, tokv,
-                tagTpl
+                tag, tagTpl, strings, variables, hasVariables, hasStrings, varname, id,
+                countl, index, ch, out, tok, v, tokv, 
+                multisplit = Contemplate.InlineTemplate.multisplit,
+                special_chars = "$ \n\r\t\v'\"", ind,
+                q, str_, escaped, si, space
             ;
             
             parts = split( tpl, $__leftTplSep, $__rightTplSep );
@@ -1656,116 +1709,161 @@
                 
                 if ( isTag )
                 {
-                    tag = "\t" + s.replace( $__regExps['specials'], " " ) + "\v"; // replace special chars
-                    
                     // parse each template tag section accurately
                     // refined parsing
-                    
-                    countl = tag.length;
+                    countl = s.length;
                     variables = [];
                     strings = {};
+                    hasVariables = false; 
+                    hasStrings = false;
                     index = 0; 
+                    space = 0;
                     ch = ''; 
                     out = ''; 
                     
                     while ( index < countl )
                     {
-                        ch = tag[ index++ ];
+                        ch = s[ index++ ];
+                        ind = special_chars.indexOf( ch );
                         
-                        // parse mainly literal strings and variables
-                        
-                        // literal string
-                        if ( '"' === ch || "'" === ch )
+                        // special chars
+                        if ( -1 < ind )
                         {
-                            tok = parseString( tag, ch, index, countl );
-                            $__idcnt++;
-                            id = "__##STR"+$__idcnt+"##__";
-                            strings[id] = tok;
-                            out += id;
-                            index += tok.length-1;
-                        }
-                        // variable
-                        else if ( '$' === ch )
-                        {
-                            tok = parseVariable(tag, index, countl);
-                            if ( tok )
+                            // variable
+                            /*'$' === ch*/
+                            if ( 0 === ind )
                             {
-                                for (v=0; v<tok.length; v++)
+                                if ( space > 0 )
                                 {
-                                    tokv = tok[ v ];
-                                    id = tokv[ 0 ];
-                                    $__variables[$__currentblock][ id ] = tokv[ 1 ];
-                                    strings = merge( strings, tokv[ 5 ] );
+                                    out += " ";
+                                    space = 0;
                                 }
-                                out += id;
-                                index += tokv[ 4 ];
-                                variables = variables.concat( tok );
+                                tok = parseVariable(s, index, countl);
+                                if ( tok )
+                                {
+                                    for (v=0; v<tok.length; v++)
+                                    {
+                                        tokv = tok[ v ];
+                                        id = tokv[ 0 ];
+                                        $__variables[$__currentblock][ id ] = tokv[ 1 ];
+                                        if ( tokv[ 5 ] ) strings = merge( strings, tokv[ 6 ] );
+                                    }
+                                    out += id;
+                                    index += tokv[ 4 ];
+                                    variables = variables.concat( tok );
+                                    hasVariables = true; 
+                                    hasStrings = hasStrings || tokv[ 5 ];
+                                }
+                                else
+                                {
+                                    out += '$';
+                                }
                             }
+                            // special chars
+                            /*SPACE.test(ch), "\n" === ch || "\r" === ch || "\t" === ch || "\v" === ch*/
+                            else if ( ind < 6 )  
+                            {
+                                space++;
+                            }
+                            // literal string
+                            /*'"' === ch || "'" === ch*/
                             else
                             {
-                                out += '$';
+                                if ( space > 0 )
+                                {
+                                    out += " ";
+                                    space = 0;
+                                }
+                                //tok = parseString(s, ch, index, countl);
+                                str_ = q = ch; escaped = false; si = index;
+                                while ( si < countl )
+                                {
+                                    str_ += (ch=s[si++]);
+                                    if ( q === ch && !escaped )  break;
+                                    escaped = (!escaped && '\\' === ch);
+                                }
+                                tok = str_;
+                                $__idcnt++;
+                                id = "#STR"+$__idcnt+"#";
+                                strings[id] = tok;
+                                out += id;
+                                index += tok.length-1;
+                                hasStrings = true;
                             }
                         }
                         // rest, bypass
                         else
                         {
+                            if ( space > 0 )
+                            {
+                                out += " ";
+                                space = 0;
+                            }
                             out += ch;
                         }
                     }
                     
-                    tag = out;
-                
                     // fix literal data notation, not needed here
-                    //tag = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), tag);
+                    //out = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), out);
+                
+                    tag = "\t" + out + "\v";
                 
                     $__startblock = null;  $__endblock = null; $__blockptr = -1;
+                    $__strings = strings;
                     
                     // replace constructs, functions, etc..
-                    tag = tag
-                        .replace( $__regExps['controls'], parseControlConstructs )
-                        .replace( $__regExps['functions'], funcReplace )
-                        .replace( $__regExps['replacements'], "' + ($1) + '" )
-                    ;
+                    tag = tag.replace( re_controls, parseConstructs );
+                    
+                    // replacements
+                    /*.replace( re_repls, "' + ($1) + '" );*/
+                    if ( 9 === tag.charCodeAt(0) && 11 === tag.charCodeAt(tag.length-1) ) 
+                        tag = "' + ("+tag.slice(1,-1)+") + '";
                     
                     // replace variables
-                    for (v=variables.length-1; v>=0; v--)
+                    if ( hasVariables )
                     {
-                        id = variables[ v ][ 0 ]; varname = variables[ v ][ 1 ];
-                        tag = tag
-                            .split( id+'__RAW__' ).join( varname )
-                            .split( id ).join(( 
-                                $__locals[$__currentblock][HAS](varname) 
-                                ? ('_loc_' + varname) /* local (loop) variable */
-                                : (variables[ v ][ 2 ]) /* default (data) variable */
-                                ) + variables[ v ][ 3 ])
-                        ;
+                        for (v=variables.length-1; v>=0; v--)
+                        {
+                            id = variables[ v ][ 0 ]; varname = variables[ v ][ 1 ];
+                            tag = tag
+                                .split( id+'__RAW__' ).join( varname )
+                                .split( id ).join(( 
+                                    $__locals[$__currentblock][HAS](varname) 
+                                    ? ('_loc_' + varname) /* local (loop) variable */
+                                    : (variables[ v ][ 2 ]) /* default (data) variable */
+                                    ) + variables[ v ][ 3 ])
+                            ;
+                        }
                     }
                     
                     // replace strings (accurately)
-                    tagTpl = Contemplate.InlineTemplate.multisplit(tag, Keys(strings), 1);
-                    tag = '';
-                    for (v=0; v<tagTpl.length; v++)
+                    if ( hasStrings )
                     {
-                        tag += (tagTpl[v][0] ? tagTpl[v][1] : strings[ tagTpl[v][1] ]);
+                        tagTpl = multisplit(tag, Keys(strings), 1);
+                        tag = '';
+                        for (v=0; v<tagTpl.length; v++)
+                        {
+                            tag += (tagTpl[v][0] ? tagTpl[v][1] : strings[ tagTpl[v][1] ]);
+                        }
                     }
-                        
-                    // replace tpl separators
-                    s = tag
-                        .split( "\t" ).join( $__tplStart )
-                        .split( "\v" ).join( padLines($__tplEnd) )
-                    ;
                     
+                    // replace tpl separators
+                    if ( /*"\v"*/11 === tag.charCodeAt(tag.length-1) ) tag = tag.slice(0,-1) + padLines($__tplEnd);
+                    if ( /*"\t"*/9 === tag.charCodeAt(0) ) tag = $__tplStart + tag.slice(1);
+                    
+                    // replace blocks
                     if ( $__startblock )
                     {
-                        $__startblock = "__||"+$__startblock+"||__";
+                        $__startblock = "#|"+$__startblock+"|#";
                         $__allblocks[ $__blockptr-1 ][ 1 ] = parsed.length + tag.indexOf( $__startblock );
                     }
                     else if ( $__endblock )
                     {
-                        $__endblock = "__||/"+$__endblock+"||__";
+                        $__endblock = "#|/"+$__endblock+"|#";
                         $__allblocks[ $__blockptr-1 ][ 2 ] = parsed.length + tag.indexOf( $__endblock ) + $__endblock.length;
                     }
                     
+                    s = tag;
                     isTag = false;
                 }
                 else
@@ -1876,7 +1974,7 @@
             // tpl render code
             if ($__extends) 
             {
-                extendCode = "this.extend( '" + $__extends + "' );";
+                extendCode = "this.extend('" + $__extends + "');";
                 renderCode = TT_RCODE1({
                     'EOL': $__TEOL
                 });
@@ -2011,7 +2109,7 @@
 
         TT_IF, TT_ELSEIF, TT_ELSE, TT_ENDIF,
     
-        TT_FOR1,TT_FOR2, TT_ELSEFOR1,TT_ELSEFOR2, TT_ENDFOR1,TT_ENDFOR2,TT_ENDFOR3,
+        TT_FOR1,TT_FOR2, TT_ELSEFOR, TT_ENDFOR1,TT_ENDFOR2,
     
         TT_FUNC1,TT_FUNC2, TT_RCODE1,TT_RCODE2
     ;
@@ -2212,33 +2310,21 @@
             if ( $__isInited ) return;
             
             // pre-compute the needed regular expressions
-            $__regExps['specials'] = RE('[\\n\\r\\v\\t]', 'g');
-            
-            $__regExps['replacements'] = RE('\\t[ ]*(.*?)[ ]*\\v', 'g');
-            
-            $__regExps['controls'] = RE('\\t[ ]*%('+$__controlConstructs.join('|')+')\\b[ ]*\\((.*)\\)', 'g');
-            $__regExps['controls2'] = RE('%('+$__controlConstructs.join('|')+')\\b[ ]*\\((.*)\\)', 'g');
-            
-            $__regExps['functions'] = RE('%('+$__funcs.join('|')+')\\b', 'g');
-            
             $__preserveLines = $__preserveLinesDefault;
             
-            $__tplStart = "'; " + $__TEOL;
+            $__tplStart = "';" + $__TEOL;
             $__tplEnd = $__TEOL + "__p__ += '";
             
             // make compilation templates
             TT_ClassCode = InlineTemplate.compile(InlineTemplate.multisplit([
                 "#PREFIXCODE#"
-                ,""
                 ,"!function (root, moduleName, moduleDefinition) {"
                 ,"    // export the module"
+                ,"    var m;"
                 ,"    // node, CommonJS, etc.."
                 ,"    if ( 'object' === typeof(module) && module.exports ) module.exports = moduleDefinition();"
-                ,"    // AMD, etc.."
-                ,"    else if ( 'function' === typeof(define) && define.amd ) define( moduleDefinition );"
-                ,"    // browser, etc.."
-                ,"    else root[ moduleName ] = moduleDefinition();"
-                ,""
+                ,"    // browser and AMD, etc.."
+                ,"    else (root[ moduleName ] = m = moduleDefinition()) && ('function' === typeof(define) && define.amd && define(moduleName,[],function(){return m;}));"
                 ,"}(this, '#CLASSNAME#', function( ){"
                 ,"    \"use strict\";"
                 ,"    return function( Contemplate ) {"
@@ -2406,17 +2492,7 @@
                 ,"#ASSIGN1#":"ASSIGN1"
             }));
         
-            TT_ELSEFOR2 = InlineTemplate.compile(InlineTemplate.multisplit([
-                ""
-                ,"    }"
-                ,"}"
-                ,"else"
-                ,"{  "
-                ,""
-            ].join( "#EOL#" ), {
-                "#EOL#":               "EOL"
-            }));
-            TT_ELSEFOR1 = InlineTemplate.compile(InlineTemplate.multisplit([
+            TT_ELSEFOR = InlineTemplate.compile(InlineTemplate.multisplit([
                 ""
                 ,"    }"
                 ,"}"
@@ -2427,14 +2503,6 @@
                 "#EOL#":               "EOL"
             }));
         
-            TT_ENDFOR3 = InlineTemplate.compile(InlineTemplate.multisplit([
-                ""
-                ,"    }"
-                ,"}"
-                ,""
-            ].join( "#EOL#" ), {
-                "#EOL#":               "EOL"
-            }));
             TT_ENDFOR2 = InlineTemplate.compile(InlineTemplate.multisplit([
                 ""
                 ,"    }"
@@ -2678,31 +2746,6 @@
             return true;
         },
         
-        // quote
-        q: function( e ) { 
-            return "'" + e + "'"; 
-        },
-        
-        // double quote
-        dq: function( e) { 
-            return '"' + e + '"';  
-        },
-        
-        // to String
-        s: function( e ) { 
-            return Str(e); 
-        },
-        
-        // to Integer
-        n: function( e ) { 
-            return parseInt(e, 10); 
-        },
-        
-        // to Float
-        f: function( e ) { 
-            return parseFloat(e, 10); 
-        },
-        
         // basic custom faster html escaping
         e: ESC1,
         
@@ -2773,12 +2816,6 @@
         },
         lcfirst: function( s ) {
             return s[0].toLowerCase( ) + s.substr(1);//.toUpperCase();
-        },
-        lowercase: function( s ) {
-            return s.toLowerCase( );
-        },
-        uppercase: function( s ) {
-            return s.toUpperCase( );
         },
         camelcase: function( s, sep, capitalizeFirst ) {
             sep = sep || "_";
@@ -3099,9 +3136,6 @@
             return c;
         }
     };
-    // aliases
-    Contemplate.now = Contemplate.time;
-    Contemplate.l = Contemplate.locale;
     
     // Template Engine end here
     //

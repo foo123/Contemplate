@@ -62,24 +62,29 @@ var contemplate_grammar = {
 
             // template keywords, directives, constructs, etc..
             "keyword" : [
-                "%extends", "%block", "%endblock", "%template", "%include",
+                "%extends", "%block", "%endblock", "%include",
                 "%if", "%elseif", "%else", "%endif", 
                 "%for", "%elsefor", "%endfor", "as", "in",
                 "%set", "%unset", "%isset"
             ],
                                   
-            // template functions, plugins, etc..
+            // template functions, plugins, aliases, etc..
             "function" : [
                 "RegExp::/%(plg|plugin)_[a-zA-Z0-9_]+/",
                 [
-                    "%htmlselect", "%htmltable", "%html", "%url", "%uuid",
-                    "%addslashes", "%stripslashes",
-                    "%sprintf", "%concat", "%ltrim", "%rtrim", "%trim", 
-                    "%lowercase", "%uppercase", "%camelcase", "%snakecase", 
-                    "%count", "%haskey", "%now", "%time", "%date", 
-                    "%inline", /*"%tpl",*/
-                    "%ldate", "%locale", "%l", "%pluralise", 
-                    "%dq", "%n", "%s", "%f", "%q", "%e"
+                    '%s', '%n', '%f', '%q', '%dq'
+                    ,'%echo', '%time', '%count'
+                    ,'%lowercase', '%uppercase', '%ucfirst', '%lcfirst', '%sprintf'
+                    ,'%date', '%ldate', '%locale', '%pluralise'
+                    ,'%inline', '%tpl', '%uuid', '%haskey'
+                    ,'%concat', '%ltrim', '%rtrim', '%trim', '%addslashes', '%stripslashes'
+                    ,'%camelcase', '%snakecase'
+                    ,'%e','%html', '%url'
+                    ,'%htmlselect', '%htmltable'
+                    // aliases
+                    ,'%l'
+                    ,'%now'
+                    ,'%template'
                 ]
             ]
         },

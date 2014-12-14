@@ -1,14 +1,11 @@
 
-
 !function (root, moduleName, moduleDefinition) {
     // export the module
+    var m;
     // node, CommonJS, etc..
     if ( 'object' === typeof(module) && module.exports ) module.exports = moduleDefinition();
-    // AMD, etc..
-    else if ( 'function' === typeof(define) && define.amd ) define( moduleDefinition );
-    // browser, etc..
-    else root[ moduleName ] = moduleDefinition();
-
+    // browser and AMD, etc..
+    else (root[ moduleName ] = m = moduleDefinition()) && ('function' === typeof(define) && define.amd && define(moduleName,[],function(){return m;}));
 }(this, 'Contemplate_base_Cached', function( ){
     "use strict";
     return function( Contemplate ) {
@@ -34,7 +31,7 @@
             'Block3': function(Contemplate,__i__) {
                 
                 var __p__ = '', data = __i__.d;
-                 
+                
                 __p__ += 'Base template Block3';
                 return __p__;
                 
@@ -46,7 +43,7 @@
             'Block2': function(Contemplate,__i__) {
                 
                 var __p__ = '', data = __i__.d;
-                 
+                
                 __p__ += 'Base template Block2';
                 return __p__;
                 
@@ -58,7 +55,7 @@
             'Block12': function(Contemplate,__i__) {
                 
                 var __p__ = '', data = __i__.d;
-                 
+                
                 __p__ += 'Base template nested Block12';
                 return __p__;
                 
@@ -70,7 +67,7 @@
             'Block11': function(Contemplate,__i__) {
                 
                 var __p__ = '', data = __i__.d;
-                 
+                
                 __p__ += 'Base template nested Block11';
                 return __p__;
                 
@@ -82,9 +79,9 @@
             'Block1': function(Contemplate,__i__) {
                 
                 var __p__ = '', data = __i__.d;
-                 
-                __p__ += '' + "\n" + 'Base template Block1' + "\n" + '<br /><br />' + "\n" + '' +  __i__.renderBlock( 'Block11' ); 
-                __p__ += '' + "\n" + '<br /><br />' + "\n" + '' +  __i__.renderBlock( 'Block12' ); 
+                
+                __p__ += '' + "\n" + 'Base template Block1' + "\n" + '<br /><br />' + "\n" + '' +  __i__.renderBlock('Block11');
+                __p__ += '' + "\n" + '<br /><br />' + "\n" + '' +  __i__.renderBlock('Block12');
                 __p__ += '' + "\n" + '<br /><br />' + "\n" + '';
                 return __p__;
                 
@@ -114,10 +111,10 @@
             /* tpl main render code starts here */
             
             __i__.d = data;
-            __p__ += '<!-- this is the base template -->' + "\n" + '' + "\n" + '<strong>This is the base template</strong>' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block1</strong><br />' + "\n" + '' +  __i__.renderBlock( 'Block1' ); 
-            __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2</strong><br />' + "\n" + '' +  __i__.renderBlock( 'Block2' ); 
-            __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block3</strong><br />' + "\n" + '' +  __i__.renderBlock( 'Block3' ); 
-            __p__ += '' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2 Again</strong><br />' + "\n" + '' +  __i__.renderBlock( 'Block2' ); 
+            __p__ += '<!-- this is the base template -->' + "\n" + '' + "\n" + '<strong>This is the base template</strong>' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block1</strong><br />' + "\n" + '' +  __i__.renderBlock('Block1');
+            __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2</strong><br />' + "\n" + '' +  __i__.renderBlock('Block2');
+            __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block3</strong><br />' + "\n" + '' +  __i__.renderBlock('Block3');
+            __p__ += '' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2 Again</strong><br />' + "\n" + '' +  __i__.renderBlock('Block2');
             __p__ += '' + "\n" + '';
             
             /* tpl main render code ends here */

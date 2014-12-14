@@ -97,7 +97,7 @@ syntax, yet work the same in all the engine's implementations.
 
 * __Fast__ , can cache templates dynamically (filesystem caching has 3 modes, __NONE__ which uses only in-memory caching, __NOUPDATE__ which caches the templates only once and __AUTOUPDATE__ which re-creates the cached template if original template has changed, useful for debugging)
 
-* Generated cached template code is __formatted and annotated__ with comments, for easy debugging
+* Generated cached template code is __formatted and annotated__ with comments, for easy debugging (note: javascript cached templates are UMD modules which can be used in both node/AMD/browser)
 
 * Syntax __close to PHP__ (there was an effort to keep the engine syntax as close to PHP syntax as possible, to avoid learning another language syntax)
 
@@ -148,24 +148,26 @@ syntax, yet work the same in all the engine's implementations.
 
 The following tests were made on a revision of a 2013 jsperf test for various javascript template engines. More tests should be done.
 
-Contemplate engine (JavaScript, 0.6.5) jsperf performance tests are [here](http://jsperf.com/js-template-engines-performance/94)
+Contemplate (0.6.5) was 2nd place on Firefox and 3rd (or close) place on Opera, IE, while Contemplate was average to slower on Chrome. The reason was mostly that Contemplate was using a code to copy/isolate the input data every time inside the render function, which most of the time is redundant, else user can use the *Contemplate.data* method to create a shallow copy suitable to be used as render data. So this was removed, plus some minor refactoring and minor loop optimisation.
 
-Contemplate was 2nd place on Firefox and 3rd (or close) place on Opera, IE, while Contemplate was average to slower on Chrome. The reason was mostly that Contemplate was using a code to copy/isolate the input data every time inside the render function, which most of the time is redundant, else user can use the *Contemplate.data* method to create a shallow copy suitable to be used as render data. So this was removed, plus some minor refactoring and minor loop optimisation.
+This resulted in great performance increase as shown below. (see changelog)
 
-This resulted in great performance increase as shown below. Contemplate engine (JavaScript, 0.6.7) new jsperf tests are [here](http://jsperf.com/js-template-engines-performance/96) (see changelog for 0.6.6, 0.6.7)
+Previous tests are here [jsperf/0.6.5](http://jsperf.com/js-template-engines-performance/94), [jsperf/0.6.7](http://jsperf.com/js-template-engines-performance/96), [jsperf/0.7](http://jsperf.com/js-template-engines-performance/112), [jsperf/0.7.1](http://jsperf.com/js-template-engines-performance/116), [jsperf/0.8](http://jsperf.com/js-template-engines-performance/117)
 
-Contemplate is (consistently) 2nd place (near 1st place) on all browsers.
+Contemplate (0.8) is (consistently) 2nd place (near 1st place) on all browsers.
 
-[![contemplate rendering jsperf](/screenshots/jsperf-rendering.png)](http://jsperf.com/js-template-engines-performance/96)
+[![contemplate rendering jsperf](/screenshots/jsperf-rendering.png)](http://jsperf.com/js-template-engines-performance/117)
 
 
 **Parse / Compilation Time**
 
-The following [jsperf tests](http://jsperf.com/js-template-engines-compilation/3) involve swig, handlebars contemplate and mustache javascript template engines. More tests should be done.
+The following tests involve swig, handlebars contemplate and mustache javascript template engines. More tests should be done.
 
-Contemplate engine (JavaScript, 0.6.7, parse method made public) is (consistently) 2nd place (near 1st place) on all browsers.
+Previous tests are here [jsperf/0.6.7](http://jsperf.com/js-template-engines-compilation/3), [jsperf/0.7](http://jsperf.com/js-template-engines-compilation/7), [jsperf/0.7.1](http://jsperf.com/js-template-engines-compilation/8), [jsperf/0.8](http://jsperf.com/js-template-engines-compilation/11)
 
-[![contemplate parse jsperf](/screenshots/jsperf-compilation.png)](http://jsperf.com/js-template-engines-compilation/3)
+Contemplate engine (0.8) is (consistently) 2nd place (near 1st place) on all browsers.
+
+[![contemplate parse jsperf](/screenshots/jsperf-compilation.png)](http://jsperf.com/js-template-engines-compilation/11)
 
 
 

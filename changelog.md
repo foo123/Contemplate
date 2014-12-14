@@ -1,5 +1,12 @@
 ###ChangeLog
 
+__0.8__
+* new template function %echo (similar to php function that echoes strings to the output) 
+* %tpl (alias of %template, %template to be deprecated?)
+* %tpl, %template, %include, %extends, %block constructs/functions accept literal strings as (1st) argument (see examples)
+* minor edits
+* various optimisations, faster, more refined compilation and rendering
+
 __0.7.1__
 * handle loop variables as local (block-scoped) variables (not added or accessed to/from passed data)
 * various optimisations

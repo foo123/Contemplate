@@ -1,14 +1,11 @@
 
-
 !function (root, moduleName, moduleDefinition) {
     // export the module
+    var m;
     // node, CommonJS, etc..
     if ( 'object' === typeof(module) && module.exports ) module.exports = moduleDefinition();
-    // AMD, etc..
-    else if ( 'function' === typeof(define) && define.amd ) define( moduleDefinition );
-    // browser, etc..
-    else root[ moduleName ] = moduleDefinition();
-
+    // browser and AMD, etc..
+    else (root[ moduleName ] = m = moduleDefinition()) && ('function' === typeof(define) && define.amd && define(moduleName,[],function(){return m;}));
 }(this, 'Contemplate_sub_Cached', function( ){
     "use strict";
     return function( Contemplate ) {
@@ -58,40 +55,40 @@
                 {
                     _loc_j = _loc_8[_loc_9]; _loc_user = _loc_7[_loc_j];
                     
-                     
-                    __p__ += '' + "\n" + '        <div id=\'' + (_loc_user["id"]) + '\' class="';        
+                    
+                    __p__ += '' + "\n" + '        <div id=\'' + ( _loc_user["id"]) + '\' class="';        
                     if (0 == (_loc_j % 2))
                     {
-                                 
+                                
                         __p__ += 'even';        
                     }
                     else if (1 == (_loc_j % 2))
                     {
-                                 
+                                
                         __p__ += 'odd';        
                     }
-                             
-                    __p__ += '">' + "\n" + '            <a href="/' + (_loc_user["name"]) + '">' + (_loc_user['name']) + '' + (_loc_user['text']) + ' ' + (Contemplate.n(data['i']) + Contemplate.n(_loc_j)) + '</a>: <strong>' + (_loc_user["text"]) + '</strong>' + "\n" + '        </div>' + "\n" + '        ';        
+                            
+                    __p__ += '">' + "\n" + '            <a href="/' + ( _loc_user["name"]) + '">' + ( _loc_user['name']) + '' + ( _loc_user['text']) + ' ' + (parseInt(data['i']) + parseInt(_loc_j)) + '</a>: <strong>' + ( _loc_user["text"]) + '</strong>' + "\n" + '        </div>' + "\n" + '        ';        
                     if ( Contemplate.haskey(_loc_user, "key1") )
                     {
-                                 
+                                
                         __p__ += '' + "\n" + '            <div> User has key &quot;key1&quot; </div>' + "\n" + '        ';        
                     }
                     else if ( Contemplate.haskey(_loc_user, "key", "key1") )
                     {
-                                 
+                                
                         __p__ += '' + "\n" + '            <div> User has key [&quot;key&quot;][&quot;key1&quot;] </div>' + "\n" + '        ';        
                     }
-                             
+                            
                     __p__ += '' + "\n" + '    ';
                 }
             }
             else
             {  
-                 
-                __p__ += '' + "\n" + '        <div class="none">' + (Contemplate.l("No Users")) + '</div>' + "\n" + '    ';
+                
+                __p__ += '' + "\n" + '        <div class="none">' + (Contemplate.locale("No Users")) + '</div>' + "\n" + '    ';
             }
-             
+            
             __p__ += '' + "\n" + '</div>' + "\n" + '';
             
             /* tpl main render code ends here */

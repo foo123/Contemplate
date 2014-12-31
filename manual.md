@@ -145,7 +145,6 @@ this is exactly how the Contemplate::tpl($id, $data) (PHP), or Contemplate.tpl(i
 __Template Functions / Plugins__
 
 
-* %e( str )   **custom fast html escape**
 * %n( val )   **convert val to integer**
 * %s( val )   **convert val to string**
 * %f( val )   **convert val to float**

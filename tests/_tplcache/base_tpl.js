@@ -16,11 +16,10 @@
     {
         /* initialize internal vars */
         
-        this._renderer = id;
+        this._renderer = null;
         this._blocks = null;
         this._extends = null;
-        this.d = null;
-        this.id = id;
+        this.id = id || null;
         
         /* tpl-defined blocks render code starts here */
         
@@ -28,9 +27,9 @@
             
             
             /* tpl block render method for block 'Block3' */
-            'Block3': function(Contemplate,__i__) {
-                
-                var __p__ = '', data = __i__.d;
+            'Block3': function( Contemplate, data, __i__ ) {
+                "use strict";
+                var __p__ = '';
                 
                 __p__ += 'Base template Block3';
                 return __p__;
@@ -40,9 +39,9 @@
             
             
             /* tpl block render method for block 'Block2' */
-            'Block2': function(Contemplate,__i__) {
-                
-                var __p__ = '', data = __i__.d;
+            'Block2': function( Contemplate, data, __i__ ) {
+                "use strict";
+                var __p__ = '';
                 
                 __p__ += 'Base template Block2';
                 return __p__;
@@ -52,9 +51,9 @@
             
             
             /* tpl block render method for block 'Block12' */
-            'Block12': function(Contemplate,__i__) {
-                
-                var __p__ = '', data = __i__.d;
+            'Block12': function( Contemplate, data, __i__ ) {
+                "use strict";
+                var __p__ = '';
                 
                 __p__ += 'Base template nested Block12';
                 return __p__;
@@ -64,9 +63,9 @@
             
             
             /* tpl block render method for block 'Block11' */
-            'Block11': function(Contemplate,__i__) {
-                
-                var __p__ = '', data = __i__.d;
+            'Block11': function( Contemplate, data, __i__ ) {
+                "use strict";
+                var __p__ = '';
                 
                 __p__ += 'Base template nested Block11';
                 return __p__;
@@ -76,12 +75,12 @@
             
             
             /* tpl block render method for block 'Block1' */
-            'Block1': function(Contemplate,__i__) {
+            'Block1': function( Contemplate, data, __i__ ) {
+                "use strict";
+                var __p__ = '';
                 
-                var __p__ = '', data = __i__.d;
-                
-                __p__ += '' + "\n" + 'Base template Block1' + "\n" + '<br /><br />' + "\n" + '' +  __i__.renderBlock('Block11');
-                __p__ += '' + "\n" + '<br /><br />' + "\n" + '' +  __i__.renderBlock('Block12');
+                __p__ += '' + "\n" + 'Base template Block1' + "\n" + '<br /><br />' + "\n" + '' +  __i__.renderBlock('Block11', data);
+                __p__ += '' + "\n" + '<br /><br />' + "\n" + '' +  __i__.renderBlock('Block12', data);
                 __p__ += '' + "\n" + '<br /><br />' + "\n" + '';
                 return __p__;
                 
@@ -100,26 +99,18 @@
     Contemplate_base_Cached.prototype = Object.create(Contemplate.Template.prototype);
     /* tpl render method */
     Contemplate_base_Cached.prototype.render = function( data, __i__ ) {
-        if ( !__i__ ) __i__ = this;
+        "use strict";
         var __p__ = '';
-        if ( this._extends )
-        {
-            __p__ = this._extends.render(data, __i__);
-        }
-        else
-        {
-            /* tpl main render code starts here */
-            
-            __i__.d = data;
-            __p__ += '<!-- this is the base template -->' + "\n" + '' + "\n" + '<strong>This is the base template</strong>' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block1</strong><br />' + "\n" + '' +  __i__.renderBlock('Block1');
-            __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2</strong><br />' + "\n" + '' +  __i__.renderBlock('Block2');
-            __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block3</strong><br />' + "\n" + '' +  __i__.renderBlock('Block3');
-            __p__ += '' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2 Again</strong><br />' + "\n" + '' +  __i__.renderBlock('Block2');
-            __p__ += '' + "\n" + '';
-            
-            /* tpl main render code ends here */
-        }
-        this.d = null;
+        __i__ = __i__ || this;
+        /* tpl main render code starts here */
+        
+        __p__ += '<!-- this is the base template -->' + "\n" + '' + "\n" + '<strong>This is the base template</strong>' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block1</strong><br />' + "\n" + '' +  __i__.renderBlock('Block1', data);
+        __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2</strong><br />' + "\n" + '' +  __i__.renderBlock('Block2', data);
+        __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block3</strong><br />' + "\n" + '' +  __i__.renderBlock('Block3', data);
+        __p__ += '' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2 Again</strong><br />' + "\n" + '' +  __i__.renderBlock('Block2', data);
+        __p__ += '' + "\n" + '';
+        
+        /* tpl main render code ends here */
         return __p__;
     };
     

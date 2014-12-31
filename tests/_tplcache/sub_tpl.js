@@ -16,11 +16,10 @@
     {
         /* initialize internal vars */
         
-        this._renderer = id;
+        this._renderer = null;
         this._blocks = null;
         this._extends = null;
-        this.d = null;
-        this.id = id;
+        this.id = id || null;
         
         /* tpl-defined blocks render code starts here */
         
@@ -35,65 +34,57 @@
     Contemplate_sub_Cached.prototype = Object.create(Contemplate.Template.prototype);
     /* tpl render method */
     Contemplate_sub_Cached.prototype.render = function( data, __i__ ) {
-        if ( !__i__ ) __i__ = this;
+        "use strict";
         var __p__ = '';
-        if ( this._extends )
+        __i__ = __i__ || this;
+        /* tpl main render code starts here */
+        
+        __p__ += '<div>' + "\n" + '    <br />' + "\n" + '    <strong>Number of Items:' + (Contemplate.count(data.users[data.i])) + '</strong>' + "\n" + '    <br />' + "\n" + '    ';
+        var _loc_7 = data.users[data.i], _loc_8 = _loc_7 ? Object.keys(_loc_7) : null,
+            _loc_9, _loc_j, _loc_user, _loc_10 = _loc_8 ? _loc_8.length : 0;
+        if (_loc_10)
         {
-            __p__ = this._extends.render(data, __i__);
+            for (_loc_9=0; _loc_9<_loc_10; _loc_9++)
+            {
+                _loc_j = _loc_8[_loc_9]; _loc_user = _loc_7[_loc_j];
+                
+                
+                __p__ += '' + "\n" + '        <div id=\'' + ( _loc_user["id"]) + '\' class="';        
+                if (0 == (_loc_j % 2))
+                {
+                            
+                    __p__ += 'even';        
+                }
+                else if (1 == (_loc_j % 2))
+                {
+                            
+                    __p__ += 'odd';        
+                }
+                        
+                __p__ += '">' + "\n" + '            <a href="/' + ( _loc_user["name"]) + '">' + ( _loc_user.name) + '' + ( _loc_user.text) + ' ' + (parseInt(data.i) + parseInt(_loc_j)) + '</a>: <strong>' + ( _loc_user["text"]) + '</strong>' + "\n" + '        </div>' + "\n" + '        ';        
+                if ( Contemplate.haskey(_loc_user, "key1") )
+                {
+                            
+                    __p__ += '' + "\n" + '            <div> User has key &quot;key1&quot; </div>' + "\n" + '        ';        
+                }
+                else if ( Contemplate.haskey(_loc_user, "key", "key1") )
+                {
+                            
+                    __p__ += '' + "\n" + '            <div> User has key [&quot;key&quot;][&quot;key1&quot;] </div>' + "\n" + '        ';        
+                }
+                        
+                __p__ += '' + "\n" + '    ';
+            }
         }
         else
-        {
-            /* tpl main render code starts here */
+        {  
             
-            __i__.d = data;
-            __p__ += '<div>' + "\n" + '    <br />' + "\n" + '    <strong>Number of Items:' + (Contemplate.count(data['users'][data['i']])) + '</strong>' + "\n" + '    <br />' + "\n" + '    ';
-            var _loc_7 = data['users'][data['i']], _loc_8 = Contemplate.keys(_loc_7),
-                _loc_9, _loc_j, _loc_user, _loc_10 = _loc_8 ? _loc_8.length : 0;
-            if (_loc_10)
-            {
-                for (_loc_9=0; _loc_9<_loc_10; _loc_9++)
-                {
-                    _loc_j = _loc_8[_loc_9]; _loc_user = _loc_7[_loc_j];
-                    
-                    
-                    __p__ += '' + "\n" + '        <div id=\'' + ( _loc_user["id"]) + '\' class="';        
-                    if (0 == (_loc_j % 2))
-                    {
-                                
-                        __p__ += 'even';        
-                    }
-                    else if (1 == (_loc_j % 2))
-                    {
-                                
-                        __p__ += 'odd';        
-                    }
-                            
-                    __p__ += '">' + "\n" + '            <a href="/' + ( _loc_user["name"]) + '">' + ( _loc_user['name']) + '' + ( _loc_user['text']) + ' ' + (parseInt(data['i']) + parseInt(_loc_j)) + '</a>: <strong>' + ( _loc_user["text"]) + '</strong>' + "\n" + '        </div>' + "\n" + '        ';        
-                    if ( Contemplate.haskey(_loc_user, "key1") )
-                    {
-                                
-                        __p__ += '' + "\n" + '            <div> User has key &quot;key1&quot; </div>' + "\n" + '        ';        
-                    }
-                    else if ( Contemplate.haskey(_loc_user, "key", "key1") )
-                    {
-                                
-                        __p__ += '' + "\n" + '            <div> User has key [&quot;key&quot;][&quot;key1&quot;] </div>' + "\n" + '        ';        
-                    }
-                            
-                    __p__ += '' + "\n" + '    ';
-                }
-            }
-            else
-            {  
-                
-                __p__ += '' + "\n" + '        <div class="none">' + (Contemplate.locale("No Users")) + '</div>' + "\n" + '    ';
-            }
-            
-            __p__ += '' + "\n" + '</div>' + "\n" + '';
-            
-            /* tpl main render code ends here */
+            __p__ += '' + "\n" + '        <div class="none">' + (Contemplate.locale("No Users")) + '</div>' + "\n" + '    ';
         }
-        this.d = null;
+        
+        __p__ += '' + "\n" + '</div>' + "\n" + '';
+        
+        /* tpl main render code ends here */
         return __p__;
     };
     

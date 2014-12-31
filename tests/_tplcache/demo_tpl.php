@@ -9,12 +9,10 @@ final class Contemplate_demo_Cached extends ContemplateTemplate
     public function __construct($id=null)
     {
         /* initialize internal vars */
-        $this->id = null; 
-        $this->d = null;
         $this->_renderer = null;
         $this->_extends = null;
         $this->_blocks = null;
-        
+        $this->id = null; 
         $this->id = $id;
         
         /* extend tpl assign code starts here */
@@ -26,10 +24,10 @@ final class Contemplate_demo_Cached extends ContemplateTemplate
     
     
     /* tpl block render method for block 'Block3' */
-    private function _blockfn_Block3($__i__) 
+    private function _blockfn_Block3(&$data, $__i__) 
     { 
         
-        $__p__ = ''; $data =& $__i__->d;
+        $__p__ = '';
         
         $__p__ .= '' . "\n" . '' . "\n" . '    <strong>Block3 is overriden by the demo template</strong>' . "\n" . '' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>Functions</strong><br />' . "\n" . '    <ul>' . "\n" . '    <li>%uuid(&quot;namespace&quot;) = ' . (Contemplate::uuid("namespace")) . '</li>' . "\n" . '    <li>%echo(&quot;123&quot;) = ' . (strval("123")) . '</li>' . "\n" . '    <li>%q(123) = ' . ("'".(123)."'") . '</li>' . "\n" . '    <li>%dq(123) = ' . ('"'.(123).'"') . '</li>' . "\n" . '    <li>%trim(&quot;__FOO__&quot;, &quot;_&quot;) = ' . (Contemplate::trim("__FOO__", "_")) . '</li>' . "\n" . '    <li>%trim(&quot;  FOO  &quot;) = ' . (Contemplate::trim("  FOO  ")) . '</li>' . "\n" . '    <li>%lowercase(&quot;FOO&quot;) = ' . (strtolower("FOO")) . '</li>' . "\n" . '    <li>%lowercase(&quot;fOo&quot;) = ' . (strtolower("fOo")) . '</li>' . "\n" . '    <li>%uppercase(&quot;foo&quot;) = ' . (strtoupper("foo")) . '</li>' . "\n" . '    <li>%uppercase(&quot;FoO&quot;) = ' . (strtoupper("FoO")) . '</li>' . "\n" . '    <li>%camelcase(&quot;camel_case&quot;, &quot;_&quot;) = ' . (Contemplate::camelcase("camel_case", "_")) . '</li>' . "\n" . '    <li>%camelcase(&quot;camelCase&quot;) = ' . (Contemplate::camelcase("camelCase")) . '</li>' . "\n" . '    <li>%snakecase(&quot;snakeCase&quot;, &quot;_&quot;) = ' . (Contemplate::snakecase("snakeCase", "_")) . '</li>' . "\n" . '    <li>%snakecase(&quot;snake_case&quot;) = ' . (Contemplate::snakecase("snake_case")) . '</li>' . "\n" . '    <li>%sprintf(&quot;%02d : %02d : %02d&quot;, 2, 0, 12) = ' . (sprintf("%02d : %02d : %02d", 2, 0, 12)) . '</li>' . "\n" . '    <li>%addslashes(&quot;this string\'s s\\&quot;s s\\\\&quot;s s\\\\\\&quot;s&quot;) = ' . (Contemplate::addslashes("this string's s\'s s\\'s s\\\'s")) . '</li>' . "\n" . '    <li>%stripslashes(&quot;this string\'s s\\&quot;s s\\\\&quot;s s\\\\\\&quot;s&quot;) = ' . (Contemplate::stripslashes("this string's s\'s s\\'s s\\\'s")) . '</li>' . "\n" . '    <li>%l(&quot;locale&quot;) = %locale(&quot;locale&quot;) = ' . (Contemplate::locale("locale")) . ' = ' . (Contemplate::locale("locale")) . '</li>' . "\n" . '    <li>%pluralise(&quot;item&quot;, 1) = ' . (Contemplate::pluralise("item", 1)) . '</li>' . "\n" . '    <li>%pluralise(&quot;item&quot;, 2) = ' . (Contemplate::pluralise("item", 2)) . '</li>' . "\n" . '    <li>%e(&#39;&lt;ok k=&quot;v&quot;&gt;&#39;) = ' . (Contemplate::e('<ok k="v">')) . '</li>' . "\n" . '    <li>%html(&#39;&lt;ok k=&quot;v&quot;&gt;&#39;) = ' . (Contemplate::html('<ok k="v">')) . '</li>' . "\n" . '    </ul>' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    ';
         $_loc_136 = $data['users'];
@@ -49,10 +47,10 @@ final class Contemplate_demo_Cached extends ContemplateTemplate
     
     
     /* tpl block render method for block 'Block2' */
-    private function _blockfn_Block2($__i__) 
+    private function _blockfn_Block2(&$data, $__i__) 
     { 
         
-        $__p__ = ''; $data =& $__i__->d;
+        $__p__ = '';
         
         $__p__ .= '' . "\n" . '' . "\n" . '    <strong>Block2 is overriden by the demo template</strong>' . "\n" . '' . "\n" . '    <br /><br />' . "\n" . '' . "\n" . '    <strong>A table</strong><br />' . "\n" . '    ' . (Contemplate::htmltable($data['table_data'], $data['table_options'])) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>Test inlined plugin</strong><br />' . "\n" . '    ' . (bracket( "inlined" )) . '' . "\n" . '    <br />' . "\n" . '    <br />' . "\n" . '    ' . "\n" . '    <strong>Test if variable is set</strong><br />' . "\n" . '    ';
         if ((isset($data['foo'])) )
@@ -178,10 +176,10 @@ final class Contemplate_demo_Cached extends ContemplateTemplate
     
     
     /* tpl block render method for block 'Block12' */
-    private function _blockfn_Block12($__i__) 
+    private function _blockfn_Block12(&$data, $__i__) 
     { 
         
-        $__p__ = ''; $data =& $__i__->d;
+        $__p__ = '';
         
         $__p__ .= 'Demo template nested Block12';
         return $__p__;
@@ -191,23 +189,20 @@ final class Contemplate_demo_Cached extends ContemplateTemplate
     /* tpl-defined blocks render code ends here */
     
     /* tpl renderBlock method */
-    public function renderBlock( $block, $__i__=null )
+    public function renderBlock($block, &$data, $__i__=null)
     {
-        $__p__ = '';
         if ( !$__i__ ) $__i__ = $this;
-        
         $method = '_blockfn_' . $block;
-        if ( method_exists($this, $method) ) return $this->{$method}($__i__);
-        elseif ( $this->_extends ) return $this->_extends->renderBlock($block, $__i__);
-        return $__p__;
+        if ( method_exists($this, $method) ) return $this->{$method}($data, $__i__);
+        elseif ( $this->_extends ) return $this->_extends->renderBlock($block, $data, $__i__);
+        return '';
     }
     
     /* tpl render method */
-    public function render($data, $__i__=null)
+    public function render(&$data, $__i__=null)
     {
-        $__p__ = '';
         if ( !$__i__ ) $__i__ = $this;
-        
+        $__p__ = '';
         if ( $this->_extends )
         {
             $__p__ = $this->_extends->render($data, $__i__);
@@ -215,10 +210,11 @@ final class Contemplate_demo_Cached extends ContemplateTemplate
         else
         {
             /* tpl main render code starts here */
+            
             $__p__ = '';
+            
             /* tpl main render code ends here */
         }
-        $this->d = null;
         return $__p__;
     }
 }

@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.8
+#  @version 0.8.1
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -144,10 +144,8 @@ class _G:
     TT_ELSEFOR = None
     TT_ENDFOR = None
 
-    TT_FUNC1 = None
-    TT_FUNC2 = None
-    TT_RCODE1 = None
-    TT_RCODE2 = None
+    TT_FUNC = None
+    TT_RCODE = None
     
     re_plugin = re.compile(r'^(plg_|plugin_)([a-zA-Z0-9_]+)')
     re_controls = re.compile(r'(\t|[ ]?)[ ]*%([a-zA-Z_][a-zA-Z0-9_]*)\b[ ]*(\()(.*)$')
@@ -425,74 +423,63 @@ class InlineTemplate:
 class Template:
     
     def __init__( self, id=None ):
-        self.id = None
-        self.d = None
         self._renderer = None
         self._extends = None
         self._blocks = None
-        
-        if id is not None:   
-            self.id = id 
+        self.id = None
+        if id is not None: self.id = id 
     
     def dispose( self ):
-        self.id = None
-        self.d = None
         self._renderer = None
         self._extends = None
         self._blocks = None
+        self.id = None
         return self
     
     def setId( self, id=None ):
         if id is not None: self.id = id
-        
         return self
     
     def extend( self, tpl ): 
         if tpl and isinstance(tpl, str):
             self._extends = Contemplate.tpl( tpl )
+        elif isinstance(tpl, Template):
+            self._extends = tpl
         else:
-            self._extends = tpl 
-        
+            self._extends = None
         return self
     
     def setBlocks( self, blocks ): 
         if not self._blocks: self._blocks = {} 
         self._blocks = Contemplate.merge(self._blocks, blocks)
-        
         return self
     
     def setRenderFunction( self, renderFunc=None ): 
         if renderFunc: self._renderer = renderFunc
-        
+        else: self._renderer = None
         return self
     
-    def renderBlock( self, block, __i__=None ):
-        if ( not __i__ ): __i__ = self
-        
+    def renderBlock( self, block, data, __i__=None ):
+        if not __i__: __i__ = self
         if (self._blocks) and (block in self._blocks):
             blockfunc = self._blocks[block]
-            return blockfunc( __i__ )
-        
+            return blockfunc(data, __i__)
         elif self._extends:
-            return self._extends.renderBlock(block, __i__)
-        
+            return self._extends.renderBlock(block, data, __i__)
         return ''
         
     
     def render( self, data, __i__=None ):
+        if not __i__: __i__ = self
         __p__ = ''
-        if ( not __i__ ): __i__ = self
-        
         if self._extends:  
             __p__ = self._extends.render(data, __i__)
         
         elif self._renderer is not None: 
             # dynamic function
-            __i__.d = data
             renderer = self._renderer
-            __p__ = renderer( __i__ )
+            __p__ = renderer(data, __i__)
         
-        self.d = None
         return __p__
     
 
@@ -691,41 +678,44 @@ def t_for( for_expr ):
     if -1 < is_python_style:
         for_expr = [for_expr[0:is_python_style], for_expr[is_python_style+4:]]
         o = for_expr[1].strip()
-        _G.id += 1
-        _o = '_loc_' + str(_G.id)
         kv = for_expr[0].split(',')
     else: #if -1 < is_php_style
         for_expr = [for_expr[0:is_php_style], for_expr[is_php_style+4:]]
         o = for_expr[0].strip()
-        _G.id += 1
-        _o = '_loc_' + str(_G.id)
         kv = for_expr[1].split('=>')
+    
+    _G.id += 1
+    _o = '_loc_' + str(_G.id)
     isAssoc = (len(kv) >= 2)
     
     if isAssoc:
         k = kv[0].strip()
         v = kv[1].strip()
+        _G.id += 1
+        _oI = '_loc_' + str(_G.id)
         
         _G.locals[_G.currentblock][_G.variables[_G.currentblock][k]] = 1
         _G.locals[_G.currentblock][_G.variables[_G.currentblock][v]] = 1
         out = "'" + padLines( _G.TT_FOR2({
             "EOL":  _G.TEOL,
-            'O': o, '_O': _o, 
-            'K': k, 'V': v,
-            'ASSIGN1': '',
-            'ASSIGN2': ''
+            'O': o, '_O': _o, '_OI': _oI, 
+            'K': k, 'V': v
+            #,'ASSIGN1': '',
+            #'ASSIGN2': ''
         }) )
         _G.level += 2
     
     else:
         v = kv[0].strip()
+        _G.id += 1
+        _oV = '_loc_' + str(_G.id)
         
         _G.locals[_G.currentblock][_G.variables[_G.currentblock][v]] = 1
         out = "'" + padLines( _G.TT_FOR1({
             "EOL":  _G.TEOL,
-            'O': o, '_O': _o, 
-            'V': v,
-            'ASSIGN1': ''
+            'O': o, '_O': _o, '_OV': _oV, 
+            'V': v
+            #,'ASSIGN1': ''
         }) )
         _G.level += 2
     
@@ -1037,7 +1027,7 @@ def parseBlocks( s ):
         off = delims[ 3 ]
         containerblock = delims[ 4 ]
         tag = "#|" + block + "|#"
-        rep = "__i__.renderBlock('" + block + "') "
+        rep = "__i__.renderBlock('" + block + "', data) "
         tl = len(tag) 
         rl = len(rep)
         
@@ -1296,6 +1286,7 @@ def parse( tpl, withblocks=True ):
             strings = {}
             hasVariables = False
             hasStrings = False
+            space = 0
             
             while ( index < count ):
             
@@ -1307,6 +1298,9 @@ def parse( tpl, withblocks=True ):
                 # literal string
                 if ( '"' == ch or "'" == ch ):
                 
+                    if space > 0:
+                        out += " "
+                        space = 0
                     #tok = parseString(s, ch, index, count)
                     q = ch
                     str_ = q
@@ -1329,6 +1323,9 @@ def parse( tpl, withblocks=True ):
                 # variable
                 elif ( '$' == ch ):
                 
+                    if space > 0:
+                        out += " "
+                        space = 0
                     tok = parseVariable(s, index, count)
                     if tok:
                     
@@ -1350,12 +1347,15 @@ def parse( tpl, withblocks=True ):
                 # special chars
                 elif ( "\n" == ch or "\r" == ch or "\t" == ch or "\v" == ch ):
                 
-                    out += " "
+                    space += 1
                 
                 
                 # rest, bypass
                 else:
                 
+                    if space > 0:
+                        out += " "
+                        space = 0
                     out += ch
                 
             
@@ -1454,12 +1454,13 @@ def createTemplateRenderFunction( id, seps=None ):
     blocks = blocks[1]
     
     if _G.extends:
-        func = _G.TT_FUNC1({
-            "EOL":  _G.TEOL
+        func = _G.TT_FUNC({
+            "EOL":  _G.TEOL,
+            'FCODE': ""
         })
     
     else:
-        func = _G.TT_FUNC2({
+        func = _G.TT_FUNC({
                 "EOL":  _G.TEOL,
                 'FCODE': "__p__ += '" + renderf + "'"
             })
@@ -1467,12 +1468,12 @@ def createTemplateRenderFunction( id, seps=None ):
     _G.funcId += 1
     
     funcName = '_contemplateFn' + str(_G.funcId)
-    fn = createFunction(funcName, '__i__=None', padLines(func, 1), {'Contemplate': Contemplate})
+    fn = createFunction(funcName, 'data,__i__', padLines(func, 1), {'Contemplate': Contemplate})
     
     blockfns = {}
     for b in blocks:
         funcName = '_contemplateBlockFn_' + b[0] + '_' + str(_G.funcId)
-        blockfns[b] = createFunction(funcName, '__i__=None', padLines(b[1], 1), {'Contemplate': Contemplate})
+        blockfns[b] = createFunction(funcName, 'data,__i__', padLines(b[1], 1), {'Contemplate': Contemplate})
     
     return [ fn, blockfns]
 
@@ -1501,13 +1502,14 @@ def createCachedTemplate( id, filename, classname, seps=None ):
     # tpl render code
     if _G.extends:
         extendCode = "self.extend('"+_G.extends+"')"
-        renderCode = _G.TT_RCODE1({
-            "EOL":  _G.TEOL
+        renderCode = _G.TT_RCODE({
+            "EOL":  _G.TEOL,
+            'RCODE': "__p__ = ''" 
         })
     
     else:
         extendCode = ''
-        renderCode = _G.TT_RCODE2({
+        renderCode = _G.TT_RCODE({
                     "EOL":  _G.TEOL,
                     'RCODE': "__p__ += '" + renderf + "'" 
                 })
@@ -1543,7 +1545,7 @@ def getCachedTemplate( id, options=dict() ):
             
             if 'parsed' in options:
                 _G.funcId += 1
-                tpl.setRenderFunction( createFunction('_contemplateFn' + str(_G.funcId), '__i__=None', padLines(options['parsed'], 1), {'Contemplate': Contemplate}) )
+                tpl.setRenderFunction( createFunction('_contemplateFn' + str(_G.funcId), 'data,__i__', padLines(options['parsed'], 1), {'Contemplate': Contemplate}) )
             else:
                 fns = createTemplateRenderFunction(id, options['separators'])
                 tpl.setRenderFunction( fns[0] )
@@ -1689,7 +1691,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.8"
+    VERSION = "0.8.1"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -1722,28 +1724,22 @@ class Contemplate:
         _G.TT_ClassCode = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
             "# -*- coding: UTF-8 -*-"
             ,"# Contemplate cached template '#TPLID#'"
-            ,""
             ,"#PREFIXCODE#"
-            ,""
             ,"# imports start here, if any"
             ,"#IMPORTS#"
             ,"# imports end here"
-            ,""
             ,"def __getTplClass__(Contemplate):"
-            ,""
             ,"    # extends the main Contemplate.Template class"
             ,"    class #CLASSNAME#(Contemplate.Template):"
             ,"        'Contemplate cached template #TPLID#'"
             ,""
             ,"        # constructor"
-            ,"        def __init__(self, id=None, __=None):"
+            ,"        def __init__(self, id=None):"
             ,"            # initialize internal vars"
-            ,"            self.id = None "
-            ,"            self.d = None" 
             ,"            self._renderer = None"
             ,"            self._extends = None"
             ,"            self._blocks = None"
-            ,""
+            ,"            self.id = None"
             ,"            self.id = id"
             ,"            "
             ,"            # extend tpl assign code starts here"
@@ -1755,25 +1751,19 @@ class Contemplate:
             ,"        # tpl-defined blocks render code ends here"
             ,""
             ,"        # render a tpl block method"
-            ,"        def renderBlock(self, block, __i__=None):"
-            ,"            if ( not __i__ ): __i__ = self"
-            ,""
+            ,"        def renderBlock(self, block, data, __i__=None):"
+            ,"            if not __i__: __i__ = self"
             ,"            method = '_blockfn_' + block"
-            ,""
             ,"            if (hasattr(self, method) and callable(getattr(self, method))):"
-            ,"                return getattr(self, method)(__i__)"
-            ,""
+            ,"                return getattr(self, method)(data, __i__)"
             ,"            elif self._extends:"
-            ,"                return self._extends.renderBlock(block, __i__)"
-            ,""
+            ,"                return self._extends.renderBlock(block, data, __i__)"
             ,"            return ''"
             ,"            "
-            ,"        "
             ,"        # tpl render method"
             ,"        def render(self, data, __i__=None):"
+            ,"            if  not __i__: __i__ = self"
             ,"            __p__ = ''"
-            ,"            if ( not __i__ ): __i__ = self"
-            ,""
             ,"            if self._extends:"
             ,"                __p__ = self._extends.render(data, __i__)"
             ,""
@@ -1782,7 +1772,6 @@ class Contemplate:
             ,"#RENDERCODE#"
             ,"                # tpl main render code ends here"
             ,""
-            ,"            self.d = None"
             ,"            return __p__"
             ,"    "
             ,"    return #CLASSNAME#"
@@ -1804,7 +1793,7 @@ class Contemplate:
         _G.TT_BlockCode = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
             ""
             ,"# tpl block render method for block '#BLOCKNAME#'"
-            ,"def #BLOCKMETHODNAME#(self, __i__):"
+            ,"def #BLOCKMETHODNAME#(self, data, __i__):"
             ,"#BLOCKMETHODCODE#"
             ,""
         ]), {
@@ -1817,7 +1806,6 @@ class Contemplate:
         _G.TT_BLOCK = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
             ""
             ,"__p__ = ''"
-            ,"data = __i__.d"
             ,"#BLOCKCODE#"
             ,"return __p__"
             ,""
@@ -1862,30 +1850,31 @@ class Contemplate:
         # a = [51,27,13,56]   dict(enumerate(a))
         _G.TT_FOR2 = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
             ""
-            ,"#_O# = Contemplate.items(#O#)"
-            ,"if (#_O#):"
-            ,"    for #K#,#V# in #_O#:"
-            #,"        #ASSIGN1#"
-            #,"        #ASSIGN2#"
+            ,"#_O# = #O#"
+            ,"#_OI# = (enumerate(#_O#) if isinstance(#_O#,(list, tuple)) else #_O#.items()) if #_O# else None"
+            ,"if (#_OI#):"
+            ,"    for #K#,#V# in #_OI#:"
             ,""
         ]), {
              "#EOL#":   "EOL"
             ,"#O#":     "O"
             ,"#_O#":    "_O"
+            ,"#_OI#":    "_OI"
             ,"#K#":     "K"
             ,"#V#":     "V"
         }))
         _G.TT_FOR1 = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
             ""
-            ,"#_O# = Contemplate.values(#O#)"
-            ,"if (#_O#):"
-            ,"    for #V# in #_O#:"
-            #,"        #ASSIGN1#"
+            ,"#_O# = #O#"
+            ,"#_OV# = (#_O# if isinstance(#_O#,(list, tuple)) else #_O#.values()) if #_O# else None"
+            ,"if (#_OV#):"
+            ,"    for #V# in #_OV#:"
             ,""
         ]), {
              "#EOL#":   "EOL"
             ,"#O#":     "O"
             ,"#_O#":    "_O"
+            ,"#_OV#":    "_OV"
             ,"#V#":     "V"
         }))
             
@@ -1903,11 +1892,9 @@ class Contemplate:
              "#EOL#":               "EOL"
         }))
             
-        _G.TT_FUNC1 = InlineTemplate.compile(InlineTemplate.multisplit("return ''"))
-        _G.TT_FUNC2 = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
+        _G.TT_FUNC = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
             ""
             ,"__p__ = ''"
-            ,"data = __i__.d"
             ,"#FCODE#"
             ,"return __p__"
             ,""
@@ -1916,10 +1903,8 @@ class Contemplate:
             ,"#FCODE#":  "FCODE"
         }))
 
-        _G.TT_RCODE1 = InlineTemplate.compile(InlineTemplate.multisplit("__p__ = ''"))
-        _G.TT_RCODE2 = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
+        _G.TT_RCODE = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
             ""
-            ,"__i__.d = data"
             ,"#RCODE#"
             ,""
         ]), {
@@ -2065,6 +2050,10 @@ class Contemplate:
         
         return parsed
         
+    #
+    # Basic template functions
+    #
+    
     # return the requested template (with optional data)
     # static
     def tpl( tpl, data=None, options=None ):
@@ -2097,10 +2086,6 @@ class Contemplate:
         # Provide some basic currying to the user
         if isinstance(data, dict): return str(tmpl.render( data ))
         else: return tmpl
-    
-    #
-    # Basic template functions
-    #
     
     # inline tpls, both inside Contemplate templates (i.e as parameters) and in code
     def inline( tpl, reps=None, compiled=False ):

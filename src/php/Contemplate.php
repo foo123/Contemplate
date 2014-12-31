@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.8
+*  @version: 0.8.1
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -110,7 +110,6 @@ class ContemplateInlineTemplate
 class ContemplateTemplate
 { 
     public $id = null;
-    public $d = null;
     protected $_extends = null;
     protected $_blocks = null;
     protected $_renderer = null;
@@ -119,15 +118,11 @@ class ContemplateTemplate
     public function __construct( $id=null )
     {
         /* initialize internal vars */
-        $this->id = null; 
-        $this->d = null;
         $this->_renderer = null;
         $this->_extends = null;
         $this->_blocks = null;
-        if ( $id ) 
-        { 
-            $this->id = $id; 
-        }
+        $this->id = null; 
+        if ( $id ) $this->id = $id; 
     }
     
     public function dispose( ) 
@@ -135,7 +130,6 @@ class ContemplateTemplate
         $this->_extends = null;
         $this->_blocks = null;
         $this->_renderer = null;
-        $this->d = null;
         $this->id = null;
         return $this;
     }
@@ -150,8 +144,10 @@ class ContemplateTemplate
     { 
         if ( $tpl && is_string($tpl) )
             $this->_extends = Contemplate::tpl( $tpl );
+        elseif ( $tpl instanceof ContemplateTemplate )
+            $this->_extends = $tpl;
         else
-            $this->_extends = $tpl; 
+            $this->_extends = null;
         return $this; 
     }
     
@@ -164,31 +160,30 @@ class ContemplateTemplate
     
     public function setRenderFunction( $renderFunc=null ) 
     { 
-        if ( $renderFunc ) $this->_renderer = $renderFunc; 
+        if ( $renderFunc && is_callable($renderFunc) ) $this->_renderer = $renderFunc;
+        else $this->_renderer = null;
         return $this; 
     }
     
-    public function renderBlock( $block, $__i__=null )
+    public function renderBlock( $block, &$data, $__i__=null )
     {
         if ( !$__i__ ) $__i__ = $this;
-        
         if ( $this->_blocks && isset($this->_blocks[$block]) ) 
         {
             $blockfunc = $this->_blocks[$block]; 
-            return $blockfunc( $__i__ );
+            return $blockfunc( $data, $__i__ );
         }
         elseif ( $this->_extends ) 
         {
-            return $this->_extends->renderBlock($block, $__i__);
+            return $this->_extends->renderBlock($block, $data, $__i__);
         }
         return '';
     }
     
-    public function render( $data, $__i__=null ) 
+    public function render( &$data, $__i__=null ) 
     {
-        $__p__ = ''; 
         if ( !$__i__ ) $__i__ = $this;
-        
+        $__p__ = ''; 
         if ( $this->_extends ) 
         { 
             $__p__ = $this->_extends->render($data, $__i__); 
@@ -196,19 +191,16 @@ class ContemplateTemplate
         elseif ( $this->_renderer )
         {
             /* dynamic function */
-            $__i__->d =& $data; 
             $renderer = $this->_renderer;
-            $__p__ = $renderer( $__i__ );
+            $__p__ = $renderer($data, $__i__);
         }
-        
-        $this->d = null;
         return $__p__;
     }
 }
 
 class Contemplate
 {
-    const VERSION = "0.8";
+    const VERSION = "0.8.1";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -279,10 +271,8 @@ class Contemplate
     private static $TT_ENDFOR1 = null;
     private static $TT_ENDFOR2 = null;
     
-    private static $TT_FUNC1 = null;
-    private static $TT_FUNC2 = null;
-    private static $TT_RCODE1 = null;
-    private static $TT_RCODE2 = null;
+    private static $TT_FUNC = null;
+    private static $TT_RCODE = null;
     
     private static $re_plugin = '/^(plg_|plugin_)([a-zA-Z0-9_]+)/';
     private static $re_controls = '/(\\t|[ ]?)[ ]*%([a-zA-Z_][a-zA-Z0-9_]*)\\b[ ]*(\\()(.*)$/';
@@ -356,12 +346,10 @@ class Contemplate
             ,"    public function __construct(\$id=null)"
             ,"    {"
             ,"        /* initialize internal vars */"
-            ,"        \$this->id = null; "
-            ,"        \$this->d = null;"
             ,"        \$this->_renderer = null;"
             ,"        \$this->_extends = null;"
             ,"        \$this->_blocks = null;"
-            ,"        "
+            ,"        \$this->id = null; "
             ,"        \$this->id = \$id;"
             ,"        "
             ,"        /* extend tpl assign code starts here */"
@@ -374,23 +362,20 @@ class Contemplate
             ,"    /* tpl-defined blocks render code ends here */"
             ,"    "
             ,"    /* tpl renderBlock method */"
-            ,"    public function renderBlock( \$block, \$__i__=null )"
+            ,"    public function renderBlock(\$block, &\$data, \$__i__=null)"
             ,"    {"
-            ,"        \$__p__ = '';"
             ,"        if ( !\$__i__ ) \$__i__ = \$this;"
-            ,"        "
             ,"        \$method = '_blockfn_' . \$block;"
-            ,"        if ( method_exists(\$this, \$method) ) return \$this->{\$method}(\$__i__);"
-            ,"        elseif ( \$this->_extends ) return \$this->_extends->renderBlock(\$block, \$__i__);"
-            ,"        return \$__p__;"
+            ,"        if ( method_exists(\$this, \$method) ) return \$this->{\$method}(\$data, \$__i__);"
+            ,"        elseif ( \$this->_extends ) return \$this->_extends->renderBlock(\$block, \$data, \$__i__);"
+            ,"        return '';"
             ,"    }"
             ,"    "
             ,"    /* tpl render method */"
-            ,"    public function render(\$data, \$__i__=null)"
+            ,"    public function render(&\$data, \$__i__=null)"
             ,"    {"
-            ,"        \$__p__ = '';"
             ,"        if ( !\$__i__ ) \$__i__ = \$this;"
-            ,"        "
+            ,"        \$__p__ = '';"
             ,"        if ( \$this->_extends )"
             ,"        {"
             ,"            \$__p__ = \$this->_extends->render(\$data, \$__i__);"
@@ -401,7 +386,6 @@ class Contemplate
             ,"#RENDERCODE#"
             ,"            /* tpl main render code ends here */"
             ,"        }"
-            ,"        \$this->d = null;"
             ,"        return \$__p__;"
             ,"    }"
             ,"}"
@@ -420,7 +404,7 @@ class Contemplate
         self::$TT_BlockCode = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
             ""
             ,"/* tpl block render method for block '#BLOCKNAME#' */"
-            ,"private function #BLOCKMETHODNAME#(\$__i__) "
+            ,"private function #BLOCKMETHODNAME#(&\$data, \$__i__) "
             ,"{ "
             ,"#BLOCKMETHODCODE#"
             ,"}"
@@ -434,7 +418,7 @@ class Contemplate
         
         self::$TT_BLOCK = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
             ""
-            ,"\$__p__ = ''; \$data =& \$__i__->d;"
+            ,"\$__p__ = '';"
             ,"#BLOCKCODE#"
             ,"return \$__p__;"
             ,""
@@ -489,7 +473,6 @@ class Contemplate
             ,"{"
             ,"    foreach (#_O# as #K#=>#V#)"
             ,"    {"
-            //,"        #ASSIGN1#"
             ,""
         )), array(
              "#EOL#"=>      "EOL"
@@ -505,7 +488,6 @@ class Contemplate
             ,"{"
             ,"    foreach (#_O# as #V#)"
             ,"    {"
-            //,"        #ASSIGN1#"
             ,""
         )), array(
              "#EOL#"=>      "EOL"
@@ -541,10 +523,9 @@ class Contemplate
              "#EOL#"=>      "EOL"
         )));
         
-        self::$TT_FUNC1 = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit("return '';"));
-        self::$TT_FUNC2 = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+        self::$TT_FUNC = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
             ""
-            ,"\$__p__ = ''; \$data =& \$__i__->d;"  
+            ,"\$__p__ = '';"  
             ,"#FCODE#"
             ,"return \$__p__;"
             ,""
@@ -553,10 +534,8 @@ class Contemplate
             ,"#FCODE#"=>   "FCODE"
         )));
 
-        self::$TT_RCODE1 = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit("\$__p__ = '';"));
-        self::$TT_RCODE2 = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+        self::$TT_RCODE = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
             ""
-            ,"\$__i__->d =& \$data;" 
             ,"#RCODE#"
             ,""
         )), array(
@@ -726,6 +705,10 @@ class Contemplate
         return $parsed;
     }
         
+    //
+    // Basic template functions
+    //
+    
     // return the requested template (with optional data)
     public static function tpl( $tpl, $data=null, $options=array() )
     {
@@ -760,10 +743,6 @@ class Contemplate
         if ( is_array( $data ) )  return $tmpl->render( $data );
         else  return $tmpl;
     }
-    
-    //
-    // Basic template functions
-    //
     
     // inline tpls, both inside Contemplate templates (i.e as parameters) and in code
     public static function inline( $tpl, $reps=array(), $compiled=false )
@@ -1533,7 +1512,7 @@ class Contemplate
             $off = $delims[ 3 ];
             $containerblock = $delims[ 4 ];
             $tag = "#|" . $block . "|#";
-            $rep = "\$__i__->renderBlock('" . $block . "');";
+            $rep = "\$__i__->renderBlock('" . $block . "', \$data);";
             $tl = strlen($tag); $rl = strlen($rep);
             
             if ( -1 < $containerblock )
@@ -2010,26 +1989,27 @@ class Contemplate
         
         if ( self::$__extends )
         {
-            $renderer = self::$TT_FUNC1;
+            $renderer = self::$TT_FUNC;
             $func = $renderer(array(
-                        'EOL'=>     self::$__TEOL
+                        'EOL'=>     self::$__TEOL,
+                        'FCODE'=> ""
                     ));
         }
         else
         {
-            $renderer = self::$TT_FUNC2;
+            $renderer = self::$TT_FUNC;
             $func = $renderer(array(
                         'EOL'=>     self::$__TEOL,
                         'FCODE'=> "\$__p__ .= '" . $renderf . "';"
                     ));
         }
         
-        $fn = create_function('$__i__', $func);
+        $fn = create_function('&$data,$__i__', $func);
         
         $blockfns = array();  
         for($b=0; $b<$bl; $b++) 
         {
-            $blockfns[$blocks[$b][0]] = create_function('$__i__', $blocks[$b][1]);
+            $blockfns[$blocks[$b][0]] = create_function('&$data,$__i__', $blocks[$b][1]);
         }
         
         return array($fn, $blockfns);
@@ -2064,15 +2044,16 @@ class Contemplate
         if (self::$__extends)
         {
             $extendCode = "\$this->extend('".self::$__extends."');";
-            $renderer = self::$TT_RCODE1;
+            $renderer = self::$TT_RCODE;
             $renderCode = $renderer(array(
-                            'EOL'=>     self::$__TEOL
+                            'EOL'=>     self::$__TEOL,
+                            'RCODE'=> "\$__p__ = '';"
                         ));
         }
         else
         {
             $extendCode = '';
-            $renderer = self::$TT_RCODE2;
+            $renderer = self::$TT_RCODE;
             $renderCode = $renderer(array(
                             'EOL'=>     self::$__TEOL,
                             'RCODE'=> "\$__p__ .= '" . $renderf . "';"
@@ -2112,7 +2093,7 @@ class Contemplate
                 if ( isset($options['parsed']) && is_string($options['parsed']) )
                 {
                     // already parsed code was given
-                    $tpl->setRenderFunction( create_function('$__i__', $options['parsed']) ); 
+                    $tpl->setRenderFunction( create_function('&$data,$__i__', $options['parsed']) ); 
                 }
                 else
                 {

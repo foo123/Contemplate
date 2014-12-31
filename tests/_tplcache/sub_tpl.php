@@ -9,12 +9,10 @@ final class Contemplate_sub_Cached extends ContemplateTemplate
     public function __construct($id=null)
     {
         /* initialize internal vars */
-        $this->id = null; 
-        $this->d = null;
         $this->_renderer = null;
         $this->_extends = null;
         $this->_blocks = null;
-        
+        $this->id = null; 
         $this->id = $id;
         
         /* extend tpl assign code starts here */
@@ -27,23 +25,20 @@ final class Contemplate_sub_Cached extends ContemplateTemplate
     /* tpl-defined blocks render code ends here */
     
     /* tpl renderBlock method */
-    public function renderBlock( $block, $__i__=null )
+    public function renderBlock($block, &$data, $__i__=null)
     {
-        $__p__ = '';
         if ( !$__i__ ) $__i__ = $this;
-        
         $method = '_blockfn_' . $block;
-        if ( method_exists($this, $method) ) return $this->{$method}($__i__);
-        elseif ( $this->_extends ) return $this->_extends->renderBlock($block, $__i__);
-        return $__p__;
+        if ( method_exists($this, $method) ) return $this->{$method}($data, $__i__);
+        elseif ( $this->_extends ) return $this->_extends->renderBlock($block, $data, $__i__);
+        return '';
     }
     
     /* tpl render method */
-    public function render($data, $__i__=null)
+    public function render(&$data, $__i__=null)
     {
-        $__p__ = '';
         if ( !$__i__ ) $__i__ = $this;
-        
+        $__p__ = '';
         if ( $this->_extends )
         {
             $__p__ = $this->_extends->render($data, $__i__);
@@ -52,7 +47,6 @@ final class Contemplate_sub_Cached extends ContemplateTemplate
         {
             /* tpl main render code starts here */
             
-            $__i__->d =& $data;
             $__p__ .= '<div>' . "\n" . '    <br />' . "\n" . '    <strong>Number of Items:' . (count($data['users'][$data['i']])) . '</strong>' . "\n" . '    <br />' . "\n" . '    ';
             $_loc_7 = $data['users'][$data['i']];
             if (!empty($_loc_7))
@@ -97,7 +91,6 @@ final class Contemplate_sub_Cached extends ContemplateTemplate
             
             /* tpl main render code ends here */
         }
-        $this->d = null;
         return $__p__;
     }
 }

@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.8
+*  @version: 0.8.1
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -36,7 +36,7 @@
         
     "use strict";
     
-    var __version__ = "0.8", Contemplate, Template, InlineTemplate, 
+    var __version__ = "0.8.1", Contemplate, Template, InlineTemplate, 
     
         // auxilliaries
         PROTO = 'prototype', HAS = 'hasOwnProperty', 
@@ -47,8 +47,13 @@
         isNode = "undefined" !== typeof(global) && '[object global]' === _toString.call(global),
         
         // php-like functions, mostly adapted from phpjs project
-        is_array = function( o ) { return (o instanceof Arr) || ('[object Array]' === _toString.call(o)); }, 
-        is_object = function( o ) { return (o instanceof Obj) || ('[object Object]' === _toString.call(o)); }, 
+        // http://jsperf.com/instanceof-array-vs-array-isarray/6
+        is_array = function( o ) { 
+            return o && ((o.constructor === Arr)/*(o instanceof Arr)*/ || ('[object Array]' === _toString.call(o))); 
+        },
+        is_object = function( o ) { 
+            return o && ((o.constructor === Obj)/*(o instanceof Obj)*/ || ('[object Object]' === _toString.call(o))); 
+        },
         count = function( mixed_var ) {
             if ( null === mixed_var || 'undefined' === typeof mixed_var ) return 0;
             else if ( is_array(mixed_var) ) return mixed_var.length;
@@ -851,10 +856,10 @@
         },
         
         merge = function( ) {
-            var args = slice( arguments );
-            if ( args.length < 1 ) return;
-            var merged = args.shift( ), i, k, o, l = args.length;
-            for (i=0; i<l; i++)
+            var args = arguments, l = args.length;
+            if ( l < 1 ) return;
+            var merged = args[0], i, k, o;
+            for (i=1; i<l; i++)
             { 
                 o = args[ i ]; 
                 if ( o ) 
@@ -1101,6 +1106,8 @@
             }
             isAssoc = kv.length >= 2
             
+            // http://jsperf.com/values-extraction/5
+            // raw 'in' loop with .hasOwnProperty is faster than looping over Object.keys
             if ( isAssoc )
             {
                 var k = trim(kv[0]),
@@ -1123,15 +1130,18 @@
             else
             {
                 var v = trim(kv[0]),
+                    _oV = '_loc_' + (++$__idcnt),
+                    _arr = '_loc_' + (++$__idcnt),
                     _k = '_loc_' + (++$__idcnt),
+                    _kk = '_loc_' + (++$__idcnt),
                     _l = '_loc_' + (++$__idcnt)
                 ;
                 $__locals[$__currentblock][$__variables[$__currentblock][v]] = 1;
                 out = "';" + padLines(TT_FOR1({
                     'EOL': $__TEOL,
-                    'O': o, '_O': _o,
-                    '_K': _k, '_L': _l, 'V': v,
-                    'ASSIGN1': ""+v+" = "+_o+"["+_k+"];"
+                    'O': o, '_O': _o, '_OV': _oV, '_ARR': _arr,
+                    '_KK': _kk, '_K': _k, '_L': _l, 'V': v,
+                    'ASSIGN1': ""+v+" = "+_arr+" ? "+_kk+" : "+_o+"["+_kk+"];"
                 }));
                 $__forType = 1;
                 $__level+=2;
@@ -1466,7 +1476,7 @@
                 off = delims[ 3 ];
                 containerblock = delims[ 4 ];
                 tag = "#|" + block + "|#";
-                rep = "__i__.renderBlock('" + block + "');";
+                rep = "__i__.renderBlock('" + block + "', data);";
                 tl = tag.length; rl = rep.length;
                 
                 if ( -1 < containerblock )
@@ -1514,7 +1524,8 @@
                 
                 variable_raw = variable;
                 // transform into tpl variable
-                variable_main = "data['"+variable_raw+"']";
+                //variable_main = "data['"+variable_raw+"']";
+                variable_main = "data."+variable_raw;
                 variable_rest = '';
                 $__idcnt++;
                 id = "#VAR"+$__idcnt+"#";
@@ -1555,7 +1566,8 @@
                         if ( lp )
                         {
                             // transform into tpl variable bracketed property
-                            variable_rest += "['" + property + "']";
+                            //variable_rest += "['" + property + "']";
+                            variable_rest += "." + property;
                             len += space + 1 + lp;
                             space = 0;
                         }
@@ -1910,24 +1922,25 @@
             
             if ($__extends)
             {
-                func = TT_FUNC1({
-                    'EOL': $__TEOL
-                });
+                func = TT_FUNC({
+                            'EOL': $__TEOL,
+                            'FCODE': padLines("__p__ = '';", 0)
+                        });
             }
             else
             {
-                // Introduce the data as local variables using with(){}
                // Convert the template into pure JavaScript
-                func = TT_FUNC2({
+                func = TT_FUNC({
                             'EOL': $__TEOL,
-                            'FCODE': "__p__ += '" + renderf + "';"
+                            'FCODE': padLines("__p__ = '" + renderf + "';", 0)
                         });
             }
             
             // defined blocks
-            for (b=0; b<bl; b++) funcs[blocks[b][0]] = FUNC("Contemplate,__i__", blocks[b][1]);
+            for (b=0; b<bl; b++) funcs[blocks[b][0]] = FUNC("Contemplate,data,__i__", blocks[b][1]);
             
-            return [FUNC("Contemplate,__i__", func), funcs];
+            //return [FUNC("Contemplate,__i__", func), funcs];
+            return [FUNC("Contemplate", func), funcs];
         },
         
         createCachedTemplate = function( id, filename, classname, seps ) {
@@ -1975,14 +1988,15 @@
             if ($__extends) 
             {
                 extendCode = "this.extend('" + $__extends + "');";
-                renderCode = TT_RCODE1({
-                    'EOL': $__TEOL
+                renderCode = TT_RCODE({
+                    'EOL': $__TEOL,
+                    'RCODE': "__p__ = '';"
                 });
             }
             else
             {
                 extendCode = '';
-                renderCode = TT_RCODE2({
+                renderCode = TT_RCODE({
                                 'EOL': $__TEOL,
                                 'RCODE': "__p__ += '" + renderf + "';"
                             });
@@ -1999,7 +2013,7 @@
                                 'PREFIXCODE': prefixCode,
                                 'EXTENDCODE': padLines(extendCode, 2),
                                 'BLOCKS': padLines(sblocks, 2),
-                                'RENDERCODE': padLines(renderCode, 3)
+                                'RENDERCODE': padLines(renderCode, 2)
                             });
             
             return setCachedTemplate(filename, classCode);
@@ -2017,13 +2031,13 @@
                     if ( options.parsed )
                     {
                         // already parsed code was given
-                        tpl = Contemplate.Template( id, FUNC("Contemplate,__i__", options.parsed) );
+                        tpl = Contemplate.Template( id ).setRenderFunction( FUNC("Contemplate", options.parsed) );
                     }
                     else
                     {
                         // parse code and create template class
                         funcs = createTemplateRenderFunction( id, options.separators ); 
-                        tpl = Contemplate.Template( id, funcs[ 0 ] ).setBlocks( funcs[ 1 ] );
+                        tpl = Contemplate.Template( id ).setRenderFunction( funcs[ 0 ] ).setBlocks( funcs[ 1 ] );
                     }
                     if ($__extends) tpl.extend( Contemplate.tpl($__extends) );
                     return tpl;
@@ -2044,7 +2058,7 @@
                         if ( fexists(cachedTplFile) )
                         {
                             var tplclass = require( cachedTplFile )( Contemplate ), 
-                                tpl = new tplclass( ).setId( id );
+                                tpl = new tplclass( id )/*.setId( id )*/;
                             return tpl;
                         }
                         return null;
@@ -2071,7 +2085,7 @@
                         if ( fexists(cachedTplFile) )
                         {
                             var tplclass = require( cachedTplFile )( Contemplate ), 
-                                tpl = new tplclass( ).setId( id );
+                                tpl = new tplclass( id )/*.setId( id )*/;
                             return tpl;
                         }
                         return null;
@@ -2081,7 +2095,7 @@
                     {    
                         // dynamic in-memory caching during page-request
                         var funcs = createTemplateRenderFunction( id, options.separators ), 
-                            tpl = Contemplate.Template( id, funcs[ 0 ] ).setBlocks( funcs[1] );
+                            tpl = Contemplate.Template( id ).setRenderFunction( funcs[ 0 ] ).setBlocks( funcs[ 1 ] );
                         if ($__extends) tpl.extend( Contemplate.tpl($__extends) );
                         return tpl;
                     }
@@ -2111,7 +2125,7 @@
     
         TT_FOR1,TT_FOR2, TT_ELSEFOR, TT_ENDFOR1,TT_ENDFOR2,
     
-        TT_FUNC1,TT_FUNC2, TT_RCODE1,TT_RCODE2
+        TT_FUNC, TT_RCODE
     ;
     
     
@@ -2129,6 +2143,12 @@
         if ( true === compiled )
         {
             this._renderer = InlineTemplate.compile( this.tpl );
+            this.render = this._renderer;
+        }
+        else
+        {
+            this._renderer = null; 
+            //this.render = InlineTemplate.prototype.render;
         }
     };
     InlineTemplate.multisplit = function multisplit( tpl, reps, as_array ) {
@@ -2167,7 +2187,7 @@
     };
     InlineTemplate.compile = function( tpl ) {
         var l = tpl.length, 
-            i, notIsSub, s, out = 'return (';
+            i, notIsSub, s, out = '"use strict";' + "\n" + 'return (';
         ;
         
         for (i=0; i<l; i++)
@@ -2210,19 +2230,22 @@
         }
     };
     
-    Template = function Template( id, renderFunc ) {
-        if ( !(this instanceof Template) ) return new Template( id, renderFunc );
-        this.id = null;  this.d = null;
-        if ( id ) 
-        { 
-            this.id = id; 
-            this._renderer = renderFunc; 
-        }
+    Template = function Template( id ) {
+        var self = this;
+        if ( !(self instanceof Template) ) return new Template( id );
+        self._renderer = null;
+        self._blocks = null;
+        self._extends = null;
+        self.id = null;
+        if ( id ) self.id = id; 
+    };
+    Template.renderProxy = function( data, __i__ ) {
+        "use strict";
+        return this._extends.render(data, __i__||this);
     };
     Template[PROTO] = {
         constructor: Template
         ,id: null
-        ,d: null
         
         ,_extends: null
         ,_blocks: null
@@ -2234,8 +2257,21 @@
             self._renderer = null;
             self._blocks = null;
             self._extends = null;
-            self.d = null;
             self.id = null;
+            return self;
+        }
+        
+        ,fixRenderer: function( ) { 
+            var self = this, sprTpl = self._extends;
+            if ( sprTpl && (sprTpl instanceof Template) )
+            {
+                self.render = Template.renderProxy;
+            }
+            else
+            {
+                if ( 'function' === typeof(self._renderer) ) self.render = self._renderer;
+                else self.render = self.constructor[PROTO].render;
+            }
             return self;
         }
         
@@ -2247,14 +2283,19 @@
         ,extend: function( tpl ) { 
             if ( tpl && tpl.substr )
                 this._extends = Contemplate.tpl( tpl );
-            else
+            else if ( tpl instanceof Template )
                 this._extends = tpl;
-            return this;
+            else
+                this._extends = null;
+            return this.fixRenderer( );
         }
         
         ,setRenderFunction: function( renderfunc ) { 
-            this._renderer = renderfunc; 
-            return this; 
+            if ( 'function' === typeof renderfunc )
+                this._renderer = renderfunc( Contemplate );
+            else
+                this._renderer = null; 
+            return this.fixRenderer( );
         }
         
         ,setBlocks: function( blocks ) { 
@@ -2265,29 +2306,16 @@
             return this; 
         }
         
-        ,renderBlock: function( block, __i__ ) {
-            if ( !__i__ ) __i__ = this;
-            if ( this._blocks && this._blocks[HAS](block) ) return this._blocks[block](Contemplate, __i__);
-            else if ( this._extends ) return this._extends.renderBlock(block, __i__);
+        ,renderBlock: function( block, data, __i__ ) {
+            __i__ = __i__ || this;
+            var blocks = this._blocks;
+            if ( blocks && blocks[HAS](block) ) return blocks[block](Contemplate, data, __i__);
+            else if ( this._extends ) return this._extends.renderBlock(block, data, __i__);
             return '';
         }
         
         ,render: function( data, __i__ ) {
             var __p__ = '';
-            
-            if ( !__i__ ) __i__ = this;
-            
-            if ( this._extends ) 
-            {
-                __p__ = this._extends.render(data, __i__);
-            }
-            else if ( this._renderer )  
-            {
-                __i__.d = data; 
-                __p__ = this._renderer(Contemplate, __i__);
-            }
-            
-            this.d = null;
             return __p__;
         }
     };
@@ -2335,11 +2363,10 @@
                 ,"    {"
                 ,"        /* initialize internal vars */"
                 ,"        "
-                ,"        this._renderer = id;"
+                ,"        this._renderer = null;"
                 ,"        this._blocks = null;"
                 ,"        this._extends = null;"
-                ,"        this.d = null;"
-                ,"        this.id = id;"
+                ,"        this.id = id || null;"
                 ,"        "
                 ,"        /* tpl-defined blocks render code starts here */"
                 ,"#BLOCKS#"
@@ -2354,19 +2381,12 @@
                 ,"    #CLASSNAME#.prototype = Object.create(Contemplate.Template.prototype);"
                 ,"    /* tpl render method */"
                 ,"    #CLASSNAME#.prototype.render = function( data, __i__ ) {"
-                ,"        if ( !__i__ ) __i__ = this;"
+                ,"        \"use strict\";"
                 ,"        var __p__ = '';"
-                ,"        if ( this._extends )"
-                ,"        {"
-                ,"            __p__ = this._extends.render(data, __i__);"
-                ,"        }"
-                ,"        else"
-                ,"        {"
-                ,"            /* tpl main render code starts here */"
+                ,"        __i__ = __i__ || this;"
+                ,"        /* tpl main render code starts here */"
                 ,"#RENDERCODE#"
-                ,"            /* tpl main render code ends here */"
-                ,"        }"
-                ,"        this.d = null;"
+                ,"        /* tpl main render code ends here */"
                 ,"        return __p__;"
                 ,"    };"
                 ,"    "
@@ -2388,7 +2408,7 @@
             TT_BlockCode = InlineTemplate.compile(InlineTemplate.multisplit([
                 ""
                 ,"/* tpl block render method for block '#BLOCKNAME#' */"
-                ,"'#BLOCKMETHODNAME#': function(Contemplate,__i__) {"
+                ,"'#BLOCKMETHODNAME#': function( Contemplate, data, __i__ ) {"
                 ,"#BLOCKMETHODCODE#"
                 ,"}"
                 ,""
@@ -2400,8 +2420,8 @@
             }));
 
             TT_BLOCK = InlineTemplate.compile(InlineTemplate.multisplit([
-                ""
-                ,"var __p__ = '', data = __i__.d;"
+                "\"use strict\";"
+                ,"var __p__ = '';"
                 ,"#BLOCKCODE#"
                 ,"return __p__;"
                 ,""
@@ -2451,7 +2471,7 @@
         
             TT_FOR2 = InlineTemplate.compile(InlineTemplate.multisplit([
                 ""
-                ,"var #_O# = #O#, #_OK# = Contemplate.keys(#_O#),"
+                ,"var #_O# = #O#, #_OK# = #_O# ? Object.keys(#_O#) : null,"
                 ,"    #_K#, #K#, #V#, #_L# = #_OK# ? #_OK#.length : 0;"
                 ,"if (#_L#)"
                 ,"{"
@@ -2473,12 +2493,14 @@
             }));
             TT_FOR1 = InlineTemplate.compile(InlineTemplate.multisplit([
                 ""
-                ,"var #_O# = Contemplate.values(#O#),"
-                ,"    #_K#, #V#, #_L# = #_O# ? #_O#.length : 0;"
+                ,"var #_O# = #O#, #_ARR# = !!#_O#.forEach," 
+                ,"    #_OV# = #_O# ? (#_ARR# ? #_O# : Object.keys(#_O#)) : null,"
+                ,"    #_K#, #_KK#, #V#, #_L# = #_OV# ? #_OV#.length : 0;"
                 ,"if (#_L#)"
                 ,"{"
                 ,"    for (#_K#=0; #_K#<#_L#; #_K#++)"
                 ,"    {"
+                ,"        #_KK# = #_OV#[#_K#];"
                 ,"        #ASSIGN1#"
                 ,"        "
                 ,""
@@ -2486,7 +2508,10 @@
                  "#EOL#":    "EOL"
                 ,"#O#":      "O"
                 ,"#_O#":    "_O"
+                ,"#_OV#":    "_OV"
                 ,"#_K#":    "_K"
+                ,"#_KK#":    "_KK"
+                ,"#_ARR#":    "_ARR"
                 ,"#V#":     "V"
                 ,"#_L#":    "_L"
                 ,"#ASSIGN1#":"ASSIGN1"
@@ -2519,22 +2544,21 @@
                 "#EOL#":               "EOL"
             }));
         
-            TT_FUNC1 = InlineTemplate.compile(InlineTemplate.multisplit("return '';"));
-            TT_FUNC2 = InlineTemplate.compile(InlineTemplate.multisplit([
-                ""
-                ,"var __p__ = '', data = __i__.d;"
+            TT_FUNC = InlineTemplate.compile(InlineTemplate.multisplit([
+                "return function( data, __i__ ){"
+                ,"\"use strict\";"
+                ,"var __p__ = '';"
+                ,"__i__ = __i__ || this;"
                 ,"#FCODE#"
                 ,"return __p__;"
-                ,""
+                ,"};"
             ].join( "#EOL#" ), {
                  "#EOL#":     "EOL"
                 ,"#FCODE#":  "FCODE"
             }));
             
-            TT_RCODE1 = InlineTemplate.compile(InlineTemplate.multisplit("__p__ = '';"));
-            TT_RCODE2 = InlineTemplate.compile(InlineTemplate.multisplit([
+            TT_RCODE = InlineTemplate.compile(InlineTemplate.multisplit([
                 ""
-                ,"__i__.d = data;"
                 ,"#RCODE#"
                 ,""
             ].join( "#EOL#" ), {
@@ -2692,6 +2716,10 @@
             return parsed;
         },
         
+        //
+        // Basic template functions
+        //
+        
         // return the requested template (with optional data)
         tpl: function( tpl, data, options ) {
             if ( tpl instanceof Contemplate.Template )
@@ -2721,10 +2749,6 @@
             return ( "object" === typeof data ) ? tmpl.render( data ) : tmpl;
         },
         
-        
-        //
-        // Basic template functions
-        //
         
         // inline tpls, both inside Contemplate templates (i.e as parameters) and in code
         inline: function( tpl, reps, compiled ) {
@@ -3093,7 +3117,7 @@
         values: function( o ) { 
             if ( o )
             {
-                if ( o instanceof Arr ) 
+                if ( o.push/*o instanceof Arr*/ ) 
                 {
                     return o;
                 }

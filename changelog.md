@@ -1,5 +1,9 @@
 ###ChangeLog
 
+__0.8.1__
+* even faster rendering optimisations (esp. for javascript, reduce rendering function calls by one)
+* minor changes
+
 __0.8__
 * new template function %echo (similar to php function that echoes strings to the output) 
 * %tpl (alias of %template, %template to be deprecated?)

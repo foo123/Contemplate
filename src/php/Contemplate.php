@@ -78,6 +78,11 @@ class ContemplateInlineTemplate
         }
     }
     
+    public function __destruct()
+    {
+        $this->dispose();
+    }
+    
     public function dispose( ) 
     {
         $this->id = null;
@@ -123,6 +128,11 @@ class ContemplateTemplate
         $this->_blocks = null;
         $this->id = null; 
         if ( $id ) $this->id = $id; 
+    }
+    
+    public function __destruct()
+    {
+        $this->dispose();
     }
     
     public function dispose( ) 
@@ -2172,8 +2182,8 @@ class Contemplate
         self::$__loops = 0; self::$__ifs = 0; self::$__loopifs = 0; self::$__level = 0;
         self::$__allblocks = array(); self::$__allblockscnt = array(); self::$__openblocks = array(array(null, -1));  
         self::$__extends = null; self::$__locals = array(); self::$__variables = array(); self::$__currentblock = '_';
-        if ( !isset(self::$__locals[$__currentblock]) ) self::$__locals[$__currentblock] = array();
-        if ( !isset(self::$__variables[$__currentblock]) ) self::$__variables[$__currentblock] = array();
+        if ( !isset(self::$__locals[self::$__currentblock]) ) self::$__locals[self::$__currentblock] = array();
+        if ( !isset(self::$__variables[self::$__currentblock]) ) self::$__variables[self::$__currentblock] = array();
         //self::$__escape = true;
     }
     

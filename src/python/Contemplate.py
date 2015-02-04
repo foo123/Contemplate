@@ -383,7 +383,6 @@ class InlineTemplate:
         funcName = '_contemplateInlineFn' + str(_G.funcId)
         return createFunction(funcName, 'args', '    ' + out,{})
     
-    
     def __init__( self, tpl='', replacements=None, compiled=False ): 
     
         if not replacements: replacements = {}
@@ -393,14 +392,15 @@ class InlineTemplate:
         if compiled is True:
             self._renderer = InlineTemplate.compile( self.tpl )
     
-    
+    def __del__( self ):
+        self.dispose()
+
     def dispose( self ): 
     
         self.id = None
         self.tpl = None
         self._renderer = None
         return self
-    
     
     def render( self, args=None ): 
     
@@ -429,6 +429,9 @@ class Template:
         self.id = None
         if id is not None: self.id = id 
     
+    def __del__( self ):
+        self.dispose()
+
     def dispose( self ):
         self._renderer = None
         self._extends = None
@@ -468,7 +471,6 @@ class Template:
             return self._extends.renderBlock(block, data, __i__)
         return ''
         
-    
     def render( self, data, __i__=None ):
         if not __i__: __i__ = self
         __p__ = ''

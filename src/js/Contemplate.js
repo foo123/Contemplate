@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.8.1
+*  @version: 0.8.2
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -36,7 +36,7 @@
         
     "use strict";
     
-    var __version__ = "0.8.1", Contemplate, Template, InlineTemplate, 
+    var __version__ = "0.8.2", Contemplate, Template, InlineTemplate, 
     
         // auxilliaries
         PROTO = 'prototype', HAS = 'hasOwnProperty', 
@@ -45,6 +45,8 @@
         OP = Obj[PROTO], AP = Arr[PROTO], FP = Func[PROTO],
         _toString = OP.toString, slice = FP.call.bind(AP.slice),
         isNode = "undefined" !== typeof(global) && '[object global]' === _toString.call(global),
+        userAgent = "undefined"!==typeof(navigator) ? navigator.userAgent : "",
+        isChrome = /Chrome\//.test(userAgent),
         
         // php-like functions, mostly adapted from phpjs project
         // http://jsperf.com/instanceof-array-vs-array-isarray/6
@@ -70,49 +72,12 @@
         FUNC = function( a, f ) { return new Func( a, f ); },
         RE = function( r, f ) { return new RegExp( r, f||'' ); },
         
-        userAgent = "undefined"!==typeof(navigator) ? navigator.userAgent : "",
-        isChrome = /Chrome\//.test(userAgent),
-        
-        _fs = isNode ? require('fs') : null, 
-        fwrite = _fs ? _fs.writeFileSync : null,
-        fread =  _fs ? _fs.readFileSync : null,
-        fexists = _fs ? _fs.existsSync : null,
-        fstat = _fs ? _fs.statSync : null,
-        realpath = _fs ? _fs.realpathSync : null,
-        fwriteAsync = _fs ? _fs.writeFile : null,
-        freadAsync =  _fs ? _fs.readFile : null,
-        fexistsAsync = _fs ? _fs.exists : null,
-        fstatAsync = _fs ? _fs.stat : null,
-        realpathAsync = _fs ? _fs.realpath : null,
-        
-        //
-        // basic ajax functions
-        //
-        ajaxLoad = function( type, url, params, asyncCB ) {
-            var xmlhttp;
-            if (window.XMLHttpRequest) // code for IE7+, Firefox, Chrome, Opera, Safari
-                xmlhttp = new XMLHttpRequest();
-            else // code for IE6, IE5
-                xmlhttp = new ActiveXObject("Microsoft.XMLHTTP"); // or ActiveXObject("Msxml2.XMLHTTP"); ??
-            
-            if ( asyncCB )
-            {
-                xmlhttp.onload = function( ) {
-                    if ( 200 === xmlhttp.status ) asyncCB( xmlhttp.responseText );
-                    else asyncCB( '' );
-                };
-                xmlhttp.open(type, url, true);  // 'true' makes the request asynchronous
-                xmlhttp.send(params);
-                return '';
-            }
-            else
-            {
-                xmlhttp.open(type, url, false);  // 'false' makes the request synchronous
-                xmlhttp.send(params);
-                if ( 200 === xmlhttp.status ) return xmlhttp.responseText;
-                return '';
-            }
-        }
+        fs = null, XMLHttp = null
+        ,frealpath, frealpath_async
+        ,fexists, fexists_async
+        ,fstat, fstat_async
+        ,fread, fread_async
+        ,fwrite, fwrite_async
         
         ,re_1 = /([\s\S]*?)(&(?:#\d+|#x[\da-f]+|[a-zA-Z][\da-z]*);|$)/g
         ,re_2 = /!/g
@@ -127,6 +92,149 @@
         ,date_words = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sun", "Mon", "Tues", "Wednes", "Thurs", "Fri", "Satur", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
     ;
 
+    if ( isNode )
+    {
+        fs = require('fs');
+        frealpath = function( file ) {
+            return fs.realpathSync(file);
+        };
+        frealpath_async = function( file, cb ) {
+            fs.realpath(file, cb);
+        };
+        fexists = function( file ) {
+            return fs.existsSync(file);
+        };
+        fexists_async = function( file, cb ) {
+            fs.exists(file, cb);
+            return false;
+        };
+        fstat = function( file ) {
+            return fs.statSync(file);
+        };
+        fstat_async = function( file, cb ) {
+            fs.stat(file, cb);
+        };
+        fread = function( file, enc ) {
+            return fs.readFileSync(file, {encoding: enc||'utf8'})/*.toString()*/;
+        };
+        fread_async = function( file, enc, cb ) {
+            fs.readFile(file, {encoding: enc||'utf8'}, cb);
+            return '';
+        };
+        fwrite = function( file, data, enc ) {
+            fs.writeFileSync(file, data, {encoding: enc||'utf8'})/*.toString()*/;
+        };
+        fwrite_async = function( file, data, enc, cb ) {
+            fs.writeFile(file, data, {encoding: enc||'utf8'}, cb);
+        };
+    }
+    else
+    {
+        XMLHttp = window.XMLHttpRequest
+            // code for IE7+, Firefox, Chrome, Opera, Safari
+            ? function( ){return new XMLHttpRequest();}
+            // code for IE6, IE5
+            : function( ){return new ActiveXObject("Microsoft.XMLHTTP");} // or ActiveXObject("Msxml2.XMLHTTP"); ??
+        ;
+        frealpath = function frealpath( file ) {
+            var link, url;
+            if ( !frealpath.link ) frealpath.link = document.createElement('a');
+            // http://stackoverflow.com/a/14781678/3591273
+            // let the browser generate abs path
+            link = frealpath.link;
+            link.href = file;
+            url = link.protocol + "//" + link.host + link.pathname + link.search + link.hash;
+            return url;
+        };
+        frealpath_async = function frealpath_async( file, cb ) {
+            var link, url;
+            if ( !frealpath_async.link ) frealpath_async.link = document.createElement('a');
+            // http://stackoverflow.com/a/14781678/3591273
+            // let the browser generate abs path
+            link = frealpath_async.link;
+            link.href = file;
+            url = link.protocol + "//" + link.host + link.pathname + link.search + link.hash;
+            if ( cb ) cb( url );
+        };
+        fexists = function( file ) {
+            return true;
+        };
+        fexists_async = function( file, cb ) {
+            if ( cb ) cb( true );
+            return true;
+        };
+        fstat = function( file ) {
+            // http://stackoverflow.com/a/5748207/3591273
+            var xmlhttp = XMLHttp( );
+            
+            var mtime, stats = {
+                mtime: false
+            };
+            xmlhttp.open('HEAD', file, false);  // 'false' makes the request synchronous
+            xmlhttp.send(null);
+            if ( 200 === xmlhttp.status )
+            {
+                mtime = new Date(xmlhttp.getResponseHeader('Last-Modified'));
+                if ( mtime.toString() === 'Invalid Date' ) mtime = false;
+                stats.mtime = mtime;
+            }
+            return stats;
+        };
+        fstat_async = function( file, cb ) {
+            // http://stackoverflow.com/a/5748207/3591273
+            var xmlhttp = XMLHttp( );
+            
+            var mtime, stats = {
+                mtime: false
+            };
+            xmlhttp.onload = function( ) {
+                if ( 200 === xmlhttp.status )
+                {
+                    mtime = new Date(xmlhttp.getResponseHeader('Last-Modified'));
+                    if ( mtime.toString() === 'Invalid Date' ) mtime = false;
+                    stats.mtime = mtime;
+                }
+                if ( cb ) cb( stats );
+            };
+            xmlhttp.open('HEAD', file, false);  // 'false' makes the request synchronous
+            xmlhttp.send(null);
+        };
+        fread = function( file, enc ) {
+            var xmlhttp = XMLHttp( );
+            
+            // plain text with enc encoding format
+            enc = enc || 'utf8';
+            xmlhttp.open('GET', file, false);  // 'false' makes the request synchronous
+            xmlhttp.setRequestHeader("Content-Type", "text/plain; charset="+enc+"");
+            xmlhttp.overrideMimeType("text/plain; charset="+enc+"");
+            // http://stackoverflow.com/questions/9855127/setting-xmlhttprequest-responsetype-forbidden-all-of-a-sudden
+            //xmlhttp.responseType = "text";
+            xmlhttp.send(null);
+            return 200 === xmlhttp.status ? xmlhttp.responseText : '';
+        };
+        fread_async = function( file, enc, cb ) {
+            var xmlhttp = XMLHttp( );
+            
+            // plain text with enc encoding format
+            enc = enc || 'utf8';
+            xmlhttp.open('GET', file, true);  // 'true' makes the request asynchronous
+            xmlhttp.setRequestHeader("Content-Type", "text/plain; charset="+enc+"");
+            xmlhttp.overrideMimeType("text/plain; charset="+enc+"");
+            xmlhttp.responseType = "text";
+            xmlhttp.onload = function( ) {
+                var err = 200 !== xmlhttp.status
+                if ( cb ) cb( err, err ? '' : xmlhttp.responseText );
+            };
+            xmlhttp.send(null);
+            return '';
+        };
+        fwrite = function( file, data, enc ) {
+        };
+        fwrite_async = function( file, data, enc, cb ) {
+            if ( cb ) cb( );
+        };
+    }
+    
     /////////////////////////////////////////////////////////////////////////
     //
     //   PHP functions adapted from phpjs project
@@ -956,12 +1064,12 @@
                 else
                 {
                     // nodejs
-                    if ( isNode && _fs ) 
+                    if ( isNode ) 
                     { 
                         if ( $__async && asyncCB )
                         {
                             // async
-                            freadAsync(template[0], { encoding: Contemplate.ENCODING }, function(err, data){
+                            fread_async(template[0], Contemplate.ENCODING, function(err, data){
                                 if ( err ) asyncCB( '' );
                                 else asyncCB( data );
                             }); 
@@ -970,7 +1078,7 @@
                         else
                         {
                             // sync
-                            return fread(template[0], { encoding: Contemplate.ENCODING }); 
+                            return fread(template[0], Contemplate.ENCODING); 
                         }
                     }
                     // client-side js and #id of DOM script-element given as template holder
@@ -994,13 +1102,16 @@
                         if ( $__async && asyncCB )
                         {
                             // async
-                            ajaxLoad('GET', template[0], null, asyncCB); 
+                            fread_async(template[0], Contemplate.ENCODING, function(err, data){
+                                if ( err ) asyncCB( '' );
+                                else asyncCB( data );
+                            }); 
                             return '';
                         }
                         else
                         {
                             // sync
-                            return ajaxLoad('GET', template[0]); 
+                            return fread(template[0], Contemplate.ENCODING); 
                         }
                     }
                 }
@@ -1216,41 +1327,15 @@
             if ( $__strings && $__strings[HAS](id) ) id = $__strings[id];
             var ch = id.charAt(0);
             if ( '"' === ch || "'" === ch ) id = id.slice(1,-1); // quoted id
-            
-            /*
-            // async
-            if ( asyncCB )
+            // cache it
+            if ( !$__partials[id] )
             {
-                // cache it
-                if ( !$__partials[id] )
-                {
-                    getTemplateContents( id, function( text ) {
-                        pushState();
-                        resetState();
-                        $__partials[id] = " " + parse( getSeparators( text ), false ) + "'; " + $__TEOL;
-                        popState();
-                        asyncCB( padLines( $__partials[id] ) );
-                    });
-                }
-                else
-                {
-                    asyncCB( padLines( $__partials[id] ) );
-                }
-                return '';
+                pushState();
+                resetState();
+                $__partials[id] = " " + parse( getSeparators( getTemplateContents( id ) ), false ) + "';" + $__TEOL;
+                popState();
             }
-            // sync
-            else
-            {*/
-                // cache it
-                if ( !$__partials[id] )
-                {
-                    pushState();
-                    resetState();
-                    $__partials[id] = " " + parse( getSeparators( getTemplateContents( id ) ), false ) + "';" + $__TEOL;
-                    popState();
-                }
-                return padLines( $__partials[id] );
-            /*}*/
+            return padLines( $__partials[id] );
         },
         
         // extend another template
@@ -1705,9 +1790,10 @@
             var parts, len, parsed, s, i, isTag,
                 tag, tagTpl, strings, variables, hasVariables, hasStrings, varname, id,
                 countl, index, ch, out, tok, v, tokv, 
-                multisplit = Contemplate.InlineTemplate.multisplit,
+                multisplit_re = Contemplate.InlineTemplate.multisplit_re,
                 special_chars = "$ \n\r\t\v'\"", ind,
-                q, str_, escaped, si, space
+                q, str_, escaped, si, space,
+                str_re = /#STR\d+#/g
             ;
             
             parts = split( tpl, $__leftTplSep, $__rightTplSep );
@@ -1851,7 +1937,7 @@
                     // replace strings (accurately)
                     if ( hasStrings )
                     {
-                        tagTpl = multisplit(tag, Keys(strings), 1);
+                        tagTpl = multisplit_re(tag, str_re);
                         tag = '';
                         for (v=0; v<tagTpl.length; v++)
                         {
@@ -2106,13 +2192,9 @@
         
         setCachedTemplate = function( filename, tplContents, asyncCB ) { 
             if ( asyncCB )
-            {
-                fwriteAsync(filename, tplContents, { encoding: Contemplate.ENCODING }, function(err) {
-                    asyncCB( !err );
-                });
-                return;
-            }
-            return fwrite(filename, tplContents, { encoding: Contemplate.ENCODING }); 
+                fwrite_async(filename, tplContents, Contemplate.ENCODING, asyncCB);
+            else
+                fwrite(filename, tplContents, Contemplate.ENCODING); 
         },
         
         // generated cached tpl class code as a "heredoc" template (for Node cached templates)
@@ -2136,19 +2218,20 @@
     
     // can use inline templates for plugins etc.. to enable non-linear plugin compile-time replacement
     InlineTemplate = function InlineTemplate( tpl, replacements, compiled ) {
-        if ( !(this instanceof InlineTemplate) ) return new InlineTemplate(tpl, replacements, compiled);
-        this.id = null;
-        this._renderer = null;
-        this.tpl = InlineTemplate.multisplit( tpl||'', replacements||{} );
+        var self = this;
+        if ( !(self instanceof InlineTemplate) ) return new InlineTemplate(tpl, replacements, compiled);
+        self.id = null;
+        self._renderer = null;
+        self.tpl = InlineTemplate.multisplit( tpl||'', replacements||{} );
         if ( true === compiled )
         {
-            this._renderer = InlineTemplate.compile( this.tpl );
-            this.render = this._renderer;
+            self._renderer = InlineTemplate.compile( self.tpl );
+            self.render = self._renderer;
         }
         else
         {
-            this._renderer = null; 
-            //this.render = InlineTemplate.prototype.render;
+            self._renderer = null; 
+            //self.render = InlineTemplate.prototype.render;
         }
     };
     InlineTemplate.multisplit = function multisplit( tpl, reps, as_array ) {
@@ -2185,6 +2268,17 @@
         }
         return a;
     };
+    InlineTemplate.multisplit_re = function multisplit_re( tpl, re ) {
+        var a = [ ], i = 0, m;
+        while ( m = re.exec( tpl ) )
+        {
+            a.push([1, tpl.slice(i, re.lastIndex - m[0].length)]);
+            a.push([0, m[1] ? m[1] : m[0]]);
+            i = re.lastIndex;
+        }
+        a.push([1, tpl.slice(i)]);
+        return a;
+    };
     InlineTemplate.compile = function( tpl ) {
         var l = tpl.length, 
             i, notIsSub, s, out = '"use strict";' + "\n" + 'return (';
@@ -2207,17 +2301,19 @@
         ,_renderer: null
         
         ,dispose: function( ) {
-            this.id = null;
-            this.tpl = null;
-            this._renderer = null;
-            return this;
+            var self = this;
+            self.id = null;
+            self.tpl = null;
+            self._renderer = null;
+            return self;
         }
         ,render: function( args ) {
+            var self = this;
             args = args || [ ];
             
-            if ( this._renderer ) return this._renderer( args );
+            if ( self._renderer ) return self._renderer( args );
             
-            var tpl = this.tpl, l = tpl.length,
+            var tpl = self.tpl, l = tpl.length,
                 i, notIsSub, s, out = ''
             ;
             

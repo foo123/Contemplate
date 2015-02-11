@@ -1,5 +1,10 @@
 ###ChangeLog
 
+__0.8.2__
+* InlineTemplate.multisplit_re method, split inlineTpl using regexps
+* Contemplate.php fix undefined __currentblock
+* minor changes
+
 __0.8.1__
 * even faster rendering optimisations (esp. for javascript, reduce rendering function calls by one)
 * minor changes

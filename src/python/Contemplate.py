@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.8.1
+#  @version 0.8.2
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -365,6 +365,22 @@ class InlineTemplate:
             
             a = c
         
+        return a
+    
+    def multisplit_re( tpl, rex ):
+        a = [ ]
+        i = 0
+        m = rex.search(tpl, i)
+        while m:
+            a.append([1, tpl[i:m.start()]])
+            try:
+                mg = m.group(1)
+            except:
+                mg = m.group(0)
+            a.append([0, mg])
+            i = m.end()
+            m = rex.search(tpl, i)
+        a.append([1, tpl[i:]])
         return a
     
     def compile( tpl ): 
@@ -1263,9 +1279,12 @@ def parseVariable( s, i, l ):
     
     return None
 
+str_re = re.compile(r'#STR\d+#', re.M|re.S)
+
 # static
 def parse( tpl, withblocks=True ):
     global _G
+    global str_re
     
     parts = split( tpl, _G.leftTplSep, _G.rightTplSep )
     re_controls = _G.re_controls
@@ -1392,7 +1411,7 @@ def parse( tpl, withblocks=True ):
             
             # replace strings (accurately)
             if hasStrings:
-                tagTpl = Contemplate.InlineTemplate.multisplit(tag, list(strings.keys()), 1)
+                tagTpl = Contemplate.InlineTemplate.multisplit_re(tag, str_re)
                 tag = ''
                 for v in tagTpl:
                     tag += (v[1] if v[0] else strings[ v[1] ])
@@ -1693,7 +1712,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.8.1"
+    VERSION = "0.8.2"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2

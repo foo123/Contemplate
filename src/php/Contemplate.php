@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.8.1
+*  @version: 0.8.2
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -49,6 +49,20 @@ class ContemplateInlineTemplate
             }
             $a = $c;
         }
+        return $a;
+    }
+    
+    public static function multisplit_re( $tpl, $re ) 
+    {
+        $a = array(); 
+        $i = 0; 
+        while ( preg_match($re, $tpl, $m, PREG_OFFSET_CAPTURE, $i) ) 
+        {
+            $a[] = array(1, substr($tpl, $i, $m[0][1]-$i));
+            $a[] = array(0, isset($m[1]) ? $m[1][0] : $m[0][0]);
+            $i = $m[0][1] + strlen($m[0][0]);
+        }
+        $a[] = array(1, substr($tpl, $i));
         return $a;
     }
     
@@ -210,7 +224,7 @@ class ContemplateTemplate
 
 class Contemplate
 {
-    const VERSION = "0.8.1";
+    const VERSION = "0.8.2";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -1759,6 +1773,8 @@ class Contemplate
         $len = count($parts);
         $isTag = false;
         $parsed = '';
+        $str_re = '/#STR\\d+#/';
+        
         for ($i=0; $i<$len; $i++)
         {
             $s = $parts[$i];
@@ -1888,7 +1904,7 @@ class Contemplate
                 // replace strings (accurately)
                 if ( $hasStrings )
                 {
-                    $tagTpl = ContemplateInlineTemplate::multisplit($tag, array_keys($strings), 1);
+                    $tagTpl = ContemplateInlineTemplate::multisplit_re($tag, $str_re);
                     $tag = '';
                     foreach ($tagTpl as $v)
                     {

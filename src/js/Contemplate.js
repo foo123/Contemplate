@@ -43,7 +43,7 @@
         Obj = Object, Arr = Array, Str = String, Func = Function, 
         Keys = Obj.keys, parse_int = parseInt, parse_float = parseFloat,
         OP = Obj[PROTO], AP = Arr[PROTO], FP = Func[PROTO],
-        _toString = OP.toString, slice = FP.call.bind(AP.slice),
+        _toString = OP.toString, slice = AP.slice,
         isNode = "undefined" !== typeof(global) && '[object global]' === _toString.call(global),
         userAgent = "undefined"!==typeof(navigator) ? navigator.userAgent : "",
         isChrome = /Chrome\//.test(userAgent),

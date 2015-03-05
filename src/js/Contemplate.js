@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.8.2
+*  @version: 0.8.2.1
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -36,14 +36,14 @@
         
     "use strict";
     
-    var __version__ = "0.8.2", Contemplate, Template, InlineTemplate, 
+    var __version__ = "0.8.2.1", Contemplate, Template, InlineTemplate, 
     
         // auxilliaries
         PROTO = 'prototype', HAS = 'hasOwnProperty', 
         Obj = Object, Arr = Array, Str = String, Func = Function, 
         Keys = Obj.keys, parse_int = parseInt, parse_float = parseFloat,
         OP = Obj[PROTO], AP = Arr[PROTO], FP = Func[PROTO],
-        _toString = OP.toString, slice = FP.call.bind(AP.slice),
+        _toString = OP.toString, //slice = AP.slice,
         isNode = "undefined" !== typeof(global) && '[object global]' === _toString.call(global),
         userAgent = "undefined"!==typeof(navigator) ? navigator.userAgent : "",
         isChrome = /Chrome\//.test(userAgent),
@@ -2923,7 +2923,8 @@
         
         // Concatenate strings/vars
         concat: function( ) { 
-            return slice( arguments ).join(''); 
+            //return /*AP.*/slice.call( arguments ).join(''); 
+            return AP.join.call( arguments, '' ); 
         },
         
         // Trim strings in templates

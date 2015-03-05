@@ -1,5 +1,9 @@
 ###ChangeLog
 
+__0.8.2.1__
+* Contemplate.js remove Function.bind dependency
+* tag new version
+
 __0.8.2__
 * InlineTemplate.multisplit_re method, split inlineTpl using regexps
 * Contemplate.php fix undefined __currentblock

@@ -994,16 +994,18 @@
             }
             else
             {
-                // tpl separators are defined on 1st (non-empty) line of tpl content
-                lines = text.split( "\n" );
-                while ( lines.length && !trim( lines[ 0 ] ).length ) lines.shift( );
-                if ( lines.length )
-                {
-                    seps = trim( lines.shift( ) ).split( " " );
-                    $__leftTplSep = trim( seps[ 0 ] );
-                    $__rightTplSep = trim( seps[ 1 ] );
+                if( $__leftTplSep == null && $__rightTplSep == null ){
+                    // tpl separators are defined on 1st (non-empty) line of tpl content
+                    lines = text.split( "\n" );
+                    while ( lines.length && !trim( lines[ 0 ] ).length ) lines.shift( );
+                    if ( lines.length )
+                    {
+                        seps = trim( lines.shift( ) ).split( " " );
+                        $__leftTplSep = trim( seps[ 0 ] );
+                        $__rightTplSep = trim( seps[ 1 ] );
+                    }
+                    text = lines.join( "\n" );
                 }
-                text = lines.join( "\n" );
             }
             return text;
         },

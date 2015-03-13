@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.8.2.1
+*  @version: 0.8.3
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -36,7 +36,7 @@
         
     "use strict";
     
-    var __version__ = "0.8.2.1", Contemplate, Template, InlineTemplate, 
+    var __version__ = "0.8.3", Contemplate, Template, InlineTemplate, 
     
         // auxilliaries
         PROTO = 'prototype', HAS = 'hasOwnProperty', 
@@ -1793,7 +1793,8 @@
                 multisplit_re = Contemplate.InlineTemplate.multisplit_re,
                 special_chars = "$ \n\r\t\v'\"", ind,
                 q, str_, escaped, si, space,
-                str_re = /#STR\d+#/g
+                str_re = /#STR\d+#/g, 
+                blockTag, hasBlock, notFoundBlock
             ;
             
             parts = split( tpl, $__leftTplSep, $__rightTplSep );
@@ -1814,6 +1815,7 @@
                     strings = {};
                     hasVariables = false; 
                     hasStrings = false;
+                    hasBlock = false;
                     index = 0; 
                     space = 0;
                     ch = ''; 
@@ -1912,14 +1914,27 @@
                     // replace constructs, functions, etc..
                     tag = tag.replace( re_controls, parseConstructs );
                     
+                    // check for blocks
+                    if ( $__startblock )
+                    {
+                        $__startblock = "#|"+$__startblock+"|#";
+                        hasBlock = true;
+                    }
+                    else if ( $__endblock )
+                    {
+                        $__endblock = "#|/"+$__endblock+"|#";
+                        hasBlock = true;
+                    }
+                    notFoundBlock = hasBlock;
+                    
                     // replacements
                     /*.replace( re_repls, "' + ($1) + '" );*/
                     if ( 9 === tag.charCodeAt(0) && 11 === tag.charCodeAt(tag.length-1) ) 
                         tag = "' + ("+tag.slice(1,-1)+") + '";
                     
-                    // replace variables
                     if ( hasVariables )
                     {
+                        // replace variables
                         for (v=variables.length-1; v>=0; v--)
                         {
                             id = variables[ v ][ 0 ]; varname = variables[ v ][ 1 ];
@@ -1934,31 +1949,71 @@
                         }
                     }
                     
-                    // replace strings (accurately)
                     if ( hasStrings )
                     {
+                        // replace strings (accurately)
                         tagTpl = multisplit_re(tag, str_re);
                         tag = '';
                         for (v=0; v<tagTpl.length; v++)
                         {
-                            tag += (tagTpl[v][0] ? tagTpl[v][1] : strings[ tagTpl[v][1] ]);
+                            if ( tagTpl[v][0] )
+                            {
+                                // and replace blocks (accurately)
+                                if ( notFoundBlock )
+                                {
+                                    if ( $__startblock )
+                                    {
+                                        blockTag = tagTpl[v][1].indexOf( $__startblock );
+                                        if ( -1 !== blockTag )
+                                        {
+                                            $__allblocks[ $__blockptr-1 ][ 1 ] = blockTag + parsed.length + tag.length;
+                                            notFoundBlock = false;
+                                        }
+                                    }
+                                    else //if ( $__endblock )
+                                    {
+                                        blockTag = tagTpl[v][1].indexOf( $__endblock );
+                                        if ( -1 !== blockTag )
+                                        {
+                                            $__allblocks[ $__blockptr-1 ][ 2 ] = blockTag + parsed.length + tag.length + $__endblock.length;
+                                            notFoundBlock = false;
+                                        }
+                                    }
+                                }
+                                tag += tagTpl[v][1];
+                            }
+                            else
+                            {
+                                tag += strings[ tagTpl[v][1] ];
+                            }
                         }
+                    }
+                    else if ( hasBlock )
+                    {
+                        // replace blocks (accurately)
+                        if ( $__startblock )
+                            $__allblocks[ $__blockptr-1 ][ 1 ] = parsed.length + tag.indexOf( $__startblock );
+                        else //if ( $__endblock )
+                            $__allblocks[ $__blockptr-1 ][ 2 ] = parsed.length + tag.indexOf( $__endblock ) + $__endblock.length;
                     }
                     
                     // replace tpl separators
-                    if ( /*"\v"*/11 === tag.charCodeAt(tag.length-1) ) tag = tag.slice(0,-1) + padLines($__tplEnd);
-                    if ( /*"\t"*/9 === tag.charCodeAt(0) ) tag = $__tplStart + tag.slice(1);
-                    
-                    // replace blocks
-                    if ( $__startblock )
+                    if ( /*"\v"*/11 === tag.charCodeAt(tag.length-1) ) 
                     {
-                        $__startblock = "#|"+$__startblock+"|#";
-                        $__allblocks[ $__blockptr-1 ][ 1 ] = parsed.length + tag.indexOf( $__startblock );
+                        tag = tag.slice(0,-1) + padLines($__tplEnd);
                     }
-                    else if ( $__endblock )
+                    if ( /*"\t"*/9 === tag.charCodeAt(0) ) 
                     {
-                        $__endblock = "#|/"+$__endblock+"|#";
-                        $__allblocks[ $__blockptr-1 ][ 2 ] = parsed.length + tag.indexOf( $__endblock ) + $__endblock.length;
+                        tag = $__tplStart + tag.slice(1);
+                        if ( hasBlock )
+                        {
+                            // update blocks (accurately)
+                            blockTag = $__tplStart.length-1;
+                            if ( $__startblock )
+                                $__allblocks[ $__blockptr-1 ][ 1 ] += blockTag;
+                            else //if ( $__endblock )
+                                $__allblocks[ $__blockptr-1 ][ 2 ] += blockTag;
+                        }
                     }
                     
                     s = tag;

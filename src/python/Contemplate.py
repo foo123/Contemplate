@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.8.2.1
+#  @version 0.8.3
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -1307,6 +1307,7 @@ def parse( tpl, withblocks=True ):
             strings = {}
             hasVariables = False
             hasStrings = False
+            hasBlock = False
             space = 0
             
             while ( index < count ):
@@ -1393,12 +1394,21 @@ def parse( tpl, withblocks=True ):
             # replace constructs, functions, etc..
             tag = re.sub(re_controls, parseConstructs, tag)
             
+            # check for blocks
+            if _G.startblock:
+                _G.startblock = "#|"+_G.startblock+"|#"
+                hasBlock = True
+            elif _G.endblock:
+                _G.endblock = "#|/"+_G.endblock+"|#"
+                hasBlock = True
+            notFoundBlock = hasBlock
+            
             # replacements
             if "\t" == tag[0] and "\v" == tag[-1]: 
                 tag = "' + str("+tag[1:-1]+") + '"
             
-            # replace variables
             if hasVariables:
+                # replace variables
                 for v in reversed(variables):
                     id = v[0]
                     varname = v[1]
@@ -1409,26 +1419,49 @@ def parse( tpl, withblocks=True ):
                         tag = tag.replace( id, v[2]+v[3] )
             
             
-            # replace strings (accurately)
             if hasStrings:
+                # replace strings (accurately)
                 tagTpl = Contemplate.InlineTemplate.multisplit_re(tag, str_re)
                 tag = ''
                 for v in tagTpl:
-                    tag += (v[1] if v[0] else strings[ v[1] ])
+                    if v[0]:
+                        # and replace blocks (accurately)
+                        if notFoundBlock:
+                            if _G.startblock:
+                                blockTag = v[1].find( _G.startblock )
+                                if -1 != blockTag:
+                                    _G.allblocks[ _G.blockptr-1 ][ 1 ] = blockTag + len(parsed) + len(tag)
+                                    notFoundBlock = False
+                            else: #if _G.endblock:
+                                blockTag = v[1].find( _G.endblock )
+                                if -1 != blockTag:
+                                    _G.allblocks[ _G.blockptr-1 ][ 2 ] = blockTag + len(parsed) + len(tag) + len(_G.endblock)
+                                    notFoundBlock = False
+                        tag += v[1]
+                    else:
+                        tag += strings[ v[1] ]
+            elif hasBlock:
+                # replace blocks (accurately)
+                if _G.startblock:
+                    _G.allblocks[ _G.blockptr-1 ][ 1 ] = len(parsed) + tag.find( _G.startblock )
+                else: #if _G.endblock:
+                    _G.allblocks[ _G.blockptr-1 ][ 2 ] = len(parsed) + tag.find( _G.endblock ) + len(_G.endblock)
             
             
             # replace tpl separators
-            if "\v" == tag[-1]: tag = tag[0:-1] + padLines(_G.tplEnd)
-            if "\t" == tag[0]: tag = _G.tplStart + tag[1:]
-            
-            # replace blocks
-            if _G.startblock:
-                _G.startblock = "#|"+_G.startblock+"|#"
-                _G.allblocks[ _G.blockptr-1 ][ 1 ] = len(parsed) + tag.find( _G.startblock )
-            elif _G.endblock:
-                _G.endblock = "#|/"+_G.endblock+"|#"
-                _G.allblocks[ _G.blockptr-1 ][ 2 ] = len(parsed) + tag.find( _G.endblock ) + len(_G.endblock)
+            if "\v" == tag[-1]: 
+                tag = tag[0:-1] + padLines(_G.tplEnd)
+            if "\t" == tag[0]: 
+                tag = _G.tplStart + tag[1:]
+                if hasBlock:
+                    # update blocks (accurately)
+                    blockTag = len(_G.tplStart)-1
+                    if _G.startblock:
+                        _G.allblocks[ _G.blockptr-1 ][ 1 ] += blockTag
+                    else: #if _G.endblock:
+                        _G.allblocks[ _G.blockptr-1 ][ 2 ] += blockTag
                     
+            
             s = tag
             
             isTag = False
@@ -1712,7 +1745,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.8.2.1"
+    VERSION = "0.8.3"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2

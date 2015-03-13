@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.8.2.1
+*  @version: 0.8.3
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -224,7 +224,7 @@ class ContemplateTemplate
 
 class Contemplate
 {
-    const VERSION = "0.8.2.1";
+    const VERSION = "0.8.3";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -1791,6 +1791,7 @@ class Contemplate
                 $strings = array();
                 $hasVariables = false;
                 $hasStrings = false;
+                $hasBlock = false;
                 $space = 0;
                 
                 while ( $index < $count )
@@ -1882,13 +1883,26 @@ class Contemplate
                 // directives and control constructs, functions, etc..
                 $tag = preg_replace_callback( $re_controls, $parseConstructs, $tag );
                 
+                // check for blocks
+                if ( self::$__startblock )
+                {
+                    self::$__startblock = "#|".self::$__startblock."|#";
+                    $hasBlock = true;
+                }
+                elseif ( self::$__endblock )
+                {
+                    self::$__endblock = "#|/".self::$__endblock."|#";
+                    $hasBlock = true;
+                }
+                $notFoundBlock = $hasBlock;
+                    
                 // other replacements
                 if ( "\t" === $tag[0] && "\v" === $tag[strlen($tag)-1] ) 
                     $tag = '\' . (' . substr($tag,1,-1) . ') . \'';
                 
-                // replace variables
                 if ( $hasVariables )
                 {
+                    // replace variables
                     $lr = count($variables);
                     for($v=$lr-1; $v>=0; $v--)
                     {
@@ -1901,31 +1915,71 @@ class Contemplate
                     }
                 }
                 
-                // replace strings (accurately)
                 if ( $hasStrings )
                 {
+                    // replace strings (accurately)
                     $tagTpl = ContemplateInlineTemplate::multisplit_re($tag, $str_re);
                     $tag = '';
                     foreach ($tagTpl as $v)
                     {
-                        $tag .= $v[0] ? $v[1] : $strings[ $v[1] ];
+                        if ( $v[0] )
+                        {
+                            // and replace blocks (accurately)
+                            if ( $notFoundBlock )
+                            {
+                                if ( self::$__startblock )
+                                {
+                                    $blockTag = strpos($v[1], self::$__startblock);
+                                    if ( false !== $blockTag )
+                                    {
+                                        self::$__allblocks[ self::$__blockptr-1 ][ 1 ] = $blockTag + strlen($parsed) + strlen($tag);
+                                        $notFoundBlock = false;
+                                    }
+                                }
+                                else //if ( self::$__endblock )
+                                {
+                                    $blockTag = strpos($v[1], self::$__endblock);
+                                    if ( false !== $blockTag )
+                                    {
+                                        self::$__allblocks[ self::$__blockptr-1 ][ 2 ] = $blockTag + strlen($parsed) + strlen($tag) + strlen(self::$__endblock);
+                                        $notFoundBlock = false;
+                                    }
+                                }
+                            }
+                            $tag .= $v[1];
+                        }
+                        else
+                        {
+                            $tag .= $strings[ $v[1] ];
+                        }
                     }
+                }
+                elseif ( $hasBlock )
+                {
+                    // replace blocks (accurately)
+                    if ( self::$__startblock )
+                        self::$__allblocks[ self::$__blockptr-1 ][ 1 ] = strlen($parsed) + strpos($tag, self::$__startblock );
+                    else //if ( self::$__endblock )
+                        self::$__allblocks[ self::$__blockptr-1 ][ 2 ] = strlen($parsed) + strpos($tag, self::$__endblock ) + strlen(self::$__endblock);
                 }
                 
                 // replace tpl separators
-                if ( "\v" === $tag[strlen($tag)-1] ) $tag = substr($tag,0,-1) . self::padLines( self::$__tplEnd );
-                if ( "\t" === $tag[0] ) $tag = self::$__tplStart . substr($tag,1);
-                
-                // replace blocks
-                if ( self::$__startblock )
+                if ( "\v" === $tag[strlen($tag)-1] ) 
                 {
-                    self::$__startblock = "#|".self::$__startblock."|#";
-                    self::$__allblocks[ self::$__blockptr-1 ][ 1 ] = strlen($parsed) + strpos($tag, self::$__startblock);
+                    $tag = substr($tag,0,-1) . self::padLines( self::$__tplEnd );
                 }
-                elseif ( self::$__endblock )
+                if ( "\t" === $tag[0] ) 
                 {
-                    self::$__endblock = "#|/".self::$__endblock."|#";
-                    self::$__allblocks[ self::$__blockptr-1 ][ 2 ] = strlen($parsed) + strpos($tag, self::$__endblock) + strlen(self::$__endblock);
+                    $tag = self::$__tplStart . substr($tag,1);
+                    if ( $hasBlock )
+                    {
+                        // update blocks (accurately)
+                        $blockTag = strlen(self::$__tplStart)-1;
+                        if ( self::$__startblock )
+                            self::$__allblocks[ self::$__blockptr-1 ][ 1 ] += $blockTag;
+                        else //if ( self::$__endblock )
+                            self::$__allblocks[ self::$__blockptr-1 ][ 2 ] += $blockTag;
+                    }
                 }
                     
                 $s = $tag;

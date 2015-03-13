@@ -1,5 +1,9 @@
 ###ChangeLog
 
+__0.8.3__
+* refined BlockTag parsing (accurately parse blockTag, regardless of strings)
+* test examples provide a Contemplate tutorial, API reference as well
+
 __0.8.2.1__
 * Contemplate.js remove Function.bind dependency
 * tag new version

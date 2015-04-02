@@ -57,6 +57,9 @@ There are a couple of other frameworks named also _contemplate_
 * [Examples/Screenshots](#screenshots)
 
 
+**If you use Contemplate in your application and you want to share it, feel free to submit an example link**
+
+
 ###Rationale
 
 There are many templating engines out there, which are elegant, fast, multipurpose (eg. _smarty_ _mustache_  _twig_  _swig_ _handlebars_  _jade_  _doT_ and so on..)

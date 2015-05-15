@@ -70,7 +70,7 @@ def definition():
         return '[[' + str(v) + ']]'
     Contemplate.bracket = bracketFunc
 definition()    
-Contemplate.addPlugin('inlinedBracket', Contemplate.inline('Contemplate.bracket',None,False))
+Contemplate.addPlugin('inlinedBracket', Contemplate.inline('Contemplate.bracket($args)',{'$args':'args'},False))
 
 # set the cache directory (make sure to exist)
 Contemplate.setCacheDir('./_tplcache')

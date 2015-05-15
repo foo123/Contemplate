@@ -1,5 +1,9 @@
 ###ChangeLog
 
+__0.8.4__
+* inlined plugins replace code accept the plugin arguments as well
+* fix subsequent plugin calls in templates, are not parsed/rendered correctly (php)
+
 __0.8.3__
 * refined BlockTag parsing (accurately parse blockTag, regardless of strings)
 * test examples provide a Contemplate tutorial, API reference as well

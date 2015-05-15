@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.8.3
+#  @version 0.8.4
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -1016,15 +1016,17 @@ def parseConstructs( match ):
     m = _G.re_plugin.match( ctrl )
     if m:
         plugin = m.group(2) 
-        if plugin and plugin in _G.plugins:
-            pl = _G.plugins[plugin]
-            args = re.sub(re_controls, parseConstructs, args)
-            if isinstance(pl,Contemplate.InlineTemplate):
-                out = pl.render() + '(' + args + ')'
-            else: 
-                out = pl + '(' + args + ')'
-            rest = re.sub(re_controls, parseConstructs, rest)
-            return prefix + out + rest
+        if plugin:
+            plugin = 'plg_' + plugin
+            if plugin in _G.plugins:
+                pl = _G.plugins[plugin]
+                args = re.sub(re_controls, parseConstructs, args)
+                if isinstance(pl,Contemplate.InlineTemplate):
+                    out = pl.render({'args':args})
+                else: 
+                    out = pl + '(' + args + ')'
+                rest = re.sub(re_controls, parseConstructs, rest)
+                return prefix + out + rest
     
     return match.group(0)
 
@@ -1745,7 +1747,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.8.3"
+    VERSION = "0.8.4"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -1979,9 +1981,9 @@ class Contemplate:
         global _G
         name = str(name)
         if isinstance(pluginCode, Contemplate.InlineTemplate):
-            _G.plugins[ name ] = pluginCode
+            _G.plugins[ 'plg_' + name ] = pluginCode
         else:
-            _G.plugins[ name ] = 'Contemplate.plg_' + name
+            _G.plugins[ 'plg_' + name ] = 'Contemplate.plg_' + name
             setattr(Contemplate, 'plg_' + name, pluginCode)
     
     # static

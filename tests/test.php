@@ -44,7 +44,7 @@ function bracket($v=null)
 {
     return '[[' . $v . ']]';
 }
-Contemplate::addPlugin('inlinedBracket', Contemplate::inline('bracket',null,false));
+Contemplate::addPlugin('inlinedBracket', Contemplate::inline('bracket($args)',array('$args'=>'args'),false));
 
 // set the cache directory (make sure to exist)
 Contemplate::setCacheDir(ABSPATH.'/_tplcache');

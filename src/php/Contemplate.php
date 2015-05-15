@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.8.3
+*  @version: 0.8.4
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -224,7 +224,7 @@ class ContemplateTemplate
 
 class Contemplate
 {
-    const VERSION = "0.8.3";
+    const VERSION = "0.8.4";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -595,7 +595,7 @@ class Contemplate
     // add custom plugins as template functions
     public static function addPlugin( $name, $pluginCode ) 
     {
-        self::$__plugins[ $name ] = $pluginCode;
+        self::$__plugins[ 'plg_' . $name ] = $pluginCode;
     }
     
     // custom php code to add to start of template (eg custom access checks etc..)
@@ -1499,19 +1499,19 @@ class Contemplate
             return $prefix . $out . $rest;
         }
         
-        if ( preg_match(self::$re_plugin, $ctrl, $m) && isset($m[2]) && isset(self::$__plugins[$m[2]]) )
+        if ( preg_match(self::$re_plugin, $ctrl, $m) && isset($m[2]) && isset(self::$__plugins['plg_' . $m[2]]) )
         {
             // allow custom plugins as template functions
-            $pl = self::$__plugins[$m[2]];
+            $pl = self::$__plugins['plg_' . $m[2]];
             $args = preg_replace_callback( $re_controls, array(__CLASS__, 'parseConstructs'), $args );
             if ( $pl instanceof ContemplateInlineTemplate )
             {
-                $out = $pl->render( ) . '(' . $args . ')';
+                $out = $pl->render(array('args'=>$args));
             }
             else
             {
-                self::$__plugins['plg_' . $m[2]] = $pl;
-                unset(self::$__plugins[$m[2]]);
+                /*self::$__plugins['plg_' . $m[2]] = $pl;
+                unset(self::$__plugins[$m[2]]);*/
                 $out = 'Contemplate::plg_' . $m[2] . '(' . $args . ')';
             }
             $rest = preg_replace_callback( $re_controls, array(__CLASS__, 'parseConstructs'), $rest );

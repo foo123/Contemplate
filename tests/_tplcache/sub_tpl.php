@@ -8,12 +8,13 @@ final class Contemplate_sub_Cached extends ContemplateTemplate
     /* constructor */
     public function __construct($id=null)
     {
+        $self = $this;
         /* initialize internal vars */
-        $this->_renderer = null;
-        $this->_extends = null;
-        $this->_blocks = null;
-        $this->id = null; 
-        $this->id = $id;
+        $self->_renderer = null;
+        $self->_extends = null;
+        $self->_blocks = null;
+        $self->id = null;
+        $self->id = $id;
         
         /* extend tpl assign code starts here */
         
@@ -27,21 +28,23 @@ final class Contemplate_sub_Cached extends ContemplateTemplate
     /* tpl renderBlock method */
     public function renderBlock($block, &$data, $__i__=null)
     {
-        if ( !$__i__ ) $__i__ = $this;
+        $self = $this;
+        if ( !$__i__ ) $__i__ = $self;
         $method = '_blockfn_' . $block;
-        if ( method_exists($this, $method) ) return $this->{$method}($data, $__i__);
-        elseif ( $this->_extends ) return $this->_extends->renderBlock($block, $data, $__i__);
+        if ( method_exists($self, $method) ) return $self->{$method}($data, $self, $__i__);
+        elseif ( $self->_extends ) return $self->_extends->renderBlock($block, $data, $__i__);
         return '';
     }
     
     /* tpl render method */
     public function render(&$data, $__i__=null)
     {
-        if ( !$__i__ ) $__i__ = $this;
+        $self = $this;
+        if ( !$__i__ ) $__i__ = $self;
         $__p__ = '';
-        if ( $this->_extends )
+        if ( $self->_extends )
         {
-            $__p__ = $this->_extends->render($data, $__i__);
+            $__p__ = $self->_extends->render($data, $__i__);
         }
         else
         {

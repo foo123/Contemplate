@@ -20,21 +20,23 @@ var http = require('http'), httpPort = 1337,
     Read = fs.readFile,
     echo = console.log,
     Contemplate = require(path.join(__dirname, '../src/js/Contemplate.js'))
+    ContemplateHTMLPlugin = require(path.join(__dirname, '../src/js/plugins/ContemplateHTMLPlugin.js'))
 ;
 
 
-Contemplate.setLocaleStrings({
+Contemplate.setLocales({
     "locale": "γλωσσική περιοχή"
 });
 Contemplate.setPlurals({
     'item': null // auto plural
 });
 
-Contemplate.addPlugin('test', function(v){
+ContemplateHTMLPlugin.hook(Contemplate);
+Contemplate.addPlugin('plg_test', function(v){
     if ( v ) return 'Plugin Test value: ' + v;
     return 'Plugin Test no value given';
 });
-Contemplate.addPlugin('print', function(v){
+Contemplate.addPlugin('plg_print', function(v){
     return '<pre>' + JSON.stringify(v, null, 4) + '</pre>';
 });
 global.bracket = function(v)
@@ -57,7 +59,7 @@ Contemplate.add({
     'sub' : path.join(__dirname, '/_tpls/sub.tpl.html'),
     'date' : path.join(__dirname, '/_tpls/date.tpl.html'),
     // add an inline template
-    'inlinetpl' : ['<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>']
+    'inlinetpl' : ['<% %super("block") %><% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>']
 });
 
 /*console.log(Contemplate.parseTpl( '<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>' ));*/

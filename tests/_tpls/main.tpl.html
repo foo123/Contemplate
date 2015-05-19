@@ -17,6 +17,7 @@
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <script src="./js/Contemplate.min.js"></script>
+        <script src="./js/ContemplateHTMLPlugin.js"></script>
         <script type="text/html" id="sub_tpl">
          <% $templates["sub"] %>
         </script>
@@ -42,7 +43,7 @@
         <strong>Contemplate.VERSION (client) = <span id="version">0</span></strong><br /><br />
         <div id="results_client"></div>
         <script>
-            Contemplate.setLocaleStrings({
+            Contemplate.setLocales({
                 "locale": "γλωσσική περιοχή"
             });
             Contemplate.setPlurals({
@@ -56,11 +57,12 @@
                 "sub" : "#sub_tpl", // load the template from this DOM element
                 'date': "./_tpls/date.tpl.html" // load the template from this url using ajax (slower)
             });
-            Contemplate.addPlugin('test', function(v){
+            ContemplateHTMLPlugin.hook(Contemplate);
+            Contemplate.addPlugin('plg_test', function(v){
                 if ( v ) return 'Plugin Test value: ' + v;
                 return 'Plugin Test no value given';
             });
-            Contemplate.addPlugin('print', function(v){
+            Contemplate.addPlugin('plg_print', function(v){
                 return '<pre>' + JSON.stringify(v, null, 4) + '</pre>';
             });
             window.bracket = function(v)

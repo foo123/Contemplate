@@ -14,12 +14,13 @@
     /* constructor */
     function Contemplate_sub_Cached(id)
     {
+        var self = this;
         /* initialize internal vars */
         
-        this._renderer = null;
-        this._blocks = null;
-        this._extends = null;
-        this.id = id || null;
+        self._renderer = null;
+        self._blocks = null;
+        self._extends = null;
+        self.id = id || null;
         
         /* tpl-defined blocks render code starts here */
         
@@ -35,8 +36,8 @@
     /* tpl render method */
     Contemplate_sub_Cached.prototype.render = function( data, __i__ ) {
         "use strict";
-        var __p__ = '';
-        __i__ = __i__ || this;
+        var self = this, __p__ = '';
+        __i__ = __i__ || self;
         /* tpl main render code starts here */
         
         __p__ += '<div>' + "\n" + '    <br />' + "\n" + '    <strong>Number of Items:' + (Contemplate.count(data.users[data.i])) + '</strong>' + "\n" + '    <br />' + "\n" + '    ';

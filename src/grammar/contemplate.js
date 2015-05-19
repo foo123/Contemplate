@@ -53,8 +53,8 @@ var contemplate_grammar = {
             
             // operators
             "operator" : [
-                "+", "-", "*", "/", "%", "<", ">", "!", "=",
-                "=>", "==", "!=", "<=", ">=", "<>", "||", "&&"
+                "+", "-", "*", "/", "%", "<", ">", "!", 
+                "==", "!=", "<=", ">=", "<>", "=", "||", "&&", "|", "&"
             ],
             
             // atoms
@@ -69,24 +69,7 @@ var contemplate_grammar = {
             ],
                                   
             // template functions, plugins, aliases, etc..
-            "function" : [
-                "RegExp::/%(plg|plugin)_[a-zA-Z0-9_]+/",
-                [
-                    '%s', '%n', '%f', '%q', '%dq'
-                    ,'%echo', '%time', '%count'
-                    ,'%lowercase', '%uppercase', '%ucfirst', '%lcfirst', '%sprintf'
-                    ,'%date', '%ldate', '%locale', '%pluralise'
-                    ,'%inline', '%tpl', '%uuid', '%haskey'
-                    ,'%concat', '%ltrim', '%rtrim', '%trim', '%addslashes', '%stripslashes'
-                    ,'%camelcase', '%snakecase'
-                    ,'%e','%html', '%url'
-                    ,'%htmlselect', '%htmltable'
-                    // aliases
-                    ,'%l'
-                    ,'%now'
-                    ,'%template'
-                ]
-            ]
+            "function" : "RegExp::/%[a-zA-Z_][a-zA-Z0-9_]*/"
         },
     
         // what to parse and in what order

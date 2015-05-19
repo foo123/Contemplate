@@ -14,20 +14,21 @@
     /* constructor */
     function Contemplate_base_Cached(id)
     {
+        var self = this;
         /* initialize internal vars */
         
-        this._renderer = null;
-        this._blocks = null;
-        this._extends = null;
-        this.id = id || null;
+        self._renderer = null;
+        self._blocks = null;
+        self._extends = null;
+        self.id = id || null;
         
         /* tpl-defined blocks render code starts here */
         
-        this._blocks = { 
+        self._blocks = { 
             
             
             /* tpl block render method for block 'Block3' */
-            'Block3': function( Contemplate, data, __i__ ) {
+            'Block3': function( Contemplate, data, self, __i__ ) {
                 "use strict";
                 var __p__ = '';
                 
@@ -39,11 +40,11 @@
             
             
             /* tpl block render method for block 'Block2' */
-            'Block2': function( Contemplate, data, __i__ ) {
+            'Block2': function( Contemplate, data, self, __i__ ) {
                 "use strict";
                 var __p__ = '';
                 
-                __p__ += 'Base template Block2';
+                __p__ += 'Base template Block2' + "\n" + '<!-- call the super block here in OO manner, if any -->' + "\n" + '' + (self.renderSuperBlock("Block2", data, __i__)) + '' + "\n" + '';
                 return __p__;
                 
             }
@@ -51,7 +52,7 @@
             
             
             /* tpl block render method for block 'Block12' */
-            'Block12': function( Contemplate, data, __i__ ) {
+            'Block12': function( Contemplate, data, self, __i__ ) {
                 "use strict";
                 var __p__ = '';
                 
@@ -63,7 +64,7 @@
             
             
             /* tpl block render method for block 'Block11' */
-            'Block11': function( Contemplate, data, __i__ ) {
+            'Block11': function( Contemplate, data, self, __i__ ) {
                 "use strict";
                 var __p__ = '';
                 
@@ -75,7 +76,7 @@
             
             
             /* tpl block render method for block 'Block1' */
-            'Block1': function( Contemplate, data, __i__ ) {
+            'Block1': function( Contemplate, data, self, __i__ ) {
                 "use strict";
                 var __p__ = '';
                 
@@ -100,8 +101,8 @@
     /* tpl render method */
     Contemplate_base_Cached.prototype.render = function( data, __i__ ) {
         "use strict";
-        var __p__ = '';
-        __i__ = __i__ || this;
+        var self = this, __p__ = '';
+        __i__ = __i__ || self;
         /* tpl main render code starts here */
         
         __p__ += '<!-- this is the base template -->' + "\n" + '' + "\n" + '<strong>This is the base template</strong>' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block1</strong><br />' + "\n" + '' +  __i__.renderBlock('Block1', data);

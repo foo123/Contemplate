@@ -1,7 +1,7 @@
 Contemplate
 ===========
 
-__Light-weight, fast and flexible template engine for PHP, Python, Node and client-side JavaScript, ActionScript(TODO)__
+__Light-weight, fast and flexible "object-oriented" template engine for PHP, Python, Node and client-side JavaScript, ActionScript(TODO)__
 
 
 ![Contemplate](/screenshots/contemplate.jpg)
@@ -99,17 +99,19 @@ and trying to contain the needed functionality inside the common language subset
 * Most of the time this can be accomplished, the rest functionality is built with __custom functions__ which mostly resemble the PHP
 syntax, yet work the same in all the engine's implementations.
 
-* Engine Implementations for __PHP__ , __Python__ , __Node__  and __client-side JavaScript__
+* __Uniform functionality__, Engine Implementations for __PHP__ , __Python__ , __Node__  and __client-side JavaScript__
 
 * Simple and __light-weight__ ( only one relatively small class for each implementation, no other dependencies ) ~30kB minified, ~11kB zipped
 
 * __Fast__ , can cache templates dynamically (filesystem caching has 3 modes, __NONE__ which uses only in-memory caching, __NOUPDATE__ which caches the templates only once and __AUTOUPDATE__ which re-creates the cached template if original template has changed, useful for debugging)
 
-* Generated cached template code is __formatted and annotated__ with comments, for easy debugging (note: javascript cached templates are UMD modules which can be used in both node/AMD/browser)
+* Generated cached template code is __formatted and annotated__ with comments, for easy debugging (note: javascript cached templates are **UMD modules** which can be used in both node/AMD/browser)
 
 * Syntax __close to PHP__ (there was an effort to keep the engine syntax as close to PHP syntax as possible, to avoid learning another language syntax)
 
 * Easily __extensible__ , __configurable__
+
+* __Object-oriented__ , templates implement **inheritance** and **polymorphism** in an almost full *object-oriented* manner (see below)
 
 * __Localization__ , __Pluralisation__ , __Date formatting__ built-in and configurable easily ( simple __Data escaping__  is also supported)
 
@@ -119,15 +121,19 @@ syntax, yet work the same in all the engine's implementations.
 
 * Templates can __include__ other templates (similar to PHP _include_ directive), these includes wil be compiled into the the template that called them
 
-* Templates can *call another template* using __template__ directive, these templates are called as templates subroutines and parsed by themselves
+* Templates can *call another template* using __tpl__ function, these templates are called as templates subroutines and parsed by themselves
 
 * Templates and template functions can also have **inline templates** as parameters via __inline__ template function
 
 * __Template Inheritance__ , templates can *extend/inherit other templates* using __extends__ directive and *override blocks* using __block__ , __endblock__ directives (see examples)
 
-* __Nested Blocks__ , *template blocks* can be nested and repeated in multiple ways
+* __Direct Super reference__ , templates can use the __super__ template function to directly reference (and call) a super block if needed in OO manner (see examples)
 
-* __Custom Plugins__ , can be used as template functions to enhance/extend the engine functionality
+* __Nested Blocks__ , *template blocks* can be nested and repeated in multiple ways (see examples)
+
+* __Custom Plugins__ , can be used as template functions to enhance/extend the engine functionality (see examples)
+
+* **custom plugins can be also inlined**, i.e their code can be **expanded at compile-time** using *Comntemplate::inline* templates in their definition, e.g saving unnecessary look-ups at render-time (see examples)
 
 
 ###Dependencies
@@ -142,7 +148,7 @@ syntax, yet work the same in all the engine's implementations.
 ###Todo
 
 * support asynchronous template loading/rendering for node/browser
-* add Contemplate implementations for Perl, Java, Scala
+* add Contemplate implementations for ActionScript, Perl, Java, Scala
 * transform Contemplate (for PHP) into a PHP C-extension, Contemplate (for node) into standalone executable (eg. https://github.com/crcn/nexe)
 * keep-up with php, node, browsers, python updates
 

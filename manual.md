@@ -1,6 +1,9 @@
 ###Manual - Keywords Reference
 
 
+**version 0.9**
+
+
 __Template Separators__
 
 
@@ -125,23 +128,6 @@ __Template Directives / Control Constructs__
 
 
 
-###Differences between 'include' and 'tpl'/'template' directives
-The main difference is that __include__ will actually copy the subtemplate contents inside the calling template (thus only one final template is generated). This is similar to PHP's _include_ directive.
-
-On the contrary __tpl__ directive will call and parse a subtemplate on its own (so the data need to be passed also). In this case each subtemplate will be compiled on its own and exist in the cache.
-
-When the templates are already cached, the relative performance of these directives is similar. __include__ tends to be slightly faster since it generates only a single template, while __template__ will generate all needed templates. However if a subtemplate has been changed and is embedded in another template using __include__ , the calling template will __NOT__ be refreshed. While if __template__ is used, the calling template __WILL__ be refreshed (since the subtemplate is called as a subroutine and not copied literally inside the calling template)
-
-The syntax for __include__ is this:  %include(subtemplateId)
-
-The syntax for __tpl__ / __template__ is this: %tpl(subtemplateId, {"var1":$value1, "var2":$value2, ..}) 
-
-where the {"var1":$value1, "var2":$value2, ..} are the data to be passed to the called template 
-this is exactly how the Contemplate::tpl($id, $data) (PHP), or Contemplate.tpl(id, data) (Javascript) are called
-
-
-
-
 __Template Functions / Plugins__
 
 
@@ -181,18 +167,14 @@ __Template Functions / Plugins__
 * %date( format [, timestamp=now] )  **return timestamp formatted according to format**
 * %ldate( format [, timestamp=now] )  **return localised timestamp formatted according to format, localised strings are user-defined**
 * %locale( val ) / %l( val )  **return localised string for val (if exists), localised strings are user-defined**
-* %pluralise( singular, count )  **return plural string for singular (if exists) depending on count, pluralised strings are user-defined**
+* %plural( singular, count )  **return plural string for singular (if exists) depending on count, pluralised strings are user-defined**
 
 
 
 
 * %inline( tpl, [reps|data] )  **create or render an inline template referenced in 'tpl' (can also be used as parameter in other template functions, e.g %htmlselect, %htmltable to render individual rows/options via a custom template)**
 * %tpl( tplIDStr, {"var1" : val1, "var2" : val2, ..} ) / %template( tplIDStr, {"var1" : val1, "var2" : val2, ..} )  **CALL a subtemplate referenced by 'tplID' passing the necessary data also**
-
-
-
-* %htmlselect( data, options )  **render a select box from given data with given options (shorthand to render a select box)**
-* %htmltable( data, options )  **render a table from given data with given options (shorthand to render a table)**
+* %super( blockName )  **Reference a super block directly if needed in OO manner** (mostly useful inside block definitions overriden by current template)
 
 
 
@@ -202,4 +184,29 @@ __Template Functions / Plugins__
 
 
 
-* %plg_pluginName( [val1, val2, ..] ) / %plugin_pluginName( [val1, val2, ..] )  **call a custom (user-defined) plugin as a template function**
+* %pluginName( [val1, val2, ..] )  **call a custom (user-defined) plugin as a template function** (see examples)
+
+
+**Included Plugins** (see examples)
+
+* %htmlselect( data, options )  **render a select box from given data with given options (shorthand to render a select box)**
+* %htmltable( data, options )  **render a table from given data with given options (shorthand to render a table)**
+
+
+
+###Differences between 'include' and 'tpl'/'template' directives
+The main difference is that __include__ will actually copy the subtemplate contents inside the calling template (thus only one final template is generated). This is similar to PHP's _include_ directive.
+
+On the contrary __tpl__ directive will call and parse a subtemplate on its own (so the data need to be passed also). In this case each subtemplate will be compiled on its own and exist in the cache.
+
+When the templates are already cached, the relative performance of these directives is similar. __include__ tends to be slightly faster since it generates only a single template, while __template__ will generate all needed templates. However if a subtemplate has been changed and is embedded in another template using __include__ , the calling template will __NOT__ be refreshed. While if __template__ is used, the calling template __WILL__ be refreshed (since the subtemplate is called as a subroutine and not copied literally inside the calling template)
+
+The syntax for __include__ is this:  %include(subtemplateId)
+
+The syntax for __tpl__ / __template__ is this: %tpl(subtemplateId, {"var1":$value1, "var2":$value2, ..}) 
+
+where the {"var1":$value1, "var2":$value2, ..} are the data to be passed to the called template 
+this is exactly how the Contemplate::tpl($id, $data) (PHP), or Contemplate.tpl(id, data) (Javascript) are called
+
+
+

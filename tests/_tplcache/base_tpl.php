@@ -8,12 +8,13 @@ final class Contemplate_base_Cached extends ContemplateTemplate
     /* constructor */
     public function __construct($id=null)
     {
+        $self = $this;
         /* initialize internal vars */
-        $this->_renderer = null;
-        $this->_extends = null;
-        $this->_blocks = null;
-        $this->id = null; 
-        $this->id = $id;
+        $self->_renderer = null;
+        $self->_extends = null;
+        $self->_blocks = null;
+        $self->id = null;
+        $self->id = $id;
         
         /* extend tpl assign code starts here */
         
@@ -24,7 +25,7 @@ final class Contemplate_base_Cached extends ContemplateTemplate
     
     
     /* tpl block render method for block 'Block3' */
-    private function _blockfn_Block3(&$data, $__i__) 
+    private function _blockfn_Block3(&$data, $self, $__i__) 
     { 
         
         $__p__ = '';
@@ -36,19 +37,19 @@ final class Contemplate_base_Cached extends ContemplateTemplate
     
     
     /* tpl block render method for block 'Block2' */
-    private function _blockfn_Block2(&$data, $__i__) 
+    private function _blockfn_Block2(&$data, $self, $__i__) 
     { 
         
         $__p__ = '';
         
-        $__p__ .= 'Base template Block2';
+        $__p__ .= 'Base template Block2' . "\n" . '<!-- call the super block here in OO manner, if any -->' . "\n" . '' . ($self->renderSuperBlock("Block2", $data, $__i__)) . '' . "\n" . '';
         return $__p__;
         
     }
     
     
     /* tpl block render method for block 'Block12' */
-    private function _blockfn_Block12(&$data, $__i__) 
+    private function _blockfn_Block12(&$data, $self, $__i__) 
     { 
         
         $__p__ = '';
@@ -60,7 +61,7 @@ final class Contemplate_base_Cached extends ContemplateTemplate
     
     
     /* tpl block render method for block 'Block11' */
-    private function _blockfn_Block11(&$data, $__i__) 
+    private function _blockfn_Block11(&$data, $self, $__i__) 
     { 
         
         $__p__ = '';
@@ -72,7 +73,7 @@ final class Contemplate_base_Cached extends ContemplateTemplate
     
     
     /* tpl block render method for block 'Block1' */
-    private function _blockfn_Block1(&$data, $__i__) 
+    private function _blockfn_Block1(&$data, $self, $__i__) 
     { 
         
         $__p__ = '';
@@ -89,21 +90,23 @@ final class Contemplate_base_Cached extends ContemplateTemplate
     /* tpl renderBlock method */
     public function renderBlock($block, &$data, $__i__=null)
     {
-        if ( !$__i__ ) $__i__ = $this;
+        $self = $this;
+        if ( !$__i__ ) $__i__ = $self;
         $method = '_blockfn_' . $block;
-        if ( method_exists($this, $method) ) return $this->{$method}($data, $__i__);
-        elseif ( $this->_extends ) return $this->_extends->renderBlock($block, $data, $__i__);
+        if ( method_exists($self, $method) ) return $self->{$method}($data, $self, $__i__);
+        elseif ( $self->_extends ) return $self->_extends->renderBlock($block, $data, $__i__);
         return '';
     }
     
     /* tpl render method */
     public function render(&$data, $__i__=null)
     {
-        if ( !$__i__ ) $__i__ = $this;
+        $self = $this;
+        if ( !$__i__ ) $__i__ = $self;
         $__p__ = '';
-        if ( $this->_extends )
+        if ( $self->_extends )
         {
-            $__p__ = $this->_extends->render($data, $__i__);
+            $__p__ = $self->_extends->render($data, $__i__);
         }
         else
         {

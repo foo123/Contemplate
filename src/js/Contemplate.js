@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.8.4
+*  @version: 0.9
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -33,7 +33,7 @@ else if ( !(name in root) )
     /* module factory */        function( exports, undef ) {
 "use strict";
 
-var __version__ = "0.8.4", Contemplate, Template, InlineTemplate, 
+var __version__ = "0.9", Contemplate, Template, InlineTemplate, 
 
     // auxilliaries
     PROTO = 'prototype', HAS = 'hasOwnProperty', 
@@ -58,11 +58,6 @@ var __version__ = "0.8.4", Contemplate, Template, InlineTemplate,
         else if ( is_array(mixed_var) ) return mixed_var.length;
         else if ( is_object(mixed_var) ) return Keys(mixed_var).length;
         return 1;
-    },
-    array_flip = function( trans ) {
-        var cis = {}, k, key, keys = Keys(trans), kl = keys.length;
-        for (k=0; k<kl; k++) { key = keys[ k ];  cis[ trans[ key ] ] = key; }
-        return cis;
     },
     time = function( ) { return Math.floor(new Date().getTime() / 1000); },
     
@@ -883,7 +878,7 @@ var
     
     re_amp = /&/g, re_lt = /</g, re_gt = />/g, re_quot = /"/g, re_quot_s = SQUOTE,
     
-    re_plugin = /^(plg_|plugin_)([a-zA-Z0-9_]+)/,
+    //re_plugin = /^(plg_|plugin_)([a-zA-Z0-9_]+)/,
     re_controls = /(\t|[ ]?)[ ]*%([a-zA-Z_][a-zA-Z0-9_]*)\b[ ]*(\()(.*)$/g,
     
     $__controlConstructs = [
@@ -898,12 +893,12 @@ var
         's', 'n', 'f', 'q', 'dq', 
         'echo', 'time', 'count',
         'lowercase', 'uppercase', 'ucfirst', 'lcfirst', 'sprintf',
-        'date', 'ldate', 'locale', 'pluralise',
+        'date', 'ldate', 'locale', 'plural',
         'inline', 'tpl', 'uuid', 'haskey',
         'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
         'camelcase', 'snakecase', 
         'e','html', 'url',
-        'htmlselect', 'htmltable'
+        'super'
     ],
     $__func_aliases = {
         'l': 'locale',
@@ -1500,8 +1495,18 @@ var
             }
         }
         
-        if ( $__func_aliases[HAS](ctrl) ) 
-            ctrl = $__func_aliases[ctrl];
+        if ( $__plugins[HAS](ctrl) )
+        {
+            // allow custom plugins as template functions
+            prefix = prefix || '';
+            var pl = $__plugins[ ctrl ];
+            args = args.replace( re_controls, parseConstructs );
+            out = ((pl instanceof Contemplate.InlineTemplate) ? pl.render({'args':args}) : (pl + '(' + args + ')'));
+            rest = rest.replace( re_controls, parseConstructs );
+            return prefix + out + rest;
+        }
+        
+        if ( $__func_aliases[HAS](ctrl) ) ctrl = $__func_aliases[ctrl];
         m = $__funcs.indexOf( ctrl );
         if ( -1 < m )
         {
@@ -1522,23 +1527,13 @@ var
                 case 10: out = 'Contemplate.ucfirst(' + args + ')'; break;
                 case 11: out = 'Contemplate.lcfirst(' + args + ')'; break;
                 case 12: out = 'Contemplate.sprintf(' + args + ')'; break;
+                case 32: out = 'self.renderSuperBlock(' + args + ', data, __i__)'; break;
                 default: out = 'Contemplate.' + ctrl + '(' + args + ')';
             }
             rest = rest.replace( re_controls, parseConstructs );
             return prefix + out + rest;
         }
         
-        m = ctrl.match( re_plugin );
-        if ( m && m[2] && $__plugins[HAS]('plg_' + m[2]) )
-        {
-            // allow custom plugins as template functions
-            prefix = prefix || '';
-            var pl = $__plugins[ 'plg_' + m[2] ];
-            args = args.replace( re_controls, parseConstructs );
-            out = ((pl instanceof Contemplate.InlineTemplate) ? pl.render({'args':args}) : (pl + '(' + args + ')'));
-            rest = rest.replace( re_controls, parseConstructs );
-            return prefix + out + rest;
-        }
         return match;
     },
     
@@ -2075,7 +2070,7 @@ var
         }
         
         // defined blocks
-        for (b=0; b<bl; b++) funcs[blocks[b][0]] = FUNC("Contemplate,data,__i__", blocks[b][1]);
+        for (b=0; b<bl; b++) funcs[blocks[b][0]] = FUNC("Contemplate,data,self,__i__", blocks[b][1]);
         
         //return [FUNC("Contemplate,__i__", func), funcs];
         return [FUNC("Contemplate", func), funcs];
@@ -2110,7 +2105,7 @@ var
         if ( sblocks.length )
         {
             sblocks = $__TEOL + 
-                        "this._blocks = { " + 
+                        "self._blocks = { " + 
                         $__TEOL + 
                         padLines( sblocks.join(',' + $__TEOL), 1 ) + 
                         $__TEOL + 
@@ -2125,7 +2120,7 @@ var
         // tpl render code
         if ($__extends) 
         {
-            extendCode = "this.extend('" + $__extends + "');";
+            extendCode = "self.extend('" + $__extends + "');";
             renderCode = TT_RCODE({
                 'EOL': $__TEOL,
                 'RCODE': "__p__ = '';"
@@ -2429,36 +2424,47 @@ Template[PROTO] = {
     }
     
     ,extend: function( tpl ) { 
+        var self = this;
         if ( tpl && tpl.substr )
-            this._extends = Contemplate.tpl( tpl );
+            self._extends = Contemplate.tpl( tpl );
         else if ( tpl instanceof Template )
-            this._extends = tpl;
+            self._extends = tpl;
         else
-            this._extends = null;
-        return this.fixRenderer( );
+            self._extends = null;
+        return self.fixRenderer( );
     }
     
     ,setRenderFunction: function( renderfunc ) { 
+        var self = this;
         if ( 'function' === typeof renderfunc )
-            this._renderer = renderfunc( Contemplate );
+            self._renderer = renderfunc( Contemplate );
         else
-            this._renderer = null; 
-        return this.fixRenderer( );
+            self._renderer = null; 
+        return self.fixRenderer( );
     }
     
     ,setBlocks: function( blocks ) { 
+        var self = this;
         if ( 'object' === typeof blocks )
         {
-            this._blocks = merge(this._blocks||{}, blocks); 
+            self._blocks = merge(self._blocks||{}, blocks); 
         }
-        return this; 
+        return self; 
     }
     
     ,renderBlock: function( block, data, __i__ ) {
-        __i__ = __i__ || this;
-        var blocks = this._blocks;
-        if ( blocks && blocks[HAS](block) ) return blocks[block](Contemplate, data, __i__);
-        else if ( this._extends ) return this._extends.renderBlock(block, data, __i__);
+        var self = this;
+        __i__ = __i__ || self;
+        var blocks = self._blocks;
+        if ( blocks && blocks[HAS](block) ) return blocks[block](Contemplate, data, self, __i__);
+        else if ( self._extends ) return self._extends.renderBlock(block, data, __i__);
+        return '';
+    }
+    
+    ,renderSuperBlock: function( block, data, __i__ ) {
+        var self = this;
+        __i__ = __i__ || self;
+        if ( self._extends ) return self._extends.renderBlock(block, data, __i__);
         return '';
     }
     
@@ -2509,12 +2515,13 @@ Contemplate = {
             ,"    /* constructor */"
             ,"    function #CLASSNAME#(id)"
             ,"    {"
+            ,"        var self = this;"
             ,"        /* initialize internal vars */"
             ,"        "
-            ,"        this._renderer = null;"
-            ,"        this._blocks = null;"
-            ,"        this._extends = null;"
-            ,"        this.id = id || null;"
+            ,"        self._renderer = null;"
+            ,"        self._blocks = null;"
+            ,"        self._extends = null;"
+            ,"        self.id = id || null;"
             ,"        "
             ,"        /* tpl-defined blocks render code starts here */"
             ,"#BLOCKS#"
@@ -2530,8 +2537,8 @@ Contemplate = {
             ,"    /* tpl render method */"
             ,"    #CLASSNAME#.prototype.render = function( data, __i__ ) {"
             ,"        \"use strict\";"
-            ,"        var __p__ = '';"
-            ,"        __i__ = __i__ || this;"
+            ,"        var self = this, __p__ = '';"
+            ,"        __i__ = __i__ || self;"
             ,"        /* tpl main render code starts here */"
             ,"#RENDERCODE#"
             ,"        /* tpl main render code ends here */"
@@ -2556,7 +2563,7 @@ Contemplate = {
         TT_BlockCode = InlineTemplate.compile(InlineTemplate.multisplit([
             ""
             ,"/* tpl block render method for block '#BLOCKNAME#' */"
-            ,"'#BLOCKMETHODNAME#': function( Contemplate, data, __i__ ) {"
+            ,"'#BLOCKMETHODNAME#': function( Contemplate, data, self, __i__ ) {"
             ,"#BLOCKMETHODCODE#"
             ,"}"
             ,""
@@ -2695,8 +2702,8 @@ Contemplate = {
         TT_FUNC = InlineTemplate.compile(InlineTemplate.multisplit([
             "return function( data, __i__ ){"
             ,"\"use strict\";"
-            ,"var __p__ = '';"
-            ,"__i__ = __i__ || this;"
+            ,"var self = this, __p__ = '';"
+            ,"__i__ = __i__ || self;"
             ,"#FCODE#"
             ,"return __p__;"
             ,"};"
@@ -2729,13 +2736,12 @@ Contemplate = {
         {
             if ( pluginCode instanceof Contemplate.InlineTemplate )
             {
-                $__plugins[ 'plg_' + name ] = pluginCode;
+                $__plugins[ name ] = pluginCode;
             }
-            else /*if ( 'function' === typeof plugin )*/
+            else if ( undef === Contemplate[ name ] )
             {
-                $__plugins[ 'plg_' + name ] = 'Contemplate.plg_' + name;
-                Contemplate[ "plg_" + name ] = pluginCode;
-                //Contemplate[ "plugin_" + name ] = pluginCode;
+                $__plugins[ name ] = 'Contemplate.' + name;
+                Contemplate[ name ] = pluginCode;
             }
         }
     },
@@ -2744,14 +2750,14 @@ Contemplate = {
         if ( preCode ) $__tplPrefixCode = '' + preCode;
     },
 
-    setLocaleStrings: function( l ) { 
-        if ( "object" === typeof l )
+    setLocales: function( locales ) { 
+        if ( "object" === typeof locales )
         {
-            $__locale = merge($__locale, l); 
+            $__locale = merge($__locale, locales);
         }
     },
     
-    clearLocaleStrings: function( ) { 
+    clearLocales: function( ) { 
         $__locale = { }; 
     },
     
@@ -2796,9 +2802,9 @@ Contemplate = {
         $__cacheMode = ( isNode ) ? mode : Contemplate.CACHE_TO_DISK_NONE; 
     },
     
-    setSyncMode: function( bool ) { 
+    /*setSyncMode: function( bool ) { 
         $__async = !bool; 
-    },
+    },*/
     
     clearCache: function( all ) { 
         $__cache = { }; 
@@ -3026,11 +3032,11 @@ Contemplate = {
     
     // locale
     // locale, l
-    locale: function( e ) { 
-        return $__locale[HAS](e) ? $__locale[e] : e; 
+    locale: function( s ) { 
+        return $__locale[HAS](s) ? $__locale[s] : s; 
     },
-    // pluralise
-    pluralise: function( singular, count ) {
+    // plural
+    plural: function( singular, count ) {
         if ($__plurals[singular])
             return 1 !== count ? $__plurals[singular] : singular;
         return singular;
@@ -3039,218 +3045,6 @@ Contemplate = {
     // generate a uuid
     uuid: function( namespace ) {
         return [namespace||'UUID', ++$__uuid, time()].join('_');
-    },
-    
-    //
-    //  HTML elements
-    //
-    
-    // html table
-    htmltable: function( data, options ) {
-        // clone data to avoid mess-ups
-        data = merge({}, data);
-        options = merge({}, options || {});
-        var o='', tk='', header='', footer='', 
-            k, rows=[], row, rl, r, i, j, l, vals, col, colvals, 
-            class_odd, class_even, row_class, odd=false,
-            hasRowTpl = options[HAS]('tpl_row'), 
-            hasCellTpl = options[HAS]('tpl_cell'), 
-            rowTpl = null, cellTpl = null
-        ;
-        
-        if ( hasRowTpl )
-        {
-            if ( !(options['tpl_row'] instanceof Contemplate.InlineTemplate) )
-                options['tpl_row'] = Contemplate.InlineTemplate(options['tpl_row'], {'$row_class':'row_class','$row':'row'});
-            rowTpl = options['tpl_row'];
-        }
-        if ( hasCellTpl )
-        {
-            if ( !(options['tpl_cell'] instanceof Contemplate.InlineTemplate) )
-                options['tpl_cell'] = Contemplate.InlineTemplate(options['tpl_cell'], {'$cell':'cell'});
-            cellTpl = options['tpl_cell'];
-        }
-        
-        o="<table";
-        
-        if (options['id']) o+=" id='"+options['id']+"'";
-        if (options['class']) o+=" class='"+options['class']+"'";
-        if (options['style']) o+=" style='"+options['style']+"'";
-        if (options['data'])
-        {
-            for (k in options['data'])
-            {
-                if (options['data'][HAS](k))
-                    o+=" data-"+k+"='"+options['data'][k]+"'";
-            }
-        }
-        o+=">";
-            
-        tk='';
-        if ( options['header'] || options['footer'] )
-            tk="<td>"+(Contemplate.keys(data)||[]).join('</td><td>')+"</td>";
-            
-        header = options['header'] ? "<thead><tr>"+tk+"</tr></thead>" : '';
-        footer = options['footer'] ? "<tfoot><tr>"+tk+"</tr></tfoot>" : '';
-        
-        o+=header;
-        
-        // get data rows
-        rows=[];
-        vals=Contemplate.values(data) || [];
-        for (i in vals)
-        {
-            if (vals[HAS](i))
-            {
-                col=vals[i];
-                if (!is_array(col))  col=[col];
-                colvals=Contemplate.values(col) || [];
-                for (j=0, l=colvals.length; j<l; j++)
-                {
-                    if (!rows[j]) rows[j]=new Arr(l);
-                    rows[j][i]=colvals[j];
-                }
-            }
-        }
-        
-        class_odd = options['odd'] ? options['odd'] : 'odd';
-        class_even = options['even'] ? options['even'] : 'even';
-            
-        // render rows
-        odd=false;
-        for (i=0, l=rows.length; i<l; i++)
-        {
-            row_class = odd ? class_odd : class_even;
-            
-            if ( hasCellTpl )
-            {
-                row = '';
-                for (r=0,rl=rows[i].length; r<rl; r++)
-                    row += cellTpl.render( {cell: rows[i][r]} );
-            }
-            else
-            {
-                row = "<td>"+rows[i].join('</td><td>')+"</td>";
-            }
-            if ( hasRowTpl )
-            {
-                o += rowTpl.render( {row_class: row_class, row: row} );
-            }
-            else
-            {
-                o += "<tr class='"+row_class+"'>"+row+"</tr>";
-            }
-            
-            odd=!odd;
-        }
-        rows=null;
-        // strict mode error, top level indentifier
-        //delete $rows;
-        
-        o+=footer;
-        o+="</table>";
-        return o;
-    },
-    
-    // html select
-    htmlselect: function( data, options ) {
-        // clone data to avoid mess-ups
-        data = merge({}, data);
-        options = merge({}, options || {});
-        var o='', k, k2, v, v2,
-            hasOptionTpl = options[HAS]('tpl_option'), 
-            optionTpl = null
-        ;
-        
-        if ( hasOptionTpl )
-        {
-            if ( !(options['tpl_option'] instanceof Contemplate.InlineTemplate) )
-                options['tpl_option'] = new Contemplate.InlineTemplate(options['tpl_option'], {'$selected':'selected','$value':'value','$option':'option'});
-            optionTpl = options['tpl_option'];
-        }
-        
-        o="<select";
-        
-        if (options['multiple']) o+=" multiple";
-        if (options['disabled']) o+=" disabled='disabled'";
-        if (options['name']) o+=" name='"+options['name']+"'";
-        if (options['id']) o+=" id='"+options['id']+"'";
-        if (options['class']) o+=" class='"+options['class']+"'";
-        if (options['style']) o+=" style='"+options['style']+"'";
-        if (options['data'])
-        {
-            for (k in options['data'])
-            {
-                if (options['data'][HAS](k))
-                    o+=" data-"+k+"='"+options['data'][k]+"'";
-            }
-        }
-        o+=">";
-        
-        if (options['selected'])
-        {
-            if (!is_array(options['selected'])) options['selected']=[options['selected']];
-            options['selected']=array_flip(options['selected']);
-        }
-        else
-            options['selected']={};
-            
-        if (options['optgroups'])
-        {
-            if (!is_array(options['optgroups'])) options['optgroups']=[options['optgroups']];
-            options['optgroups']=array_flip(options['optgroups']);
-        }
-    
-        for (k in data)
-        {
-            if (data[HAS](k))
-            {
-                v=data[k];
-                if (options['optgroups'] && options['optgroups'][HAS](k))
-                {
-                    o+="<optgroup label='"+k+"'>";
-                    for  (k2 in v)
-                    {
-                        if (v[HAS](k2))
-                        {
-                            v2=v[k2];
-                            if (options['use_key'])  v2=k2;
-                            else if (options['use_value']) k2=v2;
-                                
-                            if ( hasOptionTpl )
-                                o += optionTpl.render({
-                                    value: k2,
-                                    option: v2,
-                                    selected: options['selected'][HAS](k2)?' selected="selected"' : ''
-                                });
-                            else if (/*$options['selected'][$k2]*/ options['selected'][HAS](k2))
-                                o += "<option value='"+k2+"' selected='selected'>"+v2+"</option>";
-                            else
-                                o += "<option value='"+k2+"'>"+v2+"</option>";
-                        }
-                    }
-                    o+="</optgroup>";
-                }
-                else
-                {
-                    if (options['use_key']) v=k;
-                    else if (options['use_value']) k=v;
-                        
-                    if ( hasOptionTpl )
-                        o += optionTpl.render({
-                            value: k,
-                            option: v,
-                            selected: options['selected'][HAS](k)?' selected="selected"' : ''
-                        });
-                    else if (options['selected'][HAS](k))
-                        o += "<option value='"+k+"' selected='selected'>"+v+"</option>";
-                    else
-                        o += "<option value='"+k+"'>"+v+"</option>";
-                }
-            }
-        }
-        o+="</select>";
-        return o;
     },
     
     getTemplateContents: getTemplateContents,

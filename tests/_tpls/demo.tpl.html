@@ -11,6 +11,14 @@
 
     <br /><br />
 
+    <strong>Can reference the super Block2 directly if needed in OO manner</strong>
+    <br /><br />
+
+    <!-- call the super block here in OO manner, if any -->
+    <% %super("Block2") %>
+    
+    <br /><br />
+
     <strong>Contemplate Constructs</strong><hr /><br />
     
     <strong>FOR Loop Associative (php-style, literal array data)</strong><br />
@@ -204,30 +212,30 @@
     <li>%addslashes(&quot;this string's s\&quot;s s\\&quot;s s\\\&quot;s&quot;) = <% %addslashes("this string's s\'s s\\'s s\\\'s") %></li>
     <li>%stripslashes(&quot;this string's s\&quot;s s\\&quot;s s\\\&quot;s&quot;) = <% %stripslashes("this string's s\'s s\\'s s\\\'s") %></li>
     <li>%l(&quot;locale&quot;) = %locale(&quot;locale&quot;) = <% %l("locale") %> = <% %locale("locale") %></li>
-    <li>%pluralise(&quot;item&quot;, 1) = <% %pluralise("item", 1) %></li>
-    <li>%pluralise(&quot;item&quot;, 2) = <% %pluralise("item", 2) %></li>
+    <li>%plural(&quot;item&quot;, 1) = <% %plural("item", 1) %></li>
+    <li>%plurale(&quot;item&quot;, 2) = <% %plural("item", 2) %></li>
     <li>%e(&#39;&lt;ok k=&quot;v&quot;&gt;&#39;) = <% %e("<ok k=\"v\">") %></li>
     <li>%html(&#39;&lt;ok k=&quot;v&quot;&gt;&#39;) = <% %html("<ok k=\"v\">") %></li>
     </ul>
     
     <br /><br />
     
-    <strong>A table</strong><br />
+    <strong>A table (plugin)</strong><br />
     <% %htmltable($table_data, $table_options) %>
     
     <br /><br />
     
-    <strong>A select box</strong><br />
+    <strong>A select box (plugin)</strong><br />
     <% %htmlselect($select_data, $select_options) %>
 
     <br /><br />
     
-    <strong>A table with alternative format</strong><br />
+    <strong>A table with alternative format (plugin)</strong><br />
     <% %htmltable($table_data, {"header" : true, "tpl_cell": %inline("<td>{{value}} (inline compiled tpl)</td>",{"{{value}}":"cell"}, true)}) %>
 
     <br /><br />
     
-    <strong>A select box with alternative format</strong><br />
+    <strong>A select box with alternative format (plugin)</strong><br />
     <% %htmlselect($select_data, {
             "foo123" : ":,=>",
             "optgroups" : ["group1", "group2", "group3"],
@@ -240,12 +248,12 @@
     <br /><br />
     
     <strong>Test plugin with variable $foo</strong><br />
-    <% %plugin_test($foo) %>
+    <% %plg_test($foo) %>
     
     <br /><br />
     
     <strong>Test inlined plugin</strong><br />
-    <% %plg_inlinedBracket( "inlined" ) %>
+    <% %inlinedBracket( "inlined" ) %>
     <br /><br />
     
     <!-- use contemplate literal data with template function, in this case a print test plugin -->

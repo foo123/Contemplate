@@ -12,95 +12,96 @@ def __getTplClass__(Contemplate):
         # constructor
         def __init__(self, id=None):
             # initialize internal vars
-            self._renderer = None
-            self._extends = None
-            self._blocks = None
-            self.id = None
-            self.id = id
+            self_ = self
+            self_._renderer = None
+            self_._extends = None
+            self_._blocks = None
+            self_.id = None
+            self_.id = id
             
             # extend tpl assign code starts here
-            self.extend('base')
+            self_.extend('base')
             # extend tpl assign code ends here
 
         # tpl-defined blocks render code starts here
         
         
         # tpl block render method for block 'Block3'
-        def _blockfn_Block3(self, data, __i__):
+        def _blockfn_Block3(self, data, self_, __i__):
             
             __p__ = ''
              
-            __p__ += '' + "\n" + '' + "\n" + '    <strong>Block3 is overriden by the demo template</strong>' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>Contemplate Functions/Plugins</strong><hr /><br />' + "\n" + '    ' + "\n" + '    <strong>Functions</strong><br />' + "\n" + '    <ul>' + "\n" + '    <li>%uuid(&quot;namespace&quot;) = ' + str(Contemplate.uuid("namespace") ) + '</li>' + "\n" + '    <li>%echo(&quot;123&quot;) = ' + str(str("123") ) + '</li>' + "\n" + '    <li>%q(123) = ' + str("'"+str(123)+"'" ) + '</li>' + "\n" + '    <li>%dq(123) = ' + str('"'+str(123)+'"' ) + '</li>' + "\n" + '    <li>%trim(&quot;__FOO__&quot;, &quot;_&quot;) = ' + str(Contemplate.trim("__FOO__", "_") ) + '</li>' + "\n" + '    <li>%trim(&quot;  FOO  &quot;) = ' + str(Contemplate.trim("  FOO  ") ) + '</li>' + "\n" + '    <li>%lowercase(&quot;FOO&quot;) = ' + str(str("FOO").lower() ) + '</li>' + "\n" + '    <li>%lowercase(&quot;fOo&quot;) = ' + str(str("fOo").lower() ) + '</li>' + "\n" + '    <li>%uppercase(&quot;foo&quot;) = ' + str(str("foo").upper() ) + '</li>' + "\n" + '    <li>%uppercase(&quot;FoO&quot;) = ' + str(str("FoO").upper() ) + '</li>' + "\n" + '    <li>%camelcase(&quot;camel_case&quot;, &quot;_&quot;) = ' + str(Contemplate.camelcase("camel_case", "_") ) + '</li>' + "\n" + '    <li>%camelcase(&quot;camelCase&quot;) = ' + str(Contemplate.camelcase("camelCase") ) + '</li>' + "\n" + '    <li>%snakecase(&quot;snakeCase&quot;, &quot;_&quot;) = ' + str(Contemplate.snakecase("snakeCase", "_") ) + '</li>' + "\n" + '    <li>%snakecase(&quot;snake_case&quot;) = ' + str(Contemplate.snakecase("snake_case") ) + '</li>' + "\n" + '    <li>%sprintf(&quot;%02d : %02d : %02d&quot;, 2, 0, 12) = ' + str(Contemplate.sprintf("%02d : %02d : %02d", 2, 0, 12) ) + '</li>' + "\n" + '    <li>%addslashes(&quot;this string\'s s\&quot;s s\\&quot;s s\\\&quot;s&quot;) = ' + str(Contemplate.addslashes("this string's s\'s s\\'s s\\\'s") ) + '</li>' + "\n" + '    <li>%stripslashes(&quot;this string\'s s\&quot;s s\\&quot;s s\\\&quot;s&quot;) = ' + str(Contemplate.stripslashes("this string's s\'s s\\'s s\\\'s") ) + '</li>' + "\n" + '    <li>%l(&quot;locale&quot;) = %locale(&quot;locale&quot;) = ' + str(Contemplate.locale("locale") ) + ' = ' + str(Contemplate.locale("locale") ) + '</li>' + "\n" + '    <li>%pluralise(&quot;item&quot;, 1) = ' + str(Contemplate.pluralise("item", 1) ) + '</li>' + "\n" + '    <li>%pluralise(&quot;item&quot;, 2) = ' + str(Contemplate.pluralise("item", 2) ) + '</li>' + "\n" + '    <li>%e(&#39;&lt;ok k=&quot;v&quot;&gt;&#39;) = ' + str(Contemplate.e("<ok k=\"v\">") ) + '</li>' + "\n" + '    <li>%html(&#39;&lt;ok k=&quot;v&quot;&gt;&#39;) = ' + str(Contemplate.html("<ok k=\"v\">") ) + '</li>' + "\n" + '    </ul>' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A table</strong><br />' + "\n" + '    ' + str(Contemplate.htmltable(data['table_data'], data['table_options']) ) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A select box</strong><br />' + "\n" + '    ' + str(Contemplate.htmlselect(data['select_data'], data['select_options']) ) + '' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A table with alternative format</strong><br />' + "\n" + '    ' + str(Contemplate.htmltable(data['table_data'], {"header" : True, "tpl_cell": Contemplate.inline("<td>{{value}} (inline compiled tpl)</td>",{"{{value}}":"cell"}, True)}) ) + '' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A select box with alternative format</strong><br />' + "\n" + '    ' + str(Contemplate.htmlselect(data['select_data'], {             "foo123" : ":,=>",             "optgroups" : ["group1", "group2", "group3"],             "selected" : 3,             "multiple" : False,             "style" : "width:200px;",             "tpl_option": '<option value="$value" $selected>$option (inline tpl)</option>'         }) ) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>Test plugin with variable $foo</strong><br />' + "\n" + '    ' + str(Contemplate.plg_test(data['foo']) ) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>Test inlined plugin</strong><br />' + "\n" + '    ' + str(Contemplate.bracket( "inlined" ) ) + '' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <!-- use contemplate literal data with template function, in this case a print test plugin -->' + "\n" + '    <strong>use literal data with template function, in this case a print plugin</strong><br />' + "\n" + '    ' + str(Contemplate.plg_print({          "stringVar"     : "stringValue",          "numericVar"    : 123,          "arrayVar"      : [             0, 1, "astring", 3,              { "prop": 1 }          ]      }) ) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + ''
+            __p__ += '' + "\n" + '' + "\n" + '    <strong>Block3 is overriden by the demo template</strong>' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>Contemplate Functions/Plugins</strong><hr /><br />' + "\n" + '    ' + "\n" + '    <strong>Functions</strong><br />' + "\n" + '    <ul>' + "\n" + '    <li>%uuid(&quot;namespace&quot;) = ' + str(Contemplate.uuid("namespace") ) + '</li>' + "\n" + '    <li>%echo(&quot;123&quot;) = ' + str(str("123") ) + '</li>' + "\n" + '    <li>%q(123) = ' + str("'"+str(123)+"'" ) + '</li>' + "\n" + '    <li>%dq(123) = ' + str('"'+str(123)+'"' ) + '</li>' + "\n" + '    <li>%trim(&quot;__FOO__&quot;, &quot;_&quot;) = ' + str(Contemplate.trim("__FOO__", "_") ) + '</li>' + "\n" + '    <li>%trim(&quot;  FOO  &quot;) = ' + str(Contemplate.trim("  FOO  ") ) + '</li>' + "\n" + '    <li>%lowercase(&quot;FOO&quot;) = ' + str(str("FOO").lower() ) + '</li>' + "\n" + '    <li>%lowercase(&quot;fOo&quot;) = ' + str(str("fOo").lower() ) + '</li>' + "\n" + '    <li>%uppercase(&quot;foo&quot;) = ' + str(str("foo").upper() ) + '</li>' + "\n" + '    <li>%uppercase(&quot;FoO&quot;) = ' + str(str("FoO").upper() ) + '</li>' + "\n" + '    <li>%camelcase(&quot;camel_case&quot;, &quot;_&quot;) = ' + str(Contemplate.camelcase("camel_case", "_") ) + '</li>' + "\n" + '    <li>%camelcase(&quot;camelCase&quot;) = ' + str(Contemplate.camelcase("camelCase") ) + '</li>' + "\n" + '    <li>%snakecase(&quot;snakeCase&quot;, &quot;_&quot;) = ' + str(Contemplate.snakecase("snakeCase", "_") ) + '</li>' + "\n" + '    <li>%snakecase(&quot;snake_case&quot;) = ' + str(Contemplate.snakecase("snake_case") ) + '</li>' + "\n" + '    <li>%sprintf(&quot;%02d : %02d : %02d&quot;, 2, 0, 12) = ' + str(Contemplate.sprintf("%02d : %02d : %02d", 2, 0, 12) ) + '</li>' + "\n" + '    <li>%addslashes(&quot;this string\'s s\&quot;s s\\&quot;s s\\\&quot;s&quot;) = ' + str(Contemplate.addslashes("this string's s\'s s\\'s s\\\'s") ) + '</li>' + "\n" + '    <li>%stripslashes(&quot;this string\'s s\&quot;s s\\&quot;s s\\\&quot;s&quot;) = ' + str(Contemplate.stripslashes("this string's s\'s s\\'s s\\\'s") ) + '</li>' + "\n" + '    <li>%l(&quot;locale&quot;) = %locale(&quot;locale&quot;) = ' + str(Contemplate.locale("locale") ) + ' = ' + str(Contemplate.locale("locale") ) + '</li>' + "\n" + '    <li>%plural(&quot;item&quot;, 1) = ' + str(Contemplate.plural("item", 1) ) + '</li>' + "\n" + '    <li>%plurale(&quot;item&quot;, 2) = ' + str(Contemplate.plural("item", 2) ) + '</li>' + "\n" + '    <li>%e(&#39;&lt;ok k=&quot;v&quot;&gt;&#39;) = ' + str(Contemplate.e("<ok k=\"v\">") ) + '</li>' + "\n" + '    <li>%html(&#39;&lt;ok k=&quot;v&quot;&gt;&#39;) = ' + str(Contemplate.html("<ok k=\"v\">") ) + '</li>' + "\n" + '    </ul>' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A table (plugin)</strong><br />' + "\n" + '    ' + str(Contemplate.htmltable(data['table_data'], data['table_options']) ) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A select box (plugin)</strong><br />' + "\n" + '    ' + str(Contemplate.htmlselect(data['select_data'], data['select_options']) ) + '' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A table with alternative format (plugin)</strong><br />' + "\n" + '    ' + str(Contemplate.htmltable(data['table_data'], {"header" : True, "tpl_cell": Contemplate.inline("<td>{{value}} (inline compiled tpl)</td>",{"{{value}}":"cell"}, True)}) ) + '' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>A select box with alternative format (plugin)</strong><br />' + "\n" + '    ' + str(Contemplate.htmlselect(data['select_data'], {             "foo123" : ":,=>",             "optgroups" : ["group1", "group2", "group3"],             "selected" : 3,             "multiple" : False,             "style" : "width:200px;",             "tpl_option": '<option value="$value" $selected>$option (inline tpl)</option>'         }) ) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>Test plugin with variable $foo</strong><br />' + "\n" + '    ' + str(Contemplate.plg_test(data['foo']) ) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>Test inlined plugin</strong><br />' + "\n" + '    ' + str(Contemplate.bracket( "inlined" ) ) + '' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <!-- use contemplate literal data with template function, in this case a print test plugin -->' + "\n" + '    <strong>use literal data with template function, in this case a print plugin</strong><br />' + "\n" + '    ' + str(Contemplate.plg_print({          "stringVar"     : "stringValue",          "numericVar"    : 123,          "arrayVar"      : [             0, 1, "astring", 3,              { "prop": 1 }          ]      }) ) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + ''
             return __p__
             
         
         
         # tpl block render method for block 'Block2'
-        def _blockfn_Block2(self, data, __i__):
+        def _blockfn_Block2(self, data, self_, __i__):
             
             __p__ = ''
              
-            __p__ += '' + "\n" + '' + "\n" + '    <strong>Block2 is overriden by the demo template</strong>' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '' + "\n" + '    <strong>Contemplate Constructs</strong><hr /><br />' + "\n" + '    ' + "\n" + '    <strong>FOR Loop Associative (php-style, literal array data)</strong><br />' + "\n" + '    <pre>' + "\n" + '    &lt;% %for(["a", "b", "c"] as $index=>$value) %&gt;' + "\n" + '        [&lt;% $index %&gt;] = &lt;strong&gt;&lt;% $value %&gt;&lt;/strong&gt;&lt;br /&gt; ' + "\n" + '    &lt;% %endfor() %&gt;' + "\n" + '    </pre><br />' + "\n" + '    '
-            _loc_9 = ["a", "b", "c"]
-            _loc_10 = (enumerate(_loc_9) if isinstance(_loc_9,(list, tuple)) else _loc_9.items()) if _loc_9 else None
-            if (_loc_10):
-                for _loc_index,_loc_value in _loc_10:
+            __p__ += '' + "\n" + '' + "\n" + '    <strong>Block2 is overriden by the demo template</strong>' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '' + "\n" + '    <strong>Can reference the super Block2 directly if needed in OO manner</strong>' + "\n" + '    <br /><br />' + "\n" + '' + "\n" + '    <!-- call the super block here in OO manner, if any -->' + "\n" + '    ' + str(self_.renderSuperBlock("Block2", data, __i__) ) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '' + "\n" + '    <strong>Contemplate Constructs</strong><hr /><br />' + "\n" + '    ' + "\n" + '    <strong>FOR Loop Associative (php-style, literal array data)</strong><br />' + "\n" + '    <pre>' + "\n" + '    &lt;% %for(["a", "b", "c"] as $index=>$value) %&gt;' + "\n" + '        [&lt;% $index %&gt;] = &lt;strong&gt;&lt;% $value %&gt;&lt;/strong&gt;&lt;br /&gt; ' + "\n" + '    &lt;% %endfor() %&gt;' + "\n" + '    </pre><br />' + "\n" + '    '
+            _loc_10 = ["a", "b", "c"]
+            _loc_11 = (enumerate(_loc_10) if isinstance(_loc_10,(list, tuple)) else _loc_10.items()) if _loc_10 else None
+            if (_loc_11):
+                for _loc_index,_loc_value in _loc_11:
                      
                     __p__ += '' + "\n" + '        [' + str( _loc_index ) + '] = <strong>' + str( _loc_value ) + '</strong><br /> ' + "\n" + '    '
              
             __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>FOR Loop Non-Associative (php-style, literal array data)</strong><br />' + "\n" + '    <pre>' + "\n" + '    &lt;% %for(["a", "b", "c"] as $value2) %&gt;' + "\n" + '        &lt;strong&gt;&lt;% $value2 %&gt;&lt;/strong&gt;&lt;br /&gt; ' + "\n" + '    &lt;% %endfor() %&gt;' + "\n" + '    </pre><br />' + "\n" + '    '
-            _loc_17 = ["a", "b", "c"]
-            _loc_18 = (_loc_17 if isinstance(_loc_17,(list, tuple)) else _loc_17.values()) if _loc_17 else None
-            if (_loc_18):
-                for _loc_value2 in _loc_18:
+            _loc_18 = ["a", "b", "c"]
+            _loc_19 = (_loc_18 if isinstance(_loc_18,(list, tuple)) else _loc_18.values()) if _loc_18 else None
+            if (_loc_19):
+                for _loc_value2 in _loc_19:
                      
                     __p__ += '' + "\n" + '        <strong>' + str( _loc_value2 ) + '</strong><br /> ' + "\n" + '    '
              
             __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>FOR Loop Associative (php-style, literal object data)</strong><br />' + "\n" + '    <pre>' + "\n" + '    &lt;% %for({"k1":"a", "k2":"b", "k3":"c"} as $index3=>$value3) %&gt;' + "\n" + '        [&lt;% $index3 %&gt;] = &lt;strong&gt;&lt;% $value3 %&gt;&lt;/strong&gt;&lt;br /&gt; ' + "\n" + '    &lt;% %endfor() %&gt;' + "\n" + '    </pre><br />' + "\n" + '    '
-            _loc_28 = {"k1":"a", "k2":"b", "k3":"c"}
-            _loc_29 = (enumerate(_loc_28) if isinstance(_loc_28,(list, tuple)) else _loc_28.items()) if _loc_28 else None
-            if (_loc_29):
-                for _loc_index3,_loc_value3 in _loc_29:
+            _loc_29 = {"k1":"a", "k2":"b", "k3":"c"}
+            _loc_30 = (enumerate(_loc_29) if isinstance(_loc_29,(list, tuple)) else _loc_29.items()) if _loc_29 else None
+            if (_loc_30):
+                for _loc_index3,_loc_value3 in _loc_30:
                      
                     __p__ += '' + "\n" + '        [' + str( _loc_index3 ) + '] = <strong>' + str( _loc_value3 ) + '</strong><br /> ' + "\n" + '    '
              
             __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>FOR Loop Non-Associative (php-style, literal object data)</strong><br />' + "\n" + '    <pre>' + "\n" + '    &lt;% %for({"k1":"a", "k2":"b", "k3":"c"} as $value4) %&gt;' + "\n" + '        &lt;strong&gt;&lt;% $value4 %&gt;&lt;/strong&gt;&lt;br /&gt; ' + "\n" + '    &lt;% %endfor() %&gt;' + "\n" + '    </pre><br />' + "\n" + '    '
-            _loc_39 = {"k1":"a", "k2":"b", "k3":"c"}
-            _loc_40 = (_loc_39 if isinstance(_loc_39,(list, tuple)) else _loc_39.values()) if _loc_39 else None
-            if (_loc_40):
-                for _loc_value4 in _loc_40:
+            _loc_40 = {"k1":"a", "k2":"b", "k3":"c"}
+            _loc_41 = (_loc_40 if isinstance(_loc_40,(list, tuple)) else _loc_40.values()) if _loc_40 else None
+            if (_loc_41):
+                for _loc_value4 in _loc_41:
                      
                     __p__ += '' + "\n" + '        <strong>' + str( _loc_value4 ) + '</strong><br /> ' + "\n" + '    '
              
             __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>FOR Loop Associative (python-style, literal array data)</strong><br />' + "\n" + '    <pre>' + "\n" + '    &lt;% %for($index4,$value4 in ["a", "b", "c"]) %&gt;' + "\n" + '        [&lt;% $index4 %&gt;] = &lt;strong&gt;&lt;% $value4 %&gt;&lt;/strong&gt;&lt;br /&gt; ' + "\n" + '    &lt;% %endfor() %&gt;' + "\n" + '    </pre><br />' + "\n" + '    '
-            _loc_47 = ["a", "b", "c"]
-            _loc_48 = (enumerate(_loc_47) if isinstance(_loc_47,(list, tuple)) else _loc_47.items()) if _loc_47 else None
-            if (_loc_48):
-                for _loc_index4,_loc_value4 in _loc_48:
+            _loc_48 = ["a", "b", "c"]
+            _loc_49 = (enumerate(_loc_48) if isinstance(_loc_48,(list, tuple)) else _loc_48.items()) if _loc_48 else None
+            if (_loc_49):
+                for _loc_index4,_loc_value4 in _loc_49:
                      
                     __p__ += '' + "\n" + '        [' + str( _loc_index4 ) + '] = <strong>' + str( _loc_value4 ) + '</strong><br /> ' + "\n" + '    '
              
             __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>FOR Loop Non-Associative (python-style, literal array data)</strong><br />' + "\n" + '    <pre>' + "\n" + '    &lt;% %for($value5 in ["a", "b", "c"]) %&gt;' + "\n" + '        &lt;strong&gt;&lt;% $value5 %&gt;&lt;/strong&gt;&lt;br /&gt; ' + "\n" + '    &lt;% %endfor() %&gt;' + "\n" + '    </pre><br />' + "\n" + '    '
-            _loc_55 = ["a", "b", "c"]
-            _loc_56 = (_loc_55 if isinstance(_loc_55,(list, tuple)) else _loc_55.values()) if _loc_55 else None
-            if (_loc_56):
-                for _loc_value5 in _loc_56:
+            _loc_56 = ["a", "b", "c"]
+            _loc_57 = (_loc_56 if isinstance(_loc_56,(list, tuple)) else _loc_56.values()) if _loc_56 else None
+            if (_loc_57):
+                for _loc_value5 in _loc_57:
                      
                     __p__ += '' + "\n" + '        <strong>' + str( _loc_value5 ) + '</strong><br /> ' + "\n" + '    '
              
             __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>FOR Loop Associative (python-style, literal object data)</strong><br />' + "\n" + '    <pre>' + "\n" + '    &lt;% %for($index6,$value7 in {"k1":"a", "k2":"b", "k3":"c"}) %&gt;' + "\n" + '        [&lt;% $index6 %&gt;] = &lt;strong&gt;&lt;% $value7 %&gt;&lt;/strong&gt;&lt;br /&gt; ' + "\n" + '    &lt;% %endfor() %&gt;' + "\n" + '    </pre><br />' + "\n" + '    '
-            _loc_66 = {"k1":"a", "k2":"b", "k3":"c"}
-            _loc_67 = (enumerate(_loc_66) if isinstance(_loc_66,(list, tuple)) else _loc_66.items()) if _loc_66 else None
-            if (_loc_67):
-                for _loc_index6,_loc_value7 in _loc_67:
+            _loc_67 = {"k1":"a", "k2":"b", "k3":"c"}
+            _loc_68 = (enumerate(_loc_67) if isinstance(_loc_67,(list, tuple)) else _loc_67.items()) if _loc_67 else None
+            if (_loc_68):
+                for _loc_index6,_loc_value7 in _loc_68:
                      
                     __p__ += '' + "\n" + '        [' + str( _loc_index6 ) + '] = <strong>' + str( _loc_value7 ) + '</strong><br /> ' + "\n" + '    '
              
             __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>FOR Loop Non-Associative (python-style, literal object data)</strong><br />' + "\n" + '    <pre>' + "\n" + '    &lt;% %for($value8 in {"k1":"a", "k2":"b", "k3":"c"}) %&gt;' + "\n" + '        &lt;strong&gt;&lt;% $value8 %&gt;&lt;/strong&gt;&lt;br /&gt; ' + "\n" + '    &lt;% %endfor() %&gt;' + "\n" + '    </pre><br />' + "\n" + '    '
-            _loc_77 = {"k1":"a", "k2":"b", "k3":"c"}
-            _loc_78 = (_loc_77 if isinstance(_loc_77,(list, tuple)) else _loc_77.values()) if _loc_77 else None
-            if (_loc_78):
-                for _loc_value8 in _loc_78:
+            _loc_78 = {"k1":"a", "k2":"b", "k3":"c"}
+            _loc_79 = (_loc_78 if isinstance(_loc_78,(list, tuple)) else _loc_78.values()) if _loc_78 else None
+            if (_loc_79):
+                for _loc_value8 in _loc_79:
                      
                     __p__ += '' + "\n" + '        <strong>' + str( _loc_value8 ) + '</strong><br /> ' + "\n" + '    '
              
@@ -142,7 +143,7 @@ def __getTplClass__(Contemplate):
         
         
         # tpl block render method for block 'Block12'
-        def _blockfn_Block12(self, data, __i__):
+        def _blockfn_Block12(self, data, self_, __i__):
             
             __p__ = ''
              
@@ -154,20 +155,22 @@ def __getTplClass__(Contemplate):
 
         # render a tpl block method
         def renderBlock(self, block, data, __i__=None):
-            if not __i__: __i__ = self
+            self_ = self
+            if not __i__: __i__ = self_
             method = '_blockfn_' + block
-            if (hasattr(self, method) and callable(getattr(self, method))):
-                return getattr(self, method)(data, __i__)
-            elif self._extends:
-                return self._extends.renderBlock(block, data, __i__)
+            if (hasattr(self_, method) and callable(getattr(self_, method))):
+                return getattr(self_, method)(data, self_, __i__)
+            elif self_._extends:
+                return self_._extends.renderBlock(block, data, __i__)
             return ''
             
         # tpl render method
         def render(self, data, __i__=None):
-            if  not __i__: __i__ = self
+            self_ = self
+            if  not __i__: __i__ = self_
             __p__ = ''
-            if self._extends:
-                __p__ = self._extends.render(data, __i__)
+            if self_._extends:
+                __p__ = self_._extends.render(data, __i__)
 
             else:
                 # tpl main render code starts here

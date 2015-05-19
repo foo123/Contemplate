@@ -1,5 +1,11 @@
 ###ChangeLog
 
+__0.9__
+* make **%htmltable** , **%htmlselect** external plugins (reduce main engine code size etc)
+* add **%super** template function to reference a super block directly if needed in OO manner
+* defined plugins no longer take a *plg_* prefix, the plugin name is exactly same as the given name defined (this way even built-in functions can be overriden in some cases)
+
+
 __0.8.4__
 * inlined plugins replace code accept the plugin arguments as well
 * fix subsequent plugin calls in templates, are not parsed/rendered correctly (php)

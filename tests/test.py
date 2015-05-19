@@ -21,24 +21,31 @@
 import os, sys, http.server, socketserver
 import pprint
 
-# import the Contemplate.py engine (as a) module, probably you will want to place this in another dir/package
-import imp
-ContemplateModulePath = os.path.join(os.path.dirname(__file__), '../src/python/')
-try:
-    ContemplateFp, ContemplatePath, ContemplateDesc  = imp.find_module('Contemplate', [ContemplateModulePath])
-    Contemplate = getattr( imp.load_module('Contemplate', ContemplateFp, ContemplatePath, ContemplateDesc), 'Contemplate' )
-except ImportError as exc:
-    Contemplate = None
-    sys.stderr.write("Error: failed to import module ({})".format(exc))
-finally:
-    if ContemplateFp: ContemplateFp.close()
+def import_module(name, path):
+    import imp
+    try:
+        mod_fp, mod_path, mod_desc  = imp.find_module(name, [path])
+        mod = getattr( imp.load_module(name, mod_fp, mod_path, mod_desc), name )
+    except ImportError as exc:
+        mod = None
+        sys.stderr.write("Error: failed to import module ({})".format(exc))
+    finally:
+        if mod_fp: mod_fp.close()
+    return mod
 
+
+# import the Contemplate.py engine (as a) module, probably you will want to place this in another dir/package
+Contemplate = import_module('Contemplate', os.path.join(os.path.dirname(__file__), '../src/python/'))
 if not Contemplate:
     print ('Could not load the Contemplate Engine Module')
     sys.exit(1)
 else:    
     print ('Contemplate Engine Module loaded succesfully')
 
+ContemplateHTMLPlugin = import_module('ContemplateHTMLPlugin', os.path.join(os.path.dirname(__file__), '../src/python/plugins/'))
+if not ContemplateHTMLPlugin:
+    print ('Could not load the ContemplateHTMLPlugin')
+    sys.exit(1)
 
 # the test application server url
 IP = "127.0.0.2"
@@ -49,7 +56,7 @@ PORT = 8001
 import json
 
 
-Contemplate.setLocaleStrings({
+Contemplate.setLocales({
     "locale": "γλωσσική περιοχή"
 })
 Contemplate.setPlurals({
@@ -61,15 +68,16 @@ def test_plugin(v=None):
     return 'Plugin Test no value given'
 def print_plugin(v=None):
     return '<pre>' + pprint.pformat(v, 4) + '</pre>' 
-
-Contemplate.addPlugin('test', test_plugin)
-Contemplate.addPlugin('print', print_plugin)
 def definition():
     global Contemplate
     def bracketFunc(v):
         return '[[' + str(v) + ']]'
     Contemplate.bracket = bracketFunc
 definition()    
+
+ContemplateHTMLPlugin.hook(Contemplate)
+Contemplate.addPlugin('plg_test', test_plugin)
+Contemplate.addPlugin('plg_print', print_plugin)
 Contemplate.addPlugin('inlinedBracket', Contemplate.inline('Contemplate.bracket($args)',{'$args':'args'},False))
 
 # set the cache directory (make sure to exist)
@@ -86,7 +94,7 @@ Contemplate.add({
     'sub' : './_tpls/sub.tpl.html',
     'date' : './_tpls/date.tpl.html',
     # add an inline template
-    'inlinetpl' : ['<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>']
+    'inlinetpl' : ['<% %super("block") %><% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>']
 })
 
 #print (pprint.pformat(Contemplate.parseTpl( '<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>' ), 4))

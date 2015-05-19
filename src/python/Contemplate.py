@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.8.4
+#  @version 0.9
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -147,7 +147,7 @@ class _G:
     TT_FUNC = None
     TT_RCODE = None
     
-    re_plugin = re.compile(r'^(plg_|plugin_)([a-zA-Z0-9_]+)')
+    #re_plugin = re.compile(r'^(plg_|plugin_)([a-zA-Z0-9_]+)')
     re_controls = re.compile(r'(\t|[ ]?)[ ]*%([a-zA-Z_][a-zA-Z0-9_]*)\b[ ]*(\()(.*)$')
     
     controlConstructs = [
@@ -162,12 +162,12 @@ class _G:
         's', 'n', 'f', 'q', 'dq', 
         'echo', 'time', 'count',
         'lowercase', 'uppercase', 'ucfirst', 'lcfirst', 'sprintf',
-        'date', 'ldate', 'locale', 'pluralise',
+        'date', 'ldate', 'locale', 'plural',
         'inline', 'tpl', 'uuid', 'haskey',
         'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
         'camelcase', 'snakecase', 
         'e','html', 'url',
-        'htmlselect', 'htmltable'
+        'super'
     ]
     func_aliases = {
         'l': 'locale',
@@ -482,8 +482,14 @@ class Template:
         if not __i__: __i__ = self
         if (self._blocks) and (block in self._blocks):
             blockfunc = self._blocks[block]
-            return blockfunc(data, __i__)
+            return blockfunc(data, self, __i__)
         elif self._extends:
+            return self._extends.renderBlock(block, data, __i__)
+        return ''
+        
+    def renderSuperBlock( self, block, data, __i__=None ):
+        if not __i__: __i__ = self
+        if self._extends:
             return self._extends.renderBlock(block, data, __i__)
         return ''
         
@@ -496,7 +502,7 @@ class Template:
         elif self._renderer is not None: 
             # dynamic function
             renderer = self._renderer
-            __p__ = renderer(data, __i__)
+            __p__ = renderer(data, self, __i__)
         
         return __p__
     
@@ -975,8 +981,17 @@ def parseConstructs( match ):
             rest = re.sub(re_controls, parseConstructs, rest)
             return out + rest
     
-    if ctrl in _G.func_aliases:
-        ctrl = _G.func_aliases[ctrl]
+    if ctrl in _G.plugins:
+        pl = _G.plugins[ctrl]
+        args = re.sub(re_controls, parseConstructs, args)
+        if isinstance(pl,Contemplate.InlineTemplate):
+            out = pl.render({'args':args})
+        else: 
+            out = pl + '(' + args + ')'
+        rest = re.sub(re_controls, parseConstructs, rest)
+        return prefix + out + rest
+    
+    if ctrl in _G.func_aliases: ctrl = _G.func_aliases[ctrl]
     try:
         m = _G.funcs.index( ctrl )
     except:
@@ -1008,25 +1023,12 @@ def parseConstructs( match ):
             out = 'Contemplate.lcfirst(' + args + ')'
         elif 12==m:
             out = 'Contemplate.sprintf(' + args + ')'
+        elif 32==m:
+            out = 'self_.renderSuperBlock(' + args + ', data, __i__)'
         else:
             out = 'Contemplate.' + ctrl + '(' + args + ')'
         rest = re.sub(re_controls, parseConstructs, rest)
         return prefix + out + rest
-    
-    m = _G.re_plugin.match( ctrl )
-    if m:
-        plugin = m.group(2) 
-        if plugin:
-            plugin = 'plg_' + plugin
-            if plugin in _G.plugins:
-                pl = _G.plugins[plugin]
-                args = re.sub(re_controls, parseConstructs, args)
-                if isinstance(pl,Contemplate.InlineTemplate):
-                    out = pl.render({'args':args})
-                else: 
-                    out = pl + '(' + args + ')'
-                rest = re.sub(re_controls, parseConstructs, rest)
-                return prefix + out + rest
     
     return match.group(0)
 
@@ -1524,12 +1526,12 @@ def createTemplateRenderFunction( id, seps=None ):
     _G.funcId += 1
     
     funcName = '_contemplateFn' + str(_G.funcId)
-    fn = createFunction(funcName, 'data,__i__', padLines(func, 1), {'Contemplate': Contemplate})
+    fn = createFunction(funcName, 'data,self_,__i__', padLines(func, 1), {'Contemplate': Contemplate})
     
     blockfns = {}
     for b in blocks:
         funcName = '_contemplateBlockFn_' + b[0] + '_' + str(_G.funcId)
-        blockfns[b] = createFunction(funcName, 'data,__i__', padLines(b[1], 1), {'Contemplate': Contemplate})
+        blockfns[b] = createFunction(funcName, 'data,self_,__i__', padLines(b[1], 1), {'Contemplate': Contemplate})
     
     return [ fn, blockfns]
 
@@ -1557,7 +1559,7 @@ def createCachedTemplate( id, filename, classname, seps=None ):
     
     # tpl render code
     if _G.extends:
-        extendCode = "self.extend('"+_G.extends+"')"
+        extendCode = "self_.extend('"+_G.extends+"')"
         renderCode = _G.TT_RCODE({
             "EOL":  _G.TEOL,
             'RCODE': "__p__ = ''" 
@@ -1601,7 +1603,7 @@ def getCachedTemplate( id, options=dict() ):
             
             if 'parsed' in options:
                 _G.funcId += 1
-                tpl.setRenderFunction( createFunction('_contemplateFn' + str(_G.funcId), 'data,__i__', padLines(options['parsed'], 1), {'Contemplate': Contemplate}) )
+                tpl.setRenderFunction( createFunction('_contemplateFn' + str(_G.funcId), 'data,self_,__i__', padLines(options['parsed'], 1), {'Contemplate': Contemplate}) )
             else:
                 fns = createTemplateRenderFunction(id, options['separators'])
                 tpl.setRenderFunction( fns[0] )
@@ -1747,7 +1749,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.8.4"
+    VERSION = "0.9"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -1792,11 +1794,12 @@ class Contemplate:
             ,"        # constructor"
             ,"        def __init__(self, id=None):"
             ,"            # initialize internal vars"
-            ,"            self._renderer = None"
-            ,"            self._extends = None"
-            ,"            self._blocks = None"
-            ,"            self.id = None"
-            ,"            self.id = id"
+            ,"            self_ = self"
+            ,"            self_._renderer = None"
+            ,"            self_._extends = None"
+            ,"            self_._blocks = None"
+            ,"            self_.id = None"
+            ,"            self_.id = id"
             ,"            "
             ,"            # extend tpl assign code starts here"
             ,"#EXTENDCODE#"
@@ -1808,20 +1811,22 @@ class Contemplate:
             ,""
             ,"        # render a tpl block method"
             ,"        def renderBlock(self, block, data, __i__=None):"
-            ,"            if not __i__: __i__ = self"
+            ,"            self_ = self"
+            ,"            if not __i__: __i__ = self_"
             ,"            method = '_blockfn_' + block"
-            ,"            if (hasattr(self, method) and callable(getattr(self, method))):"
-            ,"                return getattr(self, method)(data, __i__)"
-            ,"            elif self._extends:"
-            ,"                return self._extends.renderBlock(block, data, __i__)"
+            ,"            if (hasattr(self_, method) and callable(getattr(self_, method))):"
+            ,"                return getattr(self_, method)(data, self_, __i__)"
+            ,"            elif self_._extends:"
+            ,"                return self_._extends.renderBlock(block, data, __i__)"
             ,"            return ''"
             ,"            "
             ,"        # tpl render method"
             ,"        def render(self, data, __i__=None):"
-            ,"            if  not __i__: __i__ = self"
+            ,"            self_ = self"
+            ,"            if  not __i__: __i__ = self_"
             ,"            __p__ = ''"
-            ,"            if self._extends:"
-            ,"                __p__ = self._extends.render(data, __i__)"
+            ,"            if self_._extends:"
+            ,"                __p__ = self_._extends.render(data, __i__)"
             ,""
             ,"            else:"
             ,"                # tpl main render code starts here"
@@ -1849,7 +1854,7 @@ class Contemplate:
         _G.TT_BlockCode = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
             ""
             ,"# tpl block render method for block '#BLOCKNAME#'"
-            ,"def #BLOCKMETHODNAME#(self, data, __i__):"
+            ,"def #BLOCKMETHODNAME#(self, data, self_, __i__):"
             ,"#BLOCKMETHODCODE#"
             ,""
         ]), {
@@ -1981,10 +1986,11 @@ class Contemplate:
         global _G
         name = str(name)
         if isinstance(pluginCode, Contemplate.InlineTemplate):
-            _G.plugins[ 'plg_' + name ] = pluginCode
-        else:
-            _G.plugins[ 'plg_' + name ] = 'Contemplate.plg_' + name
-            setattr(Contemplate, 'plg_' + name, pluginCode)
+            _G.plugins[ name ] = pluginCode
+        #elif not hasattr(Contemplate, name) and not callable(getattr(Contemplate, name))):
+        elif not hasattr(Contemplate, name):
+            _G.plugins[ name ] = 'Contemplate.' + name
+            setattr(Contemplate, name, pluginCode)
     
     # static
     def setPrefixCode( preCode=None ):
@@ -1993,12 +1999,12 @@ class Contemplate:
             _G.tplPrefixCode = str(preCode)
     
     # static
-    def setLocaleStrings( l ): 
+    def setLocales( locales ): 
         global _G
-        _G.locale = Contemplate.merge(_G.locale, l)
+        _G.locale = Contemplate.merge(_G.locale, locales)
     
     # static
-    def clearLocaleStrings( ): 
+    def clearLocales( ): 
         global _G
         _G.locale = {}
     
@@ -2266,15 +2272,12 @@ class Contemplate:
         
     # locale, l
     # static
-    def locale( e ): 
+    def locale( s ): 
         global _G
-        if (e in _G.locale):
-            return _G.locale[e]
-        else:
-            return e
+        return _G.locale[s] if (s in _G.locale) else s
     
     # pluralise
-    def pluralise( singular, count ): 
+    def plural( singular, count ): 
         global _G
         if (singular in _G.plurals):
             if (1 != count): return _G.plurals[singular]
@@ -2286,221 +2289,6 @@ class Contemplate:
         global _G
         _G.uuid += 1
         return '_'.join( [ str(namespace), str(_G.uuid), str(int(time.time())) ] )
-    
-    #
-    #  HTML elements
-    #
-    
-    # html table
-    # static
-    def htmltable( data, options={} ):
-        _self = Contemplate
-        # clone data to avoid mess-ups
-        data = _self.merge({}, data)
-        options = _self.merge({}, options)
-        
-        hasRowTpl = 'tpl_row' in options
-        hasCellTpl = 'tpl_cell' in options
-        rowTpl = None 
-        cellTpl = None
-        
-        if hasRowTpl:
-        
-            if not isinstance(options['tpl_row'], Contemplate.InlineTemplate):
-                options['tpl_row'] = Contemplate.InlineTemplate(str(options['tpl_row']), {'$row_class':'row_class','$row':'row'})
-            rowTpl = options['tpl_row']
-        
-        if hasCellTpl:
-        
-            if not isinstance(options['tpl_cell'], Contemplate.InlineTemplate):
-                options['tpl_cell'] = Contemplate.InlineTemplate(str(options['tpl_cell']), {'$cell':'cell'})
-            cellTpl = options['tpl_cell']
-        
-            
-        o="<table"
-        
-        if 'id' in options:
-            o+=" id='"+str(options['id'])+"'"
-        if 'class' in options:
-            o+=" class='"+str(options['class'])+"'"
-        if 'style' in options:
-            o+=" style='"+str(options['style'])+"'"
-        if 'data' in options:
-            for k,v in options['data'].items():
-                o+=" data-"+str(k)+"='"+str(v)+"'"
-            
-        o+=">"
-            
-        tk=''
-        if ('header' in options) or ('footer' in options):
-            tk="<td>"+'</td><td>'.join(data.keys())+"</td>"
-            
-        header=''
-        if ('header' in options) and options['header']:
-            header="<thead><tr>"+tk+"</tr></thead>"
-            
-        footer='';
-        if ('footer' in options) and options['footer']:
-            footer="<tfoot><tr>"+tk+"</tr></tfoot>"
-        
-        o+=header
-        
-        # get data rows
-        vals=data.values()
-        
-        maxCol=0
-        for i,col in  enumerate(vals):
-            
-            if not isinstance(col, list):  l=1
-            else: l=len(col)
-            
-            if l>maxCol: maxCol=l
-            
-            
-            
-        rows={}
-        for i,col in enumerate(vals):
-        
-            if not isinstance(col, list): colvals=[col]
-            else: colvals=col[:]
-            l=len(colvals)
-            
-            for j in range(l):
-            
-                if j not in rows: rows[j]=[''] * maxCol
-                
-                rows[j][i]=str(colvals[j])
-        
-        
-        if 'odd' in options:
-            class_odd=str(options['odd'])
-        else:
-            class_odd='odd'
-        if 'even' in options:
-            class_even=str(options['even'])
-        else:
-            class_even='even'
-            
-        # render rows
-        
-        odd=False
-        l=len(rows)
-        for i in range(l):
-        
-            row_class = class_odd if odd else class_even
-            
-            if hasCellTpl:
-            
-                row = ''
-                for cell in rows[i]:
-                    row += cellTpl.render( {'cell': cell} )
-            
-            else:
-            
-                row = "<td>"+("</td><td>".join(rows[i]))+"</td>"
-            
-            if hasRowTpl:
-            
-                o += rowTpl.render( {'row_class': row_class, 'row': row} )
-            
-            else:
-            
-                o += "<tr class='"+row_class+"'>"+row+"</tr>"
-            
-            odd = False if odd else True
-            
-        del rows
-        
-        o+=footer
-        o+="</table>"
-        return o
-    
-    # html select
-    # static
-    def htmlselect( data, options={} ):
-        _self = Contemplate
-        # clone data to avoid mess-ups
-        data = _self.merge({}, data)
-        options = _self.merge({}, options)
-        hasOptionTpl = 'tpl_option' in options
-        optionTpl = None
-            
-        if hasOptionTpl:
-        
-            if not isinstance(options['tpl_option'], Contemplate.InlineTemplate):
-                options['tpl_option'] = Contemplate.InlineTemplate(str(options['tpl_option']), {'$selected':'selected','$value':'value','$option':'option'})
-            optionTpl = options['tpl_option']
-        
-            
-        o="<select"
-        
-        if ('multiple' in options) and options['multiple']:
-            o+=" multiple"
-        if ('disabled' in options) and options['disabled']:
-            o+=" disabled='disabled'"
-        if 'name' in options:
-            o+=" name='"+str(options['name'])+"'"
-        if 'id' in options:
-            o+=" id='"+str(options['id'])+"'"
-        if 'class' in options:
-            o+=" class='"+str(options['class'])+"'"
-        if 'style' in options:
-            o+=" style='"+str(options['style'])+"'"
-        if 'data' in options:
-            for k,v in options['data'].items():
-                o+=" data-"+str(k)+"='"+str(v)+"'"
-            
-        
-        o+=">"
-        
-        if 'selected' in options:
-            if not isinstance(options['selected'], list): options['selected']=[options['selected']]
-        else:
-            options['selected']=[]
-            
-        if 'optgroups' in options:
-            if not isinstance(options['optgroups'], list): options['optgroups']=[options['optgroups']]
-        
-    
-        for k,v in data.items():
-        
-            if ('optgroups' in options) and (k in  options['optgroups']):
-            
-                o+="<optgroup label='"+str(k)+"'>"
-                
-                v1 = v
-                if isinstance(v, str) or isinstance(v, int) or not hasattr(v, '__iter__'):  v1 = [v]
-                
-                for k2,v2 in ODict(v1).items():
-                
-                    if 'use_key' in options:  v2=k2
-                    elif 'use_value' in options:   k2=v2
-                        
-                    if hasOptionTpl:
-                        o += optionTpl.render({'value': k2,'option': v2,'selected': ' selected="selected"' if k2 in options['selected'] else ''})
-                    elif k2 in options['selected']:
-                        o += "<option value='"+str(k2)+"' selected='selected'>"+str(v2)+"</option>"
-                    else:
-                        o += "<option value='"+str(k2)+"'>"+str(v2)+"</option>"
-                    
-                
-                o+="</optgroup>"
-            
-            else:
-            
-                if 'use_key' in options: v=k
-                elif 'use_value' in options:  k=v
-                    
-                if hasOptionTpl:
-                    o += optionTpl.render({'value': k,'option': v,'selected': ' selected="selected"' if k in options['selected'] else ''})
-                elif k in options['selected']:
-                    o += "<option value='"+str(k)+"' selected='selected'>"+str(v)+"</option>"
-                else:
-                    o += "<option value='"+str(k)+"'>"+str(v)+"</option>"
-            
-        
-        o+="</select>"
-        return o
     
    # static
     def getTemplateContents( id ):

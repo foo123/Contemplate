@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.8.4
+*  @version: 0.9
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -191,32 +191,45 @@ class ContemplateTemplate
     
     public function renderBlock( $block, &$data, $__i__=null )
     {
-        if ( !$__i__ ) $__i__ = $this;
-        if ( $this->_blocks && isset($this->_blocks[$block]) ) 
+        $self = $this;
+        if ( !$__i__ ) $__i__ = $self;
+        if ( $self->_blocks && isset($self->_blocks[$block]) ) 
         {
-            $blockfunc = $this->_blocks[$block]; 
-            return $blockfunc( $data, $__i__ );
+            $blockfunc = $self->_blocks[$block]; 
+            return $blockfunc( $data, $self, $__i__ );
         }
-        elseif ( $this->_extends ) 
+        elseif ( $self->_extends ) 
         {
-            return $this->_extends->renderBlock($block, $data, $__i__);
+            return $self->_extends->renderBlock($block, $data, $__i__);
+        }
+        return '';
+    }
+    
+    public function renderSuperBlock( $block, &$data, $__i__=null )
+    {
+        $self = $this;
+        if ( !$__i__ ) $__i__ = $self;
+        if ( $self->_extends ) 
+        {
+            return $self->_extends->renderBlock($block, $data, $__i__);
         }
         return '';
     }
     
     public function render( &$data, $__i__=null ) 
     {
-        if ( !$__i__ ) $__i__ = $this;
+        $self = $this;
+        if ( !$__i__ ) $__i__ = $self;
         $__p__ = ''; 
-        if ( $this->_extends ) 
+        if ( $self->_extends ) 
         { 
-            $__p__ = $this->_extends->render($data, $__i__); 
+            $__p__ = $self->_extends->render($data, $__i__); 
         }
-        elseif ( $this->_renderer )
+        elseif ( $self->_renderer )
         {
             /* dynamic function */
-            $renderer = $this->_renderer;
-            $__p__ = $renderer($data, $__i__);
+            $renderer = $self->_renderer;
+            $__p__ = $renderer($data, $self, $__i__);
         }
         return $__p__;
     }
@@ -224,7 +237,7 @@ class ContemplateTemplate
 
 class Contemplate
 {
-    const VERSION = "0.8.4";
+    const VERSION = "0.9";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -298,7 +311,7 @@ class Contemplate
     private static $TT_FUNC = null;
     private static $TT_RCODE = null;
     
-    private static $re_plugin = '/^(plg_|plugin_)([a-zA-Z0-9_]+)/';
+    //private static $re_plugin = '/^(plg_|plugin_)([a-zA-Z0-9_]+)/';
     private static $re_controls = '/(\\t|[ ]?)[ ]*%([a-zA-Z_][a-zA-Z0-9_]*)\\b[ ]*(\\()(.*)$/';
         
     private static $__controlConstructs = array(
@@ -313,12 +326,12 @@ class Contemplate
         's', 'n', 'f', 'q', 'dq', 
         'echo', 'time', 'count',
         'lowercase', 'uppercase', 'ucfirst', 'lcfirst', 'sprintf',
-        'date', 'ldate', 'locale', 'pluralise',
+        'date', 'ldate', 'locale', 'plural',
         'inline', 'tpl', 'uuid', 'haskey',
         'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
         'camelcase', 'snakecase', 
         'e','html', 'url',
-        'htmlselect', 'htmltable'
+        'super'
     );
     private static $__func_aliases = array(
         'l'=> 'locale',
@@ -369,12 +382,13 @@ class Contemplate
             ,"    /* constructor */"
             ,"    public function __construct(\$id=null)"
             ,"    {"
+            ,"        \$self = \$this;"
             ,"        /* initialize internal vars */"
-            ,"        \$this->_renderer = null;"
-            ,"        \$this->_extends = null;"
-            ,"        \$this->_blocks = null;"
-            ,"        \$this->id = null; "
-            ,"        \$this->id = \$id;"
+            ,"        \$self->_renderer = null;"
+            ,"        \$self->_extends = null;"
+            ,"        \$self->_blocks = null;"
+            ,"        \$self->id = null;"
+            ,"        \$self->id = \$id;"
             ,"        "
             ,"        /* extend tpl assign code starts here */"
             ,"#EXTENDCODE#"
@@ -388,21 +402,23 @@ class Contemplate
             ,"    /* tpl renderBlock method */"
             ,"    public function renderBlock(\$block, &\$data, \$__i__=null)"
             ,"    {"
-            ,"        if ( !\$__i__ ) \$__i__ = \$this;"
+            ,"        \$self = \$this;"
+            ,"        if ( !\$__i__ ) \$__i__ = \$self;"
             ,"        \$method = '_blockfn_' . \$block;"
-            ,"        if ( method_exists(\$this, \$method) ) return \$this->{\$method}(\$data, \$__i__);"
-            ,"        elseif ( \$this->_extends ) return \$this->_extends->renderBlock(\$block, \$data, \$__i__);"
+            ,"        if ( method_exists(\$self, \$method) ) return \$self->{\$method}(\$data, \$self, \$__i__);"
+            ,"        elseif ( \$self->_extends ) return \$self->_extends->renderBlock(\$block, \$data, \$__i__);"
             ,"        return '';"
             ,"    }"
             ,"    "
             ,"    /* tpl render method */"
             ,"    public function render(&\$data, \$__i__=null)"
             ,"    {"
-            ,"        if ( !\$__i__ ) \$__i__ = \$this;"
+            ,"        \$self = \$this;"
+            ,"        if ( !\$__i__ ) \$__i__ = \$self;"
             ,"        \$__p__ = '';"
-            ,"        if ( \$this->_extends )"
+            ,"        if ( \$self->_extends )"
             ,"        {"
-            ,"            \$__p__ = \$this->_extends->render(\$data, \$__i__);"
+            ,"            \$__p__ = \$self->_extends->render(\$data, \$__i__);"
             ,"        }"
             ,"        else"
             ,"        {"
@@ -428,7 +444,7 @@ class Contemplate
         self::$TT_BlockCode = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
             ""
             ,"/* tpl block render method for block '#BLOCKNAME#' */"
-            ,"private function #BLOCKMETHODNAME#(&\$data, \$__i__) "
+            ,"private function #BLOCKMETHODNAME#(&\$data, \$self, \$__i__) "
             ,"{ "
             ,"#BLOCKMETHODCODE#"
             ,"}"
@@ -595,7 +611,7 @@ class Contemplate
     // add custom plugins as template functions
     public static function addPlugin( $name, $pluginCode ) 
     {
-        self::$__plugins[ 'plg_' . $name ] = $pluginCode;
+        self::$__plugins[ $name ] = $pluginCode;
     }
     
     // custom php code to add to start of template (eg custom access checks etc..)
@@ -605,12 +621,12 @@ class Contemplate
             self::$__tplPrefixCode = (string)$preCode;
     }
     
-    public static function setLocaleStrings( $l ) 
+    public static function setLocales( $locales ) 
     { 
-        self::$__locale = self::merge(self::$__locale, $l); 
+        self::$__locale = self::merge(self::$__locale, (array)$locales); 
     }
     
-    public static function clearLocaleStrings( ) 
+    public static function clearLocales( ) 
     { 
         self::$__locale = array(); 
     }
@@ -867,6 +883,12 @@ class Contemplate
     //  Localization functions
     //
     
+    // time/now
+    public static function time( ) 
+    { 
+        return time(); 
+    }
+    
     // formatted date
     public static function date( $format, $time=false ) 
     { 
@@ -882,19 +904,16 @@ class Contemplate
     }
     
     // locale
-    public static function locale( $e ) 
+    public static function locale( $s ) 
     { 
-        return ( isset(self::$__locale[$e]) ) ? self::$__locale[$e] : $e; 
+        return ( isset(self::$__locale[$s]) ) ? self::$__locale[$s] : $s; 
     }
-    public static function l( $e ) 
-    { 
-        return self::locale($e); 
-    }
+    
     // pluralise
-    public static function pluralise( $singular, $count ) 
+    public static function plural( $singular, $count ) 
     { 
         if ( isset(self::$__plurals[$singular]) )
-            return 1 != $count ? self::$__plurals[$singular] : $singular;
+            return 1 !== $count ? self::$__plurals[$singular] : $singular;
         return $singular;
     }
     
@@ -904,200 +923,7 @@ class Contemplate
         return implode('_', array($namespace, ++self::$__uuid, time()));
     }
     
-    //
-    //  HTML elements
-    //
-    
-    // html table
-    public static function htmltable( $data, $options=array() )
-    {
-        $data=(array)$data;
-        $options=(array)$options;
-        
-        $hasRowTpl = isset($options['tpl_row']);
-        $hasCellTpl = isset($options['tpl_cell']);
-        $rowTpl = null; $cellTpl = null;
-        
-        if ( $hasRowTpl )
-        {
-            if ( !($options['tpl_row'] instanceof ContemplateInlineTemplate) )
-                $options['tpl_row'] = new ContemplateInlineTemplate($options['tpl_row'], array('$odd'=>'odd','$row'=>'row'));
-            $rowTpl = $options['tpl_row'];
-        }
-        if ( $hasCellTpl )
-        {
-            if ( !($options['tpl_cell'] instanceof ContemplateInlineTemplate) )
-                $options['tpl_cell'] = new ContemplateInlineTemplate($options['tpl_cell'], array('$cell'=>'cell'));
-            $cellTpl = $options['tpl_cell'];
-        }
-            
-        $o="<table";
-        
-        if (isset($options['id']))  $o.=" id='{$options['id']}'";
-        if (isset($options['class'])) $o.=" class='{$options['class']}'";
-        if (isset($options['style']))  $o.=" style='{$options['style']}'";
-        if (isset($options['data']))
-        {
-            foreach ((array)$options['data'] as $k=>$v)
-                $o.=" data-{$k}='{$v}'";
-        }
-        $o.=">";
-            
-        $tk='';
-        if (
-            (isset($options['header']) && $options['header']) || 
-            (isset($options['footer']) && $options['footer'])
-        )
-            $tk="<td>".implode('</td><td>', @array_keys($data))."</td>";
-            
-        $header='';
-        if (isset($options['header']) && $options['header'])
-            $header="<thead><tr>{$tk}</tr></thead>";
-            
-        $footer='';
-        if (isset($options['footer']) && $options['footer'])
-            $footer="<tfoot><tr>{$tk}</tr></tfoot>";
-        
-        $o.=$header;
-        
-        // get data rows
-        $rows=array();
-        foreach (@array_values($data) as $i=>$col)
-        {
-            foreach (@array_values((array)$col) as $j=>$d)
-            {
-                if (!isset($rows[$j])) $rows[$j]=array_fill(0, count($col), '');
-                $rows[$j][$i]=$d;
-            }
-        }
-        
-        if (isset($options['odd']))
-            $class_odd=$options['odd'];
-        else
-            $class_odd='odd';
-        if (isset($options['even']))
-            $class_even=$options['even'];
-        else
-            $class_even='even';
-            
-        // render rows
-        $odd=false;
-        foreach (@$rows as $row1)
-        {
-            $row_class = $odd ? $class_odd : $class_even;
-            
-            if ( $hasCellTpl )
-            {
-                $row = ''; $rl = count($row1);
-                for ($r=0; $r<$rl; $r++)
-                    $row .= $cellTpl->render( array('cell'=> $row1[$r]) );
-            }
-            else
-            {
-                $row = "<td>".implode('</td><td>', $row1)."</td>";
-            }
-            if ( $hasRowTpl )
-            {
-                $o .= $rowTpl->render( array('odd'=> $row_class, 'row'=> $row) );
-            }
-            else
-            {
-                $o .= "<tr class='" . $row_class . "'>".$row."</tr>";
-            }
-            
-            $odd=!$odd;
-        }
-        unset($rows);
-        
-        $o.=$footer;
-        $o.="</table>";
-        return $o;
-    }
-    
-    // html select
-    public static function htmlselect( $data, $options=array() )
-    {
-        $data=(array)$data;
-        $options=(array)$options;
-        
-        $hasOptionTpl = isset($options['tpl_option']); 
-        $optionTpl = null;
-        
-        if ( $hasOptionTpl )
-        {
-            if ( !($options['tpl_option'] instanceof ContemplateInlineTemplate) )
-                $options['tpl_option'] = new ContemplateInlineTemplate($options['tpl_option'], array('$selected'=>'selected','$value'=>'value','$option'=>'option'));
-            $optionTpl = $options['tpl_option'];
-        }
-            
-        $o="<select";
-        
-        if (isset($options['multiple']) && $options['multiple']) $o.=" multiple";
-        if (isset($options['disabled']) && $options['disabled']) $o.=" disabled='disabled'";
-        if (isset($options['name'])) $o.=" name='{$options['name']}'";
-        if (isset($options['id'])) $o.=" id='{$options['id']}'";
-        if (isset($options['class']))  $o.=" class='{$options['class']}'";
-        if (isset($options['style'])) $o.=" style='{$options['style']}'";
-        if (isset($options['data']))
-        {
-            foreach ((array)$options['data'] as $k=>$v)
-                $o.=" data-{$k}='{$v}'";
-        }
-        $o.=">";
-        
-        if (isset($options['selected']))
-            $options['selected']=array_flip((array)$options['selected']);
-        else
-            $options['selected']=array();
-            
-        if (isset($options['optgroups']))
-            $options['optgroups']=array_flip((array)$options['optgroups']);
-    
-        foreach ($data as $k=>$v)
-        {
-            if (isset($options['optgroups']) && isset($options['optgroups'][$k]))
-            {
-                $o.="<optgroup label='{$k}'>";
-                foreach ((array)$v as $k2=>$v2)
-                {
-                    if (isset($options['use_key']))  $v2=$k2;
-                    elseif (isset($options['use_value'])) $k2=$v2;
-                        
-                    if ( $hasOptionTpl )
-                        $o .= $optionTpl->render(array(
-                            'value'=> $k2,
-                            'option'=> $v2,
-                            'selected'=> array_key_exists($k2, $options['selected']) ? ' selected="selected"' : ''
-                        ));
-                    elseif (/*isset($options['selected'][$k2])*/ array_key_exists($k2, $options['selected']))
-                        $o .= "<option value='{$k2}' selected='selected'>{$v2}</option>";
-                    else
-                        $o .= "<option value='{$k2}'>{$v2}</option>";
-                }
-                $o.="</optgroup>";
-            }
-            else
-            {
-                if (isset($options['use_key'])) $v=$k;
-                elseif (isset($options['use_value'])) $k=$v;
-                    
-                if ( $hasOptionTpl )
-                    $o .= $optionTpl->render(array(
-                        'value'=> $k,
-                        'option'=> $v,
-                        'selected'=> array_key_exists($k, $options['selected']) ? ' selected="selected"' : ''
-                    ));
-                elseif (isset($options['selected'][$k]))
-                    $o .= "<option value='{$k}' selected='selected'>{$v}</option>";
-                else
-                    $o .= "<option value='{$k}'>{$v}</option>";
-            }
-        }
-        $o.="</select>";
-        return $o;
-    }
-    
-    //
+   //
     // Control structures
     //
     
@@ -1472,8 +1298,28 @@ class Contemplate
             }
         }
         
-        if ( isset(self::$__func_aliases[$ctrl]) ) 
-            $ctrl = self::$__func_aliases[$ctrl];
+        //if ( preg_match(self::$re_plugin, $ctrl, $m) && isset($m[2]) && isset(self::$__plugins['plg_' . $m[2]]) )
+        if ( isset(self::$__plugins[$ctrl]) ) 
+        {
+            // allow custom plugins as template functions
+            $pl = self::$__plugins[$ctrl];
+            $args = preg_replace_callback( $re_controls, array(__CLASS__, 'parseConstructs'), $args );
+            if ( $pl instanceof ContemplateInlineTemplate )
+            {
+                $out = $pl->render(array('args'=>$args));
+            }
+            else
+            {
+                /*self::$__plugins['plg_' . $m[2]] = $pl;
+                unset(self::$__plugins[$m[2]]);*/
+                //$out = 'Contemplate::plg_' . $m[2] . '(' . $args . ')';
+                $out = 'Contemplate::' . $ctrl . '(' . $args . ')';
+            }
+            $rest = preg_replace_callback( $re_controls, array(__CLASS__, 'parseConstructs'), $rest );
+            return $prefix . $out . $rest;
+        }
+        
+        if ( isset(self::$__func_aliases[$ctrl]) ) $ctrl = self::$__func_aliases[$ctrl];
         $m = array_search($ctrl, self::$__funcs);
         if ( false !== $m )
         {
@@ -1493,26 +1339,14 @@ class Contemplate
                 case 10: $out = 'ucfirst(' . $args . ')'; break;
                 case 11: $out = 'lcfirst(' . $args . ')'; break;
                 case 12: $out = 'sprintf(' . $args . ')'; break;
+                case 13: $out = 'date(' . $args . ')'; break;
+                case 22: $out = 'ltrim(' . $args . ')'; break;
+                case 23: $out = 'rtrim(' . $args . ')'; break;
+                case 24: $out = 'trim(' . $args . ')'; break;
+                case 25: $out = 'addslashes(' . $args . ')'; break;
+                case 26: $out = 'stripslashes(' . $args . ')'; break;
+                case 32: $out = '$self->renderSuperBlock(' . $args . ', $data, $__i__)'; break;
                 default: $out = 'Contemplate::' . $ctrl . '(' . $args . ')';
-            }
-            $rest = preg_replace_callback( $re_controls, array(__CLASS__, 'parseConstructs'), $rest );
-            return $prefix . $out . $rest;
-        }
-        
-        if ( preg_match(self::$re_plugin, $ctrl, $m) && isset($m[2]) && isset(self::$__plugins['plg_' . $m[2]]) )
-        {
-            // allow custom plugins as template functions
-            $pl = self::$__plugins['plg_' . $m[2]];
-            $args = preg_replace_callback( $re_controls, array(__CLASS__, 'parseConstructs'), $args );
-            if ( $pl instanceof ContemplateInlineTemplate )
-            {
-                $out = $pl->render(array('args'=>$args));
-            }
-            else
-            {
-                /*self::$__plugins['plg_' . $m[2]] = $pl;
-                unset(self::$__plugins[$m[2]]);*/
-                $out = 'Contemplate::plg_' . $m[2] . '(' . $args . ')';
             }
             $rest = preg_replace_callback( $re_controls, array(__CLASS__, 'parseConstructs'), $rest );
             return $prefix . $out . $rest;
@@ -2084,12 +1918,12 @@ class Contemplate
                     ));
         }
         
-        $fn = create_function('&$data,$__i__', $func);
+        $fn = create_function('&$data,$self,$__i__', $func);
         
         $blockfns = array();  
         for($b=0; $b<$bl; $b++) 
         {
-            $blockfns[$blocks[$b][0]] = create_function('&$data,$__i__', $blocks[$b][1]);
+            $blockfns[$blocks[$b][0]] = create_function('&$data,$self,$__i__', $blocks[$b][1]);
         }
         
         return array($fn, $blockfns);
@@ -2123,7 +1957,7 @@ class Contemplate
         // tpl render code
         if (self::$__extends)
         {
-            $extendCode = "\$this->extend('".self::$__extends."');";
+            $extendCode = "\$self->extend('".self::$__extends."');";
             $renderer = self::$TT_RCODE;
             $renderCode = $renderer(array(
                             'EOL'=>     self::$__TEOL,
@@ -2173,7 +2007,7 @@ class Contemplate
                 if ( isset($options['parsed']) && is_string($options['parsed']) )
                 {
                     // already parsed code was given
-                    $tpl->setRenderFunction( create_function('&$data,$__i__', $options['parsed']) ); 
+                    $tpl->setRenderFunction( create_function('&$data,$self,$__i__', $options['parsed']) ); 
                 }
                 else
                 {

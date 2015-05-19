@@ -12,11 +12,12 @@ def __getTplClass__(Contemplate):
         # constructor
         def __init__(self, id=None):
             # initialize internal vars
-            self._renderer = None
-            self._extends = None
-            self._blocks = None
-            self.id = None
-            self.id = id
+            self_ = self
+            self_._renderer = None
+            self_._extends = None
+            self_._blocks = None
+            self_.id = None
+            self_.id = id
             
             # extend tpl assign code starts here
             
@@ -28,20 +29,22 @@ def __getTplClass__(Contemplate):
 
         # render a tpl block method
         def renderBlock(self, block, data, __i__=None):
-            if not __i__: __i__ = self
+            self_ = self
+            if not __i__: __i__ = self_
             method = '_blockfn_' + block
-            if (hasattr(self, method) and callable(getattr(self, method))):
-                return getattr(self, method)(data, __i__)
-            elif self._extends:
-                return self._extends.renderBlock(block, data, __i__)
+            if (hasattr(self_, method) and callable(getattr(self_, method))):
+                return getattr(self_, method)(data, self_, __i__)
+            elif self_._extends:
+                return self_._extends.renderBlock(block, data, __i__)
             return ''
             
         # tpl render method
         def render(self, data, __i__=None):
-            if  not __i__: __i__ = self
+            self_ = self
+            if  not __i__: __i__ = self_
             __p__ = ''
-            if self._extends:
-                __p__ = self._extends.render(data, __i__)
+            if self_._extends:
+                __p__ = self_._extends.render(data, __i__)
 
             else:
                 # tpl main render code starts here

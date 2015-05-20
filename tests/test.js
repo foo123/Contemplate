@@ -19,7 +19,7 @@ var http = require('http'), httpPort = 1337,
     Exists = fs.exists, //path.exists,
     Read = fs.readFile,
     echo = console.log,
-    Contemplate = require(path.join(__dirname, '../src/js/Contemplate.js'))
+    Contemplate = require(path.join(__dirname, '../src/js/Contemplate.js')),
     ContemplateHTMLPlugin = require(path.join(__dirname, '../src/js/plugins/ContemplateHTMLPlugin.js'))
 ;
 

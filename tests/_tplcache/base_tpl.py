@@ -41,7 +41,7 @@ def __getTplClass__(Contemplate):
             
             __p__ = ''
              
-            __p__ += 'Base template Block2' + "\n" + '<!-- call the super block here in OO manner, if any -->' + "\n" + '' + str(self_.renderSuperBlock("Block2", data, __i__) ) + '' + "\n" + ''
+            __p__ += 'Base template Block2' + "\n" + '<!-- call the super block here in OO manner, if any -->' + "\n" + '' + str(self_.renderSuperBlock("Block2", data) ) + '' + "\n" + ''
             return __p__
             
         

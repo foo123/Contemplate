@@ -1527,7 +1527,7 @@ var
                 case 10: out = 'Contemplate.ucfirst(' + args + ')'; break;
                 case 11: out = 'Contemplate.lcfirst(' + args + ')'; break;
                 case 12: out = 'Contemplate.sprintf(' + args + ')'; break;
-                case 32: out = 'self.renderSuperBlock(' + args + ', data, __i__)'; break;
+                case 32: out = 'self.renderSuperBlock(' + args + ', data)'; break;
                 default: out = 'Contemplate.' + ctrl + '(' + args + ')';
             }
             rest = rest.replace( re_controls, parseConstructs );
@@ -2461,10 +2461,10 @@ Template[PROTO] = {
         return '';
     }
     
-    ,renderSuperBlock: function( block, data, __i__ ) {
+    ,renderSuperBlock: function( block, data/*, __i__*/ ) {
         var self = this;
-        __i__ = __i__ || self;
-        if ( self._extends ) return self._extends.renderBlock(block, data, __i__);
+        //__i__ = __i__ || self;
+        if ( self._extends ) return self._extends.renderBlock(block, data, self._extends);
         return '';
     }
     

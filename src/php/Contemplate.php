@@ -205,13 +205,13 @@ class ContemplateTemplate
         return '';
     }
     
-    public function renderSuperBlock( $block, &$data, $__i__=null )
+    public function renderSuperBlock( $block, &$data/*, $__i__=null*/ )
     {
         $self = $this;
-        if ( !$__i__ ) $__i__ = $self;
+        //if ( !$__i__ ) $__i__ = $self;
         if ( $self->_extends ) 
         {
-            return $self->_extends->renderBlock($block, $data, $__i__);
+            return $self->_extends->renderBlock($block, $data, $self->_extends);
         }
         return '';
     }
@@ -1345,7 +1345,7 @@ class Contemplate
                 case 24: $out = 'trim(' . $args . ')'; break;
                 case 25: $out = 'addslashes(' . $args . ')'; break;
                 case 26: $out = 'stripslashes(' . $args . ')'; break;
-                case 32: $out = '$self->renderSuperBlock(' . $args . ', $data, $__i__)'; break;
+                case 32: $out = '$self->renderSuperBlock(' . $args . ', $data)'; break;
                 default: $out = 'Contemplate::' . $ctrl . '(' . $args . ')';
             }
             $rest = preg_replace_callback( $re_controls, array(__CLASS__, 'parseConstructs'), $rest );

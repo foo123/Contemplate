@@ -487,10 +487,10 @@ class Template:
             return self._extends.renderBlock(block, data, __i__)
         return ''
         
-    def renderSuperBlock( self, block, data, __i__=None ):
-        if not __i__: __i__ = self
+    def renderSuperBlock( self, block, data ):
+        #if not __i__: __i__ = self
         if self._extends:
-            return self._extends.renderBlock(block, data, __i__)
+            return self._extends.renderBlock(block, data, self._extends)
         return ''
         
     def render( self, data, __i__=None ):
@@ -1024,7 +1024,7 @@ def parseConstructs( match ):
         elif 12==m:
             out = 'Contemplate.sprintf(' + args + ')'
         elif 32==m:
-            out = 'self_.renderSuperBlock(' + args + ', data, __i__)'
+            out = 'self_.renderSuperBlock(' + args + ', data)'
         else:
             out = 'Contemplate.' + ctrl + '(' + args + ')'
         rest = re.sub(re_controls, parseConstructs, rest)

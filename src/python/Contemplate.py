@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.9
+#  @version 0.9.0.1
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -1749,7 +1749,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.9"
+    VERSION = "0.9.0.1"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -1981,6 +1981,10 @@ class Contemplate:
     # Main template static methods
     #
     
+    def hasPlugin( name ):
+        global _G
+        return name and (name in _G.plugins)
+    
     # add custom plugins as template functions
     def addPlugin( name, pluginCode ):
         global _G
@@ -2068,6 +2072,10 @@ class Contemplate:
         global _G
         _G.cache = {}
         if all: _G.partials = {}
+    
+    def hasTpl( tpl ):
+        global _G
+        return tpl and (tpl in _G.templates)
     
     # add templates manually
     # static

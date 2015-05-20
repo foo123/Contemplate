@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.9
+*  @version: 0.9.0.1
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -33,7 +33,7 @@ else if ( !(name in root) )
     /* module factory */        function( exports, undef ) {
 "use strict";
 
-var __version__ = "0.9", Contemplate, Template, InlineTemplate, 
+var __version__ = "0.9.0.1", Contemplate, Template, InlineTemplate, 
 
     // auxilliaries
     PROTO = 'prototype', HAS = 'hasOwnProperty', 
@@ -2731,6 +2731,11 @@ Contemplate = {
     //
     
     // add custom plugins as template functions
+    hasPlugin: function( name ) {
+        return !!name && $__plugins[HAS](name);
+    },
+    
+    // add custom plugins as template functions
     addPlugin: function( name, pluginCode ) {
         if ( name && pluginCode )
         {
@@ -2847,6 +2852,11 @@ Contemplate = {
                 $__templates[ tpls ] = [tplStr, false]; 
             }
         }
+    },
+
+    // add templates manually
+    hasTpl: function( tpl ) { 
+        return !!tpl && $__templates[HAS](tpl);
     },
 
     parseTpl: function( tpl, options ) {

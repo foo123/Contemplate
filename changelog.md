@@ -1,5 +1,8 @@
 ###ChangeLog
 
+__0.9.0.1__
+* add *hasTpl(tpl)* , *hasPlugin(name)* Contemplate methods
+
 __0.9__
 * make **%htmltable** , **%htmlselect** external plugins (reduce main engine code size etc)
 * add **%super** template function to reference a super block directly if needed in OO manner

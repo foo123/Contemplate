@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.9
+*  @version: 0.9.0.1
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -237,7 +237,7 @@ class ContemplateTemplate
 
 class Contemplate
 {
-    const VERSION = "0.9";
+    const VERSION = "0.9.0.1";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -608,6 +608,11 @@ class Contemplate
     // Main template static methods
     //
     
+    public static function hasPlugin( $name ) 
+    {
+        return !empty($name) && isset(self::$__plugins[ $name ]);
+    }
+    
     // add custom plugins as template functions
     public static function addPlugin( $name, $pluginCode ) 
     {
@@ -683,6 +688,11 @@ class Contemplate
     { 
         self::$__cache = array(); 
         if ( $all ) self::$__partials = array(); 
+    }
+    
+    public static function hasTpl( $tpl ) 
+    {
+        return !empty($tpl) && isset(self::$__templates[ $tpl ]);
     }
     
     // add templates manually

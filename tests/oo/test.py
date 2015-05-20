@@ -15,11 +15,9 @@ Contemplate = import_module('Contemplate', os.path.join(os.path.dirname(__file__
 
 Contemplate.setCacheDir('./')
 Contemplate.setCacheMode(Contemplate.CACHE_TO_DISK_AUTOUPDATE)
-Contemplate.add({
-    'tpl1' : './tpl1.html',
-    'tpl2' : './tpl2.html',
-    'tpl3' : './tpl3.html'
-});
+if not Contemplate.hasTpl('tpl1'): Contemplate.add({'tpl1' : './tpl1.html'})
+if not Contemplate.hasTpl('tpl2'): Contemplate.add({'tpl2' : './tpl2.html'})
+if not Contemplate.hasTpl('tpl3'): Contemplate.add({'tpl3' : './tpl3.html'})
 
 print("--tpl1--")
 print(Contemplate.tpl("tpl1", {}))

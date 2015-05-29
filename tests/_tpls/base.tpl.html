@@ -29,4 +29,6 @@ Base template Block1
 
 <br /><br /><br /><br />
 <strong>This is Block2 Again</strong><br />
-<% %block(Block2) %><% %endblock() %>
+<% %block("Block2", false) %><% %endblock() %>
+<strong>This is Block2 using getblock</strong><br />
+<% %getblock("Block2") %>

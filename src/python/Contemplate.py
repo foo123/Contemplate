@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.9.0.1
+#  @version 0.9.1
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -155,7 +155,7 @@ class _G:
         'if', 'elseif', 'else', 'endif',
         'for', 'elsefor', 'endfor',
         'extends', 'block', 'endblock',
-        'include'
+        'include', 'super', 'getblock'
     ]
 
     funcs = [
@@ -166,8 +166,7 @@ class _G:
         'inline', 'tpl', 'uuid', 'haskey',
         'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
         'camelcase', 'snakecase', 
-        'e','html', 'url',
-        'super'
+        'e','html', 'url'
     ]
     func_aliases = {
         'l': 'locale',
@@ -816,12 +815,14 @@ def t_extends( id ):
 # static
 def t_block( block ):
     global _G
-    block = block.strip()
+    block = block.split(',')
+    echoed = not(("False"==block[1].strip()) if len(block)>1 else False)
+    block = block[0].strip()
     if _G.strings and (block in _G.strings): block = _G.strings[block]
     ch = block[0]
     if '"' == ch or "'" == ch: block = block[1:-1] # quoted block
     
-    _G.allblocks.append( [block, -1, -1, 0, _G.openblocks[ 0 ][ 1 ]] )
+    _G.allblocks.append( [block, -1, -1, 0, _G.openblocks[ 0 ][ 1 ], echoed] )
     if block in _G.allblockscnt: _G.allblockscnt[ block ] += 1
     else: _G.allblockscnt[ block ] = 1
     _G.blockptr = len( _G.allblocks )
@@ -980,6 +981,18 @@ def parseConstructs( match ):
             out = t_include(args)
             rest = re.sub(re_controls, parseConstructs, rest)
             return out + rest
+        
+        elif 14==m: # super
+            args = re.sub(re_controls, parseConstructs, args)
+            out = 'self_.renderSuperBlock(' + args + ', data)'
+            rest = re.sub(re_controls, parseConstructs, rest)
+            return prefix + out + rest
+        
+        elif 15==m: # getblock
+            args = re.sub(re_controls, parseConstructs, args)
+            out = '__i__.renderBlock(' + args + ', data)'
+            rest = re.sub(re_controls, parseConstructs, rest)
+            return prefix + out + rest
     
     if ctrl in _G.plugins:
         pl = _G.plugins[ctrl]
@@ -1023,8 +1036,6 @@ def parseConstructs( match ):
             out = 'Contemplate.lcfirst(' + args + ')'
         elif 12==m:
             out = 'Contemplate.sprintf(' + args + ')'
-        elif 32==m:
-            out = 'self_.renderSuperBlock(' + args + ', data)'
         else:
             out = 'Contemplate.' + ctrl + '(' + args + ')'
         rest = re.sub(re_controls, parseConstructs, rest)
@@ -1048,8 +1059,9 @@ def parseBlocks( s ):
         pos2 = delims[ 2 ]
         off = delims[ 3 ]
         containerblock = delims[ 4 ]
+        echoed = delims[ 5 ]
         tag = "#|" + block + "|#"
-        rep = "__i__.renderBlock('" + block + "', data) "
+        rep = "__i__.renderBlock('" + block + "', data) " if echoed else "'' "
         tl = len(tag) 
         rl = len(rep)
         
@@ -1617,7 +1629,7 @@ def getCachedTemplate( id, options=dict() ):
         if True != options['autoUpdate'] and CM == Contemplate.CACHE_TO_DISK_NOUPDATE:
         
             cachedTplFile = getCachedTemplateName(id)
-            cachedTplPath = os.path.join(_G.cacheDir, cachedTplFile)
+            cachedTplPath = os.path.join(options['cacheDir'], cachedTplFile)
             cachedTplClass = getCachedTemplateClass(id)
             if not os.path.isfile(cachedTplPath):
                 # if not exist, create it
@@ -1632,7 +1644,7 @@ def getCachedTemplate( id, options=dict() ):
         elif True == options['autoUpdate'] or CM == Contemplate.CACHE_TO_DISK_AUTOUPDATE:
         
             cachedTplFile = getCachedTemplateName(id)
-            cachedTplPath = os.path.join(_G.cacheDir, cachedTplFile)
+            cachedTplPath = os.path.join(options['cacheDir'], cachedTplFile)
             cachedTplClass = getCachedTemplateClass(id)
             if not os.path.isfile(cachedTplPath) or (os.path.getmtime(cachedTplPath) <= os.path.getmtime(template[0])):
                 # if tpl not exist or is out-of-sync (re-)create it
@@ -1749,7 +1761,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.9.0.1"
+    VERSION = "0.9.1"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -2139,7 +2151,8 @@ class Contemplate:
             'autoUpdate': False, 
             'refresh': False, 
             'escape': False,
-            'separators': None
+            'separators': None,
+            'cacheDir': _G.cacheDir
         }, options)
         
         if False == options['escape']: _G.escape = False

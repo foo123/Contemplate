@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.9.0.1
+*  @version: 0.9.1
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -33,7 +33,7 @@ else if ( !(name in root) )
     /* module factory */        function( exports, undef ) {
 "use strict";
 
-var __version__ = "0.9.0.1", Contemplate, Template, InlineTemplate, 
+var __version__ = "0.9.1", Contemplate, Template, InlineTemplate, 
 
     // auxilliaries
     PROTO = 'prototype', HAS = 'hasOwnProperty', 
@@ -886,7 +886,7 @@ var
         'if', 'elseif', 'else', 'endif',
         'for', 'elsefor', 'endfor',
         'extends', 'block', 'endblock',
-        'include'
+        'include', 'super', 'getblock'
     ],
     
     $__funcs = [ 
@@ -897,8 +897,7 @@ var
         'inline', 'tpl', 'uuid', 'haskey',
         'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
         'camelcase', 'snakecase', 
-        'e','html', 'url',
-        'super'
+        'e','html', 'url'
     ],
     $__func_aliases = {
         'l': 'locale',
@@ -1343,12 +1342,14 @@ var
     
     // define (overridable) block
     t_block = function( block ) { 
-        block = trim( block );
+        block = block.split(',');
+        var echoed = !(block.length>1 ? "false"===trim(block[1]) : false);
+        block = trim(block[0]);
         if ( $__strings && $__strings[HAS](block) ) block = $__strings[block];
         var ch = block.charAt(0);
         if ( '"' === ch || "'" === ch ) block = block.slice(1,-1); // quoted block
         
-        $__allblocks.push( [block, -1, -1, 0, $__openblocks[ 0 ][ 1 ]] );
+        $__allblocks.push( [block, -1, -1, 0, $__openblocks[ 0 ][ 1 ], echoed] );
         $__allblockscnt[ block ] = $__allblockscnt[ block ] ? ($__allblockscnt[ block ]+1) : 1;
         $__blockptr = $__allblocks.length;
         $__openblocks.unshift( [block, $__blockptr-1] );
@@ -1492,6 +1493,20 @@ var
                     out = t_include( args );
                     rest = rest.replace( re_controls, parseConstructs );
                     return out + rest;
+                
+                case 14 /*'super'*/:  
+                    prefix = prefix || '';
+                    args = args.replace( re_controls, parseConstructs );
+                    out = 'self.renderSuperBlock(' + args + ', data)';
+                    rest = rest.replace( re_controls, parseConstructs );
+                    return prefix + out + rest;
+                
+                case 15 /*'getblock'*/:  
+                    prefix = prefix || '';
+                    args = args.replace( re_controls, parseConstructs );
+                    out = '__i__.renderBlock(' + args + ', data)';
+                    rest = rest.replace( re_controls, parseConstructs );
+                    return prefix + out + rest;
             }
         }
         
@@ -1527,7 +1542,6 @@ var
                 case 10: out = 'Contemplate.ucfirst(' + args + ')'; break;
                 case 11: out = 'Contemplate.lcfirst(' + args + ')'; break;
                 case 12: out = 'Contemplate.sprintf(' + args + ')'; break;
-                case 32: out = 'self.renderSuperBlock(' + args + ', data)'; break;
                 default: out = 'Contemplate.' + ctrl + '(' + args + ')';
             }
             rest = rest.replace( re_controls, parseConstructs );
@@ -1540,7 +1554,7 @@ var
     parseBlocks = function( s ) {
         var blocks = [], bl = $__allblocks.length, 
             block, delims, tag, rep, tl, rl,
-            pos1, pos2, off, containerblock
+            pos1, pos2, off, containerblock, echoed
         ;
         
         while ( bl-- )
@@ -1552,8 +1566,9 @@ var
             pos2 = delims[ 2 ];
             off = delims[ 3 ];
             containerblock = delims[ 4 ];
+            echoed = delims[ 5 ];
             tag = "#|" + block + "|#";
-            rep = "__i__.renderBlock('" + block + "', data);";
+            rep = echoed ? "__i__.renderBlock('" + block + "', data);" : "'';";
             tl = tag.length; rl = rep.length;
             
             if ( -1 < containerblock )
@@ -2033,8 +2048,8 @@ var
         return parsed;
     },
     
-    getCachedTemplateName = function( id ) { 
-        return $__cacheDir + id.replace(UNDERLN, '_') + '_tpl.js'; 
+    getCachedTemplateName = function( id, cacheDir ) { 
+        return cacheDir + id.replace(UNDERLN, '_') + '_tpl.js'; 
     },
     
     getCachedTemplateClass = function( id ) { 
@@ -2182,7 +2197,7 @@ var
                 
                 if ( true !== options.autoUpdate && Contemplate.CACHE_TO_DISK_NOUPDATE === $__cacheMode )
                 {
-                    var cachedTplFile = getCachedTemplateName(id), 
+                    var cachedTplFile = getCachedTemplateName(id, options.cacheDir), 
                         cachedTplClass = getCachedTemplateClass(id);
                     if ( !fexists(cachedTplFile) )
                     {
@@ -2199,7 +2214,7 @@ var
                 
                 else if ( true === options.autoUpdate || Contemplate.CACHE_TO_DISK_AUTOUPDATE === $__cacheMode )
                 {    
-                    var cachedTplFile = getCachedTemplateName(id), 
+                    var cachedTplFile = getCachedTemplateName(id, options.cacheDir), 
                         cachedTplClass = getCachedTemplateClass(id);
                     if ( !fexists(cachedTplFile) )
                     {
@@ -2895,7 +2910,8 @@ Contemplate = {
             'autoUpdate': false,
             'refresh': false,
             'escape': true,
-            'separators': null
+            'separators': null,
+            'cacheDir': $__cacheDir
         }, options);
         
         $__escape = false !== options.escape;

@@ -63,8 +63,7 @@ There are a couple of other frameworks named also _contemplate_
 
 ###Rationale
 
-There are many templating engines out there, which are elegant, fast, multipurpose (eg. _smarty_ _mustache_  _twig_  _swig_ _handlebars_  _jade_  _doT_ and so on..)
-
+There are many templating engines out there, which are elegant, fast, multipurpose  and so on..
 Most of the sophisticated engines use a custom parser (and usually a full-fledged framework) to build the engine. 
 
 This is highly versatile:
@@ -147,6 +146,7 @@ syntax, yet work the same in all the engine's implementations.
 
 ###Todo
 
+* add support for multiple **contexts** (which include separate templates, cache directories and related parameters) so that the same engine can be used in same application by different modules independantly
 * support asynchronous template loading/rendering for node/browser
 * add Contemplate implementations for ActionScript, Perl, Java, Scala
 * transform Contemplate (for PHP) into a PHP C-extension, Contemplate (for node) into standalone executable (eg. https://github.com/crcn/nexe)

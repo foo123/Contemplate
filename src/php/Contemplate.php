@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.9.0.1
+*  @version: 0.9.1
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -237,7 +237,7 @@ class ContemplateTemplate
 
 class Contemplate
 {
-    const VERSION = "0.9.0.1";
+    const VERSION = "0.9.1";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -319,7 +319,7 @@ class Contemplate
         'if', 'elseif', 'else', 'endif',
         'for', 'elsefor', 'endfor',
         'extends', 'block', 'endblock',
-        'include'
+        'include', 'super', 'getblock'
     );
     
     private static $__funcs = array( 
@@ -330,8 +330,7 @@ class Contemplate
         'inline', 'tpl', 'uuid', 'haskey',
         'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
         'camelcase', 'snakecase', 
-        'e','html', 'url',
-        'super'
+        'e','html', 'url'
     );
     private static $__func_aliases = array(
         'l'=> 'locale',
@@ -773,7 +772,8 @@ class Contemplate
             'autoUpdate'=> false,
             'refresh'=> false,
             'escape'=> true,
-            'separators'=> null
+            'separators'=> null,
+            'cacheDir'=> self::$__cacheDir
         ), (array)$options);
         
         if ( false === $options['escape'] ) self::$__escape = false;
@@ -1147,12 +1147,14 @@ class Contemplate
     // define (overridable) block
     private static function t_block( $block ) 
     { 
-        $block = trim( $block );
+        $block = explode(',', $block);
+        $echoed = !(isset($block[1]) ? "false"===trim($block[1]) : false);
+        $block = trim($block[0]);
         if ( self::$__strings && isset(self::$__strings[$block]) ) $block = self::$__strings[$block];
         $ch = $block[0];
         if ( '"' === $ch || "'" === $ch ) $block = substr($block,1,-1); // quoted block
         
-        array_push(self::$__allblocks, array($block, -1, -1, 0, self::$__openblocks[ 0 ][ 1 ]));
+        array_push(self::$__allblocks, array($block, -1, -1, 0, self::$__openblocks[ 0 ][ 1 ], $echoed));
         self::$__allblockscnt[ $block ] = isset(self::$__allblockscnt[ $block ]) ? (self::$__allblockscnt[ $block ]+1) : 1;
         self::$__blockptr = count(self::$__allblocks);
         array_unshift(self::$__openblocks, array($block, self::$__blockptr-1));
@@ -1305,6 +1307,18 @@ class Contemplate
                     $out = self::t_include($args); 
                     $rest = preg_replace_callback( $re_controls, $parseConstructs, $rest );
                     return $out . $rest;
+                    
+                case 14 /*'super'*/:
+                    $args = preg_replace_callback( $re_controls, $parseConstructs, $args );
+                    $out = '$self->renderSuperBlock(' . $args . ', $data)';
+                    $rest = preg_replace_callback( $re_controls, $parseConstructs, $rest );
+                    return $prefix . $out . $rest;
+                
+                case 15 /*'getblock'*/:
+                    $args = preg_replace_callback( $re_controls, $parseConstructs, $args );
+                    $out = '$__i__->renderBlock(' . $args . ', $data)';
+                    $rest = preg_replace_callback( $re_controls, $parseConstructs, $rest );
+                    return $prefix . $out . $rest;
             }
         }
         
@@ -1355,7 +1369,6 @@ class Contemplate
                 case 24: $out = 'trim(' . $args . ')'; break;
                 case 25: $out = 'addslashes(' . $args . ')'; break;
                 case 26: $out = 'stripslashes(' . $args . ')'; break;
-                case 32: $out = '$self->renderSuperBlock(' . $args . ', $data)'; break;
                 default: $out = 'Contemplate::' . $ctrl . '(' . $args . ')';
             }
             $rest = preg_replace_callback( $re_controls, array(__CLASS__, 'parseConstructs'), $rest );
@@ -1379,8 +1392,9 @@ class Contemplate
             $pos2 = $delims[ 2 ];
             $off = $delims[ 3 ];
             $containerblock = $delims[ 4 ];
+            $echoed = $delims[ 5 ];
             $tag = "#|" . $block . "|#";
-            $rep = "\$__i__->renderBlock('" . $block . "', \$data);";
+            $rep = $echoed ? "\$__i__->renderBlock('" . $block . "', \$data);" : "'';";
             $tl = strlen($tag); $rl = strlen($rep);
             
             if ( -1 < $containerblock )
@@ -1889,9 +1903,9 @@ class Contemplate
         return '';
     }
     
-    private static function getCachedTemplateName( $id ) 
+    private static function getCachedTemplateName( $id, $cacheDir ) 
     { 
-        return self::$__cacheDir . preg_replace('/[\\W]+/', '_', $id) . '_tpl.php'; 
+        return $cacheDir . preg_replace('/[\\W]+/', '_', $id) . '_tpl.php'; 
     }
     
     private static function getCachedTemplateClass( $id ) 
@@ -2032,7 +2046,7 @@ class Contemplate
             {
                 if ( true !== $options['autoUpdate'] && self::CACHE_TO_DISK_NOUPDATE === self::$__cacheMode )
                 {
-                    $cachedTplFile = self::getCachedTemplateName($id);
+                    $cachedTplFile = self::getCachedTemplateName($id, $options['cacheDir']);
                     $cachedTplClass = self::getCachedTemplateClass($id);
                     if ( !is_file($cachedTplFile) )
                     {
@@ -2051,7 +2065,7 @@ class Contemplate
                 
                 elseif ( true === $options['autoUpdate'] || self::CACHE_TO_DISK_AUTOUPDATE === self::$__cacheMode )
                 {
-                    $cachedTplFile = self::getCachedTemplateName($id);
+                    $cachedTplFile = self::getCachedTemplateName($id, $options['cacheDir']);
                     $cachedTplClass = self::getCachedTemplateClass($id);
                     if ( !is_file($cachedTplFile) || (filemtime($cachedTplFile) <= filemtime($template[0])) )
                     {

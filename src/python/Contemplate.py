@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.9.1
+#  @version 0.9.2
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -12,7 +12,7 @@
 ##
 
 # needed imports
-import os, sys, re, time, datetime, calendar, codecs
+import os, sys, re, time, datetime, calendar, math, codecs
 
 # http://docs.python.org/2/library/collections.html#collections.OrderedDict
 # http://code.activestate.com/recipes/576693/
@@ -35,12 +35,6 @@ ODict = dict
 #except ImportError:
 # Python 2.x
 import cgi
-
-# http://www.php2python.com/wiki/function.htmlentities/
-def htmlentities(s, mode='ENT_COMPAT'):
-    mode = True if 'ENT_COMPAT' == mode else False
-    return cgi.escape(s, mode).encode('ascii', 'xmlcharrefreplace').decode('ascii')
-    
 
 try:
     # Python 3.x
@@ -127,8 +121,6 @@ class _G:
     ALPHANUM = re.compile(r'^[a-zA-Z0-9_]')
     SPACE = re.compile(r'^\s')
     
-    date_words = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sun", "Mon", "Tues", "Wednes", "Thurs", "Fri", "Satur", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-    
     TT_ClassCode = None
 
     TT_BlockCode = None 
@@ -175,7 +167,136 @@ class _G:
     }
 
     plugins = {}
+
+T_REGEXP = type(_G.NEWLINE)
+
+default_date_locale = {
+'meridian': { 'am':'am', 'pm':'pm', 'AM':'AM', 'PM':'PM' },
+'ordinal': { 'ord':{1:'st',2:'nd',3:'rd'}, 'nth':'th' },
+'timezone': [ 'UTC','EST','MDT' ],
+'timezone_short': [ 'UTC','EST','MDT' ],
+'day': [ 'Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday' ],
+'day_short': [ 'Sun','Mon','Tue','Wed','Thu','Fri','Sat' ],
+'month': [ 'January','February','March','April','May','June','July','August','September','October','November','December' ],
+'month_short': [ 'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec' ]
+}
+
+def php_time( ):
+    return int(time.time())
+
+def php_date( format, timestamp=None ):
+    global default_date_locale
+    locale = default_date_locale
+    # http://php.net/manual/en/datetime.formats.date.php
+    # http://strftime.org/
+    # https://docs.python.org/2/library/time.html
+    # adapted from http://brandonwamboldt.ca/python-php-date-class-335/
+    if timestamp is None: timestamp = php_time( )
+    utime = timestamp
+    dtime  = datetime.datetime.fromtimestamp(timestamp)
+
+    D = { }
+    w = dtime.weekday()
+    W = dtime.isocalendar()[1]
+    d = dtime.day
+    dmod10 = d % 10
+    n = dtime.month
+    Y = dtime.year
+    g = int(dtime.strftime("%I"))
+    G = int(dtime.strftime("%H"))
+    meridian = dtime.strftime("%p")
+    tzo = int(time.timezone / 60)
+    atzo = abs(tzo)
+
+    # Calculate and return Swatch Internet Time
+    # http://code.activestate.com/recipes/578473-calculating-swatch-internet-time-or-beats/
+    lh, lm, ls = time.localtime()[3:6]
+    beats = ((lh * 3600) + (lm * 60) + ls + time.timezone) / 86.4
+    if beats > 1000: beats -= 1000
+    elif beats < 0: beats += 1000
+        
+    # Day --
+    D['d'] = str( d ).zfill(2)
+    D['D'] = locale['day_short'][ w ]
+    D['j'] = str( d )
+    D['l'] = locale['day'][ w ]
+    D['N'] = str( w if 0 < w else 7 )
+    D['S'] = locale['ordinal']['ord'][ d ] if d in locale['ordinal']['ord'] else (locale['ordinal']['ord'][ dmod10 ] if dmod10 in locale['ordinal']['ord'] else locale['ordinal']['nth'])
+    D['w'] = str( w )
+    D['z'] = str( dtime.timetuple().tm_yday )
     
+    # Week --
+    D['W'] = str( W )
+    
+    # Month --
+    D['F'] = locale['month'][ n ]
+    D['m'] = str( n ).zfill(2)
+    D['M'] = locale['month_short'][ n ]
+    D['n'] = str( n )
+    D['t'] = str( calendar.monthrange(Y, n)[1] )
+    
+    # Year --
+    D['L'] = str( int(calendar.isleap(Y)) )
+    D['o'] = str(Y + (1 if n == 12 and W < 9 else (-1 if n == 1 and W > 9 else 0)))
+    D['Y'] = str( Y )
+    D['y'] = str( Y )[2:]
+    
+    # Time --
+    D['a'] = locale['meridian'][meridian.lower()] if meridian.lower() in locale['meridian'] else meridian.lower()
+    D['A'] = locale['meridian'][meridian] if meridian in locale['meridian'] else meridian
+    D['B'] = str( int(beats) ).zfill(3)
+    D['g'] = str( g )
+    D['G'] = str( G )
+    D['h'] = str( g ).zfill(2)
+    D['H'] = str( G ).zfill(2)
+    D['i'] = str( dtime.minute ).zfill(2)
+    D['s'] = str( dtime.second ).zfill(2)
+    D['u'] = str( dtime.microsecond ).zfill(6)
+    
+    # Timezone --
+    D['e'] = '' # TODO, missing
+    D['I'] = str( dtime.dst() )
+    D['O'] = ('-' if tzo > 0 else '+')+str(int(atzo / 60) * 100 + atzo % 60).zfill(4)
+    D['P'] = D['O'][:3]+':'+D['O'][3:]
+    D['T'] = 'UTC'
+    D['Z'] = str(-tzo*60)
+    
+    # Full Date/Time --
+    D['c'] = ''.join([ D['Y'],'-',D['m'],'-',D['d'],'\\',D['T'],D['H'],':',D['i'],':',D['s'],D['P'] ])
+    D['r'] = ''.join([ D['D'],', ',D['d'],' ',D['M'],' ',D['Y'],' ',D['H'],':',D['i'],':',D['s'],' ',D['O'] ])
+    D['U'] = str( utime )
+    
+    formatted_datetime = ''
+    for f in format: formatted_datetime += D[f] if f in D else f
+    return formatted_datetime
+
+def localized_date( format, timestamp, locale ):
+    F = ['d','D','j','l','N','S','w','z','W','F','m','M','t','L','o','Y','y','a','A','B','g','G','h','H','i','s','u','e','I','O','P','T','Z','U']
+    D = {}
+    DATE = php_date( "\n".join( F ), timestamp ).split( "\n" )
+    i = 0
+    for f in F: 
+        D[ f ] = DATE[ i ]
+        i += 1
+        
+    # localise specific formats
+    if D['D'] in locale: D['D'] = locale[D['D']]
+    if D['l'] in locale: D['l'] = locale[D['l']]
+    if D['S'] in locale: D['S'] = locale[D['S']]
+    if D['F'] in locale: D['F'] = locale[D['F']]
+    if D['M'] in locale: D['M'] = locale[D['M']]
+    if D['a'] in locale: D['a'] = locale[D['a']]
+    if D['A'] in locale: D['A'] = locale[D['A']]
+    
+    # full date/time formats, constructed from localised parts
+    D['c'] = ''.join([ D['Y'],'-',D['m'],'-',D['d'],'\\',D['T'],D['H'],':',D['i'],':',D['s'],D['P'] ])
+    D['r'] = ''.join([ D['D'],', ',D['d'],' ',D['M'],' ',D['Y'],' ',D['H'],':',D['i'],':',D['s'],' ',D['O'] ])
+    
+    # return localized date
+    localised_datetime = ''
+    for f in format: localised_datetime += D[f] if f in D else f
+    return localised_datetime
+
 
 #
 #  Auxilliary methods 
@@ -376,7 +497,14 @@ class InlineTemplate:
                 mg = m.group(1)
             except:
                 mg = m.group(0)
-            a.append([0, mg])
+            
+            is_numeric = False
+            try:
+                mn = int(mg,10)
+                is_numeric = False if math.isnan(mn) else True
+            except ValueError:
+                is_numeric = False
+            a.append([0, mn if is_numeric else mg])
             i = m.end()
             m = rex.search(tpl, i)
         a.append([1, tpl[i:]])
@@ -403,7 +531,7 @@ class InlineTemplate:
         if not replacements: replacements = {}
         self.id = None
         self._renderer = None
-        self.tpl = InlineTemplate.multisplit( tpl, replacements )
+        self.tpl = InlineTemplate.multisplit_re( tpl, replacements ) if isinstance(replacements, T_REGEXP) else InlineTemplate.multisplit( tpl, replacements )
         if compiled is True:
             self._renderer = InlineTemplate.compile( self.tpl )
     
@@ -1672,84 +1800,6 @@ def getCachedTemplate( id, options=dict() ):
 def setCachedTemplate( filename, tplContents ): 
     return Contemplate.write(filename, tplContents)
 
-# static
-def _get_ordinal_suffix( n ):
-    # adapted from http://brandonwamboldt.ca/python-php-date-class-335/
-    return {1: 'st', 2: 'nd', 3: 'rd'}.get(4 if 10 <= n % 100 < 20 else n % 10, "th")
-
-# static
-def _get_php_date( format, time ):
-    # http://php.net/manual/en/datetime.formats.date.php
-    # http://strftime.org/
-    # adapted from http://brandonwamboldt.ca/python-php-date-class-335/
-    time  = datetime.datetime.fromtimestamp(time)
-    timeStr = ''
-
-    replacements = {}
-
-    """ Day """
-    replacements['d'] = str( time.day ).zfill(2)
-    replacements['D'] = calendar.day_abbr[ time.weekday() ]
-    replacements['j'] = str( time.day )
-    replacements['l'] = calendar.day_name[ time.weekday() ]
-    replacements['S'] = _get_ordinal_suffix( time.day )
-    replacements['w'] = str( time.weekday() )
-    replacements['z'] = str( time.timetuple().tm_yday )
-    
-    """ Week """
-    replacements['W'] = str( time.isocalendar()[1] )
-    
-    """ Month """
-    replacements['F'] = calendar.month_name[ time.month ]
-    replacements['m'] = str( time.month ).zfill(2)
-    replacements['M'] = calendar.month_abbr[ time.month ]
-    replacements['n'] = str( time.month )
-    replacements['t'] = str( calendar.monthrange(time.year, time.month)[1] )
-    
-    """ Year """
-    replacements['L'] = str(int( calendar.isleap(time.year) ))
-    replacements['Y'] = str( time.year )
-    replacements['y'] = str( time.year )[2:]
-    
-    """ Time """
-    replacements['a'] = time.strftime("%p").lower()
-    replacements['A'] = time.strftime("%p")
-    replacements['g'] = str( int(time.strftime("%I")) )
-    replacements['G'] = str( int(time.strftime("%H")) )
-    replacements['h'] = time.strftime("%I")
-    replacements['H'] = time.strftime("%H")
-    replacements['i'] = str( time.minute ).zfill(2)
-    replacements['s'] = str( time.second ).zfill(2)
-    replacements['u'] = str( time.microsecond )
-    
-    """ Timezone """
-    replacements['e'] = "" #_self.get_timezone()
-    replacements['I'] = str( time.dst() )
-    
-    #for regex, replace in replacements.items():
-    #    format = format.replace(regex, replace)
-    newformat = ''
-    for c in format:
-        if c in replacements:
-            newformat += replacements[c]
-        else:
-            newformat += c
-
-    return newformat
-    
-# static
-def _localized_date( locale, format, timestamp ):
-    global _G
-    date = _get_php_date(format, timestamp)
-    date_words = _G.date_words
-    
-    # localize days/months
-    for word in date_words: 
-        if word in locale: date = date.replace(word, locale[word])
-        
-    # return localized date
-    return date
-
 
 #
 # The Contemplate Engine Main Python Class
@@ -1761,7 +1811,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.9.1"
+    VERSION = "0.9.2"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -2193,11 +2243,6 @@ class Contemplate:
     def e( s ):
         return s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;').replace('\'', '&#39;')
     
-    # basic html escaping
-    # static
-    def html( s, mode='ENT_COMPAT' ):
-        return htmlentities(s, mode)
-    
     # basic url escaping
     # static
     def url( s ):
@@ -2276,20 +2321,20 @@ class Contemplate:
     # time, now
     # static
     def time( ):
-        return int(time.time())
+        return php_time( )
     
     # formatted date
     # static
-    def date( format, time=None ):
-        if time is None: time = Contemplate.time() 
-        return _get_php_date(format, time)
+    def date( format, timestamp=None ):
+        if timestamp is None: timestamp = php_time( ) 
+        return php_date( format, timestamp )
     
     # localized formatted date
     # static
-    def ldate( format, time=None ): 
+    def ldate( format, timestamp=None ): 
         global _G
-        if time is None: time = Contemplate.time() 
-        return _localized_date(_G.locale, format, time)
+        if timestamp is None: timestamp = php_time( ) 
+        return localized_date( format, timestamp, _G.locale )
         
     # locale, l
     # static
@@ -2309,7 +2354,7 @@ class Contemplate:
     def uuid( namespace='UUID' ):
         global _G
         _G.uuid += 1
-        return '_'.join( [ str(namespace), str(_G.uuid), str(int(time.time())) ] )
+        return '_'.join( [ str(namespace), str(_G.uuid), str(php_time()) ] )
     
    # static
     def getTemplateContents( id ):

@@ -1,5 +1,10 @@
 ###ChangeLog
 
+__0.9.2__
+* update/optimise `date`, `localized_date` methods
+* remove `%html` (`htmlentities`) method (not needed, can be added as plugin if needed, less code size)
+* `ContemplateInlineTpl` minor changes
+
 __0.9.1__
 * make `%super(block)` a construct (cannot be overriden via a plugin)
 * add `%getblock(block)` construct to return block content directly via function, can be useful when block content is needed as a parameter

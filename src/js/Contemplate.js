@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.9.1
+*  @version: 0.9.2
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -33,7 +33,7 @@ else if ( !(name in root) )
     /* module factory */        function( exports, undef ) {
 "use strict";
 
-var __version__ = "0.9.1", Contemplate, Template, InlineTemplate, 
+var __version__ = "0.9.2", Contemplate, Template, InlineTemplate, 
 
     // auxilliaries
     PROTO = 'prototype', HAS = 'hasOwnProperty', 
@@ -44,6 +44,7 @@ var __version__ = "0.9.1", Contemplate, Template, InlineTemplate,
     isNode = "undefined" !== typeof(global) && '[object global]' === _toString.call(global),
     userAgent = "undefined"!==typeof(navigator) ? navigator.userAgent : "",
     isChrome = /Chrome\//.test(userAgent),
+    floor = Math.floor, round = Math.round, abs = Math.abs,
     
     // php-like functions, mostly adapted from phpjs project
     // http://jsperf.com/instanceof-array-vs-array-isarray/6
@@ -53,24 +54,17 @@ var __version__ = "0.9.1", Contemplate, Template, InlineTemplate,
     is_object = function( o ) { 
         return o && ((o.constructor === Obj)/*(o instanceof Obj)*/ || ('[object Object]' === _toString.call(o))); 
     },
+    // adapted and optimised from phpjs project
     count = function( mixed_var ) {
         if ( null === mixed_var || 'undefined' === typeof mixed_var ) return 0;
         else if ( is_array(mixed_var) ) return mixed_var.length;
         else if ( is_object(mixed_var) ) return Keys(mixed_var).length;
         return 1;
     },
-    time = function( ) { return Math.floor(new Date().getTime() / 1000); },
-    
-    FUNC = function( a, f ) { return new Func( a, f ); },
-    RE = function( r, f ) { return new RegExp( r, f||'' ); },
-    
-    fs = null, XMLHttp = null
-    ,frealpath, frealpath_async
-    ,fexists, fexists_async
-    ,fstat, fstat_async
-    ,fread, fread_async
-    ,fwrite, fwrite_async
-    
+    pad = function( s, len, ch ) {
+        var sp = s.toString( ), n = len-sp.length;
+        return n > 0 ? new Array(n+1).join(ch||' ')+sp : sp;
+    }
     ,re_1 = /([\s\S]*?)(&(?:#\d+|#x[\da-f]+|[a-zA-Z][\da-z]*);|$)/g
     ,re_2 = /!/g
     ,re_3 = /'/g
@@ -80,8 +74,169 @@ var __version__ = "0.9.1", Contemplate, Template, InlineTemplate,
     ,re_7 = /%20/g
     ,re_8 = /%%|%(\d+\$)?([-+\'#0 ]*)(\*\d+\$|\*|\d+)?(\.(\*\d+\$|\*|\d+))?([scboxXuideEfFgG])/g
     ,re_9 = /([\[\]\(\)\.\?\/\*\{\}\+\$\^\:])/g
+    ,
+    rawurlencode = function( str ) {
+        // Tilde should be allowed unescaped in future versions of PHP (as reflected below), but if you want to reflect current
+        // PHP behavior, you would need to add ".replace(/~/g, '%7E');" to the following.
+        return encodeURIComponent('' + str).replace(re_2, '%21').replace(re_3, '%27').replace(re_4, '%28').
+        replace(re_5, '%29').replace(re_6, '%2A');
+    },
+    urlencode = function( str ) {
+        // Tilde should be allowed unescaped in future versions of PHP (as reflected below), but if you want to reflect current
+        // PHP behavior, you would need to add ".replace(/~/g, '%7E');" to the following.
+        return encodeURIComponent('' + str).replace(re_2, '%21').replace(re_3, '%27').replace(re_4, '%28').
+        replace(re_5, '%29').replace(re_6, '%2A').replace(re_7, '+');
+    },
+    default_date_locale = {
+        meridian: { am:'am', pm:'pm', AM:'AM', PM:'PM' },
+        ordinal: { ord:{1:'st',2:'nd',3:'rd'}, nth:'th' },
+        timezone: [ 'UTC','EST','MDT' ],
+        timezone_short: [ 'UTC','EST','MDT' ],
+        day: [ 'Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday' ],
+        day_short: [ 'Sun','Mon','Tue','Wed','Thu','Fri','Sat' ],
+        month: [ 'January','February','March','April','May','June','July','August','September','October','November','December' ],
+        month_short: [ 'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec' ]
+    },
+    php_time = function( ) { return floor(new Date().getTime() / 1000); },
+    php_date = function( format, timestamp ) {
+        var formatted_datetime, f, i, l, jsdate,
+            locale = default_date_locale
+        ;
+        
+        // JS Date
+        if ( timestamp instanceof Date ) jsdate = new Date( timestamp );
+        // UNIX timestamp (auto-convert to int)
+        else if ( "number" === typeof timestamp ) jsdate =  new Date(timestamp * 1000);
+        // undefined
+        else/*if ( null === timestamp  || undef === timestamp )*/ jsdate = new Date( );
+        
+        var D = { }, tzo = jsdate.getTimezoneOffset( ), atzo = abs(tzo), m = jsdate.getMonth( ), jmod10;
+        // 24-Hours; 0..23
+        D.G = jsdate.getHours( );
+        // Day of month; 1..31
+        D.j = jsdate.getDate( ); jmod10 = D.j%10;
+        // Month; 1...12
+        D.n = m + 1;
+        // Full year; e.g. 1980...2010
+        D.Y = jsdate.getFullYear( );
+        // Day of week; 0[Sun]..6[Sat]
+        D.w = jsdate.getDay( );
+        // ISO-8601 day of week; 1[Mon]..7[Sun]
+        D.N = D.w || 7;
+        // Day of month w/leading 0; 01..31
+        D.d = pad(D.j, 2, '0');
+        // Shorthand day name; Mon...Sun
+        D.D = locale.day_short[ D.w ];
+        // Full day name; Monday...Sunday
+        D.l = locale.day[ D.w ];
+        // Ordinal suffix for day of month; st, nd, rd, th
+        D.S = locale.ordinal.ord[ D.j ] ? locale.ordinal.ord[ D.j ] : (locale.ordinal.ord[ jmod10 ] ? locale.ordinal.ord[ jmod10 ] : locale.ordinal.nth);
+        // Day of year; 0..365
+        D.z = round((new Date(D.Y, m, D.j) - new Date(D.Y, 0, 1)) / 864e5);
+        // ISO-8601 week number
+        D.W = pad(1 + round((new Date(D.Y, m, D.j - D.N + 3) - new Date(D.Y, 0, 4)) / 864e5 / 7), 2, '0');
+        // Full month name; January...December
+        D.F = locale.month[ m ];
+        // Month w/leading 0; 01...12
+        D.m = pad(D.n, 2, '0');
+        // Shorthand month name; Jan...Dec
+        D.M = locale.month_short[ m ];
+        // Days in month; 28...31
+        D.t = (new Date(D.Y, m+1, 0)).getDate( );
+        // Is leap year?; 0 or 1
+        D.L = D.Y % 4 === 0 & D.Y % 100 !== 0 | D.Y % 400 === 0;
+        // ISO-8601 year
+        D.o = D.Y + (11 === m && D.W < 9 ? 1 : (0 === m && D.W > 9 ? -1 : 0));
+        // Last two digits of year; 00...99
+        D.y = D.Y.toString( ).slice(-2);
+        // am or pm
+        D.a = D.G > 11 ? locale.meridian.pm : locale.meridian.am;
+        // AM or PM
+        D.A = D.G > 11 ? locale.meridian.PM : locale.meridian.AM;
+        // Swatch Internet time; 000..999
+        D.B = pad(floor((jsdate.getUTCHours( ) * 36e2 + jsdate.getUTCMinutes( ) * 60 + jsdate.getUTCSeconds( ) + 36e2) / 86.4) % 1e3, 3, '0');
+        // 12-Hours; 1..12
+        D.g = (D.G % 12) || 12;
+        // 12-Hours w/leading 0; 01..12
+        D.h = pad(D.g, 2, '0');
+        // 24-Hours w/leading 0; 00..23
+        D.H = pad(D.G, 2, '0');
+        // Minutes w/leading 0; 00..59
+        D.i = pad(jsdate.getMinutes( ), 2, '0');
+        // Seconds w/leading 0; 00..59
+        D.s = pad(jsdate.getSeconds( ), 2, '0');
+        // Microseconds; 000000-999000
+        D.u = pad(jsdate.getMilliseconds( ) * 1000, 6, '0');
+        // Timezone identifier; e.g. Atlantic/Azores, ...
+        // The following works, but requires inclusion of the very large
+        // timezone_abbreviations_list() function.
+        /*              return that.date_default_timezone_get();
+        */
+        D.e = '';
+        // DST observed?; 0 or 1
+        D.I = ((new Date(D.Y, 0) - Date.UTC(D.Y, 0)) !== (new Date(D.Y, 6) - Date.UTC(D.Y, 6))) ? 1 : 0;
+        // Difference to GMT in hour format; e.g. +0200
+        D.O = (tzo > 0 ? "-" : "+") + pad(floor(atzo / 60) * 100 + atzo % 60, 4, '0');
+        // Difference to GMT w/colon; e.g. +02:00
+        D.P = (D.O.substr(0, 3) + ":" + D.O.substr(3, 2));
+        // Timezone abbreviation; e.g. EST, MDT, ...
+        D.T = 'UTC';
+        // Timezone offset in seconds (-43200...50400)
+        D.Z = -tzo * 60;
+        // Seconds since UNIX epoch
+        D.U = jsdate / 1000 | 0;
+        // ISO-8601 date. 'Y-m-d\\TH:i:sP'
+        D.c = [ D.Y,'-',D.m,'-',D.d,'\\',D.T,D.H,':',D.i,':',D.s,D.P ].join('');
+        // RFC 2822 'D, d M Y H:i:s O'
+        D.r = [ D.D,', ',D.d,' ',D.M,' ',D.Y,' ',D.H,':',D.i,':',D.s,' ',D.O ].join('');
+            
+        formatted_datetime = '';
+        for (i=0,l=format.length; i<l; i++)
+        {
+            f = format.charAt( i );
+            formatted_datetime += D[HAS](f) ? D[ f ] : f;
+        }
+        return formatted_datetime;
+    },
+    localized_date = function( format, timestamp, locale ) {
+        var F = ['d','D','j','l','N','S','w','z','W','F','m','M','t','L','o','Y','y','a','A','B','g','G','h','H','i','s','u','e','I','O','P','T','Z','U'],
+            D = { }, DATE = php_date( F.join( "\n" ), timestamp ).split( "\n" ), i, l, f,
+            localised_datetime
+        ;
+        
+        for (i=0,l=F.length; i<l; i++) D[ F[i] ] = DATE[ i ];
+            
+        // localise specific formats
+        if ( locale[HAS](D['D']) ) D['D'] = locale[D['D']];
+        if ( locale[HAS](D['l']) ) D['l'] = locale[D['l']];
+        if ( locale[HAS](D['S']) ) D['S'] = locale[D['S']];
+        if ( locale[HAS](D['F']) ) D['F'] = locale[D['F']];
+        if ( locale[HAS](D['M']) ) D['M'] = locale[D['M']];
+        if ( locale[HAS](D['a']) ) D['a'] = locale[D['a']];
+        if ( locale[HAS](D['A']) ) D['A'] = locale[D['A']];
+        
+        // full date/time formats, constructed from localised parts
+        D.c = [ D.Y,'-',D.m,'-',D.d,'\\',D.T,D.H,':',D.i,':',D.s,D.P ].join('');
+        D.r = [ D.D,', ',D.d,' ',D.M,' ',D.Y,' ',D.H,':',D.i,':',D.s,' ',D.O ].join('');
+        
+        localised_datetime = '';
+        for (i=0,l=format.length; i<l; i++)
+        {
+            f = format.charAt( i );
+            localised_datetime += D[HAS](f) ? D[ f ] : f;
+        }
+        return localised_datetime
+    },
+
+    FUNC = function( a, f ) { return new Func( a, f ); },
+    RE = function( r, f ) { return new RegExp( r, f||'' ); },
     
-    ,date_words = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sun", "Mon", "Tues", "Wednes", "Thurs", "Fri", "Satur", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    fs = null, XMLHttp = null
+    ,frealpath, frealpath_async
+    ,fexists, fexists_async
+    ,fstat, fstat_async
+    ,fread, fread_async
+    ,fwrite, fwrite_async
 ;
 
 if ( isNode )
@@ -234,211 +389,6 @@ else
 //
 ///////////////////////////////////////////////////////////////////////////
 
-function get_html_translation_table( table, quote_style )
-{
-  var tblID, useTable = null,
-    useQuoteStyle = null;
-
-  useTable = !isNaN(table) ? get_html_translation_table.constMappingTable[table] : (table ? table.toUpperCase() : 'HTML_SPECIALCHARS');
-  useQuoteStyle = !isNaN(quote_style) ? get_html_translation_table.constMappingQuoteStyle[quote_style] : (quote_style ? quote_style.toUpperCase() : 'ENT_COMPAT');
-
-  if (useTable !== 'HTML_SPECIALCHARS' && useTable !== 'HTML_ENTITIES') 
-  {
-    throw new Error("Table: " + useTable + ' not supported');
-    return;
-  }
-  // use cached table if exists
-  tblID = useTable + '__' + useQuoteStyle;
-  if ( get_html_translation_table.tbls[tblID] )  return get_html_translation_table.tbls[tblID];
-  
-  var entities = {},
-    hash_map = {},
-    decimal;
-    
-  entities['38'] = '&amp;';
-  if ( useTable === 'HTML_ENTITIES' ) 
-  {
-    entities['160'] = '&nbsp;';
-    entities['161'] = '&iexcl;';
-    entities['162'] = '&cent;';
-    entities['163'] = '&pound;';
-    entities['164'] = '&curren;';
-    entities['165'] = '&yen;';
-    entities['166'] = '&brvbar;';
-    entities['167'] = '&sect;';
-    entities['168'] = '&uml;';
-    entities['169'] = '&copy;';
-    entities['170'] = '&ordf;';
-    entities['171'] = '&laquo;';
-    entities['172'] = '&not;';
-    entities['173'] = '&shy;';
-    entities['174'] = '&reg;';
-    entities['175'] = '&macr;';
-    entities['176'] = '&deg;';
-    entities['177'] = '&plusmn;';
-    entities['178'] = '&sup2;';
-    entities['179'] = '&sup3;';
-    entities['180'] = '&acute;';
-    entities['181'] = '&micro;';
-    entities['182'] = '&para;';
-    entities['183'] = '&middot;';
-    entities['184'] = '&cedil;';
-    entities['185'] = '&sup1;';
-    entities['186'] = '&ordm;';
-    entities['187'] = '&raquo;';
-    entities['188'] = '&frac14;';
-    entities['189'] = '&frac12;';
-    entities['190'] = '&frac34;';
-    entities['191'] = '&iquest;';
-    entities['192'] = '&Agrave;';
-    entities['193'] = '&Aacute;';
-    entities['194'] = '&Acirc;';
-    entities['195'] = '&Atilde;';
-    entities['196'] = '&Auml;';
-    entities['197'] = '&Aring;';
-    entities['198'] = '&AElig;';
-    entities['199'] = '&Ccedil;';
-    entities['200'] = '&Egrave;';
-    entities['201'] = '&Eacute;';
-    entities['202'] = '&Ecirc;';
-    entities['203'] = '&Euml;';
-    entities['204'] = '&Igrave;';
-    entities['205'] = '&Iacute;';
-    entities['206'] = '&Icirc;';
-    entities['207'] = '&Iuml;';
-    entities['208'] = '&ETH;';
-    entities['209'] = '&Ntilde;';
-    entities['210'] = '&Ograve;';
-    entities['211'] = '&Oacute;';
-    entities['212'] = '&Ocirc;';
-    entities['213'] = '&Otilde;';
-    entities['214'] = '&Ouml;';
-    entities['215'] = '&times;';
-    entities['216'] = '&Oslash;';
-    entities['217'] = '&Ugrave;';
-    entities['218'] = '&Uacute;';
-    entities['219'] = '&Ucirc;';
-    entities['220'] = '&Uuml;';
-    entities['221'] = '&Yacute;';
-    entities['222'] = '&THORN;';
-    entities['223'] = '&szlig;';
-    entities['224'] = '&agrave;';
-    entities['225'] = '&aacute;';
-    entities['226'] = '&acirc;';
-    entities['227'] = '&atilde;';
-    entities['228'] = '&auml;';
-    entities['229'] = '&aring;';
-    entities['230'] = '&aelig;';
-    entities['231'] = '&ccedil;';
-    entities['232'] = '&egrave;';
-    entities['233'] = '&eacute;';
-    entities['234'] = '&ecirc;';
-    entities['235'] = '&euml;';
-    entities['236'] = '&igrave;';
-    entities['237'] = '&iacute;';
-    entities['238'] = '&icirc;';
-    entities['239'] = '&iuml;';
-    entities['240'] = '&eth;';
-    entities['241'] = '&ntilde;';
-    entities['242'] = '&ograve;';
-    entities['243'] = '&oacute;';
-    entities['244'] = '&ocirc;';
-    entities['245'] = '&otilde;';
-    entities['246'] = '&ouml;';
-    entities['247'] = '&divide;';
-    entities['248'] = '&oslash;';
-    entities['249'] = '&ugrave;';
-    entities['250'] = '&uacute;';
-    entities['251'] = '&ucirc;';
-    entities['252'] = '&uuml;';
-    entities['253'] = '&yacute;';
-    entities['254'] = '&thorn;';
-    entities['255'] = '&yuml;';
-  }
-
-  if ( useQuoteStyle !== 'ENT_NOQUOTES' ) 
-  {
-    entities['34'] = '&quot;';
-  }
-  if ( useQuoteStyle === 'ENT_QUOTES' ) 
-  {
-    entities['39'] = '&#39;';
-  }
-  entities['60'] = '&lt;';
-  entities['62'] = '&gt;';
-
-
-  // ascii decimals to real symbols
-  for ( decimal in entities ) 
-  {
-    if ( entities.hasOwnProperty(decimal) ) 
-    {
-      hash_map[String.fromCharCode(decimal)] = entities[decimal];
-    }
-  }
-  if ( useQuoteStyle === 'ENT_QUOTES' ) 
-  {
-    hash_map["'"] = '&#039;';
-  }
-  // cache the table
-  return get_html_translation_table.tbls[tblID] = hash_map;
-}
-get_html_translation_table.constMappingTable = {};
-get_html_translation_table.constMappingQuoteStyle = {};
-// Translate arguments
-get_html_translation_table.constMappingTable[0] = 'HTML_SPECIALCHARS';
-get_html_translation_table.constMappingTable[1] = 'HTML_ENTITIES';
-get_html_translation_table.constMappingQuoteStyle[0] = 'ENT_NOQUOTES';
-get_html_translation_table.constMappingQuoteStyle[2] = 'ENT_COMPAT';
-get_html_translation_table.constMappingQuoteStyle[3] = 'ENT_QUOTES';
-get_html_translation_table.tbls = {};
-
-function htmlentities( string, quote_style, charset, double_encode ) 
-{
-  var hash_map = get_html_translation_table('HTML_ENTITIES', quote_style),
-    symbol = '';
-  string = string == null ? '' : string + '';
-
-  if ( !hash_map ) 
-  {
-    return false;
-  }
-
-  if (!!double_encode || double_encode == null) {
-    for (symbol in hash_map) {
-      if (hash_map.hasOwnProperty(symbol)) {
-        string = string.split(symbol).join(hash_map[symbol]);
-      }
-    }
-  } else {
-    string = string.replace(re_1, function (ignore, text, entity) {
-      for (symbol in hash_map) {
-        if (hash_map.hasOwnProperty(symbol)) {
-          text = text.split(symbol).join(hash_map[symbol]);
-        }
-      }
-
-      return text + entity;
-    });
-  }
-
-  return string;
-}
-
-function urlencode( str ) 
-{
-    // Tilde should be allowed unescaped in future versions of PHP (as reflected below), but if you want to reflect current
-    // PHP behavior, you would need to add ".replace(/~/g, '%7E');" to the following.
-    return encodeURIComponent('' + str).replace(re_2, '%21').replace(re_3, '%27').replace(re_4, '%28').
-    replace(re_5, '%29').replace(re_6, '%2A').replace(re_7, '+');
-}
-function rawurlencode( str )
-{
-    // Tilde should be allowed unescaped in future versions of PHP (as reflected below), but if you want to reflect current
-    // PHP behavior, you would need to add ".replace(/~/g, '%7E');" to the following.
-    return encodeURIComponent('' + str).replace(re_2, '%21').replace(re_3, '%27').replace(re_4, '%28').
-    replace(re_5, '%29').replace(re_6, '%2A');
-}
 // pad()
 function pad_( str, len, chr, leftJustify ) 
 {
@@ -646,205 +596,6 @@ function trim( str, charlist )
     }
     return whitespace.indexOf(str.charAt(0)) === -1 ? str : '';
 }
-function date( format, timestamp )
-{
-    var //that = this,
-      jsdate,
-      f,
-      formatChr = /\\?([a-z])/gi,
-      formatChrCb,
-      // Keep this here (works, but for code commented-out
-      // below for file size reasons)
-      //, tal= [],
-      _pad = function (n, c) {
-        n = n.toString();
-        return n.length < c ? _pad('0' + n, c, '0') : n;
-      },
-      txt_words = ["Sun", "Mon", "Tues", "Wednes", "Thurs", "Fri", "Satur", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-  formatChrCb = function (t, s) {
-    return f[t] ? f[t]() : s;
-  };
-  f = {
-    // Day
-    d: function () { // Day of month w/leading 0; 01..31
-      return _pad(f.j(), 2);
-    },
-    D: function () { // Shorthand day name; Mon...Sun
-      return f.l().slice(0, 3);
-    },
-    j: function () { // Day of month; 1..31
-      return jsdate.getDate();
-    },
-    l: function () { // Full day name; Monday...Sunday
-      return txt_words[f.w()] + 'day';
-    },
-    N: function () { // ISO-8601 day of week; 1[Mon]..7[Sun]
-      return f.w() || 7;
-    },
-    S: function () { // Ordinal suffix for day of month; st, nd, rd, th
-      var j = f.j();
-      return j < 4 | j > 20 && (['st', 'nd', 'rd'][j % 10 - 1] || 'th');
-    },
-    w: function () { // Day of week; 0[Sun]..6[Sat]
-      return jsdate.getDay();
-    },
-    z: function () { // Day of year; 0..365
-      var a = new Date(f.Y(), f.n() - 1, f.j()),
-        b = new Date(f.Y(), 0, 1);
-      return Math.round((a - b) / 864e5);
-    },
-
-    // Week
-    W: function () { // ISO-8601 week number
-      var a = new Date(f.Y(), f.n() - 1, f.j() - f.N() + 3),
-        b = new Date(a.getFullYear(), 0, 4);
-      return _pad(1 + Math.round((a - b) / 864e5 / 7), 2);
-    },
-
-    // Month
-    F: function () { // Full month name; January...December
-      return txt_words[6 + f.n()];
-    },
-    m: function () { // Month w/leading 0; 01...12
-      return _pad(f.n(), 2);
-    },
-    M: function () { // Shorthand month name; Jan...Dec
-      return f.F().slice(0, 3);
-    },
-    n: function () { // Month; 1...12
-      return jsdate.getMonth() + 1;
-    },
-    t: function () { // Days in month; 28...31
-      return (new Date(f.Y(), f.n(), 0)).getDate();
-    },
-
-    // Year
-    L: function () { // Is leap year?; 0 or 1
-      var j = f.Y();
-      return j % 4 === 0 & j % 100 !== 0 | j % 400 === 0;
-    },
-    o: function () { // ISO-8601 year
-      var n = f.n(),
-        W = f.W(),
-        Y = f.Y();
-      return Y + (n === 12 && W < 9 ? 1 : n === 1 && W > 9 ? -1 : 0);
-    },
-    Y: function () { // Full year; e.g. 1980...2010
-      return jsdate.getFullYear();
-    },
-    y: function () { // Last two digits of year; 00...99
-      return f.Y().toString().slice(-2);
-    },
-
-    // Time
-    a: function () { // am or pm
-      return jsdate.getHours() > 11 ? "pm" : "am";
-    },
-    A: function () { // AM or PM
-      return f.a().toUpperCase();
-    },
-    B: function () { // Swatch Internet time; 000..999
-      var H = jsdate.getUTCHours() * 36e2,
-        // Hours
-        i = jsdate.getUTCMinutes() * 60,
-        // Minutes
-        s = jsdate.getUTCSeconds(); // Seconds
-      return _pad(Math.floor((H + i + s + 36e2) / 86.4) % 1e3, 3);
-    },
-    g: function () { // 12-Hours; 1..12
-      return f.G() % 12 || 12;
-    },
-    G: function () { // 24-Hours; 0..23
-      return jsdate.getHours();
-    },
-    h: function () { // 12-Hours w/leading 0; 01..12
-      return _pad(f.g(), 2);
-    },
-    H: function () { // 24-Hours w/leading 0; 00..23
-      return _pad(f.G(), 2);
-    },
-    i: function () { // Minutes w/leading 0; 00..59
-      return _pad(jsdate.getMinutes(), 2);
-    },
-    s: function () { // Seconds w/leading 0; 00..59
-      return _pad(jsdate.getSeconds(), 2);
-    },
-    u: function () { // Microseconds; 000000-999000
-      return _pad(jsdate.getMilliseconds() * 1000, 6);
-    },
-
-    // Timezone
-    e: function () { // Timezone identifier; e.g. Atlantic/Azores, ...
-      // The following works, but requires inclusion of the very large
-      // timezone_abbreviations_list() function.
-/*              return that.date_default_timezone_get();
-*/
-      throw 'Not supported (see source code of date() for timezone on how to add support)';
-    },
-    I: function () { // DST observed?; 0 or 1
-      // Compares Jan 1 minus Jan 1 UTC to Jul 1 minus Jul 1 UTC.
-      // If they are not equal, then DST is observed.
-      var a = new Date(f.Y(), 0),
-        // Jan 1
-        c = Date.UTC(f.Y(), 0),
-        // Jan 1 UTC
-        b = new Date(f.Y(), 6),
-        // Jul 1
-        d = Date.UTC(f.Y(), 6); // Jul 1 UTC
-      return ((a - c) !== (b - d)) ? 1 : 0;
-    },
-    O: function () { // Difference to GMT in hour format; e.g. +0200
-      var tzo = jsdate.getTimezoneOffset(),
-        a = Math.abs(tzo);
-      return (tzo > 0 ? "-" : "+") + _pad(Math.floor(a / 60) * 100 + a % 60, 4);
-    },
-    P: function () { // Difference to GMT w/colon; e.g. +02:00
-      var O = f.O();
-      return (O.substr(0, 3) + ":" + O.substr(3, 2));
-    },
-    T: function () { // Timezone abbreviation; e.g. EST, MDT, ...
-      return 'UTC';
-    },
-    Z: function () { // Timezone offset in seconds (-43200...50400)
-      return -jsdate.getTimezoneOffset() * 60;
-    },
-
-    // Full Date/Time
-    c: function () { // ISO-8601 date.
-      return 'Y-m-d\\TH:i:sP'.replace(formatChr, formatChrCb);
-    },
-    r: function () { // RFC 2822
-      return 'D, d M Y H:i:s O'.replace(formatChr, formatChrCb);
-    },
-    U: function () { // Seconds since UNIX epoch
-      return jsdate / 1000 | 0;
-    }
-  };
-  var date = function (format, timestamp) {
-    //that = this;
-    jsdate = (timestamp === undefined ? new Date() : // Not provided
-      (timestamp instanceof Date) ? new Date(timestamp) : // JS Date()
-      new Date(timestamp * 1000) // UNIX timestamp (auto-convert to int)
-    );
-    return format.replace(formatChr, formatChrCb);
-  };
-  return date(format, timestamp);
-}
-
-function _localized_date( locale, format, timestamp ) 
-{
-    var i, l = date_words.length, ldate = date(format, timestamp);
-    
-    // localize days/months
-    for (i=0; i<l; i++)
-    {
-        if ( locale[HAS](date_words[i]) ) 
-            ldate = ldate.split(date_words[i]).join(locale[date_words[i]]);
-    }
-    
-    // return localized date
-    return ldate;
-}
 
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -897,7 +648,7 @@ var
         'inline', 'tpl', 'uuid', 'haskey',
         'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
         'camelcase', 'snakecase', 
-        'e','html', 'url'
+        'e', 'url'
     ],
     $__func_aliases = {
         'l': 'locale',
@@ -2284,7 +2035,9 @@ InlineTemplate = function InlineTemplate( tpl, replacements, compiled ) {
     if ( !(self instanceof InlineTemplate) ) return new InlineTemplate(tpl, replacements, compiled);
     self.id = null;
     self._renderer = null;
-    self.tpl = InlineTemplate.multisplit( tpl||'', replacements||{} );
+    self.tpl = replacements instanceof RegExp 
+        ? InlineTemplate.multisplit_re(tpl||'', replacements) 
+        : InlineTemplate.multisplit( tpl||'', replacements||{} );
     if ( true === compiled )
     {
         self._renderer = InlineTemplate.compile( self.tpl );
@@ -2331,6 +2084,7 @@ InlineTemplate.multisplit = function multisplit( tpl, reps, as_array ) {
     return a;
 };
 InlineTemplate.multisplit_re = function multisplit_re( tpl, re ) {
+    re = re.global ? re : new RegExp(re.source, re.ignoreCase?"gi":"g"); /* make sure global flag is added */
     var a = [ ], i = 0, m;
     while ( m = re.exec( tpl ) )
     {
@@ -2953,11 +2707,6 @@ Contemplate = {
     // basic custom faster html escaping
     e: ESC1,
     
-    // basic html escaping
-    html: function( s, mode ) { 
-        return htmlentities(s, mode || 'ENT_COMPAT', 'UTF-8'); 
-    },
-    
     // basic url escaping
     url: urlencode,
     
@@ -3042,18 +2791,18 @@ Contemplate = {
     
     // current time in seconds
     // time, now
-    time: time,
+    time: php_time,
     
     // formatted date
-    date: function( $format, $time ) { 
-        if (!$time) $time = time(); 
-        return date($format, $time); 
+    date: function( format, timestamp ) { 
+        if ( arguments.length < 2  ) timestamp = php_time( ); 
+        return php_date( format, timestamp ); 
     },
     
     // localized formatted date
-    ldate: function( $format, $time ) { 
-        if (!$time) $time = time(); 
-        return _localized_date($__locale, $format, $time); 
+    ldate: function( format, timestamp ) { 
+        if ( arguments.length < 2  ) timestamp = php_time( ); 
+        return localized_date( format, timestamp, $__locale ); 
     },
     
     // locale
@@ -3070,7 +2819,7 @@ Contemplate = {
     
     // generate a uuid
     uuid: function( namespace ) {
-        return [namespace||'UUID', ++$__uuid, time()].join('_');
+        return [namespace||'UUID', ++$__uuid, php_time()].join('_');
     },
     
     getTemplateContents: getTemplateContents,

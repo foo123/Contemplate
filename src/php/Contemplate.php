@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.9.1
+*  @version: 0.9.2
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -85,7 +85,9 @@ class ContemplateInlineTemplate
         if ( !$replacements ) $replacements = array();
         $this->id = null;
         $this->_renderer = null;
-        $this->tpl = self::multisplit( $tpl, (array)$replacements );
+        $this->tpl = is_string($replacements)
+                ? self::multisplit_re( $tpl, $replacements)
+                : self::multisplit( $tpl, (array)$replacements);
         if ( true === $compiled )
         {
             $this->_renderer = self::compile( $this->tpl );
@@ -237,7 +239,7 @@ class ContemplateTemplate
 
 class Contemplate
 {
-    const VERSION = "0.9.1";
+    const VERSION = "0.9.2";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -250,8 +252,6 @@ class Contemplate
     public static $NEWLINE = '/\\n\\r|\\r\\n|\\n|\\r/';
     public static $SQUOTE = "/'/";
     
-    public static $date_words = null;
-        
     private static $__isInited = false;
     private static $__cacheDir = './';
     private static $__cacheMode = 0;
@@ -330,7 +330,7 @@ class Contemplate
         'inline', 'tpl', 'uuid', 'haskey',
         'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
         'camelcase', 'snakecase', 
-        'e','html', 'url'
+        'e', 'url'
     );
     private static $__func_aliases = array(
         'l'=> 'locale',
@@ -582,8 +582,6 @@ class Contemplate
             ,"#RCODE#"=>   "RCODE"
         )));
         
-        self::$date_words = array("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sun", "Mon", "Tues", "Wednes", "Thurs", "Fri", "Satur", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec");
-        
         self::clearState();
         
         self::$__isInited = true;
@@ -822,12 +820,6 @@ class Contemplate
         return str_replace(array('&', '<', '>', '"', '\''), array('&amp;', '&lt;', '&gt;', '&quot;', '&#39;'), $s);
     }
         
-    // basic html escaping
-    public static function html( $s, $mode=ENT_COMPAT ) 
-    { 
-        return htmlentities($s, $mode, 'UTF-8'); 
-    }
-    
     // basic url escaping
     public static function url( $s ) 
     { 
@@ -900,17 +892,17 @@ class Contemplate
     }
     
     // formatted date
-    public static function date( $format, $time=false ) 
+    public static function date( $format, $timestamp=null ) 
     { 
-        if (false===$time) $time=time(); 
-        return date($format, $time); 
+        if ( null===$timestamp ) $timestamp = time(); 
+        return date( $format, $timestamp ); 
     }
     
     // localized formatted date
-    public static function ldate( $format, $time=false ) 
+    public static function ldate( $format, $timestamp=null ) 
     { 
-        if (false===$time) $time=time(); 
-        return self::_localized_date(self::$__locale, $format, $time);  
+        if ( null===$timestamp ) $timestamp = time(); 
+        return self::localized_date( $format, $timestamp, self::$__locale );  
     }
     
     // locale
@@ -2141,23 +2133,32 @@ class Contemplate
         self::$__extends = $t[7]; self::$__locals = $t[8]; self::$__variables = $t[9]; self::$__currentblock = $t[10];
     }
     
-    private static function _localized_date( $locale, $format, $timestamp ) 
+    private static function localized_date( $format, $timestamp, $locale ) 
     {
-        $date = date($format, $timestamp);
-        $date_words =& self::$date_words;
+        $F = array('d','D','j','l','N','S','w','z','W','F','m','M','t','L','o','Y','y','a','A','B','g','G','h','H','i','s','u','e','I','O','P','T','Z','U');
+        $D = array( );
+        $DATE = explode( "\n", date( implode( "\n", $F ), $timestamp ) );
+        foreach($F as $i=>$f) $D[$f] = $DATE[$i];
+        // localise specific formats
+        if ( isset($locale[$D['D']]) ) $D['D'] = $locale[ $D['D'] ];
+        if ( isset($locale[$D['l']]) ) $D['l'] = $locale[ $D['l'] ];
+        if ( isset($locale[$D['S']]) ) $D['S'] = $locale[ $D['S'] ];
+        if ( isset($locale[$D['F']]) ) $D['F'] = $locale[ $D['F'] ];
+        if ( isset($locale[$D['M']]) ) $D['M'] = $locale[ $D['M'] ];
+        if ( isset($locale[$D['a']]) ) $D['a'] = $locale[ $D['a'] ];
+        if ( isset($locale[$D['A']]) ) $D['A'] = $locale[ $D['A'] ];
+        // full date/time formats, constructed from localised parts
+        $D['c'] = implode('',array( $D['Y'],'-',$D['m'],'-',$D['d'],'\\',$D['T'],$D['H'],':',$D['i'],':',$D['s'],$D['P'] ));
+        $D['r'] = implode('',array( $D['D'],', ',$D['d'],' ',$D['M'],' ',$D['Y'],' ',$D['H'],':',$D['i'],':',$D['s'],' ',$D['O'] ));
         
-        // localize days/months
-        $replace = array();
-        
-        foreach ($date_words as $word) 
-            if ( isset($locale[$word]) ) 
-                $replace[$word] = $locale[$word]; 
-            
-        if ( !empty($replace) )  
-            $date = str_replace( array_keys($replace), array_values($replace), $date );
-            
         // return localized date
-        return $date;
+        $localised_datetime = ''; $l = strlen($format);
+        for($i=0; $i<$l; $i++)
+        {
+            $f = $format[$i];
+            $localised_datetime .= isset($D[$f]) ? $D[$f] : $f;
+        }
+        return $localised_datetime;
     }
     
     private static function padLines( $lines, $level=null )

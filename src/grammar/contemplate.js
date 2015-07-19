@@ -62,7 +62,7 @@ var contemplate_grammar = {
 
             // template keywords, directives, constructs, etc..
             "keyword" : [
-                "%extends", "%block", "%endblock", "%include",
+                "%extends", "%block", "%endblock", "%super", "%getblock", "%include",
                 "%if", "%elseif", "%else", "%endif", 
                 "%for", "%elsefor", "%endfor", "as", "in",
                 "%set", "%unset", "%isset"

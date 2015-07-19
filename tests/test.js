@@ -19,8 +19,7 @@ var http = require('http'), httpPort = 1337,
     Exists = fs.exists, //path.exists,
     Read = fs.readFile,
     echo = console.log,
-    Contemplate = require(path.join(__dirname, '../src/js/Contemplate.js')),
-    ContemplateHTMLPlugin = require(path.join(__dirname, '../src/js/plugins/ContemplateHTMLPlugin.js'))
+    Contemplate = require(path.join(__dirname, '../src/js/Contemplate.js'))
 ;
 
 
@@ -31,7 +30,6 @@ Contemplate.setPlurals({
     'item': null // auto plural
 });
 
-ContemplateHTMLPlugin.hook(Contemplate);
 Contemplate.addPlugin('plg_test', function(v){
     if ( v ) return 'Plugin Test value: ' + v;
     return 'Plugin Test no value given';

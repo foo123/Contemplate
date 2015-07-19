@@ -215,35 +215,7 @@
     <li>%plural(&quot;item&quot;, 1) = <% %plural("item", 1) %></li>
     <li>%plurale(&quot;item&quot;, 2) = <% %plural("item", 2) %></li>
     <li>%e(&#39;&lt;ok k=&quot;v&quot;&gt;&#39;) = <% %e("<ok k=\"v\">") %></li>
-    <li>%html(&#39;&lt;ok k=&quot;v&quot;&gt;&#39;) = <% %html("<ok k=\"v\">") %></li>
     </ul>
-    
-    <br /><br />
-    
-    <strong>A table (plugin)</strong><br />
-    <% %htmltable($table_data, $table_options) %>
-    
-    <br /><br />
-    
-    <strong>A select box (plugin)</strong><br />
-    <% %htmlselect($select_data, $select_options) %>
-
-    <br /><br />
-    
-    <strong>A table with alternative format (plugin)</strong><br />
-    <% %htmltable($table_data, {"header" : true, "tpl_cell": %inline("<td>{{value}} (inline compiled tpl)</td>",{"{{value}}":"cell"}, true)}) %>
-
-    <br /><br />
-    
-    <strong>A select box with alternative format (plugin)</strong><br />
-    <% %htmlselect($select_data, {
-            "foo123" : ":,=>",
-            "optgroups" : ["group1", "group2", "group3"],
-            "selected" : 3,
-            "multiple" : false,
-            "style" : "width:200px;",
-            "tpl_option": '<option value="$value" $selected>$option (inline tpl)</option>'
-        }) %>
     
     <br /><br />
     

@@ -42,11 +42,6 @@ if not Contemplate:
 else:    
     print ('Contemplate Engine Module loaded succesfully')
 
-ContemplateHTMLPlugin = import_module('ContemplateHTMLPlugin', os.path.join(os.path.dirname(__file__), '../src/python/plugins/'))
-if not ContemplateHTMLPlugin:
-    print ('Could not load the ContemplateHTMLPlugin')
-    sys.exit(1)
-
 # the test application server url
 IP = "127.0.0.2"
 PORT = 8001
@@ -75,7 +70,6 @@ def definition():
     Contemplate.bracket = bracketFunc
 definition()    
 
-ContemplateHTMLPlugin.hook(Contemplate)
 Contemplate.addPlugin('plg_test', test_plugin)
 Contemplate.addPlugin('plg_print', print_plugin)
 Contemplate.addPlugin('inlinedBracket', Contemplate.inline('Contemplate.bracket($args)',{'$args':'args'},False))

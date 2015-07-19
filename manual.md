@@ -1,7 +1,7 @@
 ###Manual - Keywords Reference
 
 
-**version 0.9.1**
+**version 0.9.2**
 
 
 __Template Separators__
@@ -180,7 +180,6 @@ __Template Functions / Plugins__
 
 
 * `%e( str )`   **custom fast html escape**
-* `%html( val )`  **html-escape val (`htmlentities`)**
 * `%url( val )`  **url-encode val (`urlencode`)**
 
 

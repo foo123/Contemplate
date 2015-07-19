@@ -22,8 +22,6 @@
 define('ABSPATH', dirname(__FILE__));
 // include the Contemplate Class
 include dirname(ABSPATH).'/src/php/Contemplate.php';
-// include the Contemplate HTML plugins
-include dirname(ABSPATH).'/src/php/plugins/ContemplateHTMLPlugin.php';
 
 Contemplate::setLocales(array(
     "locale"=> "γλωσσική περιοχή"
@@ -49,7 +47,6 @@ function print_plugin($v=null)
 // so make this expected behaviour for other Contemplate implementations as well
 Contemplate::addPlugin('uuid', 'uuid_override');*/
 
-ContemplateHTMLPlugin::hook();
 Contemplate::addPlugin('plg_test', 'test_plugin');
 Contemplate::addPlugin('plg_print', 'print_plugin');
 function bracket($v=null)

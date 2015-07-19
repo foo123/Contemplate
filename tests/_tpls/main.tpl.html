@@ -17,7 +17,6 @@
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <script src="./js/Contemplate.min.js"></script>
-        <script src="./js/ContemplateHTMLPlugin.js"></script>
         <script type="text/html" id="sub_tpl">
          <% $templates["sub"] %>
         </script>
@@ -57,7 +56,6 @@
                 "sub" : "#sub_tpl", // load the template from this DOM element
                 'date': "./_tpls/date.tpl.html" // load the template from this url using ajax (slower)
             });
-            ContemplateHTMLPlugin.hook(Contemplate);
             Contemplate.addPlugin('plg_test', function(v){
                 if ( v ) return 'Plugin Test value: ' + v;
                 return 'Plugin Test no value given';

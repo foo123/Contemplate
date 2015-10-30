@@ -1,0 +1,9 @@
+EMPTY
+
+see https://github.com/foo123/HtmlWidget
+
+Provides several html widgets (both server-side and client-side, in js / php / python)
+to be used as a (single) plugin in Contemplate Engine, if needed, instead of duplicating/developing extra plugins here.
+
+All projects of mine which were using Contemplate plugins, have been updated to use HtmlWidget as a single plugin,
+with additonal parameters to output any widget supported, in a modular way.

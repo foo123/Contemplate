@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 0.9.2
+*  @version: 1.0.0
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -33,7 +33,7 @@ else if ( !(name in root) )
     /* module factory */        function( exports, undef ) {
 "use strict";
 
-var __version__ = "0.9.2", Contemplate, Template, InlineTemplate, 
+var __version__ = "1.0.0", Contemplate, Template, InlineTemplate, Ctx,
 
     // auxilliaries
     PROTO = 'prototype', HAS = 'hasOwnProperty', 
@@ -606,10 +606,7 @@ function trim( str, charlist )
 
 // private vars
 var 
-    $__isInited = false,  $__locale = {}, $__plurals = {},
-    
-    $__async = false, $__cacheMode = 0, $__cacheDir = './', $__cache = {}, $__templates = {}, 
-    $__partials = {}, 
+    $__isInited = false, $__async = false, 
     
     $__leftTplSep = "<%", $__rightTplSep = "%>", $__tplStart = "", $__tplEnd = "", $__tplPrefixCode = "",
     
@@ -656,7 +653,7 @@ var
         'template': 'tpl'
     },
     
-    $__plugins = { },
+    $__ctx, $__context,
     
     resetState = function( ) {
         // reset state
@@ -666,6 +663,7 @@ var
         $__locals[$__currentblock] = $__locals[$__currentblock] || {};
         $__variables[$__currentblock] = $__variables[$__currentblock] || {};
         //$__escape = true;
+        //$__context = $__ctx['__GLOBAL__'];
     },
     
     clearState = function( ) {
@@ -680,7 +678,7 @@ var
     pushState = function( ) {
         // push state
         $__stack.push([$__loops, $__ifs, $__loopifs, $__forType, $__level,
-        $__allblocks, $__allblockscnt, $__openblocks, $__extends, $__locals, $__variables, $__currentblock]);
+        $__allblocks, $__allblockscnt, $__openblocks, $__extends, $__locals, $__variables, $__currentblock/*, $__context*/]);
     },
     
     popState = function( ) {
@@ -689,6 +687,7 @@ var
         $__loops = t[0]; $__ifs = t[1]; $__loopifs = t[2]; $__forType = t[3]; $__level = t[4];
         $__allblocks = t[5]; $__allblockscnt = t[6]; $__openblocks = t[7];
         $__extends = t[8]; $__locals = t[9]; $__variables = t[10]; $__currentblock = t[11];
+        //$__context = t[12];
     },
     
     // pad lines to generate formatted code
@@ -698,8 +697,7 @@ var
         if ( level >= 0 )
         {
             // needs one more additional level due to array.length
-            level = (0===level) ? level : level+1;
-            var pad = new Arr(level).join($__pad);
+            var pad = 0===level ? "" : new Arr(level+1).join($__pad);
             lines = pad + (lines.split( NEWLINE ).join( $__TEOL + pad ));
         }
         return lines;
@@ -712,16 +710,7 @@ var
         for (i=1; i<l; i++)
         { 
             o = args[ i ]; 
-            if ( o ) 
-            { 
-                for (k in o) 
-                { 
-                    if ( o[HAS](k) ) 
-                    { 
-                        merged[ k ] = o[ k ]; 
-                    } 
-                } 
-            } 
+            if ( o ) for (k in o) if ( o[HAS](k) ) merged[ k ] = o[ k ]; 
         }
         return merged;
     },
@@ -750,41 +739,6 @@ var
         return text;
     },
 
-    // faster html escape
-    // http://jsperf.com/split-join-vs-regex-replace/10
-    ESC1 = function( s ) {
-        var i = 0, l = s.length, r = '', c;
-        while ( i < l ) 
-        {
-            c = s.charAt( i++ );
-            switch( c.charCodeAt( 0 ) )
-            {
-                case 34: r += '&quot;'; break;
-                case 38: r += '&amp;'; break;
-                case 39: r += "&#39;"; break;
-                case 60: r += "&lt;"; break;
-                case 62: r += "&gt;"; break;
-                default: r += c;
-            }
-        }
-        return r;
-    },
-    /*
-    // second-third faster html escape
-    // http://jsperf.com/htmlencoderegex
-    // http://jsperf.com/htmlencoderegex/53
-    ESC2 = function( s ) {
-        return s
-            // http://jsperf.com/replace-vs-split-join-vs-replaceall/28
-            // http://jsperf.com/replace-multi-patterns-in-a-string
-            .replace(re_amp, '&amp;')
-            .replace(re_lt, '&lt;')
-            .replace(re_gt, '&gt;')
-            .replace(re_quot, '&quot;')
-            .replace(re_quot_s, '&#39;')
-        ;
-    },*/
-    
     getTemplateContents = function( id, asyncCB ) {
         var template;
         if ( (template=$__templates[id]) )
@@ -1918,9 +1872,9 @@ var
         return setCachedTemplate(filename, classCode);
     },
     
-    getCachedTemplate = function( id, options ) {
+    getCachedTemplate = function( id, ctx, options ) {
         var template;
-        if ( (template=$__templates[id]) )
+        if ( (template=ctx['templates'][id]) )
         {
             // inline templates saved only in-memory
             if ( template[1] )
@@ -1939,16 +1893,17 @@ var
                     tpl = Contemplate.Template( id ).setRenderFunction( funcs[ 0 ] ).setBlocks( funcs[ 1 ] );
                 }
                 if ($__extends) tpl.extend( Contemplate.tpl($__extends) );
+                tpl.ctx( ctx['id'] );
                 return tpl;
             }
             
             else
             {
-                if ( !isNode ) $__cacheMode = Contemplate.CACHE_TO_DISK_NONE;
+                if ( !isNode ) ctx['cacheMode'] = Contemplate.CACHE_TO_DISK_NONE;
                 
-                if ( true !== options.autoUpdate && Contemplate.CACHE_TO_DISK_NOUPDATE === $__cacheMode )
+                if ( true !== options.autoUpdate && Contemplate.CACHE_TO_DISK_NOUPDATE === ctx['cacheMode'] )
                 {
-                    var cachedTplFile = getCachedTemplateName(id, options.cacheDir), 
+                    var cachedTplFile = getCachedTemplateName(id, ctx['cacheDir']), 
                         cachedTplClass = getCachedTemplateClass(id);
                     if ( !fexists(cachedTplFile) )
                     {
@@ -1958,14 +1913,15 @@ var
                     {
                         var tplclass = require( cachedTplFile )( Contemplate ), 
                             tpl = new tplclass( id )/*.setId( id )*/;
+                        tpl.ctx( ctx['id'] );
                         return tpl;
                     }
                     return null;
                 }
                 
-                else if ( true === options.autoUpdate || Contemplate.CACHE_TO_DISK_AUTOUPDATE === $__cacheMode )
+                else if ( true === options.autoUpdate || Contemplate.CACHE_TO_DISK_AUTOUPDATE === ctx['cacheMode'] )
                 {    
-                    var cachedTplFile = getCachedTemplateName(id, options.cacheDir), 
+                    var cachedTplFile = getCachedTemplateName(id, ctx['cacheDir']), 
                         cachedTplClass = getCachedTemplateClass(id);
                     if ( !fexists(cachedTplFile) )
                     {
@@ -1985,6 +1941,7 @@ var
                     {
                         var tplclass = require( cachedTplFile )( Contemplate ), 
                             tpl = new tplclass( id )/*.setId( id )*/;
+                        tpl.ctx( ctx['id'] );
                         return tpl;
                     }
                     return null;
@@ -1996,6 +1953,7 @@ var
                     var funcs = createTemplateRenderFunction( id, options.separators ), 
                         tpl = Contemplate.Template( id ).setRenderFunction( funcs[ 0 ] ).setBlocks( funcs[ 1 ] );
                     if ($__extends) tpl.extend( Contemplate.tpl($__extends) );
+                    tpl.ctx( ctx['id'] );
                     return tpl;
                 }
             }
@@ -2008,6 +1966,21 @@ var
             fwrite_async(filename, tplContents, Contemplate.ENCODING, asyncCB);
         else
             fwrite(filename, tplContents, Contemplate.ENCODING); 
+    },
+    
+    ctx = function( id ) {
+        return {
+         'id'               : id
+        ,'cacheDir'         : './'
+        ,'cacheMode'        : 0
+        ,'cache'            : { }
+        ,'templates'        : { }
+        ,'partials'         : { }
+        ,'locale'           : { }
+        ,'plurals'          : { }
+        ,'plugins'          : { }
+        ,'prefixCode'       : ''
+        };
     },
     
     // generated cached tpl class code as a "heredoc" template (for Node cached templates)
@@ -2049,6 +2022,7 @@ InlineTemplate = function InlineTemplate( tpl, replacements, compiled ) {
         //self.render = InlineTemplate.prototype.render;
     }
 };
+InlineTemplate.VERSION = __version__;
 InlineTemplate.multisplit = function multisplit( tpl, reps, as_array ) {
     var r, sr, s, i, j, a, b, c, al, bl/*, as_array = is_array(reps)*/;
     as_array = !!as_array;
@@ -2149,17 +2123,32 @@ Template = function Template( id ) {
     self._blocks = null;
     self._extends = null;
     self.id = null;
+    self._ctx = null;
     if ( id ) self.id = id; 
 };
+Template.VERSION = __version__;
 Template.renderProxy = function( data, __i__ ) {
     "use strict";
-    return this._extends.render(data, __i__||this);
+    var self = this, ret, __ctx = false;
+    if ( !__i__ )
+    {
+        __i__ = self;
+        Contemplate.pushCtx( self._ctx );
+        __ctx = true;
+    }
+    ret = self._extends.render(data, __i__);
+    if ( __ctx )
+    {
+        Contemplate.popCtx( );
+    }
+    return ret;
 };
 Template[PROTO] = {
     constructor: Template
     ,id: null
     
     ,_extends: null
+    ,_ctx: null
     ,_blocks: null
     ,_renderer: null 
     
@@ -2169,6 +2158,7 @@ Template[PROTO] = {
         self._renderer = null;
         self._blocks = null;
         self._extends = null;
+        self._ctx = null;
         self.id = null;
         return self;
     }
@@ -2189,6 +2179,11 @@ Template[PROTO] = {
     
     ,setId: function( id ) { 
         if ( id ) this.id = id;  
+        return this; 
+    }
+    
+    ,ctx: function( ctx ) { 
+        this._ctx = ctx;
         return this; 
     }
     
@@ -2222,12 +2217,21 @@ Template[PROTO] = {
     }
     
     ,renderBlock: function( block, data, __i__ ) {
-        var self = this;
-        __i__ = __i__ || self;
+        var self = this, ret = '', __ctx = false;
+        if ( !__i__ )
+        {
+            __i__ = self;
+            Contemplate.pushCtx( self._ctx );
+            __ctx = true;
+        }
         var blocks = self._blocks;
-        if ( blocks && blocks[HAS](block) ) return blocks[block](Contemplate, data, self, __i__);
-        else if ( self._extends ) return self._extends.renderBlock(block, data, __i__);
-        return '';
+        if ( blocks && blocks[HAS](block) ) ret = blocks[block](Contemplate, data, self, __i__);
+        else if ( self._extends ) ret = self._extends.renderBlock(block, data, __i__);
+        if ( __ctx )
+        {
+            Contemplate.popCtx( );
+        }
+        return ret;
     }
     
     ,renderSuperBlock: function( block, data/*, __i__*/ ) {
@@ -2238,9 +2242,48 @@ Template[PROTO] = {
     }
     
     ,render: function( data, __i__ ) {
-        var __p__ = '';
+        var self = this, __p__ = '', __ctx = false;
+        if ( !__i__ )
+        {
+            __i__ = self;
+            Contemplate.pushCtx( self._ctx );
+            __ctx = true;
+        }
+        if ( __ctx )
+        {
+            Contemplate.popCtx( );
+        }
         return __p__;
     }
+};
+
+Ctx = function Ctx( id ) {
+    var self = this;
+    self.id               = id;
+    self.cacheDir         = './';
+    self.cacheMode        = 0;
+    self.cache            = { };
+    self.templates        = { };
+    self.partials         = { };
+    self.locale           = { };
+    self.plurals          = { };
+    self.plugins          = { };
+    self.prefixCode       = '';
+};
+Ctx.VERSION = __version__;
+Ctx[PROTO] = {
+    constructor: Ctx
+    
+    ,id: null
+    ,cacheDir: null
+    ,cacheMode: null
+    ,cache: null
+    ,templates: null
+    ,partials: null
+    ,locale: null
+    ,plurals: null
+    ,plugins: null
+    ,prefixCode: null
 };
 
 Contemplate = {
@@ -2256,9 +2299,16 @@ Contemplate = {
     
     Template: Template,
     InlineTemplate: InlineTemplate,
+    Ctx: Ctx,
     
     init: function( ) {
         if ( $__isInited ) return;
+        
+        // a default global context
+        $__ctx = {
+        '__GLOBAL__'  : new Ctx('__GLOBAL__')
+        };
+        $__context = $__ctx['__GLOBAL__'];
         
         // pre-compute the needed regular expressions
         $__preserveLines = $__preserveLinesDefault;
@@ -2499,6 +2549,22 @@ Contemplate = {
     // Main methods
     //
     
+    createCtx: function( ctx ) {
+        if ( ctx && '__GLOBAL__' !== ctx && !$__ctx[HAS](ctx) ) $__ctx[ctx] = new Ctx( ctx );
+    },
+    
+    disposeCtx: function( ctx ) {
+        if ( ctx && '__GLOBAL__' !== ctx && $__ctx[HAS](ctx) ) delete $__ctx[ctx];
+    },
+    
+    pushCtx: function( ctx ) {
+        if ( ctx && '__GLOBAL__' !== ctx && $__ctx[HAS](ctx) ) delete $__ctx[ctx];
+    },
+    
+    popCtx: function( ) {
+        if ( ctx && '__GLOBAL__' !== ctx && $__ctx[HAS](ctx) ) delete $__ctx[ctx];
+    },
+    
     // add custom plugins as template functions
     hasPlugin: function( name ) {
         return !!name && $__plugins[HAS](name);
@@ -2705,7 +2771,41 @@ Contemplate = {
     },
     
     // basic custom faster html escaping
-    e: ESC1,
+    // http://jsperf.com/split-join-vs-regex-replace/10
+    e: function( s, entities ) {
+        var i = 0, l = s.length, r = '', c, cd;
+        if ( entities )
+        {
+            while ( i < l ) 
+            {
+                c = s.charAt( i++ ); cd = c.charCodeAt( 0 );
+                switch( cd )
+                {
+                    case 34: r += "&quot;"; break;
+                    case 38: r += "&amp;"; break;
+                    case 39: r += "&apos;"; break;
+                    case 60: r += "&lt;"; break;
+                    case 62: r += "&gt;"; break;
+                    default: r += c;
+                }
+            }
+        }
+        else
+        {
+            while ( i < l ) 
+            {
+                c = s.charAt( i++ ); cd = c.charCodeAt( 0 );
+                switch( cd )
+                {
+                    case 34: case 38: case 39: case 60: case 62:
+                        r += "&#"+cd+";"; break;
+                    default:
+                        r += c;
+                }
+            }
+        }
+        return r;
+    },
     
     // basic url escaping
     url: urlencode,

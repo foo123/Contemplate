@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 0.9.2
+#  @version 1.0.0
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -69,25 +69,17 @@ except ImportError:
 class _G:
 
     isInited = False
-    cacheDir = './'
-    cacheMode = 0
-    cache = {}
-    templates = {}
-    partials = {}
-    locale = {}
-    plurals = {}
 
     leftTplSep = "<%"
     rightTplSep = "%>"
     preserveLinesDefault = "' + \"\\n\" + '"
     preserveLines = ''
     escape = True
-    EOL = "\n"
-    TEOL = os.linesep
     tplStart = ''
     tplEnd = ''
-    tplPrefixCode = ''
 
+    EOL = "\n"
+    TEOL = os.linesep
     pad = "    "
     level = 0
     loops = 0
@@ -104,6 +96,7 @@ class _G:
     variables = None
     strings = None
     currentblock = None
+    ctx = None
     
     extends = None
     id = 0
@@ -165,8 +158,6 @@ class _G:
         'now': 'time',
         'template': 'tpl'
     }
-
-    plugins = {}
 
 T_REGEXP = type(_G.NEWLINE)
 
@@ -452,6 +443,8 @@ def createFunction( funcName, args, sourceCode, additional_symbols=dict() ):
 # can use inline templates for plugins etc.. to enable non-linear plugin compile-time replacement
 class InlineTemplate:
  
+    VERSION = "1.0.0"
+    
     def multisplit( tpl, reps=dict(), as_array=False ): 
     
         #as_array = isinstance(reps, (list,tuple))
@@ -565,10 +558,13 @@ class InlineTemplate:
     
 class Template:
     
+    VERSION = "1.0.0"
+    
     def __init__( self, id=None ):
         self._renderer = None
         self._extends = None
         self._blocks = None
+        self._ctx = None
         self.id = None
         if id is not None: self.id = id 
     
@@ -579,11 +575,16 @@ class Template:
         self._renderer = None
         self._extends = None
         self._blocks = None
+        self._ctx = None
         self.id = None
         return self
     
     def setId( self, id=None ):
         if id is not None: self.id = id
+        return self
+    
+    def ctx( self, ctx ):
+        self._ctx = ctx
         return self
     
     def extend( self, tpl ): 
@@ -606,13 +607,24 @@ class Template:
         return self
     
     def renderBlock( self, block, data, __i__=None ):
-        if not __i__: __i__ = self
+        __ctx = False
+        ret = ''
+        
+        if not __i__:
+            __i__ = self
+            Contemplate.pushCtx( self._ctx )
+            __ctx = True
+        
         if (self._blocks) and (block in self._blocks):
             blockfunc = self._blocks[block]
-            return blockfunc(data, self, __i__)
+            ret = blockfunc(data, self, __i__)
         elif self._extends:
-            return self._extends.renderBlock(block, data, __i__)
-        return ''
+            ret = self._extends.renderBlock(block, data, __i__)
+        
+        if __ctx:
+            Contemplate.popCtx( )
+        
+        return ret
         
     def renderSuperBlock( self, block, data ):
         #if not __i__: __i__ = self
@@ -621,7 +633,13 @@ class Template:
         return ''
         
     def render( self, data, __i__=None ):
-        if not __i__: __i__ = self
+        __ctx = False
+        
+        if not __i__:
+            __i__ = self
+            Contemplate.pushCtx( self._ctx )
+            __ctx = True
+            
         __p__ = ''
         if self._extends:  
             __p__ = self._extends.render(data, __i__)
@@ -631,8 +649,29 @@ class Template:
             renderer = self._renderer
             __p__ = renderer(data, self, __i__)
         
+        if __ctx:
+            Contemplate.popCtx( )
+        
         return __p__
     
+
+class Ctx:
+    
+    VERSION = "1.0.0"
+    
+    def __init__( self, id ):
+        self.id               = id
+        self.cacheDir         = './'
+        self.cacheMode        = 0
+        self.cache            = { }
+        self.templates        = { }
+        self.partials         = { }
+        self.locale           = { }
+        self.plurals          = { }
+        self.plugins          = { }
+        self.prefixCode       = ''
+
+
 
 # static
 def resetState( ):
@@ -1811,7 +1850,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "0.9.2"
+    VERSION = "1.0.0"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -1822,6 +1861,7 @@ class Contemplate:
     
     InlineTemplate = InlineTemplate
     Template = Template
+    Ctx = Ctx
     
     #
     #
@@ -2038,6 +2078,20 @@ class Contemplate:
         clearState()
         
         _G.isInited = True
+    
+    
+    def createCtx( ctx ):
+        if ( ctx && '__GLOBAL__' !== ctx && !$__ctx[HAS](ctx) ) $__ctx[ctx] = Ctx( ctx )
+    
+    
+    def disposeCtx( ctx ):
+        if ( ctx && '__GLOBAL__' !== ctx && $__ctx[HAS](ctx) ) delete $__ctx[ctx]
+    
+    def pushCtx( ctx ):
+        if ( ctx && '__GLOBAL__' !== ctx && $__ctx[HAS](ctx) ) delete $__ctx[ctx]
+    
+    def popCtx( ):
+        if ( ctx && '__GLOBAL__' !== ctx && $__ctx[HAS](ctx) ) delete $__ctx[ctx]
     
     #
     # Main template static methods

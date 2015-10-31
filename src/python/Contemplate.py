@@ -72,15 +72,15 @@ class _G:
 
     leftTplSep = "<%"
     rightTplSep = "%>"
-    preserveLinesDefault = "' + \"\\n\" + '"
-    preserveLines = ''
-    escape = True
     tplStart = ''
     tplEnd = ''
-
+    preserveLinesDefault = "' + \"\\n\" + '"
+    preserveLines = ''
     EOL = "\n"
     TEOL = os.linesep
     pad = "    "
+    escape = True
+
     level = 0
     loops = 0
     ifs = 0
@@ -96,7 +96,6 @@ class _G:
     variables = None
     strings = None
     currentblock = None
-    ctx = None
     
     extends = None
     id = 0
@@ -104,6 +103,11 @@ class _G:
     stack = None
     uuid = 0
 
+    ctx = None
+    ctxS = None
+    context = None
+    glob = None
+    
     NEWLINE = re.compile(r'\n\r|\r\n|\n|\r')
     SQUOTE = re.compile(r"'")
     NL = re.compile(r'\n')
@@ -261,7 +265,8 @@ def php_date( format, timestamp=None ):
     for f in format: formatted_datetime += D[f] if f in D else f
     return formatted_datetime
 
-def localized_date( format, timestamp, locale ):
+def localized_date( format, timestamp ):
+    global _G
     F = ['d','D','j','l','N','S','w','z','W','F','m','M','t','L','o','Y','y','a','A','B','g','G','h','H','i','s','u','e','I','O','P','T','Z','U']
     D = {}
     DATE = php_date( "\n".join( F ), timestamp ).split( "\n" )
@@ -270,18 +275,27 @@ def localized_date( format, timestamp, locale ):
         D[ f ] = DATE[ i ]
         i += 1
         
+    loc = _G.context.locale
+    glo = _G.glob.locale
     # localise specific formats
-    if D['D'] in locale: D['D'] = locale[D['D']]
-    if D['l'] in locale: D['l'] = locale[D['l']]
-    if D['S'] in locale: D['S'] = locale[D['S']]
-    if D['F'] in locale: D['F'] = locale[D['F']]
-    if D['M'] in locale: D['M'] = locale[D['M']]
-    if D['a'] in locale: D['a'] = locale[D['a']]
-    if D['A'] in locale: D['A'] = locale[D['A']]
+    if   D['D'] in loc:  D['D'] = loc[ D['D'] ]
+    elif D['D'] in glo:  D['D'] = glo[ D['D'] ]
+    if   D['l'] in loc:  D['l'] = loc[ D['l'] ]
+    elif D['l'] in glo:  D['l'] = glo[ D['l'] ]
+    if   D['S'] in loc:  D['S'] = loc[ D['S'] ]
+    elif D['S'] in glo:  D['S'] = glo[ D['S'] ]
+    if   D['F'] in loc:  D['F'] = loc[ D['F'] ]
+    elif D['F'] in glo:  D['F'] = glo[ D['F'] ]
+    if   D['M'] in loc:  D['M'] = loc[ D['M'] ]
+    elif D['M'] in glo:  D['M'] = glo[ D['M'] ]
+    if   D['a'] in loc:  D['a'] = loc[ D['a'] ]
+    elif D['a'] in glo:  D['a'] = glo[ D['a'] ]
+    if   D['A'] in loc:  D['A'] = loc[ D['A'] ]
+    elif D['A'] in glo:  D['A'] = glo[ D['A'] ]
     
     # full date/time formats, constructed from localised parts
-    D['c'] = ''.join([ D['Y'],'-',D['m'],'-',D['d'],'\\',D['T'],D['H'],':',D['i'],':',D['s'],D['P'] ])
-    D['r'] = ''.join([ D['D'],', ',D['d'],' ',D['M'],' ',D['Y'],' ',D['H'],':',D['i'],':',D['s'],' ',D['O'] ])
+    D['c'] = D['Y']+'-'+D['m']+'-'+D['d']+'\\'+D['T']+D['H']+':'+D['i']+':'+D['s']+D['P']
+    D['r'] = D['D']+', '+D['d']+' '+D['M']+' '+D['Y']+' '+D['H']+':'+D['i']+':'+D['s']+' '+D['O']
     
     # return localized date
     localised_datetime = ''
@@ -562,8 +576,8 @@ class Template:
     
     def __init__( self, id=None ):
         self._renderer = None
-        self._extends = None
         self._blocks = None
+        self._extends = None
         self._ctx = None
         self.id = None
         if id is not None: self.id = id 
@@ -573,8 +587,8 @@ class Template:
 
     def dispose( self ):
         self._renderer = None
-        self._extends = None
         self._blocks = None
+        self._extends = None
         self._ctx = None
         self.id = None
         return self
@@ -608,7 +622,7 @@ class Template:
     
     def renderBlock( self, block, data, __i__=None ):
         __ctx = False
-        ret = ''
+        r = ''
         
         if not __i__:
             __i__ = self
@@ -617,14 +631,14 @@ class Template:
         
         if (self._blocks) and (block in self._blocks):
             blockfunc = self._blocks[block]
-            ret = blockfunc(data, self, __i__)
+            r = blockfunc(data, self, __i__)
         elif self._extends:
-            ret = self._extends.renderBlock(block, data, __i__)
+            r = self._extends.renderBlock(block, data, __i__)
         
         if __ctx:
             Contemplate.popCtx( )
         
-        return ret
+        return r
         
     def renderSuperBlock( self, block, data ):
         #if not __i__: __i__ = self
@@ -1769,11 +1783,11 @@ def createCachedTemplate( id, filename, classname, seps=None ):
     return Contemplate.write(filename, classCode)
 
 # static
-def getCachedTemplate( id, options=dict() ):
+def getCachedTemplate( id, contx, options=dict() ):
     global _G
     # inline templates saved only in-memory
-    if id in _G.templates:
-        template = _G.templates[id]
+    if id in contx.templates:
+        template = contx.templates[id]
         # inline templates saved only in-memory
         if template[1]:
             # dynamic in-memory caching during page-request
@@ -1789,14 +1803,15 @@ def getCachedTemplate( id, options=dict() ):
                 tpl.setBlocks( fns[1] )
             
             if _G.extends: tpl.extend( Contemplate.tpl(_G.extends) )
+            tpl.ctx( contx.id )
             return tpl
         
-        CM = _G.cacheMode
+        CM = contx.cacheMode
         
         if True != options['autoUpdate'] and CM == Contemplate.CACHE_TO_DISK_NOUPDATE:
         
             cachedTplFile = getCachedTemplateName(id)
-            cachedTplPath = os.path.join(options['cacheDir'], cachedTplFile)
+            cachedTplPath = os.path.join(contx.cacheDir, cachedTplFile)
             cachedTplClass = getCachedTemplateClass(id)
             if not os.path.isfile(cachedTplPath):
                 # if not exist, create it
@@ -1804,6 +1819,7 @@ def getCachedTemplate( id, options=dict() ):
             if os.path.isfile(cachedTplPath):
                 tpl = include(cachedTplFile, cachedTplClass)()
                 tpl.setId( id )
+                tpl.ctx( contx.id )
                 return tpl
             return None
 
@@ -1811,7 +1827,7 @@ def getCachedTemplate( id, options=dict() ):
         elif True == options['autoUpdate'] or CM == Contemplate.CACHE_TO_DISK_AUTOUPDATE:
         
             cachedTplFile = getCachedTemplateName(id)
-            cachedTplPath = os.path.join(options['cacheDir'], cachedTplFile)
+            cachedTplPath = os.path.join(contx.cacheDir, cachedTplFile)
             cachedTplClass = getCachedTemplateClass(id)
             if not os.path.isfile(cachedTplPath) or (os.path.getmtime(cachedTplPath) <= os.path.getmtime(template[0])):
                 # if tpl not exist or is out-of-sync (re-)create it
@@ -1819,6 +1835,7 @@ def getCachedTemplate( id, options=dict() ):
             if os.path.isfile(cachedTplPath):
                 tpl = include(cachedTplFile, cachedTplClass)()
                 tpl.setId( id )
+                tpl.ctx( contx.id )
                 return tpl
             return None
         
@@ -1831,6 +1848,7 @@ def getCachedTemplate( id, options=dict() ):
             tpl.setRenderFunction( fns[0] )
             tpl.setBlocks( fns[1] )
             if _G.extends: tpl.extend( Contemplate.tpl(_G.extends) )
+            tpl.ctx( contx.id )
             return tpl
         
     return None
@@ -1874,9 +1892,16 @@ class Contemplate:
         
         if _G.isInited: return
             
+        # a default global context
+        _G.glob = Ctx('__GLOBAL__')
+        _G.ctx = {
+        '__GLOBAL__'  : _G.glob
+        }
+        _G.context = _G.glob
+        _G.ctxS = []
+        
         # pre-compute the needed regular expressions
         _G.preserveLines = _G.preserveLinesDefault
-        
         _G.tplStart = "' " + _G.TEOL
         _G.tplEnd = _G.TEOL + "__p__ += '"
         
@@ -1895,13 +1920,8 @@ class Contemplate:
             ,""
             ,"        # constructor"
             ,"        def __init__(self, id=None):"
-            ,"            # initialize internal vars"
             ,"            self_ = self"
-            ,"            self_._renderer = None"
-            ,"            self_._extends = None"
-            ,"            self_._blocks = None"
-            ,"            self_.id = None"
-            ,"            self_.id = id"
+            ,"            super(#CLASSNAME#, self_).__init__( id )"
             ,"            "
             ,"            # extend tpl assign code starts here"
             ,"#EXTENDCODE#"
@@ -1914,19 +1934,29 @@ class Contemplate:
             ,"        # render a tpl block method"
             ,"        def renderBlock(self, block, data, __i__=None):"
             ,"            self_ = self"
-            ,"            if not __i__: __i__ = self_"
+            ,"            __ctx = False"
+            ,"            r = ''"
+            ,"            if not __i__:"
+            ,"                __i__ = self_"
+            ,"                Contemplate.pushCtx( self_._ctx )"
+            ,"                __ctx = True"
             ,"            method = '_blockfn_' + block"
             ,"            if (hasattr(self_, method) and callable(getattr(self_, method))):"
-            ,"                return getattr(self_, method)(data, self_, __i__)"
+            ,"                r = getattr(self_, method)(data, self_, __i__)"
             ,"            elif self_._extends:"
-            ,"                return self_._extends.renderBlock(block, data, __i__)"
-            ,"            return ''"
+            ,"                r = self_._extends.renderBlock(block, data, __i__)"
+            ,"            if __ctx:  Contemplate.popCtx( )"
+            ,"            return r"
             ,"            "
             ,"        # tpl render method"
             ,"        def render(self, data, __i__=None):"
             ,"            self_ = self"
-            ,"            if  not __i__: __i__ = self_"
+            ,"            __ctx = False"
             ,"            __p__ = ''"
+            ,"            if not __i__:"
+            ,"                __i__ = self_"
+            ,"                Contemplate.pushCtx( self_._ctx )"
+            ,"                __ctx = True"
             ,"            if self_._extends:"
             ,"                __p__ = self_._extends.render(data, __i__)"
             ,""
@@ -1935,6 +1965,7 @@ class Contemplate:
             ,"#RENDERCODE#"
             ,"                # tpl main render code ends here"
             ,""
+            ,"            if __ctx:  Contemplate.popCtx( )"
             ,"            return __p__"
             ,"    "
             ,"    return #CLASSNAME#"
@@ -2081,66 +2112,29 @@ class Contemplate:
     
     
     def createCtx( ctx ):
-        if ( ctx && '__GLOBAL__' !== ctx && !$__ctx[HAS](ctx) ) $__ctx[ctx] = Ctx( ctx )
-    
+        global _G
+        if ctx and ('__GLOBAL__' != ctx) and (ctx not in _G.ctx): _G.ctx[ctx] = Ctx( ctx )
     
     def disposeCtx( ctx ):
-        if ( ctx && '__GLOBAL__' !== ctx && $__ctx[HAS](ctx) ) delete $__ctx[ctx]
+        global _G
+        if ctx and ('__GLOBAL__' != ctx) and (ctx in _G.ctx): del _G.ctx[ctx]
     
     def pushCtx( ctx ):
-        if ( ctx && '__GLOBAL__' !== ctx && $__ctx[HAS](ctx) ) delete $__ctx[ctx]
+        global _G
+        _G.ctxS.append( _G.context.id )
+        if ctx and (ctx in _G.ctx): _G.context = _G.ctx[ctx]
+        else: _G.context = _G.glob
     
     def popCtx( ):
-        if ( ctx && '__GLOBAL__' !== ctx && $__ctx[HAS](ctx) ) delete $__ctx[ctx]
+        global _G
+        if _G.ctxS: ctx = _G.ctxS.pop( )
+        else: ctx = '__GLOBAL__'
+        if ctx and (ctx in _G.ctx): _G.context = _G.ctx[ctx]
+        else: _G.context = _G.glob
     
     #
     # Main template static methods
     #
-    
-    def hasPlugin( name ):
-        global _G
-        return name and (name in _G.plugins)
-    
-    # add custom plugins as template functions
-    def addPlugin( name, pluginCode ):
-        global _G
-        name = str(name)
-        if isinstance(pluginCode, Contemplate.InlineTemplate):
-            _G.plugins[ name ] = pluginCode
-        #elif not hasattr(Contemplate, name) and not callable(getattr(Contemplate, name))):
-        elif not hasattr(Contemplate, name):
-            _G.plugins[ name ] = 'Contemplate.' + name
-            setattr(Contemplate, name, pluginCode)
-    
-    # static
-    def setPrefixCode( preCode=None ):
-        global _G
-        if preCode:
-            _G.tplPrefixCode = str(preCode)
-    
-    # static
-    def setLocales( locales ): 
-        global _G
-        _G.locale = Contemplate.merge(_G.locale, locales)
-    
-    # static
-    def clearLocales( ): 
-        global _G
-        _G.locale = {}
-    
-    # static
-    def setPlurals( plurals ): 
-        global _G
-        for singular in plurals:
-            if plurals[ singular ] is None: 
-                # auto plural
-                plurals[ singular ] = str(singular) + 's'
-        _G.plurals = Contemplate.merge(_G.plurals, plurals)
-    
-    # static
-    def clearPlurals( ): 
-        global _G
-        _G.plurals = {}
     
     # static
     def setTemplateSeparators( seps=None ):
@@ -2157,11 +2151,71 @@ class Contemplate:
         else: 
             _G.preserveLines = ''
     
-    # static
-    def setCacheDir( dir ): 
+    def hasPlugin( name, ctx='__GLOBAL__' ):
         global _G
+        if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
+        else: contx = _G.context
+        return name and ((name in contx.plugins) or (name in _G.glob.plugins))
+    
+    # add custom plugins as template functions
+    def addPlugin( name, pluginCode, ctx='__GLOBAL__' ):
+        global _G
+        if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
+        else: contx = _G.context
+        name = str(name)
+        if isinstance(pluginCode, Contemplate.InlineTemplate):
+            contx.plugins[ name ] = pluginCode
+        #elif not hasattr(Contemplate, name) and not callable(getattr(Contemplate, name))):
+        elif not hasattr(Contemplate, name):
+            contx.plugins[ name ] = 'Contemplate.' + name
+            setattr(Contemplate, name, pluginCode)
+    
+    # static
+    def setPrefixCode( preCode=None, ctx='__GLOBAL__' ):
+        global _G
+        if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
+        else: contx = _G.context
+        if preCode: contx.prefixCode = str(preCode)
+    
+    # static
+    def setLocales( locales, ctx='__GLOBAL__' ): 
+        global _G
+        if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
+        else: contx = _G.context
+        contx.locale = Contemplate.merge(contx.locale, locales)
+    
+    # static
+    def clearLocales( ctx='__GLOBAL__' ): 
+        global _G
+        if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
+        else: contx = _G.context
+        contx.locale = {}
+    
+    # static
+    def setPlurals( plurals, ctx='__GLOBAL__' ): 
+        global _G
+        if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
+        else: contx = _G.context
+        for singular in plurals:
+            if plurals[ singular ] is None: 
+                # auto plural
+                plurals[ singular ] = str(singular) + 's'
+        contx.plurals = Contemplate.merge(contx.plurals, plurals)
+    
+    # static
+    def clearPlurals( ctx='__GLOBAL__' ): 
+        global _G
+        if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
+        else: contx = _G.context
+        contx.plurals = {}
+    
+    # static
+    def setCacheDir( dir, ctx='__GLOBAL__' ): 
+        global _G
+        if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
+        else: contx = _G.context
         _self = Contemplate
-        _dir = _G.cacheDir = os.path.abspath(dir)
+        _dir = contx.cacheDir = os.path.abspath(dir)
         
         initPyFile = os.path.join(_dir, '__init__.py')
         if not os.path.exists( initPyFile ):
@@ -2179,42 +2233,56 @@ class Contemplate:
 
     
     # static
-    def setCacheMode( mode ): 
+    def setCacheMode( mode, ctx='__GLOBAL__' ): 
         global _G
-        _G.cacheMode = mode
+        if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
+        else: contx = _G.context
+        contx.cacheMode = mode
     
     # static
-    def clearCache( all=False ): 
+    def clearCache( all=False, ctx='__GLOBAL__' ): 
         global _G
-        _G.cache = {}
-        if all: _G.partials = {}
+        if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
+        else: contx = _G.context
+        contx.cache = {}
+        if all: contx.partials = {}
     
-    def hasTpl( tpl ):
+    def hasTpl( tpl, ctx='__GLOBAL__' ):
         global _G
-        return tpl and (tpl in _G.templates)
+        if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
+        else: contx = _G.context
+        return tpl and ((tpl in contx.templates) or (tpl in _G.glob.templates))
     
     # add templates manually
     # static
-    def add( tpls, tplStr=None ):
+    def add( tpls, ctx='__GLOBAL__' ):
         global _G
+        if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
+        else: contx = _G.context
         if isinstance(tpls, dict):
             for tplID in tpls:
                 if isinstance(tpls[ tplID ], (list, tuple)):
                     # unified way to add tpls both as reference and inline
                     # inline tpl, passed as array
                     if len( tpls[ tplID ][ 0 ] ):
-                        _G.templates[ tplID ] = [tpls[ tplID ][ 0 ], True]
+                        contx.templates[ tplID ] = [tpls[ tplID ][ 0 ], True]
                 else:
-                    _G.templates[ tplID ] = [tpls[ tplID ], False]
-                    
-        elif tpls and tplStr:
-            if isinstance(tplStr, (list, tuple)):
-                # unified way to add tpls both as reference and inline
-                # inline tpl, passed as array
-                if len( tplStr[ 0 ] ):
-                    _G.templates[ tpls ] = [tplStr[ 0 ], True]
-            else:
-                _G.templates[tpls] = [tplStr, False]
+                    contx.templates[ tplID ] = [tpls[ tplID ], False]
+    
+    
+   # static
+    def getTemplateContents( id, ctx='__GLOBAL__' ):
+        global _G
+        if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
+        else: contx = _G.context
+        
+        if id in contx.templates: template = contx.templates[id]
+        elif id in _G.glob.templates: template = _G.glob.templates[id]
+        else: return ''
+        
+        if template[1]: return template[0] # inline tpl
+        elif os.path.exists(template[0]): return Contemplate.read(template[0])
+        return ''
     
     def parseTpl( tpl, options=dict() ):
         global _G
@@ -2244,35 +2312,45 @@ class Contemplate:
     # static
     def tpl( tpl, data=None, options=None ):
         global _G
-        
         if isinstance(tpl, Contemplate.Template):
-            # Provide some basic currying to the user
-            if isinstance(data, dict): return str(tpl.render( data ))
-            else: return tpl
-        
-        if not options: options = {}
-        options = merge({
-            'autoUpdate': False, 
-            'refresh': False, 
-            'escape': False,
-            'separators': None,
-            'cacheDir': _G.cacheDir
-        }, options)
-        
-        if False == options['escape']: _G.escape = False
-        else: _G.escape = True
-        
-        # Figure out if we're getting a template, or if we need to
-        # load the template - and be sure to cache the result.
-        if options['refresh'] or not (tpl in _G.cache): 
+            tmpl = tpl
+        else:
+            # see what context this template may use
+            contx = None
+            if isinstance(options, str):
+                if options in _G.ctx:
+                    contx = _G.ctx[options] # preset context
+                else:
+                    contx = _G.context # current context
+                options = {}
             
-            _G.cache[ tpl ] = getCachedTemplate( tpl, options )
-        
-        tmpl = _G.cache[ tpl ]
+            options = merge({
+                'autoUpdate': False, 
+                'refresh': False, 
+                'escape': False,
+                'separators': None
+            }, {} if not options else options)
+            
+            if 'context' in options:
+                if options['context'] in _G.ctx:
+                    contx = _G.ctx[options['context']] # preset context
+                elif not contx:
+                    contx = _G.context # current context
+                del options['context']
+            
+            if False == options['escape']: _G.escape = False
+            else: _G.escape = True
+            
+            # Figure out if we're getting a template, or if we need to
+            # load the template - and be sure to cache the result.
+            if options['refresh'] or ((tpl not in contx.cache) and (tpl not in _G.glob.cache)): 
+                
+                contx.cache[ tpl ] = getCachedTemplate( tpl, contx, options )
+            
+            tmpl = contx.cache[ tpl ] if tpl in contx.cache else _G.glob.cache[ tpl ]
         
         # Provide some basic currying to the user
-        if isinstance(data, dict): return str(tmpl.render( data ))
-        else: return tmpl
+        return str(tmpl.render( data )) if isinstance(data, dict) else tmpl
     
     # inline tpls, both inside Contemplate templates (i.e as parameters) and in code
     def inline( tpl, reps=None, compiled=False ):
@@ -2386,9 +2464,8 @@ class Contemplate:
     # localized formatted date
     # static
     def ldate( format, timestamp=None ): 
-        global _G
         if timestamp is None: timestamp = php_time( ) 
-        return localized_date( format, timestamp, _G.locale )
+        return localized_date( format, timestamp )
         
     # locale, l
     # static
@@ -2409,15 +2486,6 @@ class Contemplate:
         global _G
         _G.uuid += 1
         return '_'.join( [ str(namespace), str(_G.uuid), str(php_time()) ] )
-    
-   # static
-    def getTemplateContents( id ):
-        global _G
-        if id in _G.templates: 
-            template = _G.templates[id]
-            if template[1]: return template[0] # inline tpl
-            elif os.path.exists(template[0]): return Contemplate.read(template[0])
-        return ''
     
     def keys( o ):
         if o:

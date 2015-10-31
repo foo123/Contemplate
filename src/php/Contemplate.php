@@ -145,9 +145,9 @@ class ContemplateTemplate
     {
         /* initialize internal vars */
         $this->_renderer = null;
+        $this->_blocks = null;
         $this->_extends = null;
         $this->_ctx = null;
-        $this->_blocks = null;
         $this->id = null; 
         if ( $id ) $this->id = $id; 
     }
@@ -159,9 +159,9 @@ class ContemplateTemplate
     
     public function dispose( ) 
     {
-        $this->_extends = null;
-        $this->_blocks = null;
         $this->_renderer = null;
+        $this->_blocks = null;
+        $this->_extends = null;
         $this->_ctx = null;
         $this->id = null;
         return $this;
@@ -206,27 +206,24 @@ class ContemplateTemplate
     
     public function renderBlock( $block, &$data, $__i__=null )
     {
-        $self = $this; $ret = ''; $ctx = false;
+        $self = $this; $r = ''; $__ctx = false;
         if ( !$__i__ )
         {
             $__i__ = $self;
             Contemplate::pushCtx( $self->_ctx );
-            $ctx = true;
+            $__ctx = true;
         }
         if ( $self->_blocks && isset($self->_blocks[$block]) ) 
         {
             $blockfunc = $self->_blocks[$block]; 
-            $ret = $blockfunc( $data, $self, $__i__ );
+            $r = $blockfunc( $data, $self, $__i__ );
         }
         elseif ( $self->_extends ) 
         {
-            $ret = $self->_extends->renderBlock($block, $data, $__i__);
+            $r = $self->_extends->renderBlock($block, $data, $__i__);
         }
-        if ( $ctx )
-        {
-            Contemplate::popCtx( );
-        }
-        return $ret;
+        if ( $__ctx )  Contemplate::popCtx( );
+        return $r;
     }
     
     public function renderSuperBlock( $block, &$data/*, $__i__=null*/ )
@@ -242,12 +239,12 @@ class ContemplateTemplate
     
     public function render( &$data, $__i__=null ) 
     {
-        $self = $this; $ctx = false;
+        $self = $this; $__ctx = false;
         if ( !$__i__ )
         {
             $__i__ = $self;
             Contemplate::pushCtx( $self->_ctx );
-            $ctx = true;
+            $__ctx = true;
         }
         $__p__ = ''; 
         if ( $self->_extends ) 
@@ -260,10 +257,7 @@ class ContemplateTemplate
             $renderer = $self->_renderer;
             $__p__ = $renderer($data, $self, $__i__);
         }
-        if ( $ctx )
-        {
-            Contemplate::popCtx( );
-        }
+        if ( $__ctx )  Contemplate::popCtx( );
         return $__p__;
     }
 }
@@ -317,15 +311,15 @@ class Contemplate
     
     private static $__leftTplSep = "<%";
     private static $__rightTplSep = "%>";
-    private static $__preserveLinesDefault = "' . \"\\n\" . '";
-    private static $__preserveLines = '';
-    private static $__escape = true;
     private static $__tplStart = '';
     private static $__tplEnd = '';
-    
+    private static $__preserveLinesDefault = "' . \"\\n\" . '";
+    private static $__preserveLines = '';
     private static $__EOL = "\n";
     private static $__TEOL = PHP_EOL;
     private static $__pad = "    ";
+    private static $__escape = true;
+    
     private static $__level = 0;
     private static $__loops = 0;
     private static $__ifs = 0;
@@ -346,6 +340,8 @@ class Contemplate
     private static $__currentblock;
     
     private static $__ctx = null;
+    private static $__ctxS = null;
+    private static $__global = null;
     private static $__context = null;
     
     private static $TT_ClassCode = null;
@@ -367,9 +363,7 @@ class Contemplate
     private static $TT_FUNC = null;
     private static $TT_RCODE = null;
     
-    //private static $re_plugin = '/^(plg_|plugin_)([a-zA-Z0-9_]+)/';
     private static $re_controls = '/(\\t|[ ]?)[ ]*%([a-zA-Z_][a-zA-Z0-9_]*)\\b[ ]*(\\()(.*)$/';
-        
     private static $__controlConstructs = array(
         'set', 'unset', 'isset',
         'if', 'elseif', 'else', 'endif',
@@ -377,7 +371,6 @@ class Contemplate
         'extends', 'block', 'endblock',
         'include', 'super', 'getblock'
     );
-    
     private static $__funcs = array( 
         's', 'n', 'f', 'q', 'dq', 
         'echo', 'time', 'count',
@@ -418,39 +411,20 @@ class Contemplate
         return array_keys($arr) !== range(0, count($arr) - 1);
     }*/
 
-    public static function createCtx( $ctx )
-    {
-        if ( $ctx && '__GLOBAL__' !== $ctx && !isset(self::$__ctx[$ctx]) ) self::$__ctx[$ctx] = new ContemplateCtx( $ctx );
-    }
-    
-    public static function disposeCtx( $ctx )
-    {
-        if ( $ctx && '__GLOBAL__' !== $ctx && isset(self::$__ctx[$ctx]) ) unset( self::$__ctx[$ctx] );
-    }
-    
-    public static function pushCtx( $ctx )
-    {
-        if ( $ctx && '__GLOBAL__' !== $ctx && isset(self::$__ctx[$ctx]) ) unset( self::$__ctx[$ctx] );
-    }
-    
-    public static function popCtx( )
-    {
-        if ( $ctx && '__GLOBAL__' !== $ctx && isset(self::$__ctx[$ctx]) ) unset( self::$__ctx[$ctx] );
-    }
-    
     public static function init( )
     {
         if ( self::$__isInited ) return;
         
         // a default global context
+        self::$__global = new ContemplateCtx('__GLOBAL__');
         self::$__ctx = array(
-        '__GLOBAL__'  => new ContemplateCtx('__GLOBAL__')
+        '__GLOBAL__'  => self::$__global
         );
-        self::$__context = self::$__ctx['__GLOBAL__'];
+        self::$__context = self::$__global;
+        self::$__ctxS = array( );
         
         // pre-compute the needed regular expressions
         self::$__preserveLines = self::$__preserveLinesDefault;
-        
         self::$__tplStart = "'; " . self::$__TEOL;
         self::$__tplEnd = self::$__TEOL . "\$__p__ .= '";
         
@@ -466,12 +440,7 @@ class Contemplate
             ,"    public function __construct(\$id=null)"
             ,"    {"
             ,"        \$self = \$this;"
-            ,"        /* initialize internal vars */"
-            ,"        \$self->_renderer = null;"
-            ,"        \$self->_extends = null;"
-            ,"        \$self->_blocks = null;"
-            ,"        \$self->id = null;"
-            ,"        \$self->id = \$id;"
+            ,"        \parent::__construct( \$id );"
             ,"        "
             ,"        /* extend tpl assign code starts here */"
             ,"#EXTENDCODE#"
@@ -485,12 +454,18 @@ class Contemplate
             ,"    /* tpl renderBlock method */"
             ,"    public function renderBlock(\$block, &\$data, \$__i__=null)"
             ,"    {"
-            ,"        \$self = \$this;"
-            ,"        if ( !\$__i__ ) \$__i__ = \$self;"
+            ,"        \$self = \$this; \$r = ''; \$__ctx = false;"
+            ,"        if ( !\$__i__ )"
+            ,"        {"
+            ,"            \$__i__ = \$self;"
+            ,"            Contemplate::pushCtx( \$self->_ctx );"
+            ,"            \$__ctx = true;"
+            ,"        }"
             ,"        \$method = '_blockfn_' . \$block;"
-            ,"        if ( method_exists(\$self, \$method) ) return \$self->{\$method}(\$data, \$self, \$__i__);"
-            ,"        elseif ( \$self->_extends ) return \$self->_extends->renderBlock(\$block, \$data, \$__i__);"
-            ,"        return '';"
+            ,"        if ( method_exists(\$self, \$method) ) \$r = \$self->{\$method}(\$data, \$self, \$__i__);"
+            ,"        elseif ( \$self->_extends ) \$r = \$self->_extends->renderBlock(\$block, \$data, \$__i__);"
+            ,"        if ( \$__ctx )  Contemplate::popCtx( );"
+            ,"        return \$r;"
             ,"    }"
             ,"    "
             ,"    /* tpl render method */"
@@ -514,10 +489,7 @@ class Contemplate
             ,"#RENDERCODE#"
             ,"            /* tpl main render code ends here */"
             ,"        }"
-            ,"        if ( \$__ctx )"
-            ,"        {"
-            ,"            Contemplate::popCtx( );"
-            ,"        }"
+            ,"        if ( \$__ctx )  Contemplate::popCtx( );"
             ,"        return \$__p__;"
             ,"    }"
             ,"}"
@@ -680,12 +652,41 @@ class Contemplate
         self::$__isInited = true;
     }
     
+    public static function createCtx( $ctx )
+    {
+        if ( $ctx && '__GLOBAL__' !== $ctx && !isset(self::$__ctx[$ctx]) ) self::$__ctx[$ctx] = new ContemplateCtx( $ctx );
+    }
+    
+    public static function disposeCtx( $ctx )
+    {
+        if ( $ctx && '__GLOBAL__' !== $ctx && isset(self::$__ctx[$ctx]) ) unset( self::$__ctx[$ctx] );
+    }
+    
+    public static function pushCtx( $ctx )
+    {
+        array_push(self::$__ctxS, self::$__context->id);
+        if ( $ctx && isset(self::$__ctx[$ctx]) ) self::$__context = self::$__ctx[$ctx];
+        else self::$__context = self::$__global;
+    }
+    
+    public static function popCtx( )
+    {
+        if ( !empty(self::$__ctxS) ) $ctx = array_pop( self::$__ctxS );
+        else $ctx = '__GLOBAL__';
+        if ( $ctx && isset(self::$__ctx[$ctx]) ) self::$__context = self::$__ctx[$ctx];
+        else self::$__context = self::$__global;
+    }
+    
     // http://www.blainesch.com/403/dynamically-adding-methods-to-classes-and-objects-in-php/
     public static function __callstatic( $method, $params=array() ) 
     {
-        if ( isset( self::$__plugins[ $method ] ) && is_callable( self::$__plugins[ $method ] ) ) 
+        if ( isset( self::$__context->plugins[ $method ] ) && is_callable( self::$__context->plugins[ $method ] ) ) 
         {
-            return call_user_func_array(self::$__plugins[ $method ], $params);
+            return call_user_func_array(self::$__context->plugins[ $method ], $params);
+        } 
+        elseif ( isset( self::$__global->plugins[ $method ] ) && is_callable( self::$__global->plugins[ $method ] ) ) 
+        {
+            return call_user_func_array(self::$__global->plugins[ $method ], $params);
         } 
         /*else 
         {
@@ -697,55 +698,6 @@ class Contemplate
     //
     // Main template static methods
     //
-    
-    public static function hasPlugin( $name, $ctx=null ) 
-    {
-        return !empty($name) && isset(self::$__plugins[ $name ]);
-    }
-    
-    // add custom plugins as template functions
-    public static function addPlugin( $name, $pluginCode, $ctx=null ) 
-    {
-        self::$__plugins[ $name ] = $pluginCode;
-    }
-    
-    // custom php code to add to start of template (eg custom access checks etc..)
-    public static function setPrefixCode( $preCode=null, $ctx=null )
-    {
-        if ( $preCode )
-            self::$__tplPrefixCode = (string)$preCode;
-    }
-    
-    public static function setLocales( $locales, $ctx=null ) 
-    { 
-        self::$__locale = self::merge(self::$__locale, (array)$locales); 
-    }
-    
-    public static function clearLocales( $ctx=null ) 
-    { 
-        self::$__locale = array(); 
-    }
-    
-    public static function setPlurals( $plurals, $ctx=null ) 
-    { 
-        if ( is_array($plurals) )
-        {
-            foreach ($plurals as $singular=>$plural)
-            {
-                if ( null == $plural )
-                {
-                    // auto plural
-                    $plurals[ $singular ] = $singular.'s';
-                }
-            }
-            self::$__plurals = self::merge(self::$__plurals, $plurals); 
-        }
-    }
-    
-    public static function clearPlurals( $ctx=null ) 
-    { 
-        self::$__plurals = array(); 
-    }
     
     public static function setTemplateSeparators( $seps=null )
     {
@@ -764,45 +716,102 @@ class Contemplate
             self::$__preserveLines = ''; 
     }
     
-    public static function setCacheDir( $dir, $ctx=null ) 
-    {  
-        if ( !$ctx || !isset(self::$__ctx[$ctx]) ) $ctx =& self::$__ctx['__GLOBAL__'];
-        else $ctx =& self::$__ctx[$ctx];
-        
-        $ctx['cacheDir'] = rtrim($dir,'/').'/'; 
-    }
-    
-    public static function setCacheMode( $mode, $ctx=null ) 
-    { 
-        if ( !$ctx || !isset(self::$__ctx[$ctx]) ) $ctx =& self::$__ctx['__GLOBAL__'];
-        else $ctx =& self::$__ctx[$ctx];
-        
-        $ctx['cacheMode'] = $mode; 
-    }
-    
-    public static function clearCache( $ctx=null, $all=false ) 
-    { 
-        if ( !$ctx || !isset(self::$__ctx[$ctx]) ) $ctx =& self::$__ctx['__GLOBAL__'];
-        else $ctx =& self::$__ctx[$ctx];
-        
-        $ctx['cache'] = array(); 
-        if ( $all ) $ctx['partials'] = array(); 
-    }
-    
-    public static function hasTpl( $tpl, $ctx=null ) 
+    public static function hasPlugin( $name, $ctx='__GLOBAL__' ) 
     {
-        if ( !$ctx || !isset(self::$__ctx[$ctx]) ) $ctx =& self::$__ctx['__GLOBAL__'];
-        else $ctx =& self::$__ctx[$ctx];
-        
-        return !empty($tpl) && isset($ctx['templates'][ $tpl ]);
+        if ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
+        else $contx = self::$__context;
+        return !empty($name) && (isset($contx->plugins[ $name ]) || isset(self::$__global->plugins[ $name ]));
+    }
+    
+    // add custom plugins as template functions
+    public static function addPlugin( $name, $pluginCode, $ctx='__GLOBAL__' ) 
+    {
+        if ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
+        else $contx = self::$__context;
+        $contx->plugins[ $name ] = $pluginCode;
+    }
+    
+    // custom php code to add to start of template (eg custom access checks etc..)
+    public static function setPrefixCode( $preCode=null, $ctx='__GLOBAL__' )
+    {
+        if ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
+        else $contx = self::$__context;
+        if ( $preCode ) $contx->prefixCode = (string)$preCode;
+    }
+    
+    public static function setLocales( $locales, $ctx='__GLOBAL__' ) 
+    { 
+        if ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
+        else $contx = self::$__context;
+        $contx->locale = self::merge($contx->locale, (array)$locales); 
+    }
+    
+    public static function clearLocales( $ctx='__GLOBAL__' ) 
+    { 
+        if ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
+        else $contx = self::$__context;
+        $contx->locale = array(); 
+    }
+    
+    public static function setPlurals( $plurals, $ctx='__GLOBAL__' ) 
+    { 
+        if ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
+        else $contx = self::$__context;
+        if ( is_array($plurals) )
+        {
+            foreach ($plurals as $singular=>$plural)
+            {
+                if ( null == $plural )
+                {
+                    // auto plural
+                    $plurals[ $singular ] = $singular.'s';
+                }
+            }
+            $contx->plurals = self::merge($contx->plurals, $plurals); 
+        }
+    }
+    
+    public static function clearPlurals( $ctx='__GLOBAL__' ) 
+    { 
+        if ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
+        else $contx = self::$__context;
+        $contx->plurals = array(); 
+    }
+    
+    public static function setCacheDir( $dir, $ctx='__GLOBAL__' ) 
+    {  
+        if ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
+        else $contx = self::$__context;
+        $contx->cacheDir = rtrim($dir,'/').'/'; 
+    }
+    
+    public static function setCacheMode( $mode, $ctx='__GLOBAL__' ) 
+    { 
+        if ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
+        else $contx = self::$__context;
+        $contx->cacheMode = $mode; 
+    }
+    
+    public static function clearCache( $all=false, $ctx='__GLOBAL__' ) 
+    { 
+        if ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
+        else $contx = self::$__context;
+        $contx->cache = array(); 
+        if ( $all ) $contx->partials = array(); 
+    }
+    
+    public static function hasTpl( $tpl, $ctx='__GLOBAL__' ) 
+    {
+        if ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
+        else $contx = self::$__context;
+        return !empty($tpl) && (isset($contx->templates[ $tpl ]) || isset(self::$__global->templates[ $tpl ]));
     }
     
     // add templates manually
-    public static function add( $tpls, $ctx=null ) 
+    public static function add( $tpls, $ctx='__GLOBAL__' ) 
     { 
-        if ( !$ctx || !isset(self::$__ctx[$ctx]) ) $ctx =& self::$__ctx['__GLOBAL__'];
-        else $ctx =& self::$__ctx[$ctx];
-        
+        if ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
+        else $contx = self::$__context;
         if ( is_array($tpls) )
         {
             foreach ($tpls as $tplID=>$tplData)
@@ -812,14 +821,28 @@ class Contemplate
                     // unified way to add tpls both as reference and inline
                     // inline tpl, passed as array
                     if ( isset($tplData[ 0 ]) )
-                        $ctx['templates'][ $tplID ] = array($tplData[ 0 ], true);
+                        $contx->templates[ $tplID ] = array($tplData[ 0 ], true);
                 }
                 else
                 {
-                    $ctx['templates'][ $tplID ] = array($tpls[ $tplID ], false); 
+                    $contx->templates[ $tplID ] = array($tpls[ $tplID ], false); 
                 }
             }
         }
+    }
+    
+    public static function getTemplateContents( $id, $ctx='__GLOBAL__' )
+    {
+        if ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
+        else $contx = self::$__context;
+        
+        if ( isset($contx->templates[$id]) ) $template = $contx->templates[$id];
+        elseif ( isset(self::$__global->templates[$id]) ) $template = self::$__global->templates[$id];
+        else return '';
+        
+        if ( $template[1] ) return $template[0]; // inline tpl
+        elseif ( is_file($template[0]) ) return file_get_contents( $template[0] );
+        return '';
     }
     
     public static function parseTpl( $tpl, $options=array() ) 
@@ -842,7 +865,6 @@ class Contemplate
         {
             self::$__leftTplSep = $tmp[ 0 ]; self::$__rightTplSep = $tmp[ 1 ];
         }
-        
         return $parsed;
     }
         
@@ -855,52 +877,53 @@ class Contemplate
     {
         if ( $tpl instanceof ContemplateTemplate )
         {
-            // Provide some basic currying to the user
-            if ( is_array( $data ) )  return $tpl->render( $data );
-            else  return $tpl;
+            $tmpl = $tpl;
         }
-        
-        $ctx = null;
-        if ( is_string($options) )
+        else
         {
-            if ( isset(self::$__ctx[$options]) )
-                $ctx =& self::$__ctx[$options];
-            else
-                $ctx =& self::$__ctx['__GLOBAL__'];
-            $options = array();
+            // see what context this template may use
+            $contx = null;
+            if ( is_string($options) )
+            {
+                if ( isset(self::$__ctx[$options]) )
+                    $contx = self::$__ctx[$options]; // preset context
+                else
+                    $contx = self::$__context; // current context
+                $options = array();
+            }
+            
+            $options = array_merge(array(
+                'autoUpdate'=> false,
+                'refresh'=> false,
+                'escape'=> true,
+                'separators'=> null
+            ), (array)$options);
+            
+            if ( isset($options['context']) )
+            {
+                if ( isset(self::$__ctx[$options['context']]) )
+                    $contx = self::$__ctx[$options['context']]; // preset context
+                else if ( !$contx )
+                    $contx = self::$__context; // current context
+                unset($options['context']);
+            }
+            
+            if ( false === $options['escape'] ) self::$__escape = false;
+            else  self::$__escape = true;
+            
+            // Figure out if we're getting a template, or if we need to
+            // load the template - and be sure to cache the result.
+            if ( $options['refresh'] || (!isset($contx->cache[ $tpl ]) && !isset(self::$__global->cache[ $tpl ])) ) 
+            {
+                // load/parse required tpl (and any associated tpl)
+                $contx->cache[ $tpl ] = self::getCachedTemplate( $tpl, $contx, $options );
+            }
+            
+            $tmpl = isset($contx->cache[ $tpl ]) ? $contx->cache[ $tpl ] : self::$__global->cache[ $tpl ];
         }
-        $options = array_merge(array(
-            'autoUpdate'=> false,
-            'refresh'=> false,
-            'escape'=> true,
-            'separators'=> null
-        ), (array)$options);
-        
-        if ( isset($options['context']) )
-        {
-            if ( isset(self::$__ctx[$options['context']]) )
-                $ctx =& self::$__ctx[$options['context']];
-            else if ( !$ctx )
-                $ctx =& self::$__ctx['__GLOBAL__'];
-            unset($options['context']);
-        }
-        
-        if ( false === $options['escape'] ) self::$__escape = false;
-        else  self::$__escape = true;
-        
-        // Figure out if we're getting a template, or if we need to
-        // load the template - and be sure to cache the result.
-        if ( $options['refresh'] || !isset($ctx['cache'][ $tpl ]) ) 
-        {
-            // load/parse required tpl (and any associated tpl)
-            $ctx['cache'][ $tpl ] = self::getCachedTemplate( $tpl, $ctx, $options );
-        }
-        
-        $tmpl = $ctx['cache'][ $tpl ];
         
         // Provide some basic currying to the user
-        if ( is_array( $data ) )  return $tmpl->render( $data );
-        else  return $tmpl;
+        return is_array( $data ) ? $tmpl->render( $data ) : $tmpl;
     }
     
     // inline tpls, both inside Contemplate templates (i.e as parameters) and in code
@@ -1019,7 +1042,7 @@ class Contemplate
     public static function ldate( $format, $timestamp=null ) 
     { 
         if ( null===$timestamp ) $timestamp = time(); 
-        return self::localized_date( $format, $timestamp, self::$__locale );  
+        return self::localized_date( $format, $timestamp );  
     }
     
     // locale
@@ -1231,14 +1254,14 @@ class Contemplate
         if ( '"' === $ch || "'" === $ch ) $id = substr($id,1,-1); // quoted id
         
         /* cache it */ 
-        if ( !isset(self::$__partials[$id]) )
+        if ( !isset(self::$__context->partials[$id]) )
         {
             self::pushState();
             self::resetState();
-            self::$__partials[$id]=" " . self::parse(self::getSeparators( self::getTemplateContents($id) ), false) . "';" . self::$__TEOL;
+            self::$__context->partials[$id]=" " . self::parse(self::getSeparators( self::getTemplateContents($id) ), false) . "';" . self::$__TEOL;
             self::popState();
         }
-        return self::padLines( self::$__partials[$id] );
+        return self::padLines( self::$__context->partials[$id] );
     }
     
     // extend another template
@@ -1432,10 +1455,10 @@ class Contemplate
         }
         
         //if ( preg_match(self::$re_plugin, $ctrl, $m) && isset($m[2]) && isset(self::$__plugins['plg_' . $m[2]]) )
-        if ( isset(self::$__plugins[$ctrl]) ) 
+        if ( isset(self::$__context->plugins[$ctrl]) ) 
         {
             // allow custom plugins as template functions
-            $pl = self::$__plugins[$ctrl];
+            $pl = self::$__context->plugins[$ctrl];
             $args = preg_replace_callback( $re_controls, array(__CLASS__, 'parseConstructs'), $args );
             if ( $pl instanceof ContemplateInlineTemplate )
             {
@@ -2001,18 +2024,6 @@ class Contemplate
         return $text;
     }
     
-    public static function getTemplateContents( $id, &$ctx=null )
-    {
-        if ( !$ctx ) $ctx =& self::$__ctx['__GLOBAL__'];
-        if ( isset($ctx['templates'][$id]) )
-        {
-            $template = $ctx['templates'][$id];
-            if ( $template[1] ) return $template[0]; // inline tpl
-            elseif ( is_file($template[0]) ) return file_get_contents( $template[0] );
-        }
-        return '';
-    }
-    
     private static function getCachedTemplateName( $id, $cacheDir ) 
     { 
         return $cacheDir . preg_replace('/[\\W]+/', '_', $id) . '_tpl.php'; 
@@ -2127,11 +2138,11 @@ class Contemplate
         return file_put_contents($filename, $class);
     }
     
-    private static function getCachedTemplate( $id, &$ctx, $options=array() )
+    private static function getCachedTemplate( $id, $contx, $options=array() )
     {
-        if ( isset($ctx['templates'][$id]) )
+        if ( isset($contx->templates[$id]) )
         {
-            $template = $ctx['templates'][$id];
+            $template = $contx->templates[$id];
             // inline templates saved only in-memory
             if ( $template[1] )
             {
@@ -2149,15 +2160,15 @@ class Contemplate
                     $tpl->setRenderFunction( $fns[0] ); $tpl->setBlocks( $fns[1] );
                 }
                 if ( self::$__extends ) $tpl->extend( self::tpl(self::$__extends, null, false) );
-                $tpl->ctx( $ctx['id'] );
+                $tpl->ctx( $contx->id );
                 return $tpl;
             }
             
             else
             {
-                if ( true !== $options['autoUpdate'] && self::CACHE_TO_DISK_NOUPDATE === $ctx['cacheMode'] )
+                if ( true !== $options['autoUpdate'] && self::CACHE_TO_DISK_NOUPDATE === $contx->cacheMode )
                 {
-                    $cachedTplFile = self::getCachedTemplateName($id, $ctx['cacheDir']);
+                    $cachedTplFile = self::getCachedTemplateName($id, $contx->cacheDir);
                     $cachedTplClass = self::getCachedTemplateClass($id);
                     if ( !is_file($cachedTplFile) )
                     {
@@ -2169,15 +2180,15 @@ class Contemplate
                         include($cachedTplFile);  
                         $tpl = new $cachedTplClass();
                         $tpl->setId( $id ); 
-                        $tpl->ctx( $ctx['id'] );
+                        $tpl->ctx( $contx->id );
                         return $tpl;
                     }
                     return null;
                 }
                 
-                elseif ( true === $options['autoUpdate'] || self::CACHE_TO_DISK_AUTOUPDATE === $ctx['cacheMode'] )
+                elseif ( true === $options['autoUpdate'] || self::CACHE_TO_DISK_AUTOUPDATE === $contx->cacheMode )
                 {
-                    $cachedTplFile = self::getCachedTemplateName($id, $ctx['cacheDir']);
+                    $cachedTplFile = self::getCachedTemplateName($id, $contx->cacheDir);
                     $cachedTplClass = self::getCachedTemplateClass($id);
                     if ( !is_file($cachedTplFile) || (filemtime($cachedTplFile) <= filemtime($template[0])) )
                     {
@@ -2189,7 +2200,7 @@ class Contemplate
                         include($cachedTplFile);  
                         $tpl = new $cachedTplClass();
                         $tpl->setId( $id );
-                        $tpl->ctx( $ctx['id'] );
+                        $tpl->ctx( $contx->id );
                         return $tpl;
                     }
                     return null;
@@ -2205,7 +2216,7 @@ class Contemplate
                     $tpl->setRenderFunction( $fns[0] ); 
                     $tpl->setBlocks( $fns[1] );
                     if ( self::$__extends ) $tpl->extend( self::tpl(self::$__extends) );
-                    $tpl->ctx( $ctx['id'] );
+                    $tpl->ctx( $contx->id );
                     return $tpl;
                 }
             }
@@ -2227,7 +2238,6 @@ class Contemplate
         if ( !isset(self::$__locals[self::$__currentblock]) ) self::$__locals[self::$__currentblock] = array();
         if ( !isset(self::$__variables[self::$__currentblock]) ) self::$__variables[self::$__currentblock] = array();
         //self::$__escape = true;
-        //self::$__context =& self::$__ctx['__GLOBAL__'];
     }
     
     private static function clearState( ) 
@@ -2244,7 +2254,7 @@ class Contemplate
     {
         // push state
         array_push(self::$__stack, array(self::$__loops, self::$__ifs, self::$__loopifs, self::$__level,
-        self::$__allblocks, self::$__allblockscnt, self::$__openblocks, self::$__extends, self::$__locals, self::$__variables, self::$__currentblock/*, &self::$__context*/));
+        self::$__allblocks, self::$__allblockscnt, self::$__openblocks, self::$__extends, self::$__locals, self::$__variables, self::$__currentblock));
     }
     
     private static function popState( ) 
@@ -2254,26 +2264,35 @@ class Contemplate
         self::$__loops = $t[0]; self::$__ifs = $t[1]; self::$__loopifs = $t[2]; self::$__level = $t[3];
         self::$__allblocks = $t[4]; self::$__allblockscnt = $t[5]; self::$__openblocks = $t[6];
         self::$__extends = $t[7]; self::$__locals = $t[8]; self::$__variables = $t[9]; self::$__currentblock = $t[10];
-        //self::$__context =& $t[11];
     }
     
-    private static function localized_date( $format, $timestamp, $locale ) 
+    private static function localized_date( $format, $timestamp ) 
     {
         $F = array('d','D','j','l','N','S','w','z','W','F','m','M','t','L','o','Y','y','a','A','B','g','G','h','H','i','s','u','e','I','O','P','T','Z','U');
         $D = array( );
         $DATE = explode( "\n", date( implode( "\n", $F ), $timestamp ) );
         foreach($F as $i=>$f) $D[$f] = $DATE[$i];
+        
+        $loc =& self::$__context->locale; $glo =& self::$__global->locale;
         // localise specific formats
-        if ( isset($locale[$D['D']]) ) $D['D'] = $locale[ $D['D'] ];
-        if ( isset($locale[$D['l']]) ) $D['l'] = $locale[ $D['l'] ];
-        if ( isset($locale[$D['S']]) ) $D['S'] = $locale[ $D['S'] ];
-        if ( isset($locale[$D['F']]) ) $D['F'] = $locale[ $D['F'] ];
-        if ( isset($locale[$D['M']]) ) $D['M'] = $locale[ $D['M'] ];
-        if ( isset($locale[$D['a']]) ) $D['a'] = $locale[ $D['a'] ];
-        if ( isset($locale[$D['A']]) ) $D['A'] = $locale[ $D['A'] ];
+        if     ( isset($loc[$D['D']]) )  $D['D'] = $loc[ $D['D'] ];
+        elseif ( isset($glo[$D['D']]) )  $D['D'] = $glo[ $D['D'] ];
+        if     ( isset($loc[$D['l']]) )  $D['l'] = $loc[ $D['l'] ];
+        elseif ( isset($glo[$D['l']]) )  $D['l'] = $glo[ $D['l'] ];
+        if     ( isset($loc[$D['S']]) )  $D['S'] = $loc[ $D['S'] ];
+        elseif ( isset($glo[$D['S']]) )  $D['S'] = $glo[ $D['S'] ];
+        if     ( isset($loc[$D['F']]) )  $D['F'] = $loc[ $D['F'] ];
+        elseif ( isset($glo[$D['F']]) )  $D['F'] = $glo[ $D['F'] ];
+        if     ( isset($loc[$D['M']]) )  $D['M'] = $loc[ $D['M'] ];
+        elseif ( isset($glo[$D['M']]) )  $D['M'] = $glo[ $D['M'] ];
+        if     ( isset($loc[$D['a']]) )  $D['a'] = $loc[ $D['a'] ];
+        elseif ( isset($glo[$D['a']]) )  $D['a'] = $glo[ $D['a'] ];
+        if     ( isset($loc[$D['A']]) )  $D['A'] = $loc[ $D['A'] ];
+        elseif ( isset($glo[$D['A']]) )  $D['A'] = $glo[ $D['A'] ];
+        
         // full date/time formats, constructed from localised parts
-        $D['c'] = implode('',array( $D['Y'],'-',$D['m'],'-',$D['d'],'\\',$D['T'],$D['H'],':',$D['i'],':',$D['s'],$D['P'] ));
-        $D['r'] = implode('',array( $D['D'],', ',$D['d'],' ',$D['M'],' ',$D['Y'],' ',$D['H'],':',$D['i'],':',$D['s'],' ',$D['O'] ));
+        $D['c'] = $D['Y'].'-'.$D['m'].'-'.$D['d'].'\\'.$D['T'].$D['H'].':'.$D['i'].':'.$D['s'].$D['P'];
+        $D['r'] = $D['D'].', '.$D['d'].' '.$D['M'].' '.$D['Y'].' '.$D['H'].':'.$D['i'].':'.$D['s'].' '.$D['O'];
         
         // return localized date
         $localised_datetime = ''; $l = strlen($format);

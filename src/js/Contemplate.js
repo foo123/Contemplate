@@ -39,11 +39,8 @@ var __version__ = "1.0.0", Contemplate, Template, InlineTemplate, Ctx,
     PROTO = 'prototype', HAS = 'hasOwnProperty', 
     Obj = Object, Arr = Array, Str = String, Func = Function, 
     Keys = Obj.keys, parse_int = parseInt, parse_float = parseFloat,
-    OP = Obj[PROTO], AP = Arr[PROTO], FP = Func[PROTO],
-    _toString = OP.toString, //slice = AP.slice,
+    OP = Obj[PROTO], AP = Arr[PROTO], FP = Func[PROTO], _toString = OP.toString, //slice = AP.slice,
     isNode = "undefined" !== typeof(global) && '[object global]' === _toString.call(global),
-    userAgent = "undefined"!==typeof(navigator) ? navigator.userAgent : "",
-    isChrome = /Chrome\//.test(userAgent),
     floor = Math.floor, round = Math.round, abs = Math.abs,
     
     // php-like functions, mostly adapted from phpjs project
@@ -56,10 +53,13 @@ var __version__ = "1.0.0", Contemplate, Template, InlineTemplate, Ctx,
     },
     // adapted and optimised from phpjs project
     count = function( mixed_var ) {
-        if ( null === mixed_var || 'undefined' === typeof mixed_var ) return 0;
-        else if ( is_array(mixed_var) ) return mixed_var.length;
-        else if ( is_object(mixed_var) ) return Keys(mixed_var).length;
-        return 1;
+        return null == mixed_var
+        ? 0
+        : (is_array(mixed_var)
+        ? mixed_var.length
+        : (is_object(mixed_var)
+        ? Keys(mixed_var).length
+        : 1));
     },
     pad = function( s, len, ch ) {
         var sp = s.toString( ), n = len-sp.length;
@@ -198,26 +198,33 @@ var __version__ = "1.0.0", Contemplate, Template, InlineTemplate, Ctx,
         }
         return formatted_datetime;
     },
-    localized_date = function( format, timestamp, locale ) {
+    localized_date = function( format, timestamp ) {
         var F = ['d','D','j','l','N','S','w','z','W','F','m','M','t','L','o','Y','y','a','A','B','g','G','h','H','i','s','u','e','I','O','P','T','Z','U'],
             D = { }, DATE = php_date( F.join( "\n" ), timestamp ).split( "\n" ), i, l, f,
-            localised_datetime
+            localised_datetime, loc = $__context.locale, glo = $__global.locale
         ;
         
         for (i=0,l=F.length; i<l; i++) D[ F[i] ] = DATE[ i ];
             
         // localise specific formats
-        if ( locale[HAS](D['D']) ) D['D'] = locale[D['D']];
-        if ( locale[HAS](D['l']) ) D['l'] = locale[D['l']];
-        if ( locale[HAS](D['S']) ) D['S'] = locale[D['S']];
-        if ( locale[HAS](D['F']) ) D['F'] = locale[D['F']];
-        if ( locale[HAS](D['M']) ) D['M'] = locale[D['M']];
-        if ( locale[HAS](D['a']) ) D['a'] = locale[D['a']];
-        if ( locale[HAS](D['A']) ) D['A'] = locale[D['A']];
+        if      ( loc[D.D] )  D.D = loc[ D.D ];
+        else if ( glo[D.D] )  D.D = glo[ D.D ];
+        if      ( loc[D.l] )  D.l = loc[ D.l ];
+        else if ( glo[D.l] )  D.l = glo[ D.l ];
+        if      ( loc[D.S] )  D.S = loc[ D.S ];
+        else if ( glo[D.S] )  D.S = glo[ D.S ];
+        if      ( loc[D.F] )  D.F = loc[ D.F ];
+        else if ( glo[D.F] )  D.F = glo[ D.F ];
+        if      ( loc[D.M] )  D.M = loc[ D.M ];
+        else if ( glo[D.M] )  D.M = glo[ D.M ];
+        if      ( loc[D.a] )  D.a = loc[ D.a ];
+        else if ( glo[D.a] )  D.a = glo[ D.a ];
+        if      ( loc[D.A] )  D.A = loc[ D.A ];
+        else if ( glo[D.A] )  D.A = glo[ D.A ];
         
         // full date/time formats, constructed from localised parts
-        D.c = [ D.Y,'-',D.m,'-',D.d,'\\',D.T,D.H,':',D.i,':',D.s,D.P ].join('');
-        D.r = [ D.D,', ',D.d,' ',D.M,' ',D.Y,' ',D.H,':',D.i,':',D.s,' ',D.O ].join('');
+        D.c = D.Y+'-'+D.m+'-'+D.d+'\\'+D.T+D.H+':'+D.i+':'+D.s+D.P;
+        D.r = D.D+', '+D.d+' '+D.M+' '+D.Y+' '+D.H+':'+D.i+':'+D.s+' '+D.O;
         
         localised_datetime = '';
         for (i=0,l=format.length; i<l; i++)
@@ -608,7 +615,7 @@ function trim( str, charlist )
 var 
     $__isInited = false, $__async = false, 
     
-    $__leftTplSep = "<%", $__rightTplSep = "%>", $__tplStart = "", $__tplEnd = "", $__tplPrefixCode = "",
+    $__leftTplSep = "<%", $__rightTplSep = "%>", $__tplStart = "", $__tplEnd = "",
     
     $__preserveLinesDefault = "' + \"\\n\" + '", $__preserveLines = '',  
     $__EOL = "\n", $__TEOL = isNode ? require('os').EOL : "\n", $__escape = true,
@@ -618,6 +625,8 @@ var
     $__allblocks = null, $__allblockscnt = null,  $__openblocks = null,
     $__currentblock, $__startblock = null, $__endblock = null, $__blockptr = -1,
     $__extends = null, $__strings = null,
+    
+    $__ctx, $__ctxS, $__context, $__global,
 
     $__uuid = 0,
     
@@ -653,8 +662,6 @@ var
         'template': 'tpl'
     },
     
-    $__ctx, $__context,
-    
     resetState = function( ) {
         // reset state
         $__loops = 0; $__ifs = 0; $__loopifs = 0; $__forType = 2; $__level = 0;
@@ -663,7 +670,6 @@ var
         $__locals[$__currentblock] = $__locals[$__currentblock] || {};
         $__variables[$__currentblock] = $__variables[$__currentblock] || {};
         //$__escape = true;
-        //$__context = $__ctx['__GLOBAL__'];
     },
     
     clearState = function( ) {
@@ -678,7 +684,7 @@ var
     pushState = function( ) {
         // push state
         $__stack.push([$__loops, $__ifs, $__loopifs, $__forType, $__level,
-        $__allblocks, $__allblockscnt, $__openblocks, $__extends, $__locals, $__variables, $__currentblock/*, $__context*/]);
+        $__allblocks, $__allblockscnt, $__openblocks, $__extends, $__locals, $__variables, $__currentblock]);
     },
     
     popState = function( ) {
@@ -687,7 +693,6 @@ var
         $__loops = t[0]; $__ifs = t[1]; $__loopifs = t[2]; $__forType = t[3]; $__level = t[4];
         $__allblocks = t[5]; $__allblockscnt = t[6]; $__openblocks = t[7];
         $__extends = t[8]; $__locals = t[9]; $__variables = t[10]; $__currentblock = t[11];
-        //$__context = t[12];
     },
     
     // pad lines to generate formatted code
@@ -1968,21 +1973,6 @@ var
             fwrite(filename, tplContents, Contemplate.ENCODING); 
     },
     
-    ctx = function( id ) {
-        return {
-         'id'               : id
-        ,'cacheDir'         : './'
-        ,'cacheMode'        : 0
-        ,'cache'            : { }
-        ,'templates'        : { }
-        ,'partials'         : { }
-        ,'locale'           : { }
-        ,'plurals'          : { }
-        ,'plugins'          : { }
-        ,'prefixCode'       : ''
-        };
-    },
-    
     // generated cached tpl class code as a "heredoc" template (for Node cached templates)
     TT_ClassCode,   
 
@@ -2122,35 +2112,35 @@ Template = function Template( id ) {
     self._renderer = null;
     self._blocks = null;
     self._extends = null;
-    self.id = null;
     self._ctx = null;
+    self.id = null;
     if ( id ) self.id = id; 
 };
 Template.VERSION = __version__;
 Template.renderProxy = function( data, __i__ ) {
     "use strict";
-    var self = this, ret, __ctx = false;
+    var self = this, r, __ctx = false;
     if ( !__i__ )
     {
         __i__ = self;
         Contemplate.pushCtx( self._ctx );
         __ctx = true;
     }
-    ret = self._extends.render(data, __i__);
+    r = self._extends.render(data, __i__);
     if ( __ctx )
     {
         Contemplate.popCtx( );
     }
-    return ret;
+    return r;
 };
 Template[PROTO] = {
     constructor: Template
     ,id: null
     
+    ,_renderer: null 
+    ,_blocks: null
     ,_extends: null
     ,_ctx: null
-    ,_blocks: null
-    ,_renderer: null 
     
     // public methods
     ,dispose: function( ) {
@@ -2217,21 +2207,18 @@ Template[PROTO] = {
     }
     
     ,renderBlock: function( block, data, __i__ ) {
-        var self = this, ret = '', __ctx = false;
+        var self = this, r = '', __ctx = false, blocks;
         if ( !__i__ )
         {
             __i__ = self;
             Contemplate.pushCtx( self._ctx );
             __ctx = true;
         }
-        var blocks = self._blocks;
-        if ( blocks && blocks[HAS](block) ) ret = blocks[block](Contemplate, data, self, __i__);
-        else if ( self._extends ) ret = self._extends.renderBlock(block, data, __i__);
-        if ( __ctx )
-        {
-            Contemplate.popCtx( );
-        }
-        return ret;
+        blocks = self._blocks;
+        if ( blocks && blocks[HAS](block) ) r = blocks[block](Contemplate, data, self, __i__);
+        else if ( self._extends ) r = self._extends.renderBlock(block, data, __i__);
+        if ( __ctx )  Contemplate.popCtx( );
+        return r;
     }
     
     ,renderSuperBlock: function( block, data/*, __i__*/ ) {
@@ -2249,10 +2236,7 @@ Template[PROTO] = {
             Contemplate.pushCtx( self._ctx );
             __ctx = true;
         }
-        if ( __ctx )
-        {
-            Contemplate.popCtx( );
-        }
+        if ( __ctx )  Contemplate.popCtx( );
         return __p__;
     }
 };
@@ -2305,14 +2289,15 @@ Contemplate = {
         if ( $__isInited ) return;
         
         // a default global context
+        $__global = new Ctx('__GLOBAL__');
         $__ctx = {
-        '__GLOBAL__'  : new Ctx('__GLOBAL__')
+        '__GLOBAL__'  : $__global
         };
-        $__context = $__ctx['__GLOBAL__'];
+        $__context = $__global;
+        $__ctxS = [];
         
         // pre-compute the needed regular expressions
         $__preserveLines = $__preserveLinesDefault;
-        
         $__tplStart = "';" + $__TEOL;
         $__tplEnd = $__TEOL + "__p__ += '";
         
@@ -2320,7 +2305,6 @@ Contemplate = {
         TT_ClassCode = InlineTemplate.compile(InlineTemplate.multisplit([
             "#PREFIXCODE#"
             ,"!function (root, moduleName, moduleDefinition) {"
-            ,"    // export the module"
             ,"    var m;"
             ,"    // node, CommonJS, etc.."
             ,"    if ( 'object' === typeof(module) && module.exports ) module.exports = moduleDefinition();"
@@ -2332,15 +2316,10 @@ Contemplate = {
             ,"    /* Contemplate cached template '#TPLID#' */"
             ,"    "
             ,"    /* constructor */"
-            ,"    function #CLASSNAME#(id)"
+            ,"    function #CLASSNAME#( id )"
             ,"    {"
             ,"        var self = this;"
-            ,"        /* initialize internal vars */"
-            ,"        "
-            ,"        self._renderer = null;"
-            ,"        self._blocks = null;"
-            ,"        self._extends = null;"
-            ,"        self.id = id || null;"
+            ,"        Contemplate.Template.call( self, id );"
             ,"        "
             ,"        /* tpl-defined blocks render code starts here */"
             ,"#BLOCKS#"
@@ -2356,11 +2335,17 @@ Contemplate = {
             ,"    /* tpl render method */"
             ,"    #CLASSNAME#.prototype.render = function( data, __i__ ) {"
             ,"        \"use strict\";"
-            ,"        var self = this, __p__ = '';"
-            ,"        __i__ = __i__ || self;"
+            ,"        var self = this, __p__ = '', __ctx = false;"
+            ,"        if ( !__i__ )"
+            ,"        {"
+            ,"            __i__ = self;"
+            ,"            Contemplate.pushCtx( self._ctx );"
+            ,"            __ctx = true;"
+            ,"        }"
             ,"        /* tpl main render code starts here */"
             ,"#RENDERCODE#"
             ,"        /* tpl main render code ends here */"
+            ,"        if ( __ctx )  Contemplate.popCtx( );"
             ,"        return __p__;"
             ,"    };"
             ,"    "
@@ -2558,66 +2543,17 @@ Contemplate = {
     },
     
     pushCtx: function( ctx ) {
-        if ( ctx && '__GLOBAL__' !== ctx && $__ctx[HAS](ctx) ) delete $__ctx[ctx];
+        $__ctxS.push( $__context.id );
+        if ( ctx && $__ctx[HAS](ctx) ) $__context = $__ctx[ctx];
+        else $__context = $__global;
     },
     
     popCtx: function( ) {
-        if ( ctx && '__GLOBAL__' !== ctx && $__ctx[HAS](ctx) ) delete $__ctx[ctx];
-    },
-    
-    // add custom plugins as template functions
-    hasPlugin: function( name ) {
-        return !!name && $__plugins[HAS](name);
-    },
-    
-    // add custom plugins as template functions
-    addPlugin: function( name, pluginCode ) {
-        if ( name && pluginCode )
-        {
-            if ( pluginCode instanceof Contemplate.InlineTemplate )
-            {
-                $__plugins[ name ] = pluginCode;
-            }
-            else if ( undef === Contemplate[ name ] )
-            {
-                $__plugins[ name ] = 'Contemplate.' + name;
-                Contemplate[ name ] = pluginCode;
-            }
-        }
-    },
-
-    setPrefixCode: function( preCode ) {
-        if ( preCode ) $__tplPrefixCode = '' + preCode;
-    },
-
-    setLocales: function( locales ) { 
-        if ( "object" === typeof locales )
-        {
-            $__locale = merge($__locale, locales);
-        }
-    },
-    
-    clearLocales: function( ) { 
-        $__locale = { }; 
-    },
-    
-    setPlurals: function( plurals ) { 
-        if ( "object" === typeof plurals )
-        {
-            for (var singular in plurals)
-            {
-                if ( plurals[HAS](singular) && null == plurals[ singular ] )
-                {
-                    // auto plural
-                    plurals[ singular ] = singular+'s';
-                }
-            }
-            $__plurals = merge($__plurals, plurals); 
-        }
-    },
-    
-    clearPlurals: function( ) { 
-        $__plurals = { }; 
+        var ctx;
+        if ( $__ctxS.length ) ctx = $__ctxS.pop( );
+        else ctx = '__GLOBAL__';
+        if ( ctx && $__ctx[HAS](ctx) ) $__context = $__ctx[ctx];
+        else $__context = $__global;
     },
     
     setTemplateSeparators: function( seps ) {
@@ -2634,11 +2570,66 @@ Contemplate = {
         else $__preserveLines = ''; 
     },
     
-    setCacheDir: function( dir ) { 
+    // add custom plugins as template functions
+    hasPlugin: function( name, ctx ) {
+        return !!name && $__plugins[HAS](name);
+    },
+    
+    // add custom plugins as template functions
+    addPlugin: function( name, pluginCode, ctx ) {
+        if ( name && pluginCode )
+        {
+            if ( pluginCode instanceof Contemplate.InlineTemplate )
+            {
+                $__plugins[ name ] = pluginCode;
+            }
+            else if ( undef === Contemplate[ name ] )
+            {
+                $__plugins[ name ] = 'Contemplate.' + name;
+                Contemplate[ name ] = pluginCode;
+            }
+        }
+    },
+
+    setPrefixCode: function( preCode, ctx ) {
+        if ( preCode ) $__tplPrefixCode = '' + preCode;
+    },
+
+    setLocales: function( locales, ctx ) { 
+        if ( "object" === typeof locales )
+        {
+            $__locale = merge($__locale, locales);
+        }
+    },
+    
+    clearLocales: function( ctx ) { 
+        $__locale = { }; 
+    },
+    
+    setPlurals: function( plurals, ctx ) { 
+        if ( "object" === typeof plurals )
+        {
+            for (var singular in plurals)
+            {
+                if ( plurals[HAS](singular) && null == plurals[ singular ] )
+                {
+                    // auto plural
+                    plurals[ singular ] = singular+'s';
+                }
+            }
+            $__plurals = merge($__plurals, plurals); 
+        }
+    },
+    
+    clearPlurals: function( ctx ) { 
+        $__plurals = { }; 
+    },
+    
+    setCacheDir: function( dir, ctx ) { 
         $__cacheDir = rtrim(dir, '/') + '/';  
     },
     
-    setCacheMode: function( mode ) { 
+    setCacheMode: function( mode, ctx ) { 
         $__cacheMode = ( isNode ) ? mode : Contemplate.CACHE_TO_DISK_NONE; 
     },
     
@@ -2646,13 +2637,13 @@ Contemplate = {
         $__async = !bool; 
     },*/
     
-    clearCache: function( all ) { 
+    clearCache: function( all, ctx ) { 
         $__cache = { }; 
         if ( all ) $__partials = { }; 
     },
     
     // add templates manually
-    add: function( tpls, tplStr ) { 
+    add: function( tpls, ctx ) { 
         if ( "object" === typeof tpls )
         {
             for (var tplID in tpls)
@@ -2690,7 +2681,7 @@ Contemplate = {
     },
 
     // add templates manually
-    hasTpl: function( tpl ) { 
+    hasTpl: function( tpl, ctx ) { 
         return !!tpl && $__templates[HAS](tpl);
     },
 
@@ -2721,29 +2712,50 @@ Contemplate = {
     
     // return the requested template (with optional data)
     tpl: function( tpl, data, options ) {
+        var tmpl, contx;
         if ( tpl instanceof Contemplate.Template )
         {
-            // Provide some basic currying to the user
-            return ( "object" === typeof data ) ? tpl.render( data ) : tpl;
+            tmpl = tpl;
         }
-        options = merge({
-            'autoUpdate': false,
-            'refresh': false,
-            'escape': true,
-            'separators': null,
-            'cacheDir': $__cacheDir
-        }, options);
-        
-        $__escape = false !== options.escape;
-        
-        // Figure out if we're getting a template, or if we need to
-        // load the template - and be sure to cache the result.
-        if ( !!options.refresh || !$__cache[ tpl ] )
+        else
         {
-            $__cache[ tpl ] = getCachedTemplate( tpl, options );
+            contx = null;
+            if ( options.substr )
+            {
+                if ( $__ctx[HAS](options) )
+                    contx = $__ctx[options]; // preset context
+                else
+                    contx = $__context; // current context
+                options = {};
+            }
+            
+            options = merge({
+                'autoUpdate': false,
+                'refresh': false,
+                'escape': true,
+                'separators': null
+            }, options);
+            
+            if ( options.context )
+            {
+                if ( $__ctx[HAS](options.context) )
+                    contx = $__ctx[options.context]; // preset context
+                else if ( !contx )
+                    contx = $__context; // current context
+                delete options.context;
+            }
+            
+            $__escape = false !== options.escape;
+            
+            // Figure out if we're getting a template, or if we need to
+            // load the template - and be sure to cache the result.
+            if ( !!options.refresh || (!contx.cache[ tpl ] && !$__global.cache[ tpl ]) )
+            {
+                contx.cache[ tpl ] = getCachedTemplate( tpl, contx, options );
+            }
+            
+            tmpl = contx.cache[ tpl ] || $__global.cache[ tpl ];
         }
-        
-        var tmpl = $__cache[ tpl ];
         
         // Provide some basic currying to the user
         return ( "object" === typeof data ) ? tmpl.render( data ) : tmpl;
@@ -2902,7 +2914,7 @@ Contemplate = {
     // localized formatted date
     ldate: function( format, timestamp ) { 
         if ( arguments.length < 2  ) timestamp = php_time( ); 
-        return localized_date( format, timestamp, $__locale ); 
+        return localized_date( format, timestamp ); 
     },
     
     // locale

@@ -308,7 +308,7 @@ def localized_date( format, timestamp ):
 # (mostly methods to simulate php-like functionality needed by the engine)
 #
 # static
-def include( filename, classname, doReload=False ):
+def include( filename, classname, directory, doReload=False ):
     # http://www.php2python.com/wiki/function.include/
     # http://docs.python.org/dev/3.0/whatsnew/3.0.html
     # http://stackoverflow.com/questions/4821104/python-dynamic-instantiation-from-string-name-of-a-class-in-dynamically-imported
@@ -334,7 +334,7 @@ def include( filename, classname, doReload=False ):
     
     global _G
     getTplClass = None
-    directory = _G.cacheDir
+    #directory = _G.cacheDir
     # add the dynamic import path to sys
     os.sys.path.append(directory)
     currentcwd = os.getcwd()
@@ -626,7 +626,7 @@ class Template:
         
         if not __i__:
             __i__ = self
-            Contemplate.pushCtx( self._ctx )
+            Contemplate._pushCtx( self._ctx )
             __ctx = True
         
         if (self._blocks) and (block in self._blocks):
@@ -636,7 +636,7 @@ class Template:
             r = self._extends.renderBlock(block, data, __i__)
         
         if __ctx:
-            Contemplate.popCtx( )
+            Contemplate._popCtx( )
         
         return r
         
@@ -651,7 +651,7 @@ class Template:
         
         if not __i__:
             __i__ = self
-            Contemplate.pushCtx( self._ctx )
+            Contemplate._pushCtx( self._ctx )
             __ctx = True
             
         __p__ = ''
@@ -664,7 +664,7 @@ class Template:
             __p__ = renderer(data, self, __i__)
         
         if __ctx:
-            Contemplate.popCtx( )
+            Contemplate._popCtx( )
         
         return __p__
     
@@ -966,19 +966,20 @@ def t_endfor( args='' ):
 # static
 def t_include( id ):
     global _G
+    contx = _G.context
     id = id.strip()
     if _G.strings and (id in _G.strings): id = _G.strings[id]
     ch = id[0]
     if '"' == ch or "'" == ch: id = id[1:-1] # quoted id
     
     # cache it
-    if id not in _G.partials:
+    if id not in contx.partials:
         pushState()
         resetState()
-        _G.partials[id] = " " + parse(getSeparators( Contemplate.getTemplateContents(id) ), False) + "'" + _G.TEOL
+        contx.partials[id] = " " + parse(getSeparators( Contemplate.getTemplateContents(id, contx.context) ), False) + "'" + _G.TEOL
         popState()
     
-    return padLines( _G.partials[id] )
+    return padLines( contx.partials[id] )
 
 # extend another template
 # static
@@ -1693,28 +1694,23 @@ def getCachedTemplateClass( id ):
     return 'Contemplate_' + re.sub(_G.UNDERL, '_', id) + '_Cached'
 
 # static
-def createTemplateRenderFunction( id, seps=None ):
+def createTemplateRenderFunction( id, contx, seps=None ):
     global _G
     resetState()
     
-    blocks = parse(getSeparators( Contemplate.getTemplateContents(id), seps ))
+    blocks = parse(getSeparators( Contemplate.getTemplateContents(id, contx), seps ))
     
     clearState()
     
     renderf = blocks[0]
     blocks = blocks[1]
     
-    if _G.extends:
-        func = _G.TT_FUNC({
-            "EOL":  _G.TEOL,
-            'FCODE': ""
-        })
+    EOL = _G.TEOL
     
-    else:
-        func = _G.TT_FUNC({
-                "EOL":  _G.TEOL,
-                'FCODE': "__p__ += '" + renderf + "'"
-            })
+    func = _G.TT_FUNC({
+         "EOL"          : EOL
+        ,'FCODE'        : "" if _G.extends else "__p__ += '" + renderf + "'"
+    })
     
     _G.funcId += 1
     
@@ -1729,56 +1725,48 @@ def createTemplateRenderFunction( id, seps=None ):
     return [ fn, blockfns]
 
 # static
-def createCachedTemplate( id, filename, classname, seps=None ):
+def createCachedTemplate( id, contx, filename, classname, seps=None ):
     global _G
     resetState()
     
-    blocks = parse(getSeparators( Contemplate.getTemplateContents(id), seps ))
+    blocks = parse(getSeparators( Contemplate.getTemplateContents(id, contx), seps ))
     
     clearState()
     
     renderf = blocks[0]
     blocks = blocks[1]
     
+    EOL = _G.TEOL
+    
     # tpl-defined blocks
     sblocks = ''
     for b in blocks:
-        sblocks += _G.TEOL + _G.TT_BlockCode({
-                    "EOL":  _G.TEOL,
-                    'BLOCKNAME': b[0],
-                    'BLOCKMETHODNAME': "_blockfn_"+b[0],
-                    'BLOCKMETHODCODE': padLines(b[1], 1)
-                })
-    
-    # tpl render code
-    if _G.extends:
-        extendCode = "self_.extend('"+_G.extends+"')"
-        renderCode = _G.TT_RCODE({
-            "EOL":  _G.TEOL,
-            'RCODE': "__p__ = ''" 
+        sblocks += EOL + _G.TT_BlockCode({
+         "EOL"                  : EOL
+        ,'BLOCKNAME'            : b[0]
+        ,'BLOCKMETHODNAME'      : "_blockfn_"+b[0]
+        ,'BLOCKMETHODCODE'      : padLines(b[1], 1)
         })
     
-    else:
-        extendCode = ''
-        renderCode = _G.TT_RCODE({
-                    "EOL":  _G.TEOL,
-                    'RCODE': "__p__ += '" + renderf + "'" 
-                })
+    renderCode = _G.TT_RCODE({
+         "EOL"                  : EOL
+        ,'RCODE'                : "__p__ = ''" if _G.extends else "__p__ += '" + renderf + "'" 
+    })
+    extendCode = "self_.extend('"+_G.extends+"')" if _G.extends else ''
     
     if _G.tplPrefixCode: prefixCode = _G.tplPrefixCode
     else: prefixCode = ''
         
     # generate tpl class
     classCode = _G.TT_ClassCode({
-                "EOL":  _G.TEOL,
-                'PREFIXCODE': prefixCode,
-                'IMPORTS': '',
-                'TPLID': id,
-                'CLASSNAME': classname,
-                'EXTENDCODE': padLines(extendCode, 3),
-                'BLOCKS': padLines(sblocks, 2),
-                'RENDERCODE': padLines(renderCode, 4)
-            })
+         "EOL"                  : EOL
+        ,'PREFIXCODE'           : prefixCode
+        ,'TPLID'                : id
+        ,'CLASSNAME'            : classname
+        ,'EXTENDCODE'           : padLines(extendCode, 3)
+        ,'BLOCKS'               : padLines(sblocks, 2)
+        ,'RENDERCODE'           : padLines(renderCode, 4)
+    })
     
     return Contemplate.write(filename, classCode)
 
@@ -1798,11 +1786,11 @@ def getCachedTemplate( id, contx, options=dict() ):
                 _G.funcId += 1
                 tpl.setRenderFunction( createFunction('_contemplateFn' + str(_G.funcId), 'data,self_,__i__', padLines(options['parsed'], 1), {'Contemplate': Contemplate}) )
             else:
-                fns = createTemplateRenderFunction(id, options['separators'])
+                fns = createTemplateRenderFunction(id, contx, options['separators'])
                 tpl.setRenderFunction( fns[0] )
                 tpl.setBlocks( fns[1] )
             
-            if _G.extends: tpl.extend( Contemplate.tpl(_G.extends) )
+            if _G.extends: tpl.extend( Contemplate.tpl(_G.extends, None, contx.id) )
             tpl.ctx( contx.id )
             return tpl
         
@@ -1815,9 +1803,9 @@ def getCachedTemplate( id, contx, options=dict() ):
             cachedTplClass = getCachedTemplateClass(id)
             if not os.path.isfile(cachedTplPath):
                 # if not exist, create it
-                createCachedTemplate(id, cachedTplPath, cachedTplClass, options['separators'])
+                createCachedTemplate(id, contx, cachedTplPath, cachedTplClass, options['separators'])
             if os.path.isfile(cachedTplPath):
-                tpl = include(cachedTplFile, cachedTplClass)()
+                tpl = include(cachedTplFile, cachedTplClass, contx.cacheDir)()
                 tpl.setId( id )
                 tpl.ctx( contx.id )
                 return tpl
@@ -1831,9 +1819,9 @@ def getCachedTemplate( id, contx, options=dict() ):
             cachedTplClass = getCachedTemplateClass(id)
             if not os.path.isfile(cachedTplPath) or (os.path.getmtime(cachedTplPath) <= os.path.getmtime(template[0])):
                 # if tpl not exist or is out-of-sync (re-)create it
-                createCachedTemplate(id, cachedTplPath, cachedTplClass, options['separators'])
+                createCachedTemplate(id, contx, cachedTplPath, cachedTplClass, options['separators'])
             if os.path.isfile(cachedTplPath):
-                tpl = include(cachedTplFile, cachedTplClass)()
+                tpl = include(cachedTplFile, cachedTplClass, contx.cacheDir)()
                 tpl.setId( id )
                 tpl.ctx( contx.id )
                 return tpl
@@ -1844,10 +1832,10 @@ def getCachedTemplate( id, contx, options=dict() ):
             # dynamic in-memory caching during page-request
             tpl = Contemplate.Template()
             tpl.setId( id )
-            fns = createTemplateRenderFunction(id, options['separators'])
+            fns = createTemplateRenderFunction(id, contx, options['separators'])
             tpl.setRenderFunction( fns[0] )
             tpl.setBlocks( fns[1] )
-            if _G.extends: tpl.extend( Contemplate.tpl(_G.extends) )
+            if _G.extends: tpl.extend( Contemplate.tpl(_G.extends, None, contx.id) )
             tpl.ctx( contx.id )
             return tpl
         
@@ -1908,29 +1896,22 @@ class Contemplate:
         # make compilation templates
         _G.TT_ClassCode = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
             "# -*- coding: UTF-8 -*-"
-            ,"# Contemplate cached template '#TPLID#'"
             ,"#PREFIXCODE#"
-            ,"# imports start here, if any"
-            ,"#IMPORTS#"
-            ,"# imports end here"
+            ,"# Contemplate cached template '#TPLID#'"
             ,"def __getTplClass__(Contemplate):"
             ,"    # extends the main Contemplate.Template class"
             ,"    class #CLASSNAME#(Contemplate.Template):"
             ,"        'Contemplate cached template #TPLID#'"
-            ,""
             ,"        # constructor"
             ,"        def __init__(self, id=None):"
             ,"            self_ = self"
             ,"            super(#CLASSNAME#, self_).__init__( id )"
-            ,"            "
             ,"            # extend tpl assign code starts here"
             ,"#EXTENDCODE#"
             ,"            # extend tpl assign code ends here"
-            ,""
             ,"        # tpl-defined blocks render code starts here"
             ,"#BLOCKS#"
             ,"        # tpl-defined blocks render code ends here"
-            ,""
             ,"        # render a tpl block method"
             ,"        def renderBlock(self, block, data, __i__=None):"
             ,"            self_ = self"
@@ -1938,24 +1919,23 @@ class Contemplate:
             ,"            r = ''"
             ,"            if not __i__:"
             ,"                __i__ = self_"
-            ,"                Contemplate.pushCtx( self_._ctx )"
+            ,"                Contemplate._pushCtx( self_._ctx )"
             ,"                __ctx = True"
             ,"            method = '_blockfn_' + block"
             ,"            if (hasattr(self_, method) and callable(getattr(self_, method))):"
             ,"                r = getattr(self_, method)(data, self_, __i__)"
             ,"            elif self_._extends:"
             ,"                r = self_._extends.renderBlock(block, data, __i__)"
-            ,"            if __ctx:  Contemplate.popCtx( )"
+            ,"            if __ctx:  Contemplate._popCtx( )"
             ,"            return r"
-            ,"            "
-            ,"        # tpl render method"
+            ,"        # render method"
             ,"        def render(self, data, __i__=None):"
             ,"            self_ = self"
             ,"            __ctx = False"
             ,"            __p__ = ''"
             ,"            if not __i__:"
             ,"                __i__ = self_"
-            ,"                Contemplate.pushCtx( self_._ctx )"
+            ,"                Contemplate._pushCtx( self_._ctx )"
             ,"                __ctx = True"
             ,"            if self_._extends:"
             ,"                __p__ = self_._extends.render(data, __i__)"
@@ -1965,18 +1945,15 @@ class Contemplate:
             ,"#RENDERCODE#"
             ,"                # tpl main render code ends here"
             ,""
-            ,"            if __ctx:  Contemplate.popCtx( )"
+            ,"            if __ctx:  Contemplate._popCtx( )"
             ,"            return __p__"
-            ,"    "
             ,"    return #CLASSNAME#"
-            ,""
             ,"# allow to 'import *'  from this file as a module"
             ,"__all__ = ['__getTplClass__']"
             ,""
         ]), {
              "#EOL#":           "EOL"
             ,"#PREFIXCODE#":    "PREFIXCODE"
-            ,"#IMPORTS#":       "IMPORTS"
             ,"#CLASSNAME#":     "CLASSNAME"
             ,"#TPLID#":         "TPLID"
             ,"#BLOCKS#":        "BLOCKS"
@@ -2045,7 +2022,7 @@ class Contemplate:
         _G.TT_FOR2 = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
             ""
             ,"#_O# = #O#"
-            ,"#_OI# = (enumerate(#_O#) if isinstance(#_O#,(list, tuple)) else #_O#.items()) if #_O# else None"
+            ,"#_OI# = (enumerate(#_O#) if isinstance(#_O#,(list,tuple)) else #_O#.items()) if #_O# else None"
             ,"if (#_OI#):"
             ,"    for #K#,#V# in #_OI#:"
             ,""
@@ -2060,7 +2037,7 @@ class Contemplate:
         _G.TT_FOR1 = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
             ""
             ,"#_O# = #O#"
-            ,"#_OV# = (#_O# if isinstance(#_O#,(list, tuple)) else #_O#.values()) if #_O# else None"
+            ,"#_OV# = (#_O# if isinstance(#_O#,(list,tuple)) else #_O#.values()) if #_O# else None"
             ,"if (#_OV#):"
             ,"    for #V# in #_OV#:"
             ,""
@@ -2119,13 +2096,13 @@ class Contemplate:
         global _G
         if ctx and ('__GLOBAL__' != ctx) and (ctx in _G.ctx): del _G.ctx[ctx]
     
-    def pushCtx( ctx ):
+    def _pushCtx( ctx ):
         global _G
         _G.ctxS.append( _G.context.id )
         if ctx and (ctx in _G.ctx): _G.context = _G.ctx[ctx]
         else: _G.context = _G.glob
     
-    def popCtx( ):
+    def _popCtx( ):
         global _G
         if _G.ctxS: ctx = _G.ctxS.pop( )
         else: ctx = '__GLOBAL__'
@@ -2273,7 +2250,8 @@ class Contemplate:
    # static
     def getTemplateContents( id, ctx='__GLOBAL__' ):
         global _G
-        if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
+        if isinstance(ctx, Ctx): contx = ctx
+        elif ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
         else: contx = _G.context
         
         if id in contx.templates: template = contx.templates[id]

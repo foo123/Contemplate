@@ -11,7 +11,7 @@
 4. [Dynamic Template Inheritance](#dynamic-template-inheritance)
 5. [Template Directives](#template-directives)
 6. [Template Functions and Plugins](#template-functions-and-plugins)
-    a. [Differences between `include` and `template`](#differences-between-include-and-template)
+    1. [Differences between `include` and `template`](#differences-between-include-and-template)
 7. [Contemplate API](#contemplate-api)
 
 
@@ -166,7 +166,7 @@ tpl.render( data );
 
 
 
-####Differences between `include` and `tpl`/`template`
+####Differences between `include` and `template`
 
 The main difference is that `%include` will actually copy the subtemplate contents inside the calling template (thus only one final template is generated). This is similar to PHP's `include` directive.
 

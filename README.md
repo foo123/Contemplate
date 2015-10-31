@@ -76,40 +76,40 @@ This is highly versatile:
 2. and / or requires to learn a (completely) new syntax for building a template.
 
 
-These drawbacks can be compensated if one uses PHP itself as templating engine. PHP already **IS** a templating language and a very fast at it.
+These drawbacks can be compensated if one uses `PHP` itself as templating engine. `PHP` already **IS** a templating language and a very fast at it.
 
 This can create very simple, intuitive and fast templates.
 
 The drawbacks of this approach are:
 
-1. It works only with PHP, and many times the same template needs to be used also by Javascript
+1. It works only with `PHP`, and many times the same template needs to be used also by `JavaScript`
 
 2. It can be cumbersome to combine or iterate over templates and parts.
 
 
-*Contemplate* seeks to find the best balance between these requirements.
+`Contemplate` seeks to find the best balance between these requirements.
 
-The solution is inspired by _John Resig's post_ ([see above](http://ejohn.org/blog/javascript-micro-templating/)) and the fact that PHP, Python and JavaScript share a __common language subset__.
+The solution is inspired by _John Resig's post_ ([see above](http://ejohn.org/blog/javascript-micro-templating/)) and the fact that `PHP`, `Python` and `JavaScript` share a __common language subset__.
 
 
 
 ###Features:
 
-* *Contemplate* does a __minimum parsing__ (and caching) in order to create dynamic templates
+* `Contemplate` does a __minimum parsing__ (and caching) in order to create dynamic templates
 and trying to contain the needed functionality inside the common language subset(s).
 
-* Most of the time this can be accomplished, the rest functionality is built with __custom functions__ which mostly resemble the PHP
+* Most of the time this can be accomplished, the rest functionality is built with __custom functions__ which mostly resemble the `PHP`
 syntax, yet work the same in all the engine's implementations.
 
 * __Uniform functionality__, Engine Implementations for __PHP__ , __Python__ , __Node__  and __client-side JavaScript__
 
-* Simple and __light-weight__ ( only one relatively small class for each implementation, no other dependencies ) ~30kB minified, ~11kB zipped
+* Simple and __light-weight__ ( only one relatively small class for each implementation, no other dependencies ) `~30kB` minified, `~11kB` zipped
 
-* __Fast__ , can cache templates dynamically (filesystem caching has 3 modes, __NONE__ which uses only in-memory caching, __NOUPDATE__ which caches the templates only once and __AUTOUPDATE__ which re-creates the cached template if original template has changed, useful for debugging)
+* __Fast__ , can cache templates dynamically (filesystem caching has 3 modes, `NONE` which uses only in-memory caching, `NOUPDATE` which caches the templates only once and `AUTOUPDATE` which re-creates the cached template if original template has changed, useful for debugging)
 
-* Generated cached template code is __formatted and annotated__ with comments, for easy debugging (note: javascript cached templates are **UMD modules** which can be used in both node/AMD/browser)
+* Generated cached template code is __formatted and annotated__ with comments, for easy debugging (note: javascript cached templates are **`UMD` modules** which can be used in both `node`/`AMD`/`browser`)
 
-* Syntax __close to PHP__ (there was an effort to keep the engine syntax as close to PHP syntax as possible, to avoid learning another language syntax)
+* Syntax __close to `PHP`__ (there was an effort to keep the engine syntax as close to `PHP` syntax as possible, to avoid learning another language syntax)
 
 * Easily __extensible__ , __configurable__
 
@@ -117,43 +117,43 @@ syntax, yet work the same in all the engine's implementations.
 
 * __Localization__ , __Pluralisation__ , __Date formatting__ built-in and configurable easily ( simple __Data escaping__  is also supported)
 
-* __Date manipulation__ similar to PHP format (ie __date__ function). An extended, localized version of php's date function __ldate__ is also implemented in the framework
+* __Date manipulation__ similar to `PHP` format (ie `date` function). An extended, localized version of `php`'s date function `ldate` is also implemented in the framework
 
-* Loops can have optional __elsefor()__ statement when no data, or data is empty (see tests)
+* Loops can have optional `elsefor()` statement when no data, or data is empty (see tests)
 
-* Templates can __include__ other templates (similar to PHP _include_ directive), these includes wil be compiled into the the template that called them
+* Templates can `include` other templates (similar to `PHP` `include` directive), these includes wil be compiled into the the template that called them
 
-* Templates can *call another template* using __tpl__ function, these templates are called as templates subroutines and parsed by themselves
+* Templates can *call another template* using `tpl` function, these templates are called as templates subroutines and parsed by themselves
 
-* Templates and template functions can also have **inline templates** as parameters via __inline__ template function
+* Templates and template functions can also have **inline templates** as parameters via `inline` template function
 
-* __Template Inheritance__ , templates can *extend/inherit other templates* using __extends__ directive and *override blocks* using __block__ , __endblock__ directives (see examples)
+* __Template Inheritance__ , templates can *extend/inherit other templates* using `extends` directive and *override blocks* using `block` , `endblock` directives (see examples)
 
-* __Direct Super reference__ , templates can use the __super__ template function to directly reference (and call) a super block if needed in OO manner (see examples)
+* __Direct Super reference__ , templates can use the `super` template function to directly reference (and call) a super block if needed in OO manner (see examples)
 
-* __Nested Blocks__ , *template blocks* can be nested and repeated in multiple ways (see examples)
+* __Nested Blocks__ , *template `blocks`* can be nested and repeated in multiple ways (see examples)
 
 * __Custom Plugins__ , can be used as template functions to enhance/extend the engine functionality (see examples)
 
-* **custom plugins can be also inlined**, i.e their code can be **expanded at compile-time** using *Comntemplate::inline* templates in their definition, e.g saving unnecessary look-ups at render-time (see examples)
+* **custom plugins can be also inlined**, i.e their code can be **expanded at compile-time** using `Contemplate::inline` templates in their definition, e.g saving unnecessary look-ups at render-time (see examples)
 
 
 ###Dependencies
 
-* Only 3 classes are used (Contemplate.php, Contemplate.js, Contemplate.py), no other dependencies
-* PHP 5.2+ supported
-* Node 0.8+ supported
-* Python 2.x or 3.x supported
+* Only 3 classes are used (`Contemplate.php`, `Contemplate.js`, `Contemplate.py`), no other dependencies
+* `PHP` `5.2+` supported
+* `Node` `0.8+` supported
+* `Python` `2.x` or `3.x` supported
 * all major browsers
 
 
 ###Todo
 
-* add support for multiple **contexts** (which include separate templates, cache directories and related parameters) so that the same engine can be used in same application by different modules independantly [TODO]
-* support asynchronous template loading/rendering for node/browser
-* add Contemplate implementations for ActionScript, Perl, Java, Scala
-* transform Contemplate (for PHP) into a PHP C-extension, Contemplate (for node) into standalone executable (eg. https://github.com/crcn/nexe)
-* keep-up with php, node, browsers, python updates
+* add support for multiple `context` (which include separate templates, `cache` directories and related parameters) so that the same engine can be used in same application by different modules independantly [IN PROGRESS]
+* support asynchronous template loading/rendering for `node/browser`
+* add `Contemplate` implementations for `ActionScript, Perl, Java, Scala` [TODO?]
+* transform `Contemplate` (for `PHP`) into a `PHP` `C`-extension, `Contemplate` (for node) into standalone executable (eg. https://github.com/crcn/nexe)
+* keep-up with `php`, `node`, browsers, `python` updates
 
 
 ###Performance
@@ -165,24 +165,24 @@ syntax, yet work the same in all the engine's implementations.
 
 The following tests were made on a revision of a 2013 jsperf test for various javascript template engines. More tests should be done.
 
-Contemplate (0.6.5) was 2nd place on Firefox and 3rd (or close) place on Opera, IE, while Contemplate was average to slower on Chrome. The reason was mostly that Contemplate was using a code to copy/isolate the input data every time inside the render function, which most of the time is redundant, else user can use the *Contemplate.data* method to create a shallow copy suitable to be used as render data. So this was removed, plus some minor refactoring and minor loop optimisation.
+`Contemplate` (`0.6.5`) was 2nd place on Firefox and 3rd (or close) place on Opera, IE, while `Contemplate` was average to slower on Chrome. The reason was mostly that `Contemplate` was using a code to copy/isolate the input data every time inside the render function, which most of the time is redundant, else user can use the `Contemplate.data` method to create a shallow copy suitable to be used as render data. So this was removed, plus some minor refactoring and minor loop optimisation.
 
 This resulted in great performance increase as shown below. (see changelog)
 
 Previous tests are here [jsperf/0.6.5](http://jsperf.com/js-template-engines-performance/94), [jsperf/0.6.7](http://jsperf.com/js-template-engines-performance/96), [jsperf/0.7](http://jsperf.com/js-template-engines-performance/112), [jsperf/0.7.1](http://jsperf.com/js-template-engines-performance/116), [jsperf/0.8](http://jsperf.com/js-template-engines-performance/117), [jsperf/0.8.1](http://jsperf.com/js-template-engines-performance/120)
 
-Contemplate (0.8.1) is (consistently) 1st place on almost all browsers.
+`Contemplate` (0.8.1) is (consistently) 1st place on almost all browsers.
 
 [![contemplate rendering jsperf](/screenshots/jsperf-rendering.png)](http://jsperf.com/js-template-engines-performance/120)
 
 
 **Parse / Compilation Time**
 
-The following tests involve swig, handlebars contemplate and mustache javascript template engines. More tests should be done.
+The following tests involve `swig`, `handlebars`, `contemplate` and `mustache` `javascript` template engines. More tests should be done.
 
 Previous tests are here [jsperf/0.6.7](http://jsperf.com/js-template-engines-compilation/3), [jsperf/0.7](http://jsperf.com/js-template-engines-compilation/7), [jsperf/0.7.1](http://jsperf.com/js-template-engines-compilation/8), [jsperf/0.8](http://jsperf.com/js-template-engines-compilation/11), [jsperf/0.8.1](http://jsperf.com/js-template-engines-compilation/12)
 
-Contemplate engine (0.8.1) is (consistently) 1st place on almost all browsers.
+`Contemplate` engine (0.8.1) is (consistently) 1st place on almost all browsers.
 
 [![contemplate parse jsperf](/screenshots/jsperf-compilation.png)](http://jsperf.com/js-template-engines-compilation/12)
 
@@ -190,8 +190,8 @@ Contemplate engine (0.8.1) is (consistently) 1st place on almost all browsers.
 
 ###Tests
 
-Use _test.php_ (for php), _test.js_ (for node), _test.py_ (for python)
-under **tests** folder, to test the basic functionality
+Use `test.php` (for `php`), `test.js` (for `node`), `test.py` (for `python`)
+under `/tests` folder, to test the basic functionality
 
 
 ###Screenshots
@@ -202,7 +202,7 @@ Sample Template markup
 Data to be used for the template
 [![Template data](/screenshots/template_data.png)](https://github.com/foo123/Contemplate/raw/master/screenshots/template_data.png)
 
-PHP and Javascript rendering of the template on same page (see test.php)
+`PHP` and `JavaScript` rendering of the template on same page (see `test.php`)
 [![Template output](/screenshots/template_output.png)](https://github.com/foo123/Contemplate/raw/master/screenshots/template_output.png)
 
 

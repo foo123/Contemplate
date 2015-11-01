@@ -1,5 +1,9 @@
 ###ChangeLog
 
+__1.0.0__
+* enable dynamic contexts (ses examples), different parts of an application can use their own defined context, with their contextual template settings (including caching, directories, locales, plugins, etc..)
+* various optimisations, typo fixes
+
 __0.9.2__
 * update/optimise `date`, `localized_date` methods
 * remove `%html` (`htmlentities`) method (not needed, can be added as plugin if needed, less code size)

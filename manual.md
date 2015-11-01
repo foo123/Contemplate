@@ -9,10 +9,11 @@
 2. [Template Variables](#template-variables)
 3. [Literal Template Data](#literal-template-data)
 4. [Dynamic Template Inheritance](#dynamic-template-inheritance)
-5. [Template Directives](#template-directives)
-6. [Template Functions and Plugins](#template-functions-and-plugins)
+5. [Dynamic Contexts](#dynamic-contexts)
+6. [Template Directives](#template-directives)
+7. [Template Functions and Plugins](#template-functions-and-plugins)
     1. [Differences between `include` and `template`](#differences-between-include-and-template)
-7. [Contemplate API](#contemplate-api)
+8. [Contemplate API](#contemplate-api)
 
 
 
@@ -102,6 +103,22 @@ tpl.render( data );
 
 ```
 
+####Dynamic Contexts
+**(in progress)**
+
+The engine can use **multiple dynanic contexts** to have contextual settings, like `locales`, `caching`, `plugins` so that different modules of an application can **use the engine independantly**.
+
+A dynamic context is created with `Contemplate.createCtx( 'my-context' );`
+A dynamic context is disposed with `Contemplate.disposeCtx( 'my-context' );`
+
+If a context already exists, it is not re-created in `createCtx` method. If a context does not already exist, `disposeCtx` method does nothing.
+
+All other `API` methods of `Contemplate` can accept a `context id` (so operations take place in that context) either via `options` (in methods that accept an `options` parameter) or via an additional `ctx` string parameter (see examples).
+
+If no context is given, API operations take place in the `global` context `"__GLOBAL__"`.
+TEMPLATE operations take place in the `current` context (which defaults to `global` if no other context specified)
+
+
 
 ####Template Directives
 
@@ -143,22 +160,22 @@ tpl.render( data );
 * `%ltrim( val [, delim] )`   left trim `val` of delim (default to spaces)
 * `%rtrim( val [, delim] )`   right trim `val` of delim (default to spaces)
 * `%trim( val [, delim] )`   left/right trim `val` of delim (default to spaces)
-* `%lowercase( val )`   convert `val` to lowercase
-* `%uppercase( val )`   convert `val` to uppercase
-* `%lcfirst( val )`   convert first letter to lowercase (`php`-like function)
-* `%ucfirst( val )`   convert first letter to uppercase (`php`-like function)
-* `%camelcase( val [,sep="_" , capitalizeFirst=false] )`   convert `val` to 'camelCase', based on 'sep' separator
-* `%snakecase( val [,sep="_"] )`   convert `val` to 'snake_case', based on 'sep' separator
+* `%lowercase( val )`   convert `val` to `lowercase`
+* `%uppercase( val )`   convert `val` to `UPPERCASE`
+* `%lcfirst( val )`   convert first letter to `lOWERCASE` (`php`-like function)
+* `%ucfirst( val )`   convert first letter to `Uppercase` (`php`-like function)
+* `%camelcase( val [,sep="_" , capitalizeFirst=false] )`   convert `val` to `camelCase`, based on `sep` separator
+* `%snakecase( val [,sep="_"] )`   convert `val` to `snake_case`, based on `sep` separator
 * `%count( array_or_object )`  return number of items in `array_or_object` argument
 * `%haskey( array_or_object, key1 [,key2, ..] )`  check whether `array_or_object` argument has the given (nested) keys
 * `%uuid( namespace )`  generate a `uuid` (universal unique identifier), with optional given namespace
 * `%time()` / `%now()`   return current timestamp in seconds (`php`-like function)
 * `%date( format [, timestamp=now] )`  return timestamp formatted according to format
 * `%ldate( format [, timestamp=now] )`  return localised timestamp formatted according to format, localised strings are user-defined
-* `%locale( val )` / `%l( val )`  return localised string for `val` (if exists), localised strings are user-defined
-* `%plural( singular, count )`  return plural string for `singular` (if exists) depending on `count`, pluralised strings are user-defined
+* `%locale( val )` / `%l( val )`  return localised string for `val`, if exists (localised strings are user-defined)
+* `%plural( singular, count )`  return plural string for `singular`, if exists depending on `count` (pluralised strings are user-defined)
 * `%inline( tpl, [reps|data] )`  create or render an `inline` template referenced in 'tpl'
-* `%tpl( tpl_id_string, {"var1" : val1, "var2" : val2, ..} )` / %template( tpl_id_string, {"var1" : val1, "var2" : val2, ..} )  CALL a subtemplate referenced by 'tpl_id' passing the necessary data also
+* `%tpl( tpl_id_string, {"var1" : val1, "var2" : val2, ..} )` / `%template( tpl_id_string, {"var1" : val1, "var2" : val2, ..} )`  CALL a subtemplate referenced by 'tpl_id', passing the necessary data
 * `%e( val )`   custom fast html escape
 * `%url( val )`  url-encode val (`urlencode`)
 * `%pluginName( [val1, val2, ..] )`  call a custom (user-defined) `plugin` as a template function (see examples)
@@ -187,36 +204,42 @@ this is exactly how the `Contemplate.tpl(id, data)` method is called.
 **(javascript)**
 ```javascript
 
+// create a custom dynamic context for modular use
+Contemplate.createCtx( 'my-context' );
+
+// dispose a custom dynamic context (created earlier)
+Contemplate.disposeCtx( 'my-context' );
+
 // Add templates
 Contemplate.add({
     'tpl1': './path/to/template1',
     'tpl2': './path/to/template2',
     'inline_tpl': ['<% $var %>'], // inline template
     'dom_tpl': '#dom_tpl_id' // DOM template (for browser)
-});
+} [, ctx="__GLOBAL__"]);
 
 // add localisation
 Contemplate.setLocales({
     "locale": "γλωσσική περιοχή"
-});
+} [, ctx="__GLOBAL__"]);
 
 // add pluralisation
 Contemplate.setPlurals({
     'item': 'items'
-});
+} [, ctx="__GLOBAL__"]);
 
 // add plugins
 Contemplate.addPlugin('print', function(v){
     return '<pre>' + JSON.stringify(v, null, 4) + '</pre>';
-});
+} [, ctx="__GLOBAL__"]);
 
 // set cache directory for Node, make sure it exists
-Contemplate.setCacheDir( fs.realpathSync(path.join(__dirname, '/_tplcache')) );
+Contemplate.setCacheDir( fs.realpathSync(path.join(__dirname, '/_tplcache')) [, ctx="__GLOBAL__"] );
 
 
 // set caching mode for Node
 // Contemplate.CACHE_TO_DISK_AUTOUPDATE, Contemplate.CACHE_TO_DISK_NOUPDATE, Contemplate.CACHE_TO_DISK_NONE
-Contemplate.setCacheMode( Contemplate.CACHE_TO_DISK_AUTOUPDATE );
+Contemplate.setCacheMode( Contemplate.CACHE_TO_DISK_AUTOUPDATE [, ctx="__GLOBAL__"] );
 
 
 // get a template by id, load it and cache it if needed

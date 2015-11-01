@@ -139,41 +139,40 @@ class _G:
     #re_plugin = re.compile(r'^(plg_|plugin_)([a-zA-Z0-9_]+)')
     re_controls = re.compile(r'(\t|[ ]?)[ ]*%([a-zA-Z_][a-zA-Z0-9_]*)\b[ ]*(\()(.*)$')
     
-    controlConstructs = [
-        'set', 'unset', 'isset',
-        'if', 'elseif', 'else', 'endif',
-        'for', 'elsefor', 'endfor',
-        'extends', 'block', 'endblock',
-        'include', 'super', 'getblock'
+    directives = [
+    'set', 'unset', 'isset',
+    'if', 'elseif', 'else', 'endif',
+    'for', 'elsefor', 'endfor',
+    'extends', 'block', 'endblock',
+    'include', 'super', 'getblock'
     ]
-
     funcs = [
-        's', 'n', 'f', 'q', 'dq', 
-        'echo', 'time', 'count',
-        'lowercase', 'uppercase', 'ucfirst', 'lcfirst', 'sprintf',
-        'date', 'ldate', 'locale', 'plural',
-        'inline', 'tpl', 'uuid', 'haskey',
-        'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
-        'camelcase', 'snakecase', 
-        'e','html', 'url'
+    's', 'n', 'f', 'q', 'qq', 
+    'echo', 'time', 'count',
+    'lowercase', 'uppercase', 'ucfirst', 'lcfirst', 'sprintf',
+    'date', 'ldate', 'locale', 'plural',
+    'inline', 'tpl', 'uuid', 'haskey',
+    'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
+    'camelcase', 'snakecase', 'e', 'url'
     ]
-    func_aliases = {
-        'l': 'locale',
-        'now': 'time',
-        'template': 'tpl'
+    aliases = {
+     'l'        : 'locale'
+    ,'dq'       : 'qq'
+    ,'now'      : 'time'
+    ,'template' : 'tpl'
     }
 
 T_REGEXP = type(_G.NEWLINE)
 
 default_date_locale = {
-'meridian': { 'am':'am', 'pm':'pm', 'AM':'AM', 'PM':'PM' },
-'ordinal': { 'ord':{1:'st',2:'nd',3:'rd'}, 'nth':'th' },
-'timezone': [ 'UTC','EST','MDT' ],
-'timezone_short': [ 'UTC','EST','MDT' ],
-'day': [ 'Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday' ],
-'day_short': [ 'Sun','Mon','Tue','Wed','Thu','Fri','Sat' ],
-'month': [ 'January','February','March','April','May','June','July','August','September','October','November','December' ],
-'month_short': [ 'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec' ]
+ 'meridian': { 'am':'am', 'pm':'pm', 'AM':'AM', 'PM':'PM' }
+,'ordinal': { 'ord':{1:'st',2:'nd',3:'rd'}, 'nth':'th' }
+,'timezone': [ 'UTC','EST','MDT' ]
+,'timezone_short': [ 'UTC','EST','MDT' ]
+,'day': [ 'Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday' ]
+,'day_short': [ 'Sun','Mon','Tue','Wed','Thu','Fri','Sat' ]
+,'month': [ 'January','February','March','April','May','June','July','August','September','October','November','December' ]
+,'month_short': [ 'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec' ]
 }
 
 def php_time( ):
@@ -257,8 +256,8 @@ def php_date( format, timestamp=None ):
     D['Z'] = str(-tzo*60)
     
     # Full Date/Time --
-    D['c'] = ''.join([ D['Y'],'-',D['m'],'-',D['d'],'\\',D['T'],D['H'],':',D['i'],':',D['s'],D['P'] ])
-    D['r'] = ''.join([ D['D'],', ',D['d'],' ',D['M'],' ',D['Y'],' ',D['H'],':',D['i'],':',D['s'],' ',D['O'] ])
+    D['c'] = D['Y']+'-'+D['m']+'-'+D['d']+'\\'+D['T']+D['H']+':'+D['i']+':'+D['s']+D['P']
+    D['r'] = D['D']+', '+D['d']+' '+D['M']+' '+D['Y']+' '+D['H']+':'+D['i']+':'+D['s']+' '+D['O']
     D['U'] = str( utime )
     
     formatted_datetime = ''
@@ -358,7 +357,7 @@ def include( filename, classname, directory, doReload=False ):
     return None
 
 # static
-def createFunction( funcName, args, sourceCode, additional_symbols=dict() ):
+def create_func( funcName, args, sourceCode, additional_symbols=dict() ):
     # http://code.activestate.com/recipes/550804-create-a-restricted-python-function-from-a-string/
 
     # The list of symbols that are included by default in the generated
@@ -531,7 +530,7 @@ class InlineTemplate:
         out += ')'
         _G.funcId += 1
         funcName = '_contemplateInlineFn' + str(_G.funcId)
-        return createFunction(funcName, 'args', '    ' + out,{})
+        return create_func(funcName, 'args', '    ' + out,{})
     
     def __init__( self, tpl='', replacements=None, compiled=False ): 
     
@@ -687,9 +686,7 @@ class Ctx:
 
 
 
-# static
-def resetState( ):
-    # reset state
+def reset_state( ):
     global _G
     _G.loops = 0 
     _G.ifs = 0 
@@ -712,8 +709,7 @@ def resetState( ):
     #_G.funcId = 0
 
 
-def clearState( ):
-    # clear state
+def clear_state( ):
     global _G
 
     _G.loops = 0 
@@ -737,17 +733,13 @@ def clearState( ):
     #_G.funcId = 0
 
 
-# static
-def pushState( ):
-    # push state
+def push_state( ):
     global _G
     _G.stack.append([_G.loops, _G.ifs, _G.loopifs, _G.level,
     _G.allblocks, _G.allblockscnt, _G.openblocks,  _G.extends, _G.locals, _G.variables, _G.currentblock])
 
 
-# static
-def popState( ):
-    # pop state
+def pop_state( ):
     global _G
     t = _G.stack.pop()
     _G.loops = t[0] 
@@ -766,19 +758,16 @@ def popState( ):
     _G.currentblock = t[10]
 
 
-# static
-def padLines( lines, level=None ):
+def pad_lines( lines, level=None ):
     global _G
-    if level is None:  level = _G.level
-    
+    if level is None: level = _G.level
     if level >= 0:
         pad = _G.pad * level
-        lines = pad + ((_G.TEOL + pad).join( re.split(_G.NEWLINE, lines) ))
-    
+        lines = pad + (_G.TEOL + pad).join( re.split(_G.NEWLINE, lines) )
     return lines
 
 
-def getSeparators( text, separators=None ):
+def get_separators( text, separators=None ):
     global _G
     if separators:
         seps = separators.strip( ).split( " " )
@@ -801,31 +790,26 @@ def getSeparators( text, separators=None ):
 # Control structures
 #
 
-# whether var is set
 def t_isset( varname ):
     return '("' + varname + '__RAW__" in data)'
         
-# set/create/update tpl var
 def t_set( args ):
     global _G
     args = args.split(',')
     varname = args.pop(0).strip()
     expr = ','.join(args).strip()
-    return "';" + _G.TEOL + padLines( varname + ' = ('+ expr +')' ) + _G.TEOL
+    return "';" + _G.TEOL + pad_lines( varname + ' = ('+ expr +')' ) + _G.TEOL
 
-# unset/remove/delete tpl var
 def t_unset( varname=None ):
     global _G
     if varname:
         varname = str(varname).strip()
-        return "';" + _G.TEOL + padLines( 'if ("'+varname+'__RAW__" in data): del ' + varname ) + _G.TEOL
+        return "';" + _G.TEOL + pad_lines( 'if ("'+varname+'__RAW__" in data): del ' + varname ) + _G.TEOL
     return "'; " + _G.TEOL
     
-# if
-# static
 def t_if( cond='False' ):
     global _G
-    out = "'" + padLines( _G.TT_IF({
+    out = "'" + pad_lines( _G.TT_IF({
             "EOL":  _G.TEOL,
             'IFCOND': cond
         }) )
@@ -834,12 +818,10 @@ def t_if( cond='False' ):
     
     return out
     
-# elseif    
-# static
 def t_elseif( cond='False' ):
     global _G
     _G.level -= 1
-    out = "'" + padLines( _G.TT_ELSEIF({
+    out = "'" + pad_lines( _G.TT_ELSEIF({
             "EOL":  _G.TEOL,
             'ELIFCOND': cond
         }) )
@@ -847,32 +829,26 @@ def t_elseif( cond='False' ):
     
     return out
     
-# else
-# static
 def t_else( args='' ):
     global _G
     _G.level -= 1
-    out = "'" + padLines( _G.TT_ELSE({ 
+    out = "'" + pad_lines( _G.TT_ELSE({ 
         "EOL":  _G.TEOL
     }) )
     _G.level += 1
     
     return out
 
-# endif
-# static
 def t_endif( args='' ):
     global _G
     _G.ifs -= 1
     _G.level -= 1
-    out = "'" + padLines( _G.TT_ENDIF({ 
+    out = "'" + pad_lines( _G.TT_ENDIF({ 
         "EOL":  _G.TEOL
     }) )
     
     return out
     
-# for, foreach
-# static
 def t_for( for_expr ):
     global _G
     
@@ -900,7 +876,7 @@ def t_for( for_expr ):
         
         _G.locals[_G.currentblock][_G.variables[_G.currentblock][k]] = 1
         _G.locals[_G.currentblock][_G.variables[_G.currentblock][v]] = 1
-        out = "'" + padLines( _G.TT_FOR2({
+        out = "'" + pad_lines( _G.TT_FOR2({
             "EOL":  _G.TEOL,
             'O': o, '_O': _o, '_OI': _oI, 
             'K': k, 'V': v
@@ -915,7 +891,7 @@ def t_for( for_expr ):
         _oV = '_loc_' + str(_G.id)
         
         _G.locals[_G.currentblock][_G.variables[_G.currentblock][v]] = 1
-        out = "'" + padLines( _G.TT_FOR1({
+        out = "'" + pad_lines( _G.TT_FOR1({
             "EOL":  _G.TEOL,
             'O': o, '_O': _o, '_OV': _oV, 
             'V': v
@@ -928,42 +904,35 @@ def t_for( for_expr ):
     
     return out
 
-# elsefor
-# static
 def t_elsefor( args='' ):
-    # else attached to  for loop
     global _G
     _G.loopifs -= 1
     _G.level += -2
-    out = "'" + padLines( _G.TT_ELSEFOR({ 
+    out = "'" + pad_lines( _G.TT_ELSEFOR({ 
         "EOL":  _G.TEOL
     }) )
     _G.level += 1
     
     return out
     
-# endfor
-# static
 def t_endfor( args='' ):
     global _G
     if _G.loopifs == _G.loops:
         _G.loops -= 1 
         _G.loopifs -= 1
         _G.level += -2
-        out = "'" + padLines( _G.TT_ENDFOR({ 
+        out = "'" + pad_lines( _G.TT_ENDFOR({ 
             "EOL":  _G.TEOL
         }) )
     else:
         _G.loops -= 1
         _G.level += -1
-        out = "'" + padLines( _G.TT_ENDFOR({ 
+        out = "'" + pad_lines( _G.TT_ENDFOR({ 
             "EOL":  _G.TEOL
         }) )
     
     return out
 
-# include file
-# static
 def t_include( id ):
     global _G
     contx = _G.context
@@ -974,15 +943,13 @@ def t_include( id ):
     
     # cache it
     if id not in contx.partials:
-        pushState()
-        resetState()
-        contx.partials[id] = " " + parse(getSeparators( Contemplate.getTemplateContents(id, contx.context) ), False) + "'" + _G.TEOL
-        popState()
+        push_state()
+        reset_state()
+        contx.partials[id] = " " + parse(get_separators( get_template_contents(id, contx.context) ), False) + "'" + _G.TEOL
+        pop_state()
     
-    return padLines( contx.partials[id] )
+    return pad_lines( contx.partials[id] )
 
-# extend another template
-# static
 def t_extends( id ):
     global _G
     id = id.strip()
@@ -993,8 +960,6 @@ def t_extends( id ):
     _G.extends = id
     return "'" + _G.TEOL
     
-# define (overridable) block
-# static
 def t_block( block ):
     global _G
     block = block.split(',')
@@ -1013,8 +978,6 @@ def t_block( block ):
     _G.endblock = None
     return "' +  #|" + block + "|#"
     
-# end define (overridable) block
-# static
 def t_endblock( args='' ):
     global _G
     if  1 < len(_G.openblocks):
@@ -1030,21 +993,17 @@ def t_endblock( args='' ):
 # auxilliary parsing methods
 #
 
-# static
 def merge( m, *args ): 
     numargs = len(args)
     if numargs < 1: return m
     
     merged = m
-    
     for arg in args:
         # http://www.php2python.com/wiki/function.array-merge/
         merged = ODict(merged)
         merged.update(arg)
-    
     return merged
 
-# static
 def split( s, leftTplSep, rightTplSep ):
     global _G
     parts1 = s.split( leftTplSep )
@@ -1058,8 +1017,7 @@ def split( s, leftTplSep, rightTplSep ):
     return parts
 
 
-# static
-def parseConstructs( match ):
+def parse_constructs( match ):
     global _G
     re_controls = _G.re_controls
     prefix = match.group(1)
@@ -1084,115 +1042,84 @@ def parseConstructs( match ):
     rest = rest[len(args)+1:]
     
     try:
-        m = _G.controlConstructs.index( ctrl )
+        m = _G.directives.index( ctrl )
     except:
         m = -1
     if m > -1:
         if 0==m: # set
-            args = re.sub(re_controls, parseConstructs, args)
+            args = re.sub(re_controls, parse_constructs, args)
             out = t_set(args)
-            rest = re.sub(re_controls, parseConstructs, rest)
-            return out + rest
         
         elif 1==m: # unset
-            args = re.sub(re_controls, parseConstructs, args)
+            args = re.sub(re_controls, parse_constructs, args)
             out = t_unset(args)
-            rest = re.sub(re_controls, parseConstructs, rest)
-            return out + rest
         
         elif 2==m: # isset
-            args = re.sub(re_controls, parseConstructs, args)
+            args = re.sub(re_controls, parse_constructs, args)
             out = t_isset(args)
-            rest = re.sub(re_controls, parseConstructs, rest)
-            return out + rest
         
         elif 3==m: # if
-            args = re.sub(re_controls, parseConstructs, args)
+            args = re.sub(re_controls, parse_constructs, args)
             out = t_if(args)
-            rest = re.sub(re_controls, parseConstructs, rest)
-            return out + rest
         
         elif 4==m: # elseif
-            args = re.sub(re_controls, parseConstructs, args)
+            args = re.sub(re_controls, parse_constructs, args)
             out = t_elseif(args)
-            rest = re.sub(re_controls, parseConstructs, rest)
-            return out + rest
         
         elif 5==m: # else
             out = t_else(args)
-            rest = re.sub(re_controls, parseConstructs, rest)
-            return out + rest
         
         elif 6==m: # endif
             out = t_endif(args)
-            rest = re.sub(re_controls, parseConstructs, rest)
-            return out + rest
         
         elif 7==m: # for
-            args = re.sub(re_controls, parseConstructs, args)
+            args = re.sub(re_controls, parse_constructs, args)
             out = t_for(args)
-            rest = re.sub(re_controls, parseConstructs, rest)
-            return out + rest
         
         elif 8==m: # elsefor
             out = t_elsefor(args)
-            rest = re.sub(re_controls, parseConstructs, rest)
-            return out + rest
         
         elif 9==m: # endfor
             out = t_endfor(args)
-            rest = re.sub(re_controls, parseConstructs, rest)
-            return out + rest
         
         elif 10==m: # extends
             out = t_extends(args)
-            rest = re.sub(re_controls, parseConstructs, rest)
-            return out + rest
         
         elif 11==m: # block
             out = t_block(args)
-            rest = re.sub(re_controls, parseConstructs, rest)
-            return out + rest
         
         elif 12==m: # endblock
             out = t_endblock(args)
-            rest = re.sub(re_controls, parseConstructs, rest)
-            return out + rest
         
         elif 13==m: # include
             out = t_include(args)
-            rest = re.sub(re_controls, parseConstructs, rest)
-            return out + rest
         
         elif 14==m: # super
-            args = re.sub(re_controls, parseConstructs, args)
-            out = 'self_.renderSuperBlock(' + args + ', data)'
-            rest = re.sub(re_controls, parseConstructs, rest)
-            return prefix + out + rest
+            args = re.sub(re_controls, parse_constructs, args)
+            out = prefix + 'self_.renderSuperBlock(' + args + ', data)'
         
         elif 15==m: # getblock
-            args = re.sub(re_controls, parseConstructs, args)
-            out = '__i__.renderBlock(' + args + ', data)'
-            rest = re.sub(re_controls, parseConstructs, rest)
-            return prefix + out + rest
+            args = re.sub(re_controls, parse_constructs, args)
+            out = prefix + '__i__.renderBlock(' + args + ', data)'
+        
+        return out + re.sub(re_controls, parse_constructs, rest)
     
-    if ctrl in _G.plugins:
-        pl = _G.plugins[ctrl]
-        args = re.sub(re_controls, parseConstructs, args)
+    if (ctrl in _G.context.plugins) or (ctrl in _G.glob.plugins):
+        pl = _G.context.plugins[ctrl] if ctrl in _G.context.plugins else _G.glob.plugins[ctrl]
+        args = re.sub(re_controls, parse_constructs, args)
         if isinstance(pl,Contemplate.InlineTemplate):
             out = pl.render({'args':args})
         else: 
             out = pl + '(' + args + ')'
-        rest = re.sub(re_controls, parseConstructs, rest)
-        return prefix + out + rest
+        return prefix + out + re.sub(re_controls, parse_constructs, rest)
     
-    if ctrl in _G.func_aliases: ctrl = _G.func_aliases[ctrl]
+    if ctrl in _G.aliases: ctrl = _G.aliases[ctrl]
     try:
         m = _G.funcs.index( ctrl )
     except:
         m = -1
     if m > -1:
-        args = re.sub(re_controls, parseConstructs, args)
+        args = re.sub(re_controls, parse_constructs, args)
         # aliases and builtin functions
         if 0 ==m or 5 == m:
             out = 'str(' + args + ')'
@@ -1220,18 +1147,16 @@ def parseConstructs( match ):
             out = 'Contemplate.sprintf(' + args + ')'
         else:
             out = 'Contemplate.' + ctrl + '(' + args + ')'
-        rest = re.sub(re_controls, parseConstructs, rest)
-        return prefix + out + rest
+        return prefix + out + re.sub(re_controls, parse_constructs, rest)
     
     return match.group(0)
 
 
-# static
-def parseBlocks( s ):
+def parse_blocks( s ):
     global _G
     blocks = [] 
     bl = len(_G.allblocks)
-    
+    EOL = _G.TEOL
     while bl:
         bl -= 1
         delims = _G.allblocks[ bl ]
@@ -1260,9 +1185,9 @@ def parseBlocks( s ):
         
             # 1st occurance, block definition
             blocks.append([ block, _G.TT_BLOCK({
-                    "EOL":  _G.TEOL,
-                    'BLOCKCODE': s[pos1+tl:pos2-tl-1] + "'"
-                })])
+             "EOL"           : EOL
+            ,'BLOCKCODE'     : s[pos1+tl:pos2-tl-1] + "'"
+            })])
         
         s = s[0:pos1] + rep + s[pos2+1:]
         if 1 <= _G.allblockscnt[ block ]: _G.allblockscnt[ block ] -= 1
@@ -1274,7 +1199,7 @@ def parseBlocks( s ):
     return [ s, blocks ]
 
 
-def parseVariable( s, i, l ):
+def parse_variable( s, i, l ):
     global _G
     
     if ( _G.ALPHA.match(s[i]) ):
@@ -1401,7 +1326,7 @@ def parseVariable( s, i, l ):
                 elif ( '$' == ch ):
                 
                     sub = s[i+1:]
-                    subvariables = parseVariable(sub, 0, len(sub));
+                    subvariables = parse_variable(sub, 0, len(sub));
                     if ( subvariables ):
                     
                         # transform into tpl variable property
@@ -1479,7 +1404,6 @@ def parseVariable( s, i, l ):
 
 str_re = re.compile(r'#STR\d+#', re.M|re.S)
 
-# static
 def parse( tpl, withblocks=True ):
     global _G
     global str_re
@@ -1546,7 +1470,7 @@ def parse( tpl, withblocks=True ):
                     if space > 0:
                         out += " "
                         space = 0
-                    tok = parseVariable(s, index, count)
+                    tok = parse_variable(s, index, count)
                     if tok:
                     
                         for tokv in tok:
@@ -1590,7 +1514,7 @@ def parse( tpl, withblocks=True ):
             _G.strings = strings
             
             # replace constructs, functions, etc..
-            tag = re.sub(re_controls, parseConstructs, tag)
+            tag = re.sub(re_controls, parse_constructs, tag)
             
             # check for blocks
             if _G.startblock:
@@ -1648,7 +1572,7 @@ def parse( tpl, withblocks=True ):
             
             # replace tpl separators
             if "\v" == tag[-1]: 
-                tag = tag[0:-1] + padLines(_G.tplEnd)
+                tag = tag[0:-1] + pad_lines(_G.tplEnd)
             if "\t" == tag[0]: 
                 tag = _G.tplStart + tag[1:]
                 if hasBlock:
@@ -1679,28 +1603,38 @@ def parse( tpl, withblocks=True ):
         parsed += s
     
     if False != withblocks: 
-        return parseBlocks(parsed) if len(_G.allblocks)>0 else [parsed, []]
+        return parse_blocks(parsed) if len(_G.allblocks)>0 else [parsed, []]
     
     return parsed
 
-# static
-def getCachedTemplateName( id ):
+def get_cached_template_name( id ):
     global _G
     return re.sub(_G.UNDERL, '_', id) + '_tpl' + '.py'
 
-# static
-def getCachedTemplateClass( id ):
+def get_cached_template_class( id ):
     global _G
     return 'Contemplate_' + re.sub(_G.UNDERL, '_', id) + '_Cached'
 
-# static
-def createTemplateRenderFunction( id, contx, seps=None ):
+def get_template_contents( id, contx ):
     global _G
-    resetState()
     
-    blocks = parse(getSeparators( Contemplate.getTemplateContents(id, contx), seps ))
+    if id in contx.templates: template = contx.templates[id]
+    elif id in _G.glob.templates: template = _G.glob.templates[id]
+    else: return ''
     
-    clearState()
+    if template[1]: return template[0] # inline tpl
+    elif os.path.exists(template[0]): return Contemplate.read(template[0])
+    return ''
+
+def create_template_render_function( id, contx, seps=None ):
+    global _G
+    
+    _ctx = _G.context
+    _G.context = contx
+    reset_state()
+    blocks = parse(get_separators( get_template_contents(id, contx), seps ))
+    clear_state()
+    _G.context = _ctx
     
     renderf = blocks[0]
     blocks = blocks[1]
@@ -1708,30 +1642,31 @@ def createTemplateRenderFunction( id, contx, seps=None ):
     EOL = _G.TEOL
     
     func = _G.TT_FUNC({
-         "EOL"          : EOL
-        ,'FCODE'        : "" if _G.extends else "__p__ += '" + renderf + "'"
+     "EOL"          : EOL
+    ,'FCODE'        : "" if _G.extends else "__p__ += '" + renderf + "'"
     })
     
     _G.funcId += 1
     
     funcName = '_contemplateFn' + str(_G.funcId)
-    fn = createFunction(funcName, 'data,self_,__i__', padLines(func, 1), {'Contemplate': Contemplate})
+    fn = create_func(funcName, 'data,self_,__i__', pad_lines(func, 1), {'Contemplate': Contemplate})
     
     blockfns = {}
     for b in blocks:
         funcName = '_contemplateBlockFn_' + b[0] + '_' + str(_G.funcId)
-        blockfns[b] = createFunction(funcName, 'data,self_,__i__', padLines(b[1], 1), {'Contemplate': Contemplate})
+        blockfns[b] = create_func(funcName, 'data,self_,__i__', pad_lines(b[1], 1), {'Contemplate': Contemplate})
     
     return [ fn, blockfns]
 
-# static
-def createCachedTemplate( id, contx, filename, classname, seps=None ):
+def create_cached_template( id, contx, filename, classname, seps=None ):
     global _G
-    resetState()
     
-    blocks = parse(getSeparators( Contemplate.getTemplateContents(id, contx), seps ))
-    
-    clearState()
+    _ctx = _G.context
+    _G.context = contx
+    reset_state()
+    blocks = parse(get_separators( get_template_contents(id, contx), seps ))
+    clear_state()
+    _G.context = _ctx
     
     renderf = blocks[0]
     blocks = blocks[1]
@@ -1745,33 +1680,29 @@ def createCachedTemplate( id, contx, filename, classname, seps=None ):
          "EOL"                  : EOL
         ,'BLOCKNAME'            : b[0]
         ,'BLOCKMETHODNAME'      : "_blockfn_"+b[0]
-        ,'BLOCKMETHODCODE'      : padLines(b[1], 1)
+        ,'BLOCKMETHODCODE'      : pad_lines(b[1], 1)
         })
     
     renderCode = _G.TT_RCODE({
-         "EOL"                  : EOL
-        ,'RCODE'                : "__p__ = ''" if _G.extends else "__p__ += '" + renderf + "'" 
+     "EOL"                  : EOL
+    ,'RCODE'                : "__p__ = ''" if _G.extends else "__p__ += '" + renderf + "'" 
     })
     extendCode = "self_.extend('"+_G.extends+"')" if _G.extends else ''
-    
-    if _G.tplPrefixCode: prefixCode = _G.tplPrefixCode
-    else: prefixCode = ''
+    prefixCode = contx.prefixCode if contx.prefixCode else ''
         
     # generate tpl class
     classCode = _G.TT_ClassCode({
-         "EOL"                  : EOL
-        ,'PREFIXCODE'           : prefixCode
-        ,'TPLID'                : id
-        ,'CLASSNAME'            : classname
-        ,'EXTENDCODE'           : padLines(extendCode, 3)
-        ,'BLOCKS'               : padLines(sblocks, 2)
-        ,'RENDERCODE'           : padLines(renderCode, 4)
+     "EOL"                  : EOL
+    ,'PREFIXCODE'           : prefixCode
+    ,'TPLID'                : id
+    ,'CLASSNAME'            : classname
+    ,'EXTENDCODE'           : pad_lines(extendCode, 3)
+    ,'BLOCKS'               : pad_lines(sblocks, 2)
+    ,'RENDERCODE'           : pad_lines(renderCode, 4)
     })
-    
     return Contemplate.write(filename, classCode)
 
-# static
-def getCachedTemplate( id, contx, options=dict() ):
+def get_cached_template( id, contx, options=dict() ):
     global _G
     # inline templates saved only in-memory
     if id in contx.templates:
@@ -1784,9 +1715,9 @@ def getCachedTemplate( id, contx, options=dict() ):
             
             if 'parsed' in options:
                 _G.funcId += 1
-                tpl.setRenderFunction( createFunction('_contemplateFn' + str(_G.funcId), 'data,self_,__i__', padLines(options['parsed'], 1), {'Contemplate': Contemplate}) )
+                tpl.setRenderFunction( create_func('_contemplateFn' + str(_G.funcId), 'data,self_,__i__', pad_lines(options['parsed'], 1), {'Contemplate': Contemplate}) )
             else:
-                fns = createTemplateRenderFunction(id, contx, options['separators'])
+                fns = create_template_render_function(id, contx, options['separators'])
                 tpl.setRenderFunction( fns[0] )
                 tpl.setBlocks( fns[1] )
             
@@ -1798,12 +1729,12 @@ def getCachedTemplate( id, contx, options=dict() ):
         
         if True != options['autoUpdate'] and CM == Contemplate.CACHE_TO_DISK_NOUPDATE:
         
-            cachedTplFile = getCachedTemplateName(id)
+            cachedTplFile = get_cached_template_name(id)
             cachedTplPath = os.path.join(contx.cacheDir, cachedTplFile)
-            cachedTplClass = getCachedTemplateClass(id)
+            cachedTplClass = get_cached_template_class(id)
             if not os.path.isfile(cachedTplPath):
                 # if not exist, create it
-                createCachedTemplate(id, contx, cachedTplPath, cachedTplClass, options['separators'])
+                create_cached_template(id, contx, cachedTplPath, cachedTplClass, options['separators'])
             if os.path.isfile(cachedTplPath):
                 tpl = include(cachedTplFile, cachedTplClass, contx.cacheDir)()
                 tpl.setId( id )
@@ -1814,12 +1745,12 @@ def getCachedTemplate( id, contx, options=dict() ):
         
         elif True == options['autoUpdate'] or CM == Contemplate.CACHE_TO_DISK_AUTOUPDATE:
         
-            cachedTplFile = getCachedTemplateName(id)
+            cachedTplFile = get_cached_template_name(id)
             cachedTplPath = os.path.join(contx.cacheDir, cachedTplFile)
-            cachedTplClass = getCachedTemplateClass(id)
+            cachedTplClass = get_cached_template_class(id)
             if not os.path.isfile(cachedTplPath) or (os.path.getmtime(cachedTplPath) <= os.path.getmtime(template[0])):
                 # if tpl not exist or is out-of-sync (re-)create it
-                createCachedTemplate(id, contx, cachedTplPath, cachedTplClass, options['separators'])
+                create_cached_template(id, contx, cachedTplPath, cachedTplClass, options['separators'])
             if os.path.isfile(cachedTplPath):
                 tpl = include(cachedTplFile, cachedTplClass, contx.cacheDir)()
                 tpl.setId( id )
@@ -1832,7 +1763,7 @@ def getCachedTemplate( id, contx, options=dict() ):
             # dynamic in-memory caching during page-request
             tpl = Contemplate.Template()
             tpl.setId( id )
-            fns = createTemplateRenderFunction(id, contx, options['separators'])
+            fns = create_template_render_function(id, contx, options['separators'])
             tpl.setRenderFunction( fns[0] )
             tpl.setBlocks( fns[1] )
             if _G.extends: tpl.extend( Contemplate.tpl(_G.extends, None, contx.id) )
@@ -1841,8 +1772,7 @@ def getCachedTemplate( id, contx, options=dict() ):
         
     return None
 
-# static
-def setCachedTemplate( filename, tplContents ): 
+def set_cached_template( filename, tplContents ): 
     return Contemplate.write(filename, tplContents)
 
 
@@ -1871,9 +1801,7 @@ class Contemplate:
     
     #
     #
-    #
     
-    # static
     def init( ):
         
         global _G
@@ -2083,10 +2011,13 @@ class Contemplate:
             ,"#RCODE#":  "RCODE"
         }))
         
-        clearState()
-        
+        clear_state()
         _G.isInited = True
     
+    
+    #
+    # Main API methods
+    #
     
     def createCtx( ctx ):
         global _G
@@ -2109,18 +2040,12 @@ class Contemplate:
         if ctx and (ctx in _G.ctx): _G.context = _G.ctx[ctx]
         else: _G.context = _G.glob
     
-    #
-    # Main template static methods
-    #
-    
-    # static
     def setTemplateSeparators( seps=None ):
         global _G
         if seps:
             if 'left' in seps: _G.leftTplSep = str(seps['left'])
             if 'right' in seps: _G.rightTplSep = str(seps['right'])
     
-    # static
     def setPreserveLines( enable=True ): 
         global _G
         if enable:  
@@ -2134,7 +2059,6 @@ class Contemplate:
         else: contx = _G.context
         return name and ((name in contx.plugins) or (name in _G.glob.plugins))
     
-    # add custom plugins as template functions
     def addPlugin( name, pluginCode, ctx='__GLOBAL__' ):
         global _G
         if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
@@ -2147,28 +2071,24 @@ class Contemplate:
             contx.plugins[ name ] = 'Contemplate.' + name
             setattr(Contemplate, name, pluginCode)
     
-    # static
     def setPrefixCode( preCode=None, ctx='__GLOBAL__' ):
         global _G
         if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
         else: contx = _G.context
         if preCode: contx.prefixCode = str(preCode)
     
-    # static
     def setLocales( locales, ctx='__GLOBAL__' ): 
         global _G
         if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
         else: contx = _G.context
         contx.locale = Contemplate.merge(contx.locale, locales)
     
-    # static
     def clearLocales( ctx='__GLOBAL__' ): 
         global _G
         if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
         else: contx = _G.context
         contx.locale = {}
     
-    # static
     def setPlurals( plurals, ctx='__GLOBAL__' ): 
         global _G
         if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
@@ -2179,14 +2099,12 @@ class Contemplate:
                 plurals[ singular ] = str(singular) + 's'
         contx.plurals = Contemplate.merge(contx.plurals, plurals)
     
-    # static
     def clearPlurals( ctx='__GLOBAL__' ): 
         global _G
         if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
         else: contx = _G.context
         contx.plurals = {}
     
-    # static
     def setCacheDir( dir, ctx='__GLOBAL__' ): 
         global _G
         if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
@@ -2209,14 +2127,12 @@ class Contemplate:
         #    os.sys.path.append(_dir)
 
     
-    # static
     def setCacheMode( mode, ctx='__GLOBAL__' ): 
         global _G
         if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
         else: contx = _G.context
         contx.cacheMode = mode
     
-    # static
     def clearCache( all=False, ctx='__GLOBAL__' ): 
         global _G
         if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
@@ -2230,13 +2146,12 @@ class Contemplate:
         else: contx = _G.context
         return tpl and ((tpl in contx.templates) or (tpl in _G.glob.templates))
     
-    # add templates manually
-    # static
     def add( tpls, ctx='__GLOBAL__' ):
         global _G
-        if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
-        else: contx = _G.context
         if isinstance(tpls, dict):
+            if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
+            else: contx = _G.context
+            
             for tplID in tpls:
                 if isinstance(tpls[ tplID ], (list, tuple)):
                     # unified way to add tpls both as reference and inline
@@ -2247,24 +2162,37 @@ class Contemplate:
                     contx.templates[ tplID ] = [tpls[ tplID ], False]
     
     
-   # static
     def getTemplateContents( id, ctx='__GLOBAL__' ):
         global _G
         if isinstance(ctx, Ctx): contx = ctx
         elif ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
         else: contx = _G.context
-        
-        if id in contx.templates: template = contx.templates[id]
-        elif id in _G.glob.templates: template = _G.glob.templates[id]
-        else: return ''
-        
-        if template[1]: return template[0] # inline tpl
-        elif os.path.exists(template[0]): return Contemplate.read(template[0])
-        return ''
+        return get_template_contents( id, contx )
+    
     
     def parseTpl( tpl, options=dict() ):
         global _G
         
+        # see what context this template may use
+        contx = None
+        if isinstance(options, str):
+            if options in _G.ctx:
+                contx = _G.ctx[options] # preset context
+            else:
+                contx = _G.glob # global context
+            options = {}
+        
+        options = merge({
+            'separators': None
+        }, {} if not options else options)
+        
+        if 'context' in options:
+            if options['context'] in _G.ctx:
+                contx = _G.ctx[options['context']] # preset context
+            elif not contx:
+                contx = _G.glob # global context
+            del options['context']
+            
         separators = options['separators'] if options and ('separators' in options) else None
         
         if separators:
@@ -2272,9 +2200,12 @@ class Contemplate:
             _G.leftTplSep = separators[ 0 ]  
             _G.rightTplSep = separators[ 1 ]
         
-        resetState()
+        _ctx = _G.context
+        _G.context = contx
+        reset_state()
         parsed = parse( tpl )
-        clearState()
+        clear_state()
+        _G.context = _ctx
         
         if separators:
             _G.leftTplSep = tmp[ 0 ]
@@ -2283,11 +2214,9 @@ class Contemplate:
         return parsed
         
     #
-    # Basic template functions
+    # Main Template functions
     #
     
-    # return the requested template (with optional data)
-    # static
     def tpl( tpl, data=None, options=None ):
         global _G
         if isinstance(tpl, Contemplate.Template):
@@ -2323,20 +2252,18 @@ class Contemplate:
             # load the template - and be sure to cache the result.
             if options['refresh'] or ((tpl not in contx.cache) and (tpl not in _G.glob.cache)): 
                 
-                contx.cache[ tpl ] = getCachedTemplate( tpl, contx, options )
+                contx.cache[ tpl ] = get_cached_template( tpl, contx, options )
             
             tmpl = contx.cache[ tpl ] if tpl in contx.cache else _G.glob.cache[ tpl ]
         
         # Provide some basic currying to the user
         return str(tmpl.render( data )) if isinstance(data, dict) else tmpl
     
-    # inline tpls, both inside Contemplate templates (i.e as parameters) and in code
     def inline( tpl, reps=None, compiled=False ):
         if isinstance(tpl, Contemplate.InlineTemplate): return str(tpl.render( reps ))
         return Contemplate.InlineTemplate( tpl, reps, compiled )
     
         
-    # check if (nested) keys exist in tpl variable
     def haskey( v, *args ):
         if not v or not (isinstance(v, list) or isinstance(v, dict)): return False
         argslen = len(args)
@@ -2345,54 +2272,37 @@ class Contemplate:
         
             if args[i] not in tmp: return False
             tmp = tmp[args[i]]
-        
         return True
         
-    # basic custom faster html escaping
-    # static
-    def e( s ):
-        return s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;').replace('\'', '&#39;')
+    def e( s, entities=True ):
+        f = ''
+        if entities:
+            for c in s:
+                if '&' == c:    f += '&amp;'
+                elif '<' == c:  f += '&lt;'
+                elif '>' == c:  f += '&gt;'
+                elif '"' == c:  f += '&quot;'
+                elif '\'' == c: f += '&apos;'
+                else:           f += c
+        else:
+            for c in s:
+                if '&' == c:    f += '&#38;'
+                elif '<' == c:  f += '&#60;'
+                elif '>' == c:  f += '&#62;'
+                elif '"' == c:  f += '&#34;'
+                elif '\'' == c: f += '&#39;'
+                else:           f += c
+        return f
     
-    # basic url escaping
-    # static
     def url( s ):
         return urlencode(s)
     
-    # count items in array/list or object/dict
-    # static
-    def count( a ):
-        # http://www.php2python.com/wiki/function.count/
-        return len(a)
-    
-    # http://www.php2python.com/wiki/function.addslashes/
-    # static
-    def addslashes( s ):
-        l = ["\\", '"', "'", "\0", ]
-        s = str(s)
-        for i in l:
-            if i in s:  s = s.replace(i, '\\'+i)
-        return s
-
-    # http://www.php2python.com/wiki/function.stripslashes/
-    # static
-    def stripslashes( s ):
-        return stripslashes(s) 
-    
-    # Concatenate strings/vars
-    # static
-    def concat( *args ):
-        return ''.join(args)
-        
-    # Trim strings in templates
-    # static
     def trim( s, charlist=None ):
         return s.strip(charlist) if charlist else s.strip()
     
-    # static
     def ltrim( s, charlist=None ):
         return s.lstrip(charlist) if charlist else s.lstrip()
     
-    # static
     def rtrim( s, charlist=None ):
         return s.rstrip(charlist) if charlist else s.rstrip()
     
@@ -2414,87 +2324,81 @@ class Contemplate:
         sep = str(sep)
         return re.sub( r'([A-Z])', lambda m: sep + m.group(1), str(s) ).lower()
     
-    # Sprintf in templates
-    # static
+    def addslashes( s ):
+        # http://www.php2python.com/wiki/function.addslashes/
+        l = ["\\", '"', "'", "\0"]
+        s = str(s)
+        f = ''
+        for c in s: f += '\\'+c if c in l else c
+        return f
+
+    def stripslashes( s ):
+        # http://www.php2python.com/wiki/function.stripslashes/
+        return stripslashes(s) 
+    
+    def concat( *args ):
+        return ''.join(args)
+        
     def sprintf( format, *args ):
-        numargs = len(args)
-        if numargs>0:
-            #format = args.pop(0)
-            return format % args
+        if len(args)>0: return format % args
         return ''
     
     #
     #  Localization functions
     #
     
-    # current time in seconds
-    # time, now
-    # static
     def time( ):
         return php_time( )
     
-    # formatted date
-    # static
     def date( format, timestamp=None ):
         if timestamp is None: timestamp = php_time( ) 
         return php_date( format, timestamp )
     
-    # localized formatted date
-    # static
     def ldate( format, timestamp=None ): 
         if timestamp is None: timestamp = php_time( ) 
         return localized_date( format, timestamp )
         
-    # locale, l
-    # static
     def locale( s ): 
         global _G
-        return _G.locale[s] if (s in _G.locale) else s
+        return _G.context.locale[s] if s in _G.context.locale else (_G.glob.locale[s] if s in _G.glob.locale else s)
     
-    # pluralise
     def plural( singular, count ): 
         global _G
-        if (singular in _G.plurals):
-            if (1 != count): return _G.plurals[singular]
-            else: return singular
-        return singular
+        if 1 == count: return singular
+        return _G.context.plurals[singular] if singular in _G.context.plurals else (_G.glob.plurals[singular] if singular in _G.glob.plurals else singular)
     
-    # generate a uuid
     def uuid( namespace='UUID' ):
         global _G
         _G.uuid += 1
         return '_'.join( [ str(namespace), str(_G.uuid), str(php_time()) ] )
     
+    def count( a ):
+        # http://www.php2python.com/wiki/function.count/
+        return 0 if a is None else len(a)
+    
     def keys( o ):
-        if o:
-            return range(len(o)) if isinstance(o,(list, tuple)) else o.keys()
+        if o: return range(len(o)) if isinstance(o,(list, tuple)) else o.keys()
         return None
     
     def values( o ):
-        if o:
-            return o if isinstance(o,(list, tuple)) else o.values()
+        if o: return o if isinstance(o,(list, tuple)) else o.values()
         return None
         
     def items( o ):
-        if o:
-            return enumerate(o) if isinstance(o,(list, tuple)) else o.items()
+        if o: return enumerate(o) if isinstance(o,(list, tuple)) else o.items()
         return None
         
-    # static
     def merge( m, *args ): 
         numargs = len(args)
         if numargs < 1: return m
         
         merged = m
-        
         for arg in args:
             # http://www.php2python.com/wiki/function.array-merge/
             merged = ODict(merged)
             merged.update(arg)
-        
         return merged
     
-    # static
     def data( data ):
         if isinstance(data, list):
             # clone the data
@@ -2502,14 +2406,9 @@ class Contemplate:
         else:
             # clone the dict
             cdata = ODict()
-            
-            for key in data.keys():
-                newkey = key
-                cdata[newkey] = data[key]
-            
+            for key in data.keys(): cdata[key] = data[key]
             return cdata
         
-    # static
     def open( file, op ):
         #if Contemplate.ENCODING: 
         #    f = open(file, op, encoding=Contemplate.ENCODING)
@@ -2518,21 +2417,19 @@ class Contemplate:
         #return f
         return open(file, op, -1, Contemplate.ENCODING)
 
-    # static
     def read( file ):
         buffer=''
         with Contemplate.open(file, 'r') as f:
             buffer = f.read()
         return buffer
 
-    # static
     def write( file, text ):
         with Contemplate.open(file, 'w') as f:
             f.write(text)
 
 
 # init the engine on load
-Contemplate.init()
+Contemplate.init( )
 
 # if used with 'import *'
 __all__ = ['Contemplate']

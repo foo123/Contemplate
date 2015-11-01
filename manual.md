@@ -127,9 +127,9 @@ TEMPLATE operations take place in the `current` context (which defaults to `glob
 * `%unset( $var )`  UNSET / DELETE tpl variable `$var`
 * `%isset( $var )`  CHECK whether a tpl variable `$var` is set
 * `%if( expression_or_value )`  IF construct
-* `%elseif( expression_or_value )`  ELSEIF construct
+* `%elseif( expression_or_value )` / `%elif( expression_or_value )`  ELSEIF construct
 * `%else()`  ELSE construct
-* `%endif()` ENDIF construct, end the IF construct
+* `%endif()` / `%fi()` ENDIF construct, end the IF construct
 * `%for( expression_or_obj as $key=>$val )`  associative FOR loop (`php`-style)
 * `%for( expression_or_obj as $val )`  non-associative FOR loop (`php`-style)
 * `%for( $key,$val in expression_or_obj )`  associative FOR loop (`python`-style)
@@ -151,8 +151,8 @@ TEMPLATE operations take place in the `current` context (which defaults to `glob
 * `%n( val )`   convert `val` to integer
 * `%s( val )`   convert `val` to string
 * `%f( val )`   convert `val` to float
-* `%q( val )`   wrap `val` in single quotes
-* `%dq( val )`  wrap `val` in double-quotes
+* `%q( val )`   wrap `val` in single-quotes
+* `%qq( val )` / `%dq( val )`  wrap `val` in double-quotes
 * `%addslashes( str )`  addslashes (`php`-like) function
 * `%stripslashes( str )`  stripslashes (`php`-like) function
 * `%sprintf( format, val1, val2, .. )`   return a formatted string using `val1`, `val2`, etc..

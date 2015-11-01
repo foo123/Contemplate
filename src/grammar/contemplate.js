@@ -12,7 +12,6 @@ var contemplate_grammar = {
     ,"atom"                     : "atom"
     ,"keyword"                  : "keyword"
     ,"function"                 : "builtin"
-    ,"operator"                 : "operator"
     ,"variable"                 : "variable"
     ,"property"                 : "variable"
     ,"number"                   : "number"
@@ -37,16 +36,12 @@ var contemplate_grammar = {
                                 "RE::/0(?![\\dx])/"
                                 ]
     ,"string:escaped-block"     : ["RE::/(['\"])/", 1]
-    ,"operator"                 : [
-                                "+", "-", "*", "/", "%", "<", ">", "!", 
-                                "==", "!=", "<=", ">=", "<>", "=", "||", "&&", "|", "&"
-                                ]
     ,"atom"                     : {"autocomplete":true,"tokens":[
                                 "true", "false", "null"
                                 ]}
     ,"keyword"                  : {"autocomplete":true,"tokens":[
                                 "%extends", "%block", "%endblock", "%super", "%getblock", "%include",
-                                "%if", "%elseif", "%else", "%endif", 
+                                "%if", "%elseif", "%elif", "%else", "%endif", "%fi", 
                                 "%for", "%elsefor", "%endfor", "as", "in",
                                 "%set", "%unset", "%isset"
                                 ]}
@@ -62,8 +57,7 @@ var contemplate_grammar = {
                                 "number",
                                 "string",
                                 "variable",
-                                "property",
-                                "operator"
+                                "property"
                                 ]
 
 };

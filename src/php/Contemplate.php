@@ -12,7 +12,6 @@
 **/
 if (!class_exists('Contemplate'))
 {
-
 // can use inline templates for plugins etc.. to enable non-linear plugin compile-time replacement
 class ContemplateInlineTemplate
 { 
@@ -206,12 +205,11 @@ class ContemplateTemplate
     
     public function renderBlock( $block, &$data, $__i__=null )
     {
-        $self = $this; $r = ''; $__ctx = false;
+        $self = $this; $r = ''; $__ctx = null;
         if ( !$__i__ )
         {
             $__i__ = $self;
-            Contemplate::_pushCtx( $self->_ctx );
-            $__ctx = true;
+            $__ctx = Contemplate::_set_ctx( $self->_ctx );
         }
         if ( $self->_blocks && isset($self->_blocks[$block]) ) 
         {
@@ -222,7 +220,7 @@ class ContemplateTemplate
         {
             $r = $self->_extends->renderBlock($block, $data, $__i__);
         }
-        if ( $__ctx )  Contemplate::_popCtx( );
+        if ( $__ctx )  Contemplate::_set_ctx( $__ctx );
         return $r;
     }
     
@@ -239,12 +237,11 @@ class ContemplateTemplate
     
     public function render( &$data, $__i__=null ) 
     {
-        $self = $this; $__ctx = false;
+        $self = $this; $__ctx = null;
         if ( !$__i__ )
         {
             $__i__ = $self;
-            Contemplate::_pushCtx( $self->_ctx );
-            $__ctx = true;
+            $__ctx = Contemplate::_set_ctx( $self->_ctx );
         }
         $__p__ = ''; 
         if ( $self->_extends ) 
@@ -257,7 +254,7 @@ class ContemplateTemplate
             $renderer = $self->_renderer;
             $__p__ = $renderer($data, $self, $__i__);
         }
-        if ( $__ctx )  Contemplate::_popCtx( );
+        if ( $__ctx )  Contemplate::_set_ctx( $__ctx );
         return $__p__;
     }
 }
@@ -340,7 +337,6 @@ class Contemplate
     private static $__currentblock;
     
     private static $__ctx = null;
-    private static $__ctxS = null;
     private static $__global = null;
     private static $__context = null;
     
@@ -370,6 +366,10 @@ class Contemplate
     'for', 'elsefor', 'endfor',
     'extends', 'block', 'endblock',
     'include', 'super', 'getblock'
+    );
+    private static $__directive_aliases = array(
+     'elif'      => 'elseif'
+    ,'fi'        => 'endif'
     );
     private static $__funcs = array( 
     's', 'n', 'f', 'q', 'qq', 
@@ -412,7 +412,6 @@ class Contemplate
         '__GLOBAL__'  => self::$__global
         );
         self::$__context = self::$__global;
-        self::$__ctxS = array( );
         
         // pre-compute the needed regular expressions
         self::$__preserveLines = self::$__preserveLinesDefault;
@@ -443,28 +442,26 @@ class Contemplate
             ,"/* tpl renderBlock method */"
             ,"public function renderBlock(\$block, &\$data, \$__i__=null)"
             ,"{"
-            ,"    \$self = \$this; \$r = ''; \$__ctx = false;"
+            ,"    \$self = \$this; \$r = ''; \$__ctx = null;"
             ,"    if ( !\$__i__ )"
             ,"    {"
             ,"        \$__i__ = \$self;"
-            ,"        Contemplate::_pushCtx( \$self->_ctx );"
-            ,"        \$__ctx = true;"
+            ,"        \$__ctx = Contemplate::_set_ctx( \$self->_ctx );"
             ,"    }"
             ,"    \$method = '_blockfn_' . \$block;"
             ,"    if ( method_exists(\$self, \$method) ) \$r = \$self->{\$method}(\$data, \$self, \$__i__);"
             ,"    elseif ( \$self->_extends ) \$r = \$self->_extends->renderBlock(\$block, \$data, \$__i__);"
-            ,"    if ( \$__ctx )  Contemplate::_popCtx( );"
+            ,"    if ( \$__ctx )  Contemplate::_set_ctx( \$__ctx );"
             ,"    return \$r;"
             ,"}"
             ,"/* tpl render method */"
             ,"public function render(&\$data, \$__i__=null)"
             ,"{"
-            ,"    \$self = \$this; \$__ctx = false;"
+            ,"    \$self = \$this; \$__ctx = null;"
             ,"    if ( !\$__i__ )"
             ,"    {"
             ,"        \$__i__ = \$self;"
-            ,"        Contemplate::_pushCtx( \$self->_ctx );"
-            ,"        \$__ctx = true;"
+            ,"        \$__ctx = Contemplate::_set_ctx( \$self->_ctx );"
             ,"    }"
             ,"    \$__p__ = '';"
             ,"    if ( \$self->_extends )"
@@ -477,7 +474,7 @@ class Contemplate
             ,"#RENDERCODE#"
             ,"        /* tpl main render code ends here */"
             ,"    }"
-            ,"    if ( \$__ctx )  Contemplate::_popCtx( );"
+            ,"    if ( \$__ctx )  Contemplate::_set_ctx( \$__ctx );"
             ,"    return \$__p__;"
             ,"}"
             ,"}"
@@ -639,6 +636,15 @@ class Contemplate
         self::$__isInited = true;
     }
     
+    public static function _set_ctx( $ctx )
+    {
+        $contx = self::$__context;
+        if ( $ctx instanceof ContemplateCtx ) self::$__context = $ctx;
+        elseif ( $ctx && isset(self::$__ctx[$ctx]) ) self::$__context = self::$__ctx[$ctx];
+        else self::$__context = self::$__global;
+        return $contx;
+    }
+    
     //
     // Main API methods
     //
@@ -651,21 +657,6 @@ class Contemplate
     public static function disposeCtx( $ctx )
     {
         if ( $ctx && '__GLOBAL__' !== $ctx && isset(self::$__ctx[$ctx]) ) unset( self::$__ctx[$ctx] );
-    }
-    
-    public static function _pushCtx( $ctx )
-    {
-        array_push(self::$__ctxS, self::$__context->id);
-        if ( $ctx && isset(self::$__ctx[$ctx]) ) self::$__context = self::$__ctx[$ctx];
-        else self::$__context = self::$__global;
-    }
-    
-    public static function _popCtx( )
-    {
-        if ( !empty(self::$__ctxS) ) $ctx = array_pop( self::$__ctxS );
-        else $ctx = '__GLOBAL__';
-        if ( $ctx && isset(self::$__ctx[$ctx]) ) self::$__context = self::$__ctx[$ctx];
-        else self::$__context = self::$__global;
     }
     
     public static function setTemplateSeparators( $seps=null )
@@ -1163,10 +1154,10 @@ class Contemplate
     private static function t_if( $cond='false' ) 
     {  
         $renderer = self::$TT_IF;
-        $out = "';" . self::pad_lines( $renderer(array(
-                'EOL'=>     self::$__TEOL,
-                'IFCOND'=> $cond
-            )) );
+        $out = "';" . self::pad_lines($renderer(array(
+             'EOL'          => self::$__TEOL
+            ,'IFCOND'       => $cond
+            )));
         self::$__ifs++;  
         self::$__level++;
         
@@ -1177,10 +1168,10 @@ class Contemplate
     { 
         $renderer = self::$TT_ELSEIF;
         self::$__level--;
-        $out = "';" . self::pad_lines( $renderer(array(
-                'EOL'=>     self::$__TEOL,
-                'ELIFCOND'=> $cond
-            )) );
+        $out = "';" . self::pad_lines($renderer(array(
+             'EOL'          => self::$__TEOL
+            ,'ELIFCOND'     => $cond
+            )));
         self::$__level++;
         
         return $out;
@@ -1190,9 +1181,9 @@ class Contemplate
     { 
         $renderer = self::$TT_ELSE;
         self::$__level--;
-        $out = "';" . self::pad_lines( $renderer(array( 
-            'EOL'=>     self::$__TEOL
-        )) );
+        $out = "';" . self::pad_lines($renderer(array( 
+        'EOL'           => self::$__TEOL
+        )));
         self::$__level++;
         
         return $out;
@@ -1203,9 +1194,9 @@ class Contemplate
         $renderer = self::$TT_ENDIF;
         self::$__ifs--;  
         self::$__level--;
-        $out = "';" . self::pad_lines( $renderer(array( 
-            'EOL'=>     self::$__TEOL
-        )) );
+        $out = "';" . self::pad_lines($renderer(array( 
+        'EOL'           => self::$__TEOL
+        )));
         
         return $out;
     }
@@ -1239,12 +1230,14 @@ class Contemplate
             self::$__locals[self::$__currentblock][self::$__variables[self::$__currentblock][$k]] = 1; 
             self::$__locals[self::$__currentblock][self::$__variables[self::$__currentblock][$v]] = 1;
             $renderer = self::$TT_FOR2;
-            $out = "';" . self::pad_lines( $renderer(array(
-                    'EOL'=>     self::$__TEOL,
-                    'O'=> $o, '_O'=> $_o, 
-                    'K'=> $k, 'V'=> $v
-                    //,'ASSIGN1'=> ""
-                )) );
+            $out = "';" . self::pad_lines($renderer(array(
+                 'EOL'          => self::$__TEOL
+                ,'O'            => $o
+                ,'_O'           => $_o 
+                ,'K'            => $k
+                ,'V'            => $v
+                //,'ASSIGN1'=> ""
+                )));
             self::$__level+=2;
         }
         else
@@ -1253,12 +1246,13 @@ class Contemplate
 
             self::$__locals[self::$__currentblock][self::$__variables[self::$__currentblock][$v]] = 1;
             $renderer = self::$TT_FOR1;
-            $out = "';" . self::pad_lines( $renderer(array(
-                    'EOL'=>     self::$__TEOL,
-                    'O'=> $o, '_O'=> $_o, 
-                    'V'=> $v
-                    //,'ASSIGN1'=> ""
-                )) );
+            $out = "';" . self::pad_lines($renderer(array(
+                 'EOL'          => self::$__TEOL
+                ,'O'            => $o
+                ,'_O'           => $_o
+                ,'V'            => $v
+                //,'ASSIGN1'=> ""
+                )));
             self::$__level+=2;
         }
         self::$__loops++;  self::$__loopifs++;
@@ -1272,9 +1266,9 @@ class Contemplate
         $renderer = self::$TT_ELSEFOR;
         self::$__loopifs--;  
         self::$__level+=-2;
-        $out = "';" . self::pad_lines( $renderer(array( 
-            'EOL'=>     self::$__TEOL
-        )) );
+        $out = "';" . self::pad_lines($renderer(array( 
+        'EOL'           => self::$__TEOL
+        )));
         self::$__level+=1;
         
         return $out;
@@ -1287,18 +1281,18 @@ class Contemplate
             self::$__loops--; self::$__loopifs--;  
             self::$__level+=-2;
             $renderer = self::$TT_ENDFOR1;
-            $out = "';" . self::pad_lines( $renderer( array(
-                'EOL'=>     self::$__TEOL
-            ) ) );
+            $out = "';" . self::pad_lines($renderer(array(
+            'EOL'           => self::$__TEOL
+            )));
         }
         else
         {
             self::$__loops--;  
             self::$__level+=-1;
             $renderer = self::$TT_ENDFOR2;
-            $out = "';" . self::pad_lines( $renderer( array(
-                'EOL'=>     self::$__TEOL
-            ) ) );
+            $out = "';" . self::pad_lines($renderer(array(
+            'EOL'           => self::$__TEOL
+            )));
         }
         return $out;
     }
@@ -1414,6 +1408,7 @@ class Contemplate
         }
         $rest = substr($rest, strlen($args)+1);
         
+        if ( isset(self::$__directive_aliases[$ctrl]) ) $ctrl = self::$__directive_aliases[$ctrl];
         $m = array_search($ctrl, self::$__directives);
         if ( false !== $m )
         {
@@ -1494,7 +1489,6 @@ class Contemplate
             return $out . preg_replace_callback( $re_controls, $parse_constructs, $rest );
         }
         
-        //if ( preg_match(self::$re_plugin, $ctrl, $m) && isset($m[2]) && isset(self::$__plugins['plg_' . $m[2]]) )
         if ( isset(self::$__context->plugins[$ctrl]) || isset(self::$__global->plugins[$ctrl]) ) 
         {
             // allow custom plugins as template functions
@@ -2052,14 +2046,14 @@ class Contemplate
         return $text;
     }
     
-    private static function get_cached_template_name( $id, $cacheDir ) 
+    private static function get_cached_template_name( $id, $ctx, $cacheDir ) 
     { 
-        return $cacheDir . preg_replace('/[\\W]+/', '_', $id) . '_tpl.php'; 
+        return $cacheDir . preg_replace('/[\\W]+/', '_', $id) . '_tpl__' . preg_replace('/[\\W]+/', '_', $ctx) .'.php'; 
     }
     
-    private static function get_cached_template_class( $id ) 
+    private static function get_cached_template_class( $id, $ctx ) 
     { 
-        return 'Contemplate_' .  preg_replace('/[\\W]+/', '_', $id) . '_Cached';  
+        return 'Contemplate_' .  preg_replace('/[\\W]+/', '_', $id) . '_Cached__' . preg_replace('/[\\W]+/', '_', $ctx);  
     }
     
     private static function get_template_contents( $id, $contx )
@@ -2164,7 +2158,7 @@ class Contemplate
             {
                 // dynamic in-memory caching during page-request
                 //return new Contemplate($id, self::create_template_render_function($id));
-                $tpl = new ContemplateTemplate(); $tpl->setId( $id );
+                $tpl = new ContemplateTemplate( $id );
                 if ( isset($options['parsed']) && is_string($options['parsed']) )
                 {
                     // already parsed code was given
@@ -2172,7 +2166,7 @@ class Contemplate
                 }
                 else
                 {
-                    $fns = self::create_template_render_function($id, $contx, $options['separators']);
+                    $fns = self::create_template_render_function( $id, $contx, $options['separators'] );
                     $tpl->setRenderFunction( $fns[0] ); $tpl->setBlocks( $fns[1] );
                 }
                 if ( self::$__extends ) $tpl->extend( self::tpl(self::$__extends, null, $contx->id) );
@@ -2184,19 +2178,18 @@ class Contemplate
             {
                 if ( true !== $options['autoUpdate'] && self::CACHE_TO_DISK_NOUPDATE === $contx->cacheMode )
                 {
-                    $cachedTplFile = self::get_cached_template_name($id, $contx->cacheDir);
-                    $cachedTplClass = self::get_cached_template_class($id);
+                    $cachedTplFile = self::get_cached_template_name( $id, $contx->id, $contx->cacheDir );
+                    $cachedTplClass = self::get_cached_template_class( $id, $contx->id );
                     if ( !is_file($cachedTplFile) )
                     {
                         // if not exist, create it
-                        self::create_cached_template($id, $contx, $cachedTplFile, $cachedTplClass, $options['separators']);
+                        self::create_cached_template( $id, $contx, $cachedTplFile, $cachedTplClass, $options['separators'] );
                     }
                     if (is_file($cachedTplFile))
                     {
-                        include($cachedTplFile);  
-                        $tpl = new $cachedTplClass();
-                        $tpl->setId( $id ); 
-                        $tpl->ctx( $contx->id );
+                        include( $cachedTplFile );
+                        $tpl = new $cachedTplClass( );
+                        $tpl->setId( $id )->ctx( $contx->id );
                         return $tpl;
                     }
                     return null;
@@ -2204,19 +2197,18 @@ class Contemplate
                 
                 elseif ( true === $options['autoUpdate'] || self::CACHE_TO_DISK_AUTOUPDATE === $contx->cacheMode )
                 {
-                    $cachedTplFile = self::get_cached_template_name($id, $contx->cacheDir);
-                    $cachedTplClass = self::get_cached_template_class($id);
+                    $cachedTplFile = self::get_cached_template_name( $id, $contx->id, $contx->cacheDir );
+                    $cachedTplClass = self::get_cached_template_class( $id, $contx->id );
                     if ( !is_file($cachedTplFile) || (filemtime($cachedTplFile) <= filemtime($template[0])) )
                     {
                         // if tpl not exist or is out-of-sync (re-)create it
-                        self::create_cached_template($id, $contx, $cachedTplFile, $cachedTplClass, $options['separators']);
+                        self::create_cached_template( $id, $contx, $cachedTplFile, $cachedTplClass, $options['separators'] );
                     }
                     if ( is_file($cachedTplFile) )
                     {
-                        include($cachedTplFile);  
-                        $tpl = new $cachedTplClass();
-                        $tpl->setId( $id );
-                        $tpl->ctx( $contx->id );
+                        include( $cachedTplFile );
+                        $tpl = new $cachedTplClass( );
+                        $tpl->setId( $id )->ctx( $contx->id );
                         return $tpl;
                     }
                     return null;
@@ -2228,7 +2220,7 @@ class Contemplate
                     //return new Contemplate($id, self::create_template_render_function($id));
                     $tpl = new ContemplateTemplate( );
                     $tpl->setId( $id );
-                    $fns = self::create_template_render_function($id, $contx, $options['separators']);
+                    $fns = self::create_template_render_function( $id, $contx, $options['separators'] );
                     $tpl->setRenderFunction( $fns[0] ); 
                     $tpl->setBlocks( $fns[1] );
                     if ( self::$__extends ) $tpl->extend( self::tpl(self::$__extends, null, $contx->id) );

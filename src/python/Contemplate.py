@@ -104,9 +104,8 @@ class _G:
     uuid = 0
 
     ctx = None
-    ctxS = None
-    context = None
     glob = None
+    context = None
     
     NEWLINE = re.compile(r'\n\r|\r\n|\n|\r')
     SQUOTE = re.compile(r"'")
@@ -146,6 +145,10 @@ class _G:
     'extends', 'block', 'endblock',
     'include', 'super', 'getblock'
     ]
+    directive_aliases = {
+     'elif'         : 'elseif'
+    ,'fi'           : 'endif'
+    }
     funcs = [
     's', 'n', 'f', 'q', 'qq', 
     'echo', 'time', 'count',
@@ -174,6 +177,24 @@ default_date_locale = {
 ,'month': [ 'January','February','March','April','May','June','July','August','September','October','November','December' ]
 ,'month_short': [ 'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec' ]
 }
+
+def open_file( file, op ):
+    #if Contemplate.ENCODING: 
+    #    f = open(file, op, encoding=Contemplate.ENCODING)
+    #else: 
+    #    f = open(file, op)
+    #return f
+    return open(file, op, -1, Contemplate.ENCODING)
+
+def read_file( file ):
+    buffer=''
+    with open_file(file, 'r') as f:
+        buffer = f.read( )
+    return buffer
+
+def write_file( file, text ):
+    with open_file(file, 'w') as f:
+        f.write(text)
 
 def php_time( ):
     return int(time.time())
@@ -307,8 +328,8 @@ def localized_date( format, timestamp ):
 # (mostly methods to simulate php-like functionality needed by the engine)
 #
 # static
-def include( filename, classname, directory, doReload=False ):
-    # http://www.php2python.com/wiki/function.include/
+def import_tpl( filename, classname, directory, doReload=False ):
+    # http://www.php2python.com/wiki/function.import_tpl/
     # http://docs.python.org/dev/3.0/whatsnew/3.0.html
     # http://stackoverflow.com/questions/4821104/python-dynamic-instantiation-from-string-name-of-a-class-in-dynamically-imported
     
@@ -320,7 +341,7 @@ def include( filename, classname, directory, doReload=False ):
     #    return _locals_[classname]
     #else:
     #    # Python 3.x
-    #    exec(Contemplate.read(filename), _globals_, _locals_)
+    #    exec(read_file(filename), _globals_, _locals_)
     #    return _locals_[classname]
     
     # http://docs.python.org/2/library/imp.html
@@ -363,14 +384,14 @@ def create_func( funcName, args, sourceCode, additional_symbols=dict() ):
     # The list of symbols that are included by default in the generated
     # function's environment
     SAFE_SYMBOLS = [
-        "list", "dict", "enumerate", "tuple", "set", "long", "float", "object",
-        "bool", "callable", "True", "False", "dir",
-        "frozenset", "getattr", "hasattr", "abs", "cmp", "complex",
-        "divmod", "id", "pow", "round", "slice", "vars",
-        "hash", "hex", "int", "isinstance", "issubclass", "len",
-        "map", "filter", "max", "min", "oct", "chr", "ord", "range",
-        "reduce", "repr", "str", "type", "zip", "xrange", "None",
-        "Exception", "KeyboardInterrupt"
+    "list", "dict", "enumerate", "tuple", "set", "long", "float", "object",
+    "bool", "callable", "True", "False", "dir",
+    "frozenset", "getattr", "hasattr", "abs", "cmp", "complex",
+    "divmod", "id", "pow", "round", "slice", "vars",
+    "hash", "hex", "int", "isinstance", "issubclass", "len",
+    "map", "filter", "max", "min", "oct", "chr", "ord", "range",
+    "reduce", "repr", "str", "type", "zip", "xrange", "None",
+    "Exception", "KeyboardInterrupt"
     ]
     
     # Also add the standard exceptions
@@ -459,38 +480,26 @@ class InlineTemplate:
     VERSION = "1.0.0"
     
     def multisplit( tpl, reps=dict(), as_array=False ): 
-    
         #as_array = isinstance(reps, (list,tuple))
         a = [ [1, tpl] ]
         items = enumerate(reps) if as_array else reps.items()
         for r,s in items:
-        
             c = [ ]
             sr = s if as_array else r
             s = [ 0, s ]
             for ai in a:
-            
                 if 1 == ai[0]:
-                
                     b = ai[1].split( sr ) 
                     bl = len(b)
                     c.append([1, b[0]])
-                    
                     if bl > 1:
-                    
                         for j in range(bl-1):
                             c.append(s)
                             c.append([1, b[j+1]])
                     
-                    
-                
                 else:
-                
                     c.append(ai)
-                
-            
             a = c
-        
         return a
     
     def multisplit_re( tpl, rex ):
@@ -533,7 +542,6 @@ class InlineTemplate:
         return create_func(funcName, 'args', '    ' + out,{})
     
     def __init__( self, tpl='', replacements=None, compiled=False ): 
-    
         if not replacements: replacements = {}
         self.id = None
         self._renderer = None
@@ -545,14 +553,12 @@ class InlineTemplate:
         self.dispose()
 
     def dispose( self ): 
-    
         self.id = None
         self.tpl = None
         self._renderer = None
         return self
     
     def render( self, args=None ): 
-    
         if not args: args = []
         if self._renderer is not None: 
             return self._renderer( args )
@@ -615,28 +621,23 @@ class Template:
         return self
     
     def setRenderFunction( self, renderFunc=None ): 
-        if renderFunc: self._renderer = renderFunc
-        else: self._renderer = None
+        self._renderer = renderFunc if renderFunc else None
         return self
     
     def renderBlock( self, block, data, __i__=None ):
-        __ctx = False
-        r = ''
-        
+        __ctx = None
         if not __i__:
             __i__ = self
-            Contemplate._pushCtx( self._ctx )
-            __ctx = True
+            __ctx = Contemplate._set_ctx( self._ctx )
         
+        r = ''
         if (self._blocks) and (block in self._blocks):
             blockfunc = self._blocks[block]
             r = blockfunc(data, self, __i__)
         elif self._extends:
             r = self._extends.renderBlock(block, data, __i__)
         
-        if __ctx:
-            Contemplate._popCtx( )
-        
+        if __ctx: Contemplate._set_ctx( __ctx )
         return r
         
     def renderSuperBlock( self, block, data ):
@@ -646,25 +647,20 @@ class Template:
         return ''
         
     def render( self, data, __i__=None ):
-        __ctx = False
-        
+        __ctx = None
         if not __i__:
             __i__ = self
-            Contemplate._pushCtx( self._ctx )
-            __ctx = True
+            __ctx = Contemplate._set_ctx( self._ctx )
             
         __p__ = ''
         if self._extends:  
             __p__ = self._extends.render(data, __i__)
-        
         elif self._renderer is not None: 
             # dynamic function
             renderer = self._renderer
             __p__ = renderer(data, self, __i__)
         
-        if __ctx:
-            Contemplate._popCtx( )
-        
+        if __ctx: Contemplate._set_ctx( __ctx )
         return __p__
     
 
@@ -705,13 +701,11 @@ def reset_state( ):
     _G.currentblock = '_'
     if not _G.currentblock in _G.locals: _G.locals[_G.currentblock] = {}
     if not _G.currentblock in _G.variables: _G.variables[_G.currentblock] = {}
-    
     #_G.funcId = 0
 
 
 def clear_state( ):
     global _G
-
     _G.loops = 0 
     _G.ifs = 0 
     _G.loopifs = 0
@@ -809,10 +803,10 @@ def t_unset( varname=None ):
     
 def t_if( cond='False' ):
     global _G
-    out = "'" + pad_lines( _G.TT_IF({
-            "EOL":  _G.TEOL,
-            'IFCOND': cond
-        }) )
+    out = "'" + pad_lines(_G.TT_IF({
+         "EOL"          : _G.TEOL
+        ,'IFCOND'       : cond
+        }))
     _G.ifs += 1
     _G.level += 1
     
@@ -821,10 +815,10 @@ def t_if( cond='False' ):
 def t_elseif( cond='False' ):
     global _G
     _G.level -= 1
-    out = "'" + pad_lines( _G.TT_ELSEIF({
-            "EOL":  _G.TEOL,
-            'ELIFCOND': cond
-        }) )
+    out = "'" + pad_lines(_G.TT_ELSEIF({
+         "EOL"          : _G.TEOL
+        ,'ELIFCOND'     : cond
+        }))
     _G.level += 1
     
     return out
@@ -832,9 +826,9 @@ def t_elseif( cond='False' ):
 def t_else( args='' ):
     global _G
     _G.level -= 1
-    out = "'" + pad_lines( _G.TT_ELSE({ 
-        "EOL":  _G.TEOL
-    }) )
+    out = "'" + pad_lines(_G.TT_ELSE({ 
+    "EOL"           : _G.TEOL
+    }))
     _G.level += 1
     
     return out
@@ -843,9 +837,9 @@ def t_endif( args='' ):
     global _G
     _G.ifs -= 1
     _G.level -= 1
-    out = "'" + pad_lines( _G.TT_ENDIF({ 
-        "EOL":  _G.TEOL
-    }) )
+    out = "'" + pad_lines(_G.TT_ENDIF({ 
+    "EOL"           : _G.TEOL
+    }))
     
     return out
     
@@ -876,13 +870,16 @@ def t_for( for_expr ):
         
         _G.locals[_G.currentblock][_G.variables[_G.currentblock][k]] = 1
         _G.locals[_G.currentblock][_G.variables[_G.currentblock][v]] = 1
-        out = "'" + pad_lines( _G.TT_FOR2({
-            "EOL":  _G.TEOL,
-            'O': o, '_O': _o, '_OI': _oI, 
-            'K': k, 'V': v
-            #,'ASSIGN1': '',
-            #'ASSIGN2': ''
-        }) )
+        out = "'" + pad_lines(_G.TT_FOR2({
+         "EOL"          : _G.TEOL
+        ,'O'            : o
+        ,'_O'           : _o
+        ,'_OI'          : _oI
+        ,'K'            : k
+        ,'V'            : v
+        #,'ASSIGN1': '',
+        #'ASSIGN2': ''
+        }))
         _G.level += 2
     
     else:
@@ -891,12 +888,14 @@ def t_for( for_expr ):
         _oV = '_loc_' + str(_G.id)
         
         _G.locals[_G.currentblock][_G.variables[_G.currentblock][v]] = 1
-        out = "'" + pad_lines( _G.TT_FOR1({
-            "EOL":  _G.TEOL,
-            'O': o, '_O': _o, '_OV': _oV, 
-            'V': v
-            #,'ASSIGN1': ''
-        }) )
+        out = "'" + pad_lines(_G.TT_FOR1({
+         "EOL"          : _G.TEOL
+        ,'O'            : o
+        ,'_O'           : _o
+        ,'_OV'          : _oV 
+        ,'V'            : v
+        #,'ASSIGN1': ''
+        }))
         _G.level += 2
     
     _G.loops += 1  
@@ -908,9 +907,9 @@ def t_elsefor( args='' ):
     global _G
     _G.loopifs -= 1
     _G.level += -2
-    out = "'" + pad_lines( _G.TT_ELSEFOR({ 
-        "EOL":  _G.TEOL
-    }) )
+    out = "'" + pad_lines(_G.TT_ELSEFOR({ 
+    "EOL"           : _G.TEOL
+    }))
     _G.level += 1
     
     return out
@@ -921,15 +920,15 @@ def t_endfor( args='' ):
         _G.loops -= 1 
         _G.loopifs -= 1
         _G.level += -2
-        out = "'" + pad_lines( _G.TT_ENDFOR({ 
-            "EOL":  _G.TEOL
-        }) )
+        out = "'" + pad_lines(_G.TT_ENDFOR({ 
+        "EOL"           : _G.TEOL
+        }))
     else:
         _G.loops -= 1
         _G.level += -1
-        out = "'" + pad_lines( _G.TT_ENDFOR({ 
-            "EOL":  _G.TEOL
-        }) )
+        out = "'" + pad_lines(_G.TT_ENDFOR({ 
+        "EOL"           : _G.TEOL
+        }))
     
     return out
 
@@ -1041,6 +1040,7 @@ def parse_constructs( match ):
     
     rest = rest[len(args)+1:]
     
+    if ctrl in _G.directive_aliases: ctrl = _G.directive_aliases[ctrl]
     try:
         m = _G.directives.index( ctrl )
     except:
@@ -1091,7 +1091,7 @@ def parse_constructs( match ):
         elif 12==m: # endblock
             out = t_endblock(args)
         
-        elif 13==m: # include
+        elif 13==m: # import_tpl
             out = t_include(args)
         
         elif 14==m: # super
@@ -1192,15 +1192,12 @@ def parse_blocks( s ):
     #_G.allblocks = None 
     #_G.allblockscnt = None 
     #_G.openblocks = None
-    
     return [ s, blocks ]
 
 
 def parse_variable( s, i, l ):
     global _G
-    
-    if ( _G.ALPHA.match(s[i]) ):
-    
+    if _G.ALPHA.match(s[i]):
         strings = {}
         variables = []
         space = 0
@@ -1209,11 +1206,9 @@ def parse_variable( s, i, l ):
         # main variable
         variable = s[i]
         i += 1
-        while ( i < l and _G.ALPHANUM.match(s[i]) ):
-        
+        while i < l and _G.ALPHANUM.match(s[i]):
             variable += s[i]
             i += 1
-        
         
         variable_raw = variable
         # transform into tpl variable
@@ -1225,61 +1220,44 @@ def parse_variable( s, i, l ):
         
         # extra space
         space = 0
-        while ( i < l and _G.SPACE.match(s[i]) ):
-        
+        while i < l and _G.SPACE.match(s[i]):
             space += 1
             i += 1
-        
         
         bracketcnt = 0
         
         # optional properties
-        while ( i < l and ('.' == s[i] or '[' == s[i]) ):
-        
+        while i < l and ('.' == s[i] or '[' == s[i]):
             delim = s[i]
             i += 1
-            
             # extra space
-            while ( i < l and _G.SPACE.match(s[i]) ):
-            
+            while i < l and _G.SPACE.match(s[i]):
                 space += 1
                 i += 1
             
-        
             # alpha-numeric dot property
-            if ( '.' == delim ):
-            
+            if '.' == delim:
                 # property
                 property = ''
-                while ( i < l and _G.ALPHANUM.match(s[i]) ):
-                
+                while i < l and _G.ALPHANUM.match(s[i]):
                     property += s[i]
                     i += 1
                 
                 lp = len(property)
-                if ( lp ):
-                
+                if lp:
                     # transform into tpl variable bracketed property
                     variable_rest += "['" + property + "']"
                     _len += space + 1 + lp
                     space = 0
-                
                 else:
-                
                     break
                 
-            
-            
             # bracketed property
-            elif ( '[' == delim ):
-            
+            elif '[' == delim:
                 bracketcnt += 1
-                
                 ch = s[i]
-                
                 # literal string property
-                if ( '"' == ch or "'" == ch ):
-                
+                if '"' == ch or "'" == ch:
                     #property = parseString( s, ch, i+1, l )
                     q = ch
                     str_ = q
@@ -1302,14 +1280,11 @@ def parse_variable( s, i, l ):
                     space = 0
                     hasStrings = True
                 
-                
                 # numeric array property
-                elif ( _G.NUM.match(ch) ):
-                
+                elif _G.NUM.match(ch):
                     property = s[i]
                     i += 1
-                    while ( i < l and _G.NUM.match(s[i]) ):
-                    
+                    while i < l and _G.NUM.match(s[i]):
                         property += s[i]
                         i += 1
                     
@@ -1318,14 +1293,11 @@ def parse_variable( s, i, l ):
                     _len += space + 1 + lp
                     space = 0
                 
-                
                 # sub-variable property
-                elif ( '$' == ch ):
-                
+                elif '$' == ch:
                     sub = s[i+1:]
                     subvariables = parse_variable(sub, 0, len(sub));
-                    if ( subvariables ):
-                    
+                    if subvariables:
                         # transform into tpl variable property
                         property = subvariables[-1]
                         variable_rest += delim + property[0]
@@ -1336,67 +1308,43 @@ def parse_variable( s, i, l ):
                         variables = variables + subvariables
                         hasStrings = hasStrings or property[5]
                     
-                
-                
                 # close bracket
-                elif ( ']' == ch ):
-                
-                    if ( bracketcnt > 0 ):
-                    
+                elif ']' == ch:
+                    if bracketcnt > 0:
                         bracketcnt -= 1
                         variable_rest += delim + s[i]
                         i += 1
                         _len += space + 2
                         space = 0
-                    
                     else:
-                    
                         break
-                    
-                
                 
                 else:
-                
                     break
                 
-                
-                
                 # extra space
-                while ( i < l and _G.SPACE.match(s[i]) ):
-                
+                while i < l and _G.SPACE.match(s[i]):
                     space += 1
                     i += 1
                 
-        
                 # close bracket
-                if ( ']' == s[i] ):
-                
-                    if ( bracketcnt > 0 ):
-                    
+                if ']' == s[i]:
+                    if bracketcnt > 0:
                         bracketcnt -= 1
                         variable_rest += s[i]
                         i += 1
                         _len += space + 1
                         space = 0
-                    
                     else:
-                    
                         break
                     
-                
-            
-            
             # extra space
-            while ( i < l and _G.SPACE.match(s[i]) ):
-            
+            while i < l and _G.SPACE.match(s[i]):
                 space += 1
                 i += 1
             
-        
-        
         variables.append( [id, variable_raw, variable_main, variable_rest, _len, hasStrings, strings] )
         return variables
-    
     return None
 
 str_re = re.compile(r'#STR\d+#', re.M|re.S)
@@ -1413,9 +1361,7 @@ def parse( tpl, withblocks=True ):
     
     for i in range(l):
         s = parts[i]
-        
         if isTag:
-            
             # parse each template tag section accurately
             # refined parsing
             count = len( s )
@@ -1428,17 +1374,13 @@ def parse( tpl, withblocks=True ):
             hasStrings = False
             hasBlock = False
             space = 0
-            
-            while ( index < count ):
-            
+            while index < count:
                 ch = s[index]
                 index  += 1
                 
                 # parse mainly literal strings and variables
-                
                 # literal string
-                if ( '"' == ch or "'" == ch ):
-                
+                if '"' == ch or "'" == ch:
                     if space > 0:
                         out += " "
                         space = 0
@@ -1462,14 +1404,12 @@ def parse( tpl, withblocks=True ):
                     hasStrings = True
                 
                 # variable
-                elif ( '$' == ch ):
-                
+                elif '$' == ch:
                     if space > 0:
                         out += " "
                         space = 0
                     tok = parse_variable(s, index, count)
                     if tok:
-                    
                         for tokv in tok:
                             id = tokv[ 0 ]
                             _G.variables[_G.currentblock][ id ] = tokv[ 1 ]
@@ -1479,27 +1419,20 @@ def parse( tpl, withblocks=True ):
                         variables = variables + tok
                         hasVariables = True
                         hasStrings = hasStrings or tokv[ 6 ]
-                    
                     else:
-                    
                         out += '$'
                     
-                
                 # special chars
-                elif ( "\n" == ch or "\r" == ch or "\t" == ch or "\v" == ch ):
-                
+                elif "\n" == ch or "\r" == ch or "\t" == ch or "\v" == ch:
                     space += 1
-                
                 
                 # rest, bypass
                 else:
-                
                     if space > 0:
                         out += " "
                         space = 0
                     out += ch
                 
-            
             # fix literal data notation python-style
             out = out.replace('true', 'True').replace('false', 'False').replace('null', 'None').replace('&&', ' and ').replace(' || ', ' or ').replace('!', ' not ')
             
@@ -1536,7 +1469,6 @@ def parse( tpl, withblocks=True ):
                         tag = tag.replace( id, '_loc_'+varname+v[3] )
                     else: # default (data) variable
                         tag = tag.replace( id, v[2]+v[3] )
-            
             
             if hasStrings:
                 # replace strings (accurately)
@@ -1580,47 +1512,34 @@ def parse( tpl, withblocks=True ):
                     else: #if _G.endblock:
                         _G.allblocks[ _G.blockptr-1 ][ 2 ] += blockTag
                     
-            
             s = tag
-            
             isTag = False
-            
         else:
-            
-            if _G.escape:
-                s = s.replace( "\\", "\\\\" )  # escape escapes
-                
+            if _G.escape: s = s.replace( "\\", "\\\\" )  # escape escapes
             s = s.replace( "'", "\\'" )  # escape single quotes accurately (used by parse function)
-            
             s = s.replace( "\n", _G.preserveLines ) # preserve lines
             #s = re.sub(_G.NL, _G.preserveLines, s) # preserve lines
-            
             isTag = True
-        
         parsed += s
     
-    if False != withblocks: 
-        return parse_blocks(parsed) if len(_G.allblocks)>0 else [parsed, []]
-    
-    return parsed
+    return (parse_blocks(parsed) if len(_G.allblocks)>0 else [parsed, []]) if False != withblocks else parsed
 
-def get_cached_template_name( id ):
+def get_cached_template_name( id, ctx ):
     global _G
-    return re.sub(_G.UNDERL, '_', id) + '_tpl' + '.py'
+    return re.sub(_G.UNDERL, '_', id) + '_tpl__' + re.sub(_G.UNDERL, '_', ctx) + '.py'
 
-def get_cached_template_class( id ):
+def get_cached_template_class( id, ctx ):
     global _G
-    return 'Contemplate_' + re.sub(_G.UNDERL, '_', id) + '_Cached'
+    return 'Contemplate_' + re.sub(_G.UNDERL, '_', id) + '_Cached__' + re.sub(_G.UNDERL, '_', ctx)
 
 def get_template_contents( id, contx ):
     global _G
-    
     if id in contx.templates: template = contx.templates[id]
     elif id in _G.glob.templates: template = _G.glob.templates[id]
     else: return ''
     
     if template[1]: return template[0] # inline tpl
-    elif os.path.exists(template[0]): return Contemplate.read(template[0])
+    elif os.path.exists(template[0]): return read_file(template[0])
     return ''
 
 def create_template_render_function( id, contx, seps=None ):
@@ -1697,7 +1616,7 @@ def create_cached_template( id, contx, filename, classname, seps=None ):
     ,'BLOCKS'               : pad_lines(sblocks, 2)
     ,'RENDERCODE'           : pad_lines(renderCode, 4)
     })
-    return Contemplate.write(filename, classCode)
+    return write_file(filename, classCode)
 
 def get_cached_template( id, contx, options=dict() ):
     global _G
@@ -1707,14 +1626,14 @@ def get_cached_template( id, contx, options=dict() ):
         # inline templates saved only in-memory
         if template[1]:
             # dynamic in-memory caching during page-request
-            tpl = Contemplate.Template()
+            tpl = Contemplate.Template( )
             tpl.setId( id )
             
             if 'parsed' in options:
                 _G.funcId += 1
                 tpl.setRenderFunction( create_func('_contemplateFn' + str(_G.funcId), 'data,self_,__i__', pad_lines(options['parsed'], 1), {'Contemplate': Contemplate}) )
             else:
-                fns = create_template_render_function(id, contx, options['separators'])
+                fns = create_template_render_function( id, contx, options['separators'] )
                 tpl.setRenderFunction( fns[0] )
                 tpl.setBlocks( fns[1] )
             
@@ -1726,51 +1645,48 @@ def get_cached_template( id, contx, options=dict() ):
         
         if True != options['autoUpdate'] and CM == Contemplate.CACHE_TO_DISK_NOUPDATE:
         
-            cachedTplFile = get_cached_template_name(id)
+            cachedTplFile = get_cached_template_name( id, contx.id )
             cachedTplPath = os.path.join(contx.cacheDir, cachedTplFile)
-            cachedTplClass = get_cached_template_class(id)
+            cachedTplClass = get_cached_template_class( id, contx.id )
             if not os.path.isfile(cachedTplPath):
                 # if not exist, create it
-                create_cached_template(id, contx, cachedTplPath, cachedTplClass, options['separators'])
+                create_cached_template( id, contx, cachedTplPath, cachedTplClass, options['separators'] )
             if os.path.isfile(cachedTplPath):
-                tpl = include(cachedTplFile, cachedTplClass, contx.cacheDir)()
-                tpl.setId( id )
-                tpl.ctx( contx.id )
+                tpl = import_tpl( cachedTplFile, cachedTplClass, contx.cacheDir )()
+                tpl.setId( id ).ctx( contx.id )
                 return tpl
             return None
 
         
         elif True == options['autoUpdate'] or CM == Contemplate.CACHE_TO_DISK_AUTOUPDATE:
         
-            cachedTplFile = get_cached_template_name(id)
+            cachedTplFile = get_cached_template_name( id, contx.id )
             cachedTplPath = os.path.join(contx.cacheDir, cachedTplFile)
-            cachedTplClass = get_cached_template_class(id)
+            cachedTplClass = get_cached_template_class( id, contx.id )
             if not os.path.isfile(cachedTplPath) or (os.path.getmtime(cachedTplPath) <= os.path.getmtime(template[0])):
                 # if tpl not exist or is out-of-sync (re-)create it
-                create_cached_template(id, contx, cachedTplPath, cachedTplClass, options['separators'])
+                create_cached_template( id, contx, cachedTplPath, cachedTplClass, options['separators'] )
             if os.path.isfile(cachedTplPath):
-                tpl = include(cachedTplFile, cachedTplClass, contx.cacheDir)()
-                tpl.setId( id )
-                tpl.ctx( contx.id )
+                tpl = import_tpl( cachedTplFile, cachedTplClass, contx.cacheDir )()
+                tpl.setId( id ).ctx( contx.id )
                 return tpl
             return None
         
         else:
         
             # dynamic in-memory caching during page-request
-            tpl = Contemplate.Template()
-            tpl.setId( id )
-            fns = create_template_render_function(id, contx, options['separators'])
+            tpl = Contemplate.Template( )
+            tpl.setId( id ).ctx( contx.id )
+            fns = create_template_render_function( id, contx, options['separators'] )
             tpl.setRenderFunction( fns[0] )
             tpl.setBlocks( fns[1] )
             if _G.extends: tpl.extend( Contemplate.tpl(_G.extends, None, contx.id) )
-            tpl.ctx( contx.id )
             return tpl
         
     return None
 
 def set_cached_template( filename, tplContents ): 
-    return Contemplate.write(filename, tplContents)
+    return write_file(filename, tplContents)
 
 
 #
@@ -1800,7 +1716,6 @@ class Contemplate:
     #
     
     def init( ):
-        
         global _G
         
         if _G.isInited: return
@@ -1811,7 +1726,6 @@ class Contemplate:
         '__GLOBAL__'  : _G.glob
         }
         _G.context = _G.glob
-        _G.ctxS = []
         
         # pre-compute the needed regular expressions
         _G.preserveLines = _G.preserveLinesDefault
@@ -1840,28 +1754,26 @@ class Contemplate:
             ,"        # render a tpl block method"
             ,"        def renderBlock(self, block, data, __i__=None):"
             ,"            self_ = self"
-            ,"            __ctx = False"
-            ,"            r = ''"
+            ,"            __ctx = None"
             ,"            if not __i__:"
             ,"                __i__ = self_"
-            ,"                Contemplate._pushCtx( self_._ctx )"
-            ,"                __ctx = True"
+            ,"                __ctx = Contemplate._set_ctx( self_._ctx )"
+            ,"            r = ''"
             ,"            method = '_blockfn_' + block"
             ,"            if (hasattr(self_, method) and callable(getattr(self_, method))):"
             ,"                r = getattr(self_, method)(data, self_, __i__)"
             ,"            elif self_._extends:"
             ,"                r = self_._extends.renderBlock(block, data, __i__)"
-            ,"            if __ctx:  Contemplate._popCtx( )"
+            ,"            if __ctx:  Contemplate._set_ctx( __ctx )"
             ,"            return r"
             ,"        # render method"
             ,"        def render(self, data, __i__=None):"
             ,"            self_ = self"
-            ,"            __ctx = False"
+            ,"            __ctx = None"
             ,"            __p__ = ''"
             ,"            if not __i__:"
             ,"                __i__ = self_"
-            ,"                Contemplate._pushCtx( self_._ctx )"
-            ,"                __ctx = True"
+            ,"                __ctx = Contemplate._set_ctx( self_._ctx )"
             ,"            if self_._extends:"
             ,"                __p__ = self_._extends.render(data, __i__)"
             ,""
@@ -1870,7 +1782,7 @@ class Contemplate:
             ,"#RENDERCODE#"
             ,"                # tpl main render code ends here"
             ,""
-            ,"            if __ctx:  Contemplate._popCtx( )"
+            ,"            if __ctx:  Contemplate._set_ctx( __ctx )"
             ,"            return __p__"
             ,"    return #CLASSNAME#"
             ,"# allow to 'import *'  from this file as a module"
@@ -2012,6 +1924,14 @@ class Contemplate:
         _G.isInited = True
     
     
+    def _set_ctx( ctx ):
+        global _G
+        contx = _G.context
+        if isinstance(ctx, Ctx): _G.context = ctx
+        elif ctx and (ctx in _G.ctx): _G.context = _G.ctx[ctx]
+        else: _G.context = _G.glob
+        return contx
+    
     #
     # Main API methods
     #
@@ -2024,19 +1944,6 @@ class Contemplate:
         global _G
         if ctx and ('__GLOBAL__' != ctx) and (ctx in _G.ctx): del _G.ctx[ctx]
     
-    def _pushCtx( ctx ):
-        global _G
-        _G.ctxS.append( _G.context.id )
-        if ctx and (ctx in _G.ctx): _G.context = _G.ctx[ctx]
-        else: _G.context = _G.glob
-    
-    def _popCtx( ):
-        global _G
-        if _G.ctxS: ctx = _G.ctxS.pop( )
-        else: ctx = '__GLOBAL__'
-        if ctx and (ctx in _G.ctx): _G.context = _G.ctx[ctx]
-        else: _G.context = _G.glob
-    
     def setTemplateSeparators( seps=None ):
         global _G
         if seps:
@@ -2045,10 +1952,7 @@ class Contemplate:
     
     def setPreserveLines( enable=True ): 
         global _G
-        if enable:  
-            _G.preserveLines = _G.preserveLinesDefault
-        else: 
-            _G.preserveLines = ''
+        _G.preserveLines = _G.preserveLinesDefault if enable else ''
     
     def hasPlugin( name, ctx='__GLOBAL__' ):
         global _G
@@ -2118,12 +2022,12 @@ class Contemplate:
 # added by Contemplate.py Engine
 # dummy Python __init__.py file
 # used with Contemplate 'import'
-# to include cached templates as modules, for optimization
+# to import_tpl cached templates as modules, for optimization
 """
-            _self.write(initPyFile, _initPy_)
+            write_file(initPyFile, _initPy_)
             
         #if _dir not in os.sys.path:
-        #    # allow to use 'import' in order to include cached templates
+        #    # allow to use 'import' in order to import_tpl cached templates
         #    os.sys.path.append(_dir)
 
     
@@ -2412,24 +2316,6 @@ class Contemplate:
             for key in data.keys(): cdata[key] = data[key]
             return cdata
         
-    def open( file, op ):
-        #if Contemplate.ENCODING: 
-        #    f = open(file, op, encoding=Contemplate.ENCODING)
-        #else: 
-        #    f = open(file, op)
-        #return f
-        return open(file, op, -1, Contemplate.ENCODING)
-
-    def read( file ):
-        buffer=''
-        with Contemplate.open(file, 'r') as f:
-            buffer = f.read()
-        return buffer
-
-    def write( file, text ):
-        with Contemplate.open(file, 'w') as f:
-            f.write(text)
-
 
 # init the engine on load
 Contemplate.init( )

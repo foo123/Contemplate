@@ -633,7 +633,7 @@ function parse_constructs( match, prefix, ctrl, startParen, rest )
         prefix = prefix || '';
         var pl = $__context.plugins[ ctrl ] || $__global.plugins[ ctrl ];
         args = args.replace( re_controls, parse_constructs );
-        out = ((pl instanceof Contemplate.InlineTemplate) ? pl.render({'args':args}) : (pl + '(' + args + ')'));
+        out = pl instanceof Contemplate.InlineTemplate ? pl.render({'args':args}) : 'Contemplate.plg_("' + ctrl + '",' + args + ')';
         return prefix + out + rest.replace( re_controls, parse_constructs );
     }
     
@@ -1928,18 +1928,23 @@ Contemplate = {
             if ( arguments.length < 2 ) ctx = '__GLOBAL__';
             if ( ctx && $__ctx[HAS](ctx) ) contx = $__ctx[ctx];
             else contx = $__context;
-            if ( pluginCode instanceof Contemplate.InlineTemplate )
-            {
-                contx.plugins[ name ] = pluginCode;
-            }
-            else if ( undef === Contemplate[ name ] )
-            {
-                contx.plugins[ name ] = 'Contemplate.' + name;
-                Contemplate[ name ] = pluginCode;
-            }
+            contx.plugins[ name ] = pluginCode;
         }
     }
 
+    ,plg_: function( plg ) {
+        var args = arguments;
+        if ( $__context.plugins[HAS]( plg ) && "function" === typeof $__context.plugins[ plg ] ) 
+        {
+            return $__context.plugins[ plg ].apply( null, slice.call(args, 1) );
+        } 
+        else if ( $__global.plugins[HAS]( plg ) && "function" === typeof $__global.plugins[ plg ] ) 
+        {
+            return $__global.plugins[ plg ].apply( null, slice.call(args, 1) );
+        }
+        return '';
+    }
+    
     ,setPrefixCode: function( preCode, ctx ) {
         var contx;
         if ( arguments.length < 2 ) ctx = '__GLOBAL__';
@@ -2364,7 +2369,7 @@ var default_date_locale = {
     ,month: [ 'January','February','March','April','May','June','July','August','September','October','November','December' ]
     ,month_short: [ 'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec' ]
     },
-    Keys = Obj.keys, join = Arr[PROTO].join, floor = Math.floor, round = Math.round, abs = Math.abs,
+    Keys = Obj.keys, join = Arr[PROTO].join, slice = Arr[PROTO].slice, floor = Math.floor, round = Math.round, abs = Math.abs,
     re_1 = /([\s\S]*?)(&(?:#\d+|#x[\da-f]+|[a-zA-Z][\da-z]*);|$)/g,
     re_2 = /!/g, re_3 = /'/g, re_4 = /\(/g, re_5 = /\)/g, re_6 = /\*/g, re_7 = /%20/g,
     re_8 = /%%|%(\d+\$)?([-+\'#0 ]*)(\*\d+\$|\*|\d+)?(\.(\*\d+\$|\*|\d+))?([scboxXuideEfFgG])/g,

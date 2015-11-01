@@ -131,7 +131,10 @@ data = {
 
 main_template_data={
     'templates' : {
+        'base' : Contemplate.getTemplateContents('base'),
+        'demo' : Contemplate.getTemplateContents('demo'),
         'sub' : Contemplate.getTemplateContents('sub'),
+        'date' : Contemplate.getTemplateContents('date')
     },
     'contemplate_version': Contemplate.VERSION,
     #'sepleft' : sepleft,

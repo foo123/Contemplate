@@ -694,9 +694,26 @@ class Contemplate
     
     public static function addPlugin( $name, $pluginCode, $ctx='__GLOBAL__' ) 
     {
-        if ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
-        else $contx = self::$__context;
-        $contx->plugins[ $name ] = $pluginCode;
+        if ( $name && $pluginCode )
+        {
+            if ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
+            else $contx = self::$__context;
+            $contx->plugins[ $name ] = $pluginCode;
+        }
+    }
+    
+    public static function plg_( $plg ) 
+    {
+        $args = func_get_args( ); array_shift( $args );
+        if ( isset( self::$__context->plugins[ $plg ] ) && is_callable( self::$__context->plugins[ $plg ] ) ) 
+        {
+            return call_user_func_array(self::$__context->plugins[ $plg ], $args);
+        } 
+        elseif ( isset( self::$__global->plugins[ $plg ] ) && is_callable( self::$__global->plugins[ $plg ] ) ) 
+        {
+            return call_user_func_array(self::$__global->plugins[ $plg ], $args);
+        }
+        return '';
     }
     
     public static function setPrefixCode( $preCode=null, $ctx='__GLOBAL__' )
@@ -857,24 +874,6 @@ class Contemplate
     //
     // Main Template functions
     //
-    
-    public static function __callstatic( $method, $params=array() ) 
-    {
-        // http://www.blainesch.com/403/dynamically-adding-methods-to-classes-and-objects-in-php/
-        if ( isset( self::$__context->plugins[ $method ] ) && is_callable( self::$__context->plugins[ $method ] ) ) 
-        {
-            return call_user_func_array(self::$__context->plugins[ $method ], $params);
-        } 
-        elseif ( isset( self::$__global->plugins[ $method ] ) && is_callable( self::$__global->plugins[ $method ] ) ) 
-        {
-            return call_user_func_array(self::$__global->plugins[ $method ], $params);
-        } 
-        /*else 
-        {
-            throw new Exception("Method not defined.");
-        }*/
-        return '';
-    }
     
     public static function tpl( $tpl, $data=null, $options=array() )
     {
@@ -1501,17 +1500,7 @@ class Contemplate
             // allow custom plugins as template functions
             $pl = isset(self::$__context->plugins[$ctrl]) ? self::$__context->plugins[$ctrl] : self::$__global->plugins[$ctrl];
             $args = preg_replace_callback( $re_controls, $parse_constructs, $args );
-            if ( $pl instanceof ContemplateInlineTemplate )
-            {
-                $out = $pl->render(array('args'=>$args));
-            }
-            else
-            {
-                /*self::$__plugins['plg_' . $m[2]] = $pl;
-                unset(self::$__plugins[$m[2]]);*/
-                //$out = 'Contemplate::plg_' . $m[2] . '(' . $args . ')';
-                $out = 'Contemplate::' . $ctrl . '(' . $args . ')';
-            }
+            $out = $pl instanceof ContemplateInlineTemplate ? $pl->render(array('args'=>$args)) : 'Contemplate::plg_("' . $ctrl . '",' . $args . ')';
             return $prefix . $out . preg_replace_callback( $re_controls, $parse_constructs, $rest );
         }
         

@@ -1107,10 +1107,7 @@ def parse_constructs( match ):
     if (ctrl in _G.context.plugins) or (ctrl in _G.glob.plugins):
         pl = _G.context.plugins[ctrl] if ctrl in _G.context.plugins else _G.glob.plugins[ctrl]
         args = re.sub(re_controls, parse_constructs, args)
-        if isinstance(pl,Contemplate.InlineTemplate):
-            out = pl.render({'args':args})
-        else: 
-            out = pl + '(' + args + ')'
+        out = pl.render({'args':args}) if isinstance(pl,Contemplate.InlineTemplate) else 'Contemplate.plg_("' + ctrl + '",' + args + ')'
         return prefix + out + re.sub(re_controls, parse_constructs, rest)
     
     if ctrl in _G.aliases: ctrl = _G.aliases[ctrl]
@@ -2061,15 +2058,18 @@ class Contemplate:
     
     def addPlugin( name, pluginCode, ctx='__GLOBAL__' ):
         global _G
-        if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
-        else: contx = _G.context
-        name = str(name)
-        if isinstance(pluginCode, Contemplate.InlineTemplate):
-            contx.plugins[ name ] = pluginCode
-        #elif not hasattr(Contemplate, name) and not callable(getattr(Contemplate, name))):
-        elif not hasattr(Contemplate, name):
-            contx.plugins[ name ] = 'Contemplate.' + name
-            setattr(Contemplate, name, pluginCode)
+        if name and pluginCode:
+            if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
+            else: contx = _G.context
+            contx.plugins[ str(name) ] = pluginCode
+    
+    def plg_( plg, *args ):
+        global _G
+        if plg in _G.context.plugins and callable(_G.context.plugins[ plg ]): 
+            return _G.context.plugins[ plg ]( *args )
+        elif plg in _G.glob.plugins and callable(_G.glob.plugins[ plg ]): 
+            return _G.glob.plugins[ plg ]( *args )
+        return ''
     
     def setPrefixCode( preCode=None, ctx='__GLOBAL__' ):
         global _G

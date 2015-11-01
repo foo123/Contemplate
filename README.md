@@ -33,7 +33,7 @@ The inspiration came from an old post by [John Resig](https://github.com/jeresig
 ----------------------------------------------------------------------------------------------------------------------
 
 **Note**
-There are a couple of other frameworks named also _contemplate_
+There are a couple of other frameworks named also `contemplate`
 
 * http://www.arlomedia.com/software/contemplate/assembled/introduction.html
 * There is an older and quite different template engine for node named also `"contemplate"` [here](https://npmjs.org/package/contemplate) and [here](https://github.com/enricomarino/contemplate)

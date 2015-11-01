@@ -119,7 +119,10 @@ $data=array(
 
 $main_template_data=array(
     'templates' => array(
+        'base' => Contemplate::getTemplateContents('base'),
+        'demo' => Contemplate::getTemplateContents('demo'),
         'sub' => Contemplate::getTemplateContents('sub'),
+        'date' => Contemplate::getTemplateContents('date')
     ),
     'contemplate_version' => Contemplate::VERSION,
     //'sepleft' => $sepleft,

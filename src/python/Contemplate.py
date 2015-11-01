@@ -945,7 +945,7 @@ def t_include( id ):
     if id not in contx.partials:
         push_state()
         reset_state()
-        contx.partials[id] = " " + parse(get_separators( get_template_contents(id, contx.context) ), False) + "'" + _G.TEOL
+        contx.partials[id] = " " + parse(get_separators( get_template_contents(id, contx) ), False) + "'" + _G.TEOL
         pop_state()
     
     return pad_lines( contx.partials[id] )
@@ -2193,6 +2193,8 @@ class Contemplate:
                 contx = _G.glob # global context
             del options['context']
             
+        if not contx: contx = _G.glob # global context
+        
         separators = options['separators'] if options and ('separators' in options) else None
         
         if separators:
@@ -2245,8 +2247,9 @@ class Contemplate:
                     contx = _G.context # current context
                 del options['context']
             
-            if False == options['escape']: _G.escape = False
-            else: _G.escape = True
+            if not contx: contx = _G.context # current context
+            
+            _G.escape = False if False == options['escape'] else True
             
             # Figure out if we're getting a template, or if we need to
             # load the template - and be sure to cache the result.

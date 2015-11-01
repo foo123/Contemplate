@@ -1216,28 +1216,13 @@ function create_cached_template( id, contx, filename, classname, seps )
     // tpl-defined blocks
     sblocks = [];
     for (b=0; b<bl; b++) 
-    {
         sblocks.push(EOL + TT_BlockCode({
          'EOL'                  : EOL
         ,'BLOCKNAME'            : blocks[b][0]
         ,'BLOCKMETHODNAME'      : blocks[b][0]
         ,'BLOCKMETHODCODE'      : pad_lines(blocks[b][1], 1)
         }));
-    }
-    if ( sblocks.length )
-    {
-        sblocks = EOL + 
-                    "self._blocks = { " + 
-                    EOL + 
-                    pad_lines( sblocks.join(',' + EOL), 1 ) + 
-                    EOL + 
-                    "};" +
-                    EOL;
-    }
-    else
-    {
-        sblocks = '';
-    }
+    sblocks = sblocks.length ? EOL + "self._blocks = {" + EOL + sblocks.join(',' + EOL) + EOL + "};" + EOL : '';
     
     renderCode = TT_RCODE({
      'EOL'                  : EOL
@@ -1268,7 +1253,7 @@ function get_cached_template( id, contx, options )
         {
             // dynamic in-memory caching during page-request
             var funcs, tpl;
-            if ( options.parsed )
+            if ( options && options.parsed )
             {
                 // already parsed code was given
                 tpl = Contemplate.Template( id ).setRenderFunction( FUNC("Contemplate", options.parsed) );
@@ -2079,7 +2064,7 @@ Contemplate = {
         var tmp, parsed, separators, _ctx, contx = null;
         
         // see what context this template may use
-        if ( options.substr )
+        if ( options && options.substr )
         {
             if ( $__ctx[HAS](options) )
                 contx = $__ctx[options]; // preset context
@@ -2100,6 +2085,8 @@ Contemplate = {
                 contx = $__global; // global context
             delete options.context;
         }
+        if ( !contx ) contx = $__global; // global context
+        
         separators = options && options.separators ? options.separators : null;
         if ( separators )
         {
@@ -2135,7 +2122,7 @@ Contemplate = {
         {
             // see what context this template may use
             contx = null;
-            if ( options.substr )
+            if ( options && options.substr )
             {
                 if ( $__ctx[HAS](options) )
                     contx = $__ctx[options]; // preset context
@@ -2159,6 +2146,7 @@ Contemplate = {
                     contx = $__context; // current context
                 delete options.context;
             }
+            if ( !contx ) contx = $__context; // current context
             
             $__escape = false !== options.escape;
             
@@ -2895,7 +2883,7 @@ function sprintf( )
 
 
 // init the engine on load
-Contemplate.init();
+Contemplate.init( );
 
 // export it
 // add it to global namespace to be available for sub-templates, same as browser

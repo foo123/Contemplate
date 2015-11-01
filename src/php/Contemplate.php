@@ -431,7 +431,7 @@ class Contemplate
             ,"public function __construct(\$id=null)"
             ,"{"
             ,"    \$self = \$this;"
-            ,"    \parent::__construct( \$id );"
+            ,"    parent::__construct( \$id );"
             ,"    "
             ,"    /* extend tpl assign code starts here */"
             ,"#EXTENDCODE#"
@@ -830,6 +830,7 @@ class Contemplate
                 $contx = self::$__global; // global context
             unset($options['context']);
         }
+        if ( !$contx ) $contx = self::$__global; // global context
         
         $separators = $options && !empty($options['separators']) ? $options['separators'] : null;
         
@@ -909,9 +910,9 @@ class Contemplate
                     $contx = self::$__context; // current context
                 unset($options['context']);
             }
+            if ( !$contx ) $contx = self::$__context; // current context
             
-            if ( false === $options['escape'] ) self::$__escape = false;
-            else  self::$__escape = true;
+            self::$__escape = false === $options['escape'] ? false : true;
             
             // Figure out if we're getting a template, or if we need to
             // load the template - and be sure to cache the result.
@@ -2133,14 +2134,12 @@ class Contemplate
         $renderer = self::$TT_BlockCode;
         $sblocks = '';
         for($b=0; $b<$bl; $b++) 
-        {
             $sblocks .= $EOL . $renderer(array(
              "EOL"                  => $EOL
             ,'BLOCKNAME'            => $blocks[$b][0]
             ,'BLOCKMETHODNAME'      => "_blockfn_" . $blocks[$b][0]
             ,'BLOCKMETHODCODE'      => self::pad_lines($blocks[$b][1], 1)
             ));
-        }
         
         $renderer = self::$TT_RCODE;
         $renderCode = $renderer(array(

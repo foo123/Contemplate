@@ -68,9 +68,7 @@
         }
         Contemplate.addPlugin('inlinedBracket', Contemplate.inline('bracket($args)',{'$args':'args'}));
         document.getElementById("version").innerHTML = ''+Contemplate.VERSION;
-        var output = Contemplate.tpl('demo', <% $data_client %>);
-        document.getElementById("results_client").innerHTML = output;
-        console.log(output);
+        document.getElementById("results_client").innerHTML = Contemplate.tpl('demo', <% $data_client %>);
         </script>
     
     </body>

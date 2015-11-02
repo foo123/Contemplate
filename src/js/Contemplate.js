@@ -174,85 +174,6 @@ function get_separators( text, separators )
     }
     return text;
 }
-function get_template_contents( id, contx, asyncCB )
-{
-    var template;
-    
-    template = contx.templates[id] || $__global.templates[id];
-    
-    if ( template )
-    {
-        if ( template[1] ) //inline tpl
-        {
-            if ( $__async && asyncCB )
-            {
-                // async
-                asyncCB( template[0] );
-                return '';
-            }
-            else
-            {
-                // sync
-                return template[0];
-            }
-        }
-        else
-        {
-            // nodejs
-            if ( isNode ) 
-            { 
-                if ( $__async && asyncCB )
-                {
-                    // async
-                    fread_async(template[0], Contemplate.ENCODING, function(err, data){
-                        if ( err ) asyncCB( '' );
-                        else asyncCB( data );
-                    }); 
-                    return '';
-                }
-                else
-                {
-                    // sync
-                    return fread( template[0], contx.encoding );
-                }
-            }
-            // client-side js and #id of DOM script-element given as template holder
-            else if ( '#'===template[0].charAt(0) ) 
-            { 
-                if ( $__async && asyncCB )
-                {
-                    // async
-                    asyncCB( window.document.getElementById(template[0].substring(1)).innerHTML || '' );
-                    return '';
-                }
-                else
-                {
-                    // sync
-                    return window.document.getElementById(template[0].substring(1)).innerHTML || ''; 
-                }
-            }
-            // client-side js and url given as template location
-            else 
-            { 
-                if ( $__async && asyncCB )
-                {
-                    // async
-                    fread_async(template[0], Contemplate.ENCODING, function(err, data){
-                        if ( err ) asyncCB( '' );
-                        else asyncCB( data );
-                    }); 
-                    return '';
-                }
-                else
-                {
-                    // sync
-                    return fread( template[0], contx.encoding );
-                }
-            }
-        }
-    }
-    return '';
-}
 
 //
 // Control structures
@@ -483,7 +404,6 @@ function t_extends( id )
     if ( $__strings && $__strings[HAS](id) ) id = $__strings[id];
     var ch = id.charAt(0);
     if ( '"' === ch || "'" === ch ) id = id.slice(1,-1); // quoted id
-    
     $__extends = id;
     return "';" + $__TEOL; 
 }
@@ -1171,6 +1091,85 @@ function get_cached_template_class( id, ctx )
 { 
     return 'Contemplate_' + id.replace(UNDERLN, '_') + '_Cached__' + ctx.replace(UNDERLN, '_'); 
 }
+function get_template_contents( id, contx, asyncCB )
+{
+    var template;
+    
+    template = contx.templates[id] || $__global.templates[id];
+    
+    if ( template )
+    {
+        if ( template[1] ) //inline tpl
+        {
+            if ( $__async && asyncCB )
+            {
+                // async
+                asyncCB( template[0] );
+                return '';
+            }
+            else
+            {
+                // sync
+                return template[0];
+            }
+        }
+        else
+        {
+            // nodejs
+            if ( isNode ) 
+            { 
+                if ( $__async && asyncCB )
+                {
+                    // async
+                    fread_async(template[0], contx.encoding, function(err, data){
+                        if ( err ) asyncCB( '' );
+                        else asyncCB( data );
+                    }); 
+                    return '';
+                }
+                else
+                {
+                    // sync
+                    return fread( template[0], contx.encoding );
+                }
+            }
+            // client-side js and #id of DOM script-element given as template holder
+            else if ( '#'===template[0].charAt(0) ) 
+            { 
+                if ( $__async && asyncCB )
+                {
+                    // async
+                    asyncCB( window.document.getElementById(template[0].slice(1)).innerHTML || '' );
+                    return '';
+                }
+                else
+                {
+                    // sync
+                    return window.document.getElementById(template[0].slice(1)).innerHTML || '';
+                }
+            }
+            // client-side js and url given as template location
+            else 
+            { 
+                if ( $__async && asyncCB )
+                {
+                    // async
+                    fread_async(template[0], contx.encoding, function(err, data){
+                        if ( err ) asyncCB( '' );
+                        else asyncCB( data );
+                    }); 
+                    return '';
+                }
+                else
+                {
+                    // sync
+                    return fread( template[0], contx.encoding );
+                }
+            }
+        }
+    }
+    return '';
+}
 function create_template_render_function( id, contx, seps )
 {
     var tpl, blocks, funcs = {}, b, bl, func, renderf, _ctx, EOL = $__TEOL;
@@ -1249,8 +1248,9 @@ function create_cached_template( id, contx, filename, classname, seps )
 }
 function get_cached_template( id, contx, options )
 {
-    var template, tplclass, tpl, funcs, cachedTplFile, cachedTplClass, stat, stat2;
-    if ( template=contx.templates[id] )
+    var template, tplclass, tpl, sprTpl, funcs, cachedTplFile, cachedTplClass, stat, stat2;
+    template = contx.templates[id] || $__global.templates[id];
+    if ( template )
     {
         // inline templates saved only in-memory
         if ( template[1] )
@@ -1268,7 +1268,8 @@ function get_cached_template( id, contx, options )
                 funcs = create_template_render_function( id, contx, options.separators ); 
                 tpl.setRenderFunction( funcs[ 0 ] ).setBlocks( funcs[ 1 ] );
             }
-            if ( $__extends ) tpl.extend( Contemplate.tpl($__extends, null, contx.id) );
+            sprTpl = $__extends;
+            if ( sprTpl ) tpl.extend( Contemplate.tpl(sprTpl, null, contx.id) );
             return tpl;
         }
         
@@ -1325,7 +1326,8 @@ function get_cached_template( id, contx, options )
                 // dynamic in-memory caching during page-request
                 funcs = create_template_render_function( id, contx, options.separators );
                 tpl = new Contemplate.Template( id ).ctx( contx.id ).setRenderFunction( funcs[ 0 ] ).setBlocks( funcs[ 1 ] );
-                if ($__extends) tpl.extend( Contemplate.tpl($__extends, null, contx.id) );
+                sprTpl = $__extends;
+                if ( sprTpl ) tpl.extend( Contemplate.tpl(sprTpl, null, contx.id) );
                 return tpl;
             }
         }
@@ -1512,7 +1514,7 @@ Template[PROTO] = {
     ,extend: function( tpl ) { 
         var self = this;
         self._extends = tpl && tpl.substr
-                    ? Contemplate.tpl( tpl )
+                    ? Contemplate.tpl( tpl, null, self._ctx )
                     : (tpl instanceof Template
                     ? tpl
                     : null);
@@ -1997,7 +1999,7 @@ Contemplate = {
     
     ,add: function( tpls, ctx ) { 
         var contx, tplID;
-        if ( "object" === typeof tpls )
+        if ( tpls && "object"===typeof tpls )
         {
             if ( arguments.length < 2 ) ctx = '__GLOBAL__';
             contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
@@ -2127,7 +2129,7 @@ Contemplate = {
         }
         
         // Provide some basic currying to the user
-        return "object"===typeof data ? tmpl.render( data ) : tmpl;
+        return data && "object"===typeof data ? tmpl.render( data ) : tmpl;
     }
     
     

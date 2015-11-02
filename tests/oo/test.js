@@ -1,5 +1,4 @@
-var path = require('path'),
-    echo = console.log,
+var path = require('path'), echo = console.log,
     Contemplate = require(path.join(__dirname, '../../src/js/Contemplate.js'))
 ;
 

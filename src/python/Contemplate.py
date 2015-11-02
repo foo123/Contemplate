@@ -741,7 +741,6 @@ def t_extends( id ):
     if _G.strings and (id in _G.strings): id = _G.strings[id]
     ch = id[0]
     if '"' == ch or "'" == ch: id = id[1:-1] # quoted id
-    
     _G.extends = id
     return "'" + _G.TEOL
     
@@ -1425,8 +1424,8 @@ def get_cached_template( id, contx, options=dict() ):
             else:
                 fns = create_template_render_function( id, contx, options['separators'] )
                 tpl.setRenderFunction( fns[0] ).setBlocks( fns[1] )
-            
-            if _G.extends: tpl.extend( Contemplate.tpl(_G.extends, None, contx.id) )
+            sprTpl = _G.extends
+            if sprTpl: tpl.extend( Contemplate.tpl(sprTpl, None, contx.id) )
             return tpl
         
         CM = contx.cacheMode
@@ -1466,7 +1465,8 @@ def get_cached_template( id, contx, options=dict() ):
             fns = create_template_render_function( id, contx, options['separators'] )
             tpl = Contemplate.Template( id )
             tpl.ctx( contx.id ).setRenderFunction( fns[0] ).setBlocks( fns[1] )
-            if _G.extends: tpl.extend( Contemplate.tpl(_G.extends, None, contx.id) )
+            sprTpl = _G.extends
+            if sprTpl: tpl.extend( Contemplate.tpl(sprTpl, None, contx.id) )
             return tpl
         
     return None
@@ -1600,12 +1600,7 @@ class Template:
         return self
     
     def extend( self, tpl ): 
-        if tpl and isinstance(tpl, str):
-            self._extends = Contemplate.tpl( tpl )
-        elif isinstance(tpl, Template):
-            self._extends = tpl
-        else:
-            self._extends = None
+        self._extends = Contemplate.tpl( tpl, None, self._ctx ) if tpl and isinstance(tpl, str) else (tpl if isinstance(tpl, Template) else None)
         return self
     
     def setBlocks( self, blocks ): 

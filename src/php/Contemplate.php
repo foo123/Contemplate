@@ -176,12 +176,7 @@ class ContemplateTemplate
     
     public function extend( $tpl ) 
     { 
-        if ( $tpl && is_string($tpl) )
-            $this->_extends = Contemplate::tpl( $tpl );
-        elseif ( $tpl instanceof ContemplateTemplate )
-            $this->_extends = $tpl;
-        else
-            $this->_extends = null;
+        $this->_extends = $tpl && is_string($tpl) ? Contemplate::tpl( $tpl, null, $this->_ctx ) : ($tpl instanceof ContemplateTemplate ? $tpl : null);
         return $this; 
     }
     
@@ -1300,7 +1295,6 @@ class Contemplate
         if ( self::$__strings && isset(self::$__strings[$id]) ) $id = self::$__strings[$id];
         $ch = $id[0];
         if ( '"' === $ch || "'" === $ch ) $id = substr($id,1,-1); // quoted id
-        
         self::$__extends = $id;
         return "';" . self::$__TEOL; 
     }
@@ -2130,7 +2124,8 @@ class Contemplate
                     $fns = self::create_template_render_function( $id, $contx, $options['separators'] );
                     $tpl->setRenderFunction( $fns[0] )->setBlocks( $fns[1] );
                 }
-                if ( self::$__extends ) $tpl->extend( self::tpl(self::$__extends, null, $contx->id) );
+                $sprTpl = self::$__extends;
+                if ( $sprTpl ) $tpl->extend( self::tpl($sprTpl, null, $contx->id) );
                 return $tpl;
             }
             
@@ -2180,7 +2175,8 @@ class Contemplate
                     $fns = self::create_template_render_function( $id, $contx, $options['separators'] );
                     $tpl = new ContemplateTemplate( $id );
                     $tpl->ctx( $contx->id )->setRenderFunction( $fns[0] )->setBlocks( $fns[1] );
-                    if ( self::$__extends ) $tpl->extend( self::tpl(self::$__extends, null, $contx->id) );
+                    $sprTpl = self::$__extends;
+                    if ( $sprTpl ) $tpl->extend( self::tpl($sprTpl, null, $contx->id) );
                     return $tpl;
                 }
             }

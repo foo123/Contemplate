@@ -1,8 +1,8 @@
 ###ChangeLog
 
 __1.0.0__
-* enable dynamic contexts (ses examples), different parts of an application can use the engine in a modular way, with their contextual template settings (including caching, directories, locales, plugins, etc..) independantly
-* `%elseif` alias `%elif`, `%endif` alias `%fi`
+* enable dynamic contexts (see examples), different parts of an application can use the engine in a **modular way**, with their contextual template settings (including caching, directories, locales, plugins, etc..) **independantly**
+* `%elif` **alias of** `%elseif`, `%fi` **alias of** `%endif`
 * optimisations, typo fixes
 
 __0.9.2__
@@ -16,7 +16,6 @@ __0.9.1__
 * `%block` construct can be defined without being echoed (like a container) using `%block(blockID, false)`
 * can override 'cacheDir' option in `Contemplate.tpl` call via options (experimental)
 
-
 __0.9.0.1__
 * add `hasTpl(tpl)` , `hasPlugin(name)` Contemplate methods
 
@@ -24,7 +23,6 @@ __0.9__
 * make `%htmltable` , `%htmlselect` external plugins (reduce main engine code size etc)
 * add `%super` template function to reference a super block directly if needed in OO manner
 * defined plugins no longer take a `plg_` prefix, the plugin name is exactly same as the given name defined (this way even built-in functions can be overriden in some cases)
-
 
 __0.8.4__
 * inlined plugins replace code accept the plugin arguments as well
@@ -40,7 +38,7 @@ __0.8.2.1__
 
 __0.8.2__
 * `InlineTemplate.multisplit_re` method, split inlineTpl using regexps
-* Contemplate.php fix `undefined __currentblock`
+* Contemplate.php fix `undefined __currentblock` error
 * minor changes
 
 __0.8.1__
@@ -61,7 +59,7 @@ __0.7.1__
 
 __0.7__
 * inline templates both in Contemplate templates (e.g as parameters to other functions) or in code
-* %inline template function, creates/renders inline templates
+* `%inline` template function, creates/renders inline templates
 * templates classes extend `Contemplate.Tpl` template class (`Contemplate.InlineTpl` also?)
 * minor updates
 

@@ -1,6 +1,6 @@
 ###Contemplate Manual
 
-**version 0.9.2; platforms: PHP, Python, Node/JS**
+**version 1.0.0; platforms: PHP, Python, Node/JS**
 
 
 ###Contents
@@ -223,10 +223,14 @@ Contemplate.setLocales({
     "locale": "γλωσσική περιοχή"
 } [, ctx="__GLOBAL__"]);
 
+Contemplate.clearLocales([ctx="__GLOBAL__"]);
+
 // add pluralisation
 Contemplate.setPlurals({
     'item': 'items'
 } [, ctx="__GLOBAL__"]);
+
+Contemplate.clearPlurals([ctx="__GLOBAL__"]);
 
 // add plugins
 Contemplate.addPlugin('print', function(v){
@@ -243,7 +247,7 @@ Contemplate.setCacheMode( Contemplate.CACHE_TO_DISK_AUTOUPDATE [, ctx="__GLOBAL_
 
 
 // get a template by id, load it and cache it if needed
-var tpl = Contemplate.tpl('tpl_id' [, null, options]);
+var tpl = Contemplate.tpl('tpl_id' [, null, options={}]);
 
 // render template
 tpl.render(data);

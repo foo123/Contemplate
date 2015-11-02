@@ -15,8 +15,6 @@ if (!class_exists('Contemplate'))
 // can use inline templates for plugins etc.. to enable non-linear plugin compile-time replacement
 class ContemplateInlineTemplate
 { 
-    const VERSION = "1.0.0";
-    
     public $id = null;
     public $tpl = '';
     private $_renderer = null;
@@ -131,8 +129,6 @@ class ContemplateInlineTemplate
 }
 class ContemplateTemplate
 { 
-    const VERSION = "1.0.0";
-    
     public $id = null;
     protected $_extends = null;
     protected $_ctx = null;
@@ -261,8 +257,6 @@ class ContemplateTemplate
 
 class ContemplateCtx
 {
-    const VERSION = "1.0.0";
-    
     public $id = null;
     public $cacheDir = null;
     public $cacheMode = null;
@@ -329,7 +323,6 @@ class Contemplate
     private static $__blockptr = -1;
     private static $__extends = null;
     private static $__strings = null;
-    private static $__stack = null;
     private static $__uuid = 0;
     private static $__idcnt = 0;
     private static $__locals; 
@@ -840,25 +833,17 @@ class Contemplate
         }
         if ( !$contx ) $contx = self::$__global; // global context
         
+        $leftSep = self::$__leftTplSep; $rightSep = self::$__rightTplSep;
         $separators = $options && !empty($options['separators']) ? $options['separators'] : null;
-        
-        if ( $separators )
-        {
-            $tmp = array(self::$__leftTplSep, self::$__rightTplSep);
-            self::$__leftTplSep = $separators[ 0 ];  self::$__rightTplSep = $separators[ 1 ];
-        }
+        if ( $separators ) { $leftSep = $separators[ 0 ]; $rightSep = $separators[ 1 ]; }
         
         $_ctx = self::$__context;
         self::$__context = $contx;
-        self::reset_state();
-        $parsed = self::parse( $tpl );
-        self::clear_state();
+        self::reset_state( );
+        $parsed = self::parse( $tpl, $leftSep, $rightSep );
+        self::clear_state( );
         self::$__context = $_ctx;
         
-        if ( $separators )
-        {
-            self::$__leftTplSep = $tmp[ 0 ]; self::$__rightTplSep = $tmp[ 1 ];
-        }
         return $parsed;
     }
         
@@ -1306,14 +1291,16 @@ class Contemplate
         
         $contx = self::$__context;
         /* cache it */ 
-        if ( !isset($contx->partials[$id]) )
+        if ( !isset($contx->partials[$id]) /*&& !isset(self::$__global->partials[$id])*/ )
         {
-            self::push_state();
-            self::reset_state();
-            $contx->partials[$id]=" " . self::parse(self::get_separators( self::get_template_contents($id, $contx) ), false) . "';" . self::$__TEOL;
-            self::pop_state();
+            $state = self::push_state( );
+            self::reset_state( );
+            $tpl = self::get_template_contents( $id, $contx );
+            $tpl = self::get_separators( $tpl );
+            $contx->partials[$id]=" " . self::parse( $tpl, self::$__leftTplSep, self::$__rightTplSep, false ) . "';" . self::$__TEOL;
+            self::pop_state( $state );
         }
-        return self::pad_lines( $contx->partials[$id] );
+        return self::pad_lines( /*isset($contx->partials[$id]) ?*/ $contx->partials[$id] /*: self::$__global->partials[$id]*/ );
     }
     
     private static function t_extends( $id ) 
@@ -1369,20 +1356,6 @@ class Contemplate
     //
     // auxilliary parsing methods
     //
-    private static function split( $s, $leftTplSep, $rightTplSep )
-    {
-        $parts1 = explode( $leftTplSep, $s );
-        $len = count( $parts1 );
-        $parts = array();
-        for ($i=0; $i<$len; $i++)
-        {
-            $tmp = explode( $rightTplSep, $parts1[$i] );
-            $parts[] = $tmp[0];
-            if ( isset($tmp[1]) ) $parts[] = $tmp[1];
-        }
-        return $parts;
-    }
-    
     private static function parse_constructs( $m )
     {
         $re_controls = self::$re_controls;
@@ -1661,7 +1634,7 @@ class Contemplate
                     // literal string property
                     if ( '"' == $ch || "'" == $ch )
                     {
-                        //$property = self::parseString( $s, $ch, $i+1, $l );
+                        //$property = self::parse_string( $s, $ch, $i+1, $l );
                         $str_ = $q = $ch;
                         $si = $i+1;
                         $escaped = false;
@@ -1777,249 +1750,243 @@ class Contemplate
         return null;
     }
     
-    private static function parse( $tpl, $withblocks=true ) 
+    private static function parse( $tpl, $leftTplSep, $rightTplSep, $withblocks=true ) 
     {
-        $parts = self::split($tpl, self::$__leftTplSep, self::$__rightTplSep);
         $re_controls = self::$re_controls;
         $parse_constructs = array(__CLASS__, 'parse_constructs');
-        $len = count($parts);
-        $isTag = false;
-        $parsed = '';
         $str_re = '/#STR\\d+#/';
         
-        for ($i=0; $i<$len; $i++)
+        $t1 = $leftTplSep; $l1 = strlen($t1);
+        $t2 = $rightTplSep; $l2 = strlen($t2);
+        $parsed = '';
+        while ( !empty($tpl) )
         {
-            $s = $parts[$i];
-            
-            if ( $isTag )
+            $p1 = strpos( $tpl, $t1 );
+            if ( false === $p1 )
             {
-                // parse each template tag section accurately
-                // refined parsing of strings and variables
-                $count = strlen( $s );
-                $index = 0;
-                $ch = '';
-                $out = '';
-                $variables = array();
-                $strings = array();
-                $hasVariables = false;
-                $hasStrings = false;
-                $hasBlock = false;
-                $space = 0;
+                $s = $tpl;
+                if ( self::$__escape ) $s = str_replace( "\\", "\\\\", $s );  // escape escapes
+                $s = str_replace( "'", "\\'", $s );  // escape single quotes accurately (used by parse function)
+                $s = preg_replace( "/[\n]/", self::$__preserveLines, $s ); // preserve lines
+                $parsed .= $s;
+                break;
+            }
+            $p2 = strpos( $tpl, $t2, $p1+$l1 );
+            if ( false === $p2 ) $p2 = strlen($tpl);
+            
+            $s = substr($tpl, 0, $p1);
+            if ( self::$__escape ) $s = str_replace( "\\", "\\\\", $s );  // escape escapes
+            $s = str_replace( "'", "\\'", $s );  // escape single quotes accurately (used by parse function)
+            $s = preg_replace( "/[\n]/", self::$__preserveLines, $s ); // preserve lines
+            $parsed .= $s;
+            
+            // template TAG
+            $s = substr($tpl, $p1+$l1, $p2-$p1-$l1); $tpl = substr($tpl, $p2+$l2);
+        
+            // parse each template tag section accurately
+            // refined parsing of strings and variables
+            $count = strlen( $s );
+            $index = 0;
+            $ch = '';
+            $out = '';
+            $variables = array();
+            $strings = array();
+            $hasVariables = false;
+            $hasStrings = false;
+            $hasBlock = false;
+            $space = 0;
+            
+            while ( $index < $count )
+            {
+                $ch = $s[$index++];
                 
-                while ( $index < $count )
+                // parse mainly literal strings and variables
+                
+                // literal string
+                if ( '"' == $ch || "'" == $ch )
                 {
-                    $ch = $s[$index++];
-                    
-                    // parse mainly literal strings and variables
-                    
-                    // literal string
-                    if ( '"' == $ch || "'" == $ch )
+                    if ( $space > 0 )
                     {
-                        if ( $space > 0 )
+                        $out .= " ";
+                        $space = 0;
+                    }
+                    //$tok = self::parse_string($s, $ch, $index, $count);
+                    $str_ = $q = $ch;
+                    $si = $index;
+                    $escaped = false;
+                    while ( $si < $count )
+                    {
+                        $ch = $s[$si++];
+                        $str_ .= $ch;
+                        if ( $q == $ch && !$escaped )  break;
+                        $escaped = (!$escaped && '\\' == $ch);
+                    }
+                    $tok = $str_;
+                    self::$__idcnt++;
+                    $id = "#STR" . self::$__idcnt . "#";
+                    $strings[ $id ] = $tok;
+                    $out .= $id;
+                    $index += strlen($tok)-1;
+                    $hasStrings = true;
+                }
+                // variable
+                elseif ( '$' == $ch )
+                {
+                    if ( $space > 0 )
+                    {
+                        $out .= " ";
+                        $space = 0;
+                    }
+                    $tok = self::parse_variable($s, $index, $count);
+                    if ( $tok )
+                    {
+                        foreach ($tok as $tokv)
                         {
-                            $out .= " ";
-                            $space = 0;
+                            $id = $tokv[ 0 ];
+                            self::$__variables[self::$__currentblock][ $id ] = $tokv[ 1 ];
+                            if ( $tokv[ 5 ] ) $strings = array_merge( $strings, $tokv[ 6 ] );
                         }
-                        //$tok = self::parseString($s, $ch, $index, $count);
-                        $str_ = $q = $ch;
-                        $si = $index;
-                        $escaped = false;
-                        while ( $si < $count )
-                        {
-                            $ch = $s[$si++];
-                            $str_ .= $ch;
-                            if ( $q == $ch && !$escaped )  break;
-                            $escaped = (!$escaped && '\\' == $ch);
-                        }
-                        $tok = $str_;
-                        self::$__idcnt++;
-                        $id = "#STR" . self::$__idcnt . "#";
-                        $strings[ $id ] = $tok;
                         $out .= $id;
-                        $index += strlen($tok)-1;
-                        $hasStrings = true;
+                        $index += $tokv[ 4 ];
+                        $variables = array_merge( $variables, $tok );
+                        $hasVariables = true;
+                        $hasStrings = $hasStrings || $tokv[ 5 ];
                     }
-                    // variable
-                    elseif ( '$' == $ch )
-                    {
-                        if ( $space > 0 )
-                        {
-                            $out .= " ";
-                            $space = 0;
-                        }
-                        $tok = self::parse_variable($s, $index, $count);
-                        if ( $tok )
-                        {
-                            foreach ($tok as $tokv)
-                            {
-                                $id = $tokv[ 0 ];
-                                self::$__variables[self::$__currentblock][ $id ] = $tokv[ 1 ];
-                                if ( $tokv[ 5 ] ) $strings = array_merge( $strings, $tokv[ 6 ] );
-                            }
-                            $out .= $id;
-                            $index += $tokv[ 4 ];
-                            $variables = array_merge( $variables, $tok );
-                            $hasVariables = true;
-                            $hasStrings = $hasStrings || $tokv[ 5 ];
-                        }
-                        else
-                        {
-                            $out .= '$';
-                        }
-                    }
-                    // special chars
-                    elseif ( " " === $ch || "\n" === $ch || "\r" === $ch || "\t" === $ch || "\v" === $ch )
-                    {
-                        $space++;
-                    }
-                    // rest, bypass
                     else
                     {
-                        if ( $space > 0 )
-                        {
-                            $out .= " ";
-                            $space = 0;
-                        }
-                        $out .= $ch;
+                        $out .= '$';
                     }
                 }
-                
-                // fix literal data notation
-                $out = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), $out);
-                
-                $tag = "\t" . $out . "\v";
-                
-                self::$__startblock = null;  self::$__endblock = null; self::$__blockptr = -1;
-                self::$__strings =& $strings;
-                
-                // directives and control constructs, functions, etc..
-                $tag = preg_replace_callback( $re_controls, $parse_constructs, $tag );
-                
-                // check for blocks
-                if ( self::$__startblock )
+                // special chars
+                elseif ( " " === $ch || "\n" === $ch || "\r" === $ch || "\t" === $ch || "\v" === $ch )
                 {
-                    self::$__startblock = "#|".self::$__startblock."|#";
-                    $hasBlock = true;
+                    $space++;
                 }
-                elseif ( self::$__endblock )
+                // rest, bypass
+                else
                 {
-                    self::$__endblock = "#|/".self::$__endblock."|#";
-                    $hasBlock = true;
-                }
-                $notFoundBlock = $hasBlock;
-                    
-                // other replacements
-                if ( "\t" === $tag[0] && "\v" === $tag[strlen($tag)-1] ) 
-                    $tag = '\' . (' . substr($tag,1,-1) . ') . \'';
-                
-                if ( $hasVariables )
-                {
-                    // replace variables
-                    $lr = count($variables);
-                    for($v=$lr-1; $v>=0; $v--)
+                    if ( $space > 0 )
                     {
-                        $id = $variables[ $v ][ 0 ]; $varname = $variables[ $v ][ 1 ];
-                        $tag = str_replace( $id.'__RAW__', $varname, $tag );
-                        if ( isset(self::$__locals[self::$__currentblock][$varname]) ) /* local (loop) variable */
-                            $tag = str_replace( $id, '$_loc_' . $varname . $variables[ $v ][ 3 ], $tag );
-                        else /* default (data) variable */
-                            $tag = str_replace( $id, $variables[ $v ][ 2 ] . $variables[ $v ][ 3 ], $tag );
+                        $out .= " ";
+                        $space = 0;
                     }
+                    $out .= $ch;
                 }
-                
-                if ( $hasStrings )
-                {
-                    // replace strings (accurately)
-                    $tagTpl = ContemplateInlineTemplate::multisplit_re($tag, $str_re);
-                    $tag = '';
-                    foreach ($tagTpl as $v)
-                    {
-                        if ( $v[0] )
-                        {
-                            // and replace blocks (accurately)
-                            if ( $notFoundBlock )
-                            {
-                                if ( self::$__startblock )
-                                {
-                                    $blockTag = strpos($v[1], self::$__startblock);
-                                    if ( false !== $blockTag )
-                                    {
-                                        self::$__allblocks[ self::$__blockptr-1 ][ 1 ] = $blockTag + strlen($parsed) + strlen($tag);
-                                        $notFoundBlock = false;
-                                    }
-                                }
-                                else //if ( self::$__endblock )
-                                {
-                                    $blockTag = strpos($v[1], self::$__endblock);
-                                    if ( false !== $blockTag )
-                                    {
-                                        self::$__allblocks[ self::$__blockptr-1 ][ 2 ] = $blockTag + strlen($parsed) + strlen($tag) + strlen(self::$__endblock);
-                                        $notFoundBlock = false;
-                                    }
-                                }
-                            }
-                            $tag .= $v[1];
-                        }
-                        else
-                        {
-                            $tag .= $strings[ $v[1] ];
-                        }
-                    }
-                }
-                elseif ( $hasBlock )
-                {
-                    // replace blocks (accurately)
-                    if ( self::$__startblock )
-                        self::$__allblocks[ self::$__blockptr-1 ][ 1 ] = strlen($parsed) + strpos($tag, self::$__startblock );
-                    else //if ( self::$__endblock )
-                        self::$__allblocks[ self::$__blockptr-1 ][ 2 ] = strlen($parsed) + strpos($tag, self::$__endblock ) + strlen(self::$__endblock);
-                }
-                
-                // replace tpl separators
-                if ( "\v" === $tag[strlen($tag)-1] ) 
-                {
-                    $tag = substr($tag,0,-1) . self::pad_lines( self::$__tplEnd );
-                }
-                if ( "\t" === $tag[0] ) 
-                {
-                    $tag = self::$__tplStart . substr($tag,1);
-                    if ( $hasBlock )
-                    {
-                        // update blocks (accurately)
-                        $blockTag = strlen(self::$__tplStart)-1;
-                        if ( self::$__startblock )
-                            self::$__allblocks[ self::$__blockptr-1 ][ 1 ] += $blockTag;
-                        else //if ( self::$__endblock )
-                            self::$__allblocks[ self::$__blockptr-1 ][ 2 ] += $blockTag;
-                    }
-                }
-                    
-                $s = $tag;
-                
-                $isTag = false;
-            }
-            else
-            {
-                if ( self::$__escape )
-                    $s = str_replace( "\\", "\\\\", $s );  // escape escapes
-                
-                $s = str_replace( "'", "\\'", $s );  // escape single quotes accurately (used by parse function)
-                
-                $s = preg_replace( "/[\n]/", self::$__preserveLines, $s ); // preserve lines
-                
-                $isTag = true;
             }
             
-            $parsed .= $s;
+            // fix literal data notation
+            $out = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), $out);
+            
+            $tag = "\t" . $out . "\v";
+            
+            self::$__startblock = null;  self::$__endblock = null; self::$__blockptr = -1;
+            self::$__strings =& $strings;
+            
+            // directives and control constructs, functions, etc..
+            $tag = preg_replace_callback( $re_controls, $parse_constructs, $tag );
+            
+            // check for blocks
+            if ( self::$__startblock )
+            {
+                self::$__startblock = "#|".self::$__startblock."|#";
+                $hasBlock = true;
+            }
+            elseif ( self::$__endblock )
+            {
+                self::$__endblock = "#|/".self::$__endblock."|#";
+                $hasBlock = true;
+            }
+            $notFoundBlock = $hasBlock;
+                
+            // other replacements
+            if ( "\t" === $tag[0] && "\v" === $tag[strlen($tag)-1] ) 
+                $tag = '\' . (' . substr($tag,1,-1) . ') . \'';
+            
+            if ( $hasVariables )
+            {
+                // replace variables
+                $lr = count($variables);
+                for($v=$lr-1; $v>=0; $v--)
+                {
+                    $id = $variables[ $v ][ 0 ]; $varname = $variables[ $v ][ 1 ];
+                    $tag = str_replace( $id.'__RAW__', $varname, $tag );
+                    if ( isset(self::$__locals[self::$__currentblock][$varname]) ) /* local (loop) variable */
+                        $tag = str_replace( $id, '$_loc_' . $varname . $variables[ $v ][ 3 ], $tag );
+                    else /* default (data) variable */
+                        $tag = str_replace( $id, $variables[ $v ][ 2 ] . $variables[ $v ][ 3 ], $tag );
+                }
+            }
+            
+            if ( $hasStrings )
+            {
+                // replace strings (accurately)
+                $tagTpl = ContemplateInlineTemplate::multisplit_re($tag, $str_re);
+                $tag = '';
+                foreach ($tagTpl as $v)
+                {
+                    if ( $v[0] )
+                    {
+                        // and replace blocks (accurately)
+                        if ( $notFoundBlock )
+                        {
+                            if ( self::$__startblock )
+                            {
+                                $blockTag = strpos($v[1], self::$__startblock);
+                                if ( false !== $blockTag )
+                                {
+                                    self::$__allblocks[ self::$__blockptr-1 ][ 1 ] = $blockTag + strlen($parsed) + strlen($tag);
+                                    $notFoundBlock = false;
+                                }
+                            }
+                            else //if ( self::$__endblock )
+                            {
+                                $blockTag = strpos($v[1], self::$__endblock);
+                                if ( false !== $blockTag )
+                                {
+                                    self::$__allblocks[ self::$__blockptr-1 ][ 2 ] = $blockTag + strlen($parsed) + strlen($tag) + strlen(self::$__endblock);
+                                    $notFoundBlock = false;
+                                }
+                            }
+                        }
+                        $tag .= $v[1];
+                    }
+                    else
+                    {
+                        $tag .= $strings[ $v[1] ];
+                    }
+                }
+            }
+            elseif ( $hasBlock )
+            {
+                // replace blocks (accurately)
+                if ( self::$__startblock )
+                    self::$__allblocks[ self::$__blockptr-1 ][ 1 ] = strlen($parsed) + strpos($tag, self::$__startblock );
+                else //if ( self::$__endblock )
+                    self::$__allblocks[ self::$__blockptr-1 ][ 2 ] = strlen($parsed) + strpos($tag, self::$__endblock ) + strlen(self::$__endblock);
+            }
+            
+            // replace tpl separators
+            if ( "\v" === $tag[strlen($tag)-1] ) 
+            {
+                $tag = substr($tag,0,-1) . self::pad_lines( self::$__tplEnd );
+            }
+            if ( "\t" === $tag[0] ) 
+            {
+                $tag = self::$__tplStart . substr($tag,1);
+                if ( $hasBlock )
+                {
+                    // update blocks (accurately)
+                    $blockTag = strlen(self::$__tplStart)-1;
+                    if ( self::$__startblock )
+                        self::$__allblocks[ self::$__blockptr-1 ][ 1 ] += $blockTag;
+                    else //if ( self::$__endblock )
+                        self::$__allblocks[ self::$__blockptr-1 ][ 2 ] += $blockTag;
+                }
+            }
+                
+            $parsed .= $tag;
         }
-        
-        if ( false !== $withblocks ) 
-        {
-            if ( !empty(self::$__allblocks) ) return self::parse_blocks($parsed);
-            else return array($parsed, array());
-        }
-        
-        return $parsed;
+        return false !== $withblocks ? (!empty(self::$__allblocks) ? self::parse_blocks($parsed) : array($parsed, array())) : $parsed;
     }
     
     private static function get_separators( $text, $separators=null )
@@ -2071,9 +2038,11 @@ class Contemplate
     {
         $_ctx = self::$__context;
         self::$__context = $contx;
-        self::reset_state();
-        $blocks = self::parse(self::get_separators( self::get_template_contents($id, $contx), $seps ));
-        self::clear_state();
+        self::reset_state( );
+        $tpl = self::get_template_contents( $id, $contx );
+        $tpl = self::get_separators( $tpl, $seps );
+        $blocks = self::parse( $tpl, self::$__leftTplSep, self::$__rightTplSep );
+        self::clear_state( );
         self::$__context = $_ctx;
         
         $renderf = $blocks[0];
@@ -2102,9 +2071,11 @@ class Contemplate
     {
         $_ctx = self::$__context;
         self::$__context = $contx;
-        self::reset_state();
-        $blocks = self::parse(self::get_separators( self::get_template_contents($id, $contx), $seps ));
-        self::clear_state();
+        self::reset_state( );
+        $tpl = self::get_template_contents( $id, $contx );
+        $tpl = self::get_separators( $tpl, $seps );
+        $blocks = self::parse( $tpl, self::$__leftTplSep, self::$__rightTplSep );
+        self::clear_state( );
         self::$__context = $_ctx;
         
         $renderf = $blocks[0];
@@ -2145,7 +2116,7 @@ class Contemplate
         ));
         
         //return self::set_cached_template($filename, $class);
-        return file_put_contents($filename, $class);
+        return file_put_contents( $filename, $class );
     }
     
     private static function get_cached_template( $id, $contx, $options=array() )
@@ -2252,22 +2223,20 @@ class Contemplate
         self::$__loops = 0; self::$__ifs = 0; self::$__loopifs = 0; self::$__level = 0;
         self::$__allblocks = null; self::$__allblockscnt = null; self::$__openblocks = null;
         /*self::$__extends = null;*/ self::$__locals = null; self::$__variables = null; self::$__currentblock = null;
-        self::$__idcnt = 0; self::$__stack = array();
-        self::$__strings = null;
+        self::$__idcnt = 0; self::$__strings = null;
     }
     
     private static function push_state( ) 
     {
-        array_push(self::$__stack, array(self::$__loops, self::$__ifs, self::$__loopifs, self::$__level,
-        self::$__allblocks, self::$__allblockscnt, self::$__openblocks, self::$__extends, self::$__locals, self::$__variables, self::$__currentblock));
+        return array(self::$__loops, self::$__ifs, self::$__loopifs, self::$__level,
+        self::$__allblocks, self::$__allblockscnt, self::$__openblocks, self::$__extends, self::$__locals, self::$__variables, self::$__currentblock);
     }
     
-    private static function pop_state( ) 
+    private static function pop_state( $state ) 
     {
-        $t = array_pop(self::$__stack);
-        self::$__loops = $t[0]; self::$__ifs = $t[1]; self::$__loopifs = $t[2]; self::$__level = $t[3];
-        self::$__allblocks = $t[4]; self::$__allblockscnt = $t[5]; self::$__openblocks = $t[6];
-        self::$__extends = $t[7]; self::$__locals = $t[8]; self::$__variables = $t[9]; self::$__currentblock = $t[10];
+        self::$__loops = $state[0]; self::$__ifs = $state[1]; self::$__loopifs = $state[2]; self::$__level = $state[3];
+        self::$__allblocks = $state[4]; self::$__allblockscnt = $state[5]; self::$__openblocks = $state[6];
+        self::$__extends = $state[7]; self::$__locals = $state[8]; self::$__variables = $state[9]; self::$__currentblock = $state[10];
     }
     
     private static function localized_date( $format, $timestamp ) 

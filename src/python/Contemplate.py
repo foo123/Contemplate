@@ -100,7 +100,6 @@ class _G:
     extends = None
     id = 0
     funcId = 0
-    stack = None
     uuid = 0
 
     ctx = None
@@ -378,7 +377,7 @@ def import_tpl( filename, classname, directory, doReload=False ):
     return None
 
 # static
-def create_func( funcName, args, sourceCode, additional_symbols=dict() ):
+def create_function( funcName, args, sourceCode, additional_symbols=dict() ):
     # http://code.activestate.com/recipes/550804-create-a-restricted-python-function-from-a-string/
 
     # The list of symbols that are included by default in the generated
@@ -477,8 +476,6 @@ def create_func( funcName, args, sourceCode, additional_symbols=dict() ):
 # can use inline templates for plugins etc.. to enable non-linear plugin compile-time replacement
 class InlineTemplate:
  
-    VERSION = "1.0.0"
-    
     def multisplit( tpl, reps=dict(), as_array=False ): 
         #as_array = isinstance(reps, (list,tuple))
         a = [ [1, tpl] ]
@@ -539,7 +536,7 @@ class InlineTemplate:
         out += ')'
         _G.funcId += 1
         funcName = '_contemplateInlineFn' + str(_G.funcId)
-        return create_func(funcName, 'args', '    ' + out,{})
+        return create_function(funcName, 'args', '    ' + out,{})
     
     def __init__( self, tpl='', replacements=None, compiled=False ): 
         if not replacements: replacements = {}
@@ -576,8 +573,6 @@ class InlineTemplate:
 
     
 class Template:
-    
-    VERSION = "1.0.0"
     
     def __init__( self, id=None ):
         self._renderer = None
@@ -666,8 +661,6 @@ class Template:
 
 class Ctx:
     
-    VERSION = "1.0.0"
-    
     def __init__( self, id ):
         self.id               = id
         self.cacheDir         = './'
@@ -722,34 +715,32 @@ def clear_state( ):
     _G.currentblock = None
     
     _G.id = 0
-    _G.stack = []
     _G.strings = None
     #_G.funcId = 0
 
 
 def push_state( ):
     global _G
-    _G.stack.append([_G.loops, _G.ifs, _G.loopifs, _G.level,
-    _G.allblocks, _G.allblockscnt, _G.openblocks,  _G.extends, _G.locals, _G.variables, _G.currentblock])
+    return [_G.loops, _G.ifs, _G.loopifs, _G.level,
+    _G.allblocks, _G.allblockscnt, _G.openblocks,  _G.extends, _G.locals, _G.variables, _G.currentblock]
 
 
-def pop_state( ):
+def pop_state( state ):
     global _G
-    t = _G.stack.pop()
-    _G.loops = t[0] 
-    _G.ifs = t[1] 
-    _G.loopifs = t[2] 
-    _G.level = t[3]
+    _G.loops = state[0] 
+    _G.ifs = state[1] 
+    _G.loopifs = state[2] 
+    _G.level = state[3]
     
-    _G.allblocks = t[4]
-    _G.allblockscnt = t[5]
-    _G.openblocks = t[6]
+    _G.allblocks = state[4]
+    _G.allblockscnt = state[5]
+    _G.openblocks = state[6]
     
-    _G.extends = t[7]
+    _G.extends = state[7]
     
-    _G.locals = t[8] 
-    _G.variables = t[9] 
-    _G.currentblock = t[10]
+    _G.locals = state[8] 
+    _G.variables = state[9] 
+    _G.currentblock = state[10]
 
 
 def pad_lines( lines, level=None ):
@@ -758,6 +749,7 @@ def pad_lines( lines, level=None ):
     if level >= 0:
         pad = _G.pad * level
         lines = pad + (_G.TEOL + pad).join( re.split(_G.NEWLINE, lines) )
+        #lines = pad + (_G.TEOL + pad).join( lines.split("\n") )
     return lines
 
 
@@ -941,13 +933,14 @@ def t_include( id ):
     if '"' == ch or "'" == ch: id = id[1:-1] # quoted id
     
     # cache it
-    if id not in contx.partials:
-        push_state()
-        reset_state()
-        contx.partials[id] = " " + parse(get_separators( get_template_contents(id, contx) ), False) + "'" + _G.TEOL
-        pop_state()
-    
-    return pad_lines( contx.partials[id] )
+    if id not in contx.partials: #and (id not in _G.glob.partials):
+        state = push_state( )
+        reset_state( )
+        tpl = get_template_contents( id, contx )
+        tpl = get_separators( tpl )
+        contx.partials[id] = " " + parse( tpl, _G.leftTplSep, _G.rightTplSep, False ) + "'" + _G.TEOL
+        pop_state( state )
+    return pad_lines( contx.partials[id] ) # if id in contx.partials else _G.glob.partials[id]
 
 def t_extends( id ):
     global _G
@@ -1002,19 +995,6 @@ def merge( m, *args ):
         merged = ODict(merged)
         merged.update(arg)
     return merged
-
-def split( s, leftTplSep, rightTplSep ):
-    global _G
-    parts1 = s.split( leftTplSep )
-    l = len(parts1)
-    parts = []
-    for i in range(l):
-        tmp = parts1[i].split( rightTplSep )
-        parts.append ( tmp[0] )
-        if len(tmp) > 1: parts.append ( tmp[1] )
-    
-    return parts
-
 
 def parse_constructs( match ):
     global _G
@@ -1258,7 +1238,7 @@ def parse_variable( s, i, l ):
                 ch = s[i]
                 # literal string property
                 if '"' == ch or "'" == ch:
-                    #property = parseString( s, ch, i+1, l )
+                    #property = parse_string( s, ch, i+1, l )
                     q = ch
                     str_ = q
                     escaped = False
@@ -1349,178 +1329,192 @@ def parse_variable( s, i, l ):
 
 str_re = re.compile(r'#STR\d+#', re.M|re.S)
 
-def parse( tpl, withblocks=True ):
+def parse( tpl, leftTplSep, rightTplSep, withblocks=True ):
     global _G
     global str_re
     
-    parts = split( tpl, _G.leftTplSep, _G.rightTplSep )
     re_controls = _G.re_controls
-    l = len(parts)
-    isTag = False
+    t1 = leftTplSep
+    l1 = len(t1)
+    t2 = rightTplSep
+    l2 = len(t2)
     parsed = ''
-    
-    for i in range(l):
-        s = parts[i]
-        if isTag:
-            # parse each template tag section accurately
-            # refined parsing
-            count = len( s )
-            index = 0
-            ch = ''
-            out = ''
-            variables = []
-            strings = {}
-            hasVariables = False
-            hasStrings = False
-            hasBlock = False
-            space = 0
-            while index < count:
-                ch = s[index]
-                index  += 1
-                
-                # parse mainly literal strings and variables
-                # literal string
-                if '"' == ch or "'" == ch:
-                    if space > 0:
-                        out += " "
-                        space = 0
-                    #tok = parseString(s, ch, index, count)
-                    q = ch
-                    str_ = q
-                    escaped = False
-                    si = index
-                    while si < count:
-                        ch = s[si]
-                        si += 1
-                        str_ += ch
-                        if ( q == ch and not escaped ):  break
-                        escaped = (not escaped and '\\' == ch)
-                    tok = str_
-                    _G.id += 1
-                    id = "#STR"+str(_G.id)+"#"
-                    strings[id] = tok
-                    out += id
-                    index += len(tok)-1
-                    hasStrings = True
-                
-                # variable
-                elif '$' == ch:
-                    if space > 0:
-                        out += " "
-                        space = 0
-                    tok = parse_variable(s, index, count)
-                    if tok:
-                        for tokv in tok:
-                            id = tokv[ 0 ]
-                            _G.variables[_G.currentblock][ id ] = tokv[ 1 ]
-                            if tokv[ 6 ]: strings.update(tokv[ 6 ])
-                        out += id
-                        index += tokv[ 4 ]
-                        variables = variables + tok
-                        hasVariables = True
-                        hasStrings = hasStrings or tokv[ 6 ]
-                    else:
-                        out += '$'
-                    
-                # special chars
-                elif "\n" == ch or "\r" == ch or "\t" == ch or "\v" == ch:
-                    space += 1
-                
-                # rest, bypass
-                else:
-                    if space > 0:
-                        out += " "
-                        space = 0
-                    out += ch
-                
-            # fix literal data notation python-style
-            out = out.replace('true', 'True').replace('false', 'False').replace('null', 'None').replace('&&', ' and ').replace(' || ', ' or ').replace('!', ' not ')
-            
-            tag = "\t" + out + "\v"
-                
-            _G.startblock = None  
-            _G.endblock = None 
-            _G.blockptr = -1
-            _G.strings = strings
-            
-            # replace constructs, functions, etc..
-            tag = re.sub(re_controls, parse_constructs, tag)
-            
-            # check for blocks
-            if _G.startblock:
-                _G.startblock = "#|"+_G.startblock+"|#"
-                hasBlock = True
-            elif _G.endblock:
-                _G.endblock = "#|/"+_G.endblock+"|#"
-                hasBlock = True
-            notFoundBlock = hasBlock
-            
-            # replacements
-            if "\t" == tag[0] and "\v" == tag[-1]: 
-                tag = "' + str("+tag[1:-1]+") + '"
-            
-            if hasVariables:
-                # replace variables
-                for v in reversed(variables):
-                    id = v[0]
-                    varname = v[1]
-                    tag = tag.replace( id+'__RAW__', varname )
-                    if varname in _G.locals[_G.currentblock]: # local (loop) variable
-                        tag = tag.replace( id, '_loc_'+varname+v[3] )
-                    else: # default (data) variable
-                        tag = tag.replace( id, v[2]+v[3] )
-            
-            if hasStrings:
-                # replace strings (accurately)
-                tagTpl = Contemplate.InlineTemplate.multisplit_re(tag, str_re)
-                tag = ''
-                for v in tagTpl:
-                    if v[0]:
-                        # and replace blocks (accurately)
-                        if notFoundBlock:
-                            if _G.startblock:
-                                blockTag = v[1].find( _G.startblock )
-                                if -1 != blockTag:
-                                    _G.allblocks[ _G.blockptr-1 ][ 1 ] = blockTag + len(parsed) + len(tag)
-                                    notFoundBlock = False
-                            else: #if _G.endblock:
-                                blockTag = v[1].find( _G.endblock )
-                                if -1 != blockTag:
-                                    _G.allblocks[ _G.blockptr-1 ][ 2 ] = blockTag + len(parsed) + len(tag) + len(_G.endblock)
-                                    notFoundBlock = False
-                        tag += v[1]
-                    else:
-                        tag += strings[ v[1] ]
-            elif hasBlock:
-                # replace blocks (accurately)
-                if _G.startblock:
-                    _G.allblocks[ _G.blockptr-1 ][ 1 ] = len(parsed) + tag.find( _G.startblock )
-                else: #if _G.endblock:
-                    _G.allblocks[ _G.blockptr-1 ][ 2 ] = len(parsed) + tag.find( _G.endblock ) + len(_G.endblock)
-            
-            
-            # replace tpl separators
-            if "\v" == tag[-1]: 
-                tag = tag[0:-1] + pad_lines(_G.tplEnd)
-            if "\t" == tag[0]: 
-                tag = _G.tplStart + tag[1:]
-                if hasBlock:
-                    # update blocks (accurately)
-                    blockTag = len(_G.tplStart)-1
-                    if _G.startblock:
-                        _G.allblocks[ _G.blockptr-1 ][ 1 ] += blockTag
-                    else: #if _G.endblock:
-                        _G.allblocks[ _G.blockptr-1 ][ 2 ] += blockTag
-                    
-            s = tag
-            isTag = False
-        else:
+    while len(tpl):
+        p1 = tpl.find( t1 )
+        if -1 == p1:
+            s = tpl
             if _G.escape: s = s.replace( "\\", "\\\\" )  # escape escapes
             s = s.replace( "'", "\\'" )  # escape single quotes accurately (used by parse function)
             s = s.replace( "\n", _G.preserveLines ) # preserve lines
             #s = re.sub(_G.NL, _G.preserveLines, s) # preserve lines
-            isTag = True
+            parsed += s
+            break
+            
+        p2 = tpl.find( t2, p1+l1 )
+        if -1 == p2: p2 = len(tpl)
+        
+        s = tpl[0:p1]
+        if _G.escape: s = s.replace( "\\", "\\\\" )  # escape escapes
+        s = s.replace( "'", "\\'" )  # escape single quotes accurately (used by parse function)
+        s = s.replace( "\n", _G.preserveLines ) # preserve lines
+        #s = re.sub(_G.NL, _G.preserveLines, s) # preserve lines
         parsed += s
+        
+        # template TAG
+        s = tpl[p1+l1:p2]
+        tpl = tpl[p2+l2:]
+        
+        # parse each template tag section accurately
+        # refined parsing
+        count = len( s )
+        index = 0
+        ch = ''
+        out = ''
+        variables = []
+        strings = {}
+        hasVariables = False
+        hasStrings = False
+        hasBlock = False
+        space = 0
+        while index < count:
+            ch = s[index]
+            index  += 1
+            
+            # parse mainly literal strings and variables
+            # literal string
+            if '"' == ch or "'" == ch:
+                if space > 0:
+                    out += " "
+                    space = 0
+                #tok = parse_string(s, ch, index, count)
+                q = ch
+                str_ = q
+                escaped = False
+                si = index
+                while si < count:
+                    ch = s[si]
+                    si += 1
+                    str_ += ch
+                    if ( q == ch and not escaped ):  break
+                    escaped = (not escaped and '\\' == ch)
+                tok = str_
+                _G.id += 1
+                id = "#STR"+str(_G.id)+"#"
+                strings[id] = tok
+                out += id
+                index += len(tok)-1
+                hasStrings = True
+            
+            # variable
+            elif '$' == ch:
+                if space > 0:
+                    out += " "
+                    space = 0
+                tok = parse_variable(s, index, count)
+                if tok:
+                    for tokv in tok:
+                        id = tokv[ 0 ]
+                        _G.variables[_G.currentblock][ id ] = tokv[ 1 ]
+                        if tokv[ 6 ]: strings.update(tokv[ 6 ])
+                    out += id
+                    index += tokv[ 4 ]
+                    variables = variables + tok
+                    hasVariables = True
+                    hasStrings = hasStrings or tokv[ 6 ]
+                else:
+                    out += '$'
+                
+            # special chars
+            elif "\n" == ch or "\r" == ch or "\t" == ch or "\v" == ch:
+                space += 1
+            
+            # rest, bypass
+            else:
+                if space > 0:
+                    out += " "
+                    space = 0
+                out += ch
+            
+        # fix literal data notation python-style
+        out = out.replace('true', 'True').replace('false', 'False').replace('null', 'None').replace('&&', ' and ').replace(' || ', ' or ').replace('!', ' not ')
+        
+        tag = "\t" + out + "\v"
+            
+        _G.startblock = None  
+        _G.endblock = None 
+        _G.blockptr = -1
+        _G.strings = strings
+        
+        # replace constructs, functions, etc..
+        tag = re.sub(re_controls, parse_constructs, tag)
+        
+        # check for blocks
+        if _G.startblock:
+            _G.startblock = "#|"+_G.startblock+"|#"
+            hasBlock = True
+        elif _G.endblock:
+            _G.endblock = "#|/"+_G.endblock+"|#"
+            hasBlock = True
+        notFoundBlock = hasBlock
+        
+        # replacements
+        if "\t" == tag[0] and "\v" == tag[-1]: 
+            tag = "' + str("+tag[1:-1]+") + '"
+        
+        if hasVariables:
+            # replace variables
+            for v in reversed(variables):
+                id = v[0]
+                varname = v[1]
+                tag = tag.replace( id+'__RAW__', varname )
+                if varname in _G.locals[_G.currentblock]: # local (loop) variable
+                    tag = tag.replace( id, '_loc_'+varname+v[3] )
+                else: # default (data) variable
+                    tag = tag.replace( id, v[2]+v[3] )
+        
+        if hasStrings:
+            # replace strings (accurately)
+            tagTpl = Contemplate.InlineTemplate.multisplit_re(tag, str_re)
+            tag = ''
+            for v in tagTpl:
+                if v[0]:
+                    # and replace blocks (accurately)
+                    if notFoundBlock:
+                        if _G.startblock:
+                            blockTag = v[1].find( _G.startblock )
+                            if -1 != blockTag:
+                                _G.allblocks[ _G.blockptr-1 ][ 1 ] = blockTag + len(parsed) + len(tag)
+                                notFoundBlock = False
+                        else: #if _G.endblock:
+                            blockTag = v[1].find( _G.endblock )
+                            if -1 != blockTag:
+                                _G.allblocks[ _G.blockptr-1 ][ 2 ] = blockTag + len(parsed) + len(tag) + len(_G.endblock)
+                                notFoundBlock = False
+                    tag += v[1]
+                else:
+                    tag += strings[ v[1] ]
+        elif hasBlock:
+            # replace blocks (accurately)
+            if _G.startblock:
+                _G.allblocks[ _G.blockptr-1 ][ 1 ] = len(parsed) + tag.find( _G.startblock )
+            else: #if _G.endblock:
+                _G.allblocks[ _G.blockptr-1 ][ 2 ] = len(parsed) + tag.find( _G.endblock ) + len(_G.endblock)
+        
+        
+        # replace tpl separators
+        if "\v" == tag[-1]: 
+            tag = tag[0:-1] + pad_lines(_G.tplEnd)
+        if "\t" == tag[0]: 
+            tag = _G.tplStart + tag[1:]
+            if hasBlock:
+                # update blocks (accurately)
+                blockTag = len(_G.tplStart)-1
+                if _G.startblock:
+                    _G.allblocks[ _G.blockptr-1 ][ 1 ] += blockTag
+                else: #if _G.endblock:
+                    _G.allblocks[ _G.blockptr-1 ][ 2 ] += blockTag
+                
+        parsed += tag
     
     return (parse_blocks(parsed) if len(_G.allblocks)>0 else [parsed, []]) if False != withblocks else parsed
 
@@ -1547,9 +1541,11 @@ def create_template_render_function( id, contx, seps=None ):
     
     _ctx = _G.context
     _G.context = contx
-    reset_state()
-    blocks = parse(get_separators( get_template_contents(id, contx), seps ))
-    clear_state()
+    reset_state( )
+    tpl = get_template_contents( id, contx )
+    tpl = get_separators( tpl, seps )
+    blocks = parse( tpl, _G.leftTplSep, _G.rightTplSep )
+    clear_state( )
     _G.context = _ctx
     
     renderf = blocks[0]
@@ -1565,23 +1561,25 @@ def create_template_render_function( id, contx, seps=None ):
     _G.funcId += 1
     
     funcName = '_contemplateFn' + str(_G.funcId)
-    fn = create_func(funcName, 'data,self_,__i__', pad_lines(func, 1), {'Contemplate': Contemplate})
+    fn = create_function(funcName, 'data,self_,__i__', pad_lines(func, 1), {'Contemplate': Contemplate})
     
     blockfns = {}
     for b in blocks:
         funcName = '_contemplateBlockFn_' + b[0] + '_' + str(_G.funcId)
-        blockfns[b] = create_func(funcName, 'data,self_,__i__', pad_lines(b[1], 1), {'Contemplate': Contemplate})
+        blockfns[b] = create_function(funcName, 'data,self_,__i__', pad_lines(b[1], 1), {'Contemplate': Contemplate})
     
-    return [ fn, blockfns]
+    return [fn, blockfns]
 
 def create_cached_template( id, contx, filename, classname, seps=None ):
     global _G
     
     _ctx = _G.context
     _G.context = contx
-    reset_state()
-    blocks = parse(get_separators( get_template_contents(id, contx), seps ))
-    clear_state()
+    reset_state( )
+    tpl = get_template_contents( id, contx )
+    tpl = get_separators( tpl, seps )
+    blocks = parse( tpl, _G.leftTplSep, _G.rightTplSep )
+    clear_state( )
     _G.context = _ctx
     
     renderf = blocks[0]
@@ -1616,7 +1614,7 @@ def create_cached_template( id, contx, filename, classname, seps=None ):
     ,'BLOCKS'               : pad_lines(sblocks, 2)
     ,'RENDERCODE'           : pad_lines(renderCode, 4)
     })
-    return write_file(filename, classCode)
+    return write_file( filename, classCode )
 
 def get_cached_template( id, contx, options=dict() ):
     global _G
@@ -1631,7 +1629,7 @@ def get_cached_template( id, contx, options=dict() ):
             
             if 'parsed' in options:
                 _G.funcId += 1
-                tpl.setRenderFunction( create_func('_contemplateFn' + str(_G.funcId), 'data,self_,__i__', pad_lines(options['parsed'], 1), {'Contemplate': Contemplate}) )
+                tpl.setRenderFunction( create_function('_contemplateFn' + str(_G.funcId), 'data,self_,__i__', pad_lines(options['parsed'], 1), {'Contemplate': Contemplate}) )
             else:
                 fns = create_template_render_function( id, contx, options['separators'] )
                 tpl.setRenderFunction( fns[0] )
@@ -2099,23 +2097,20 @@ class Contemplate:
             
         if not contx: contx = _G.glob # global context
         
-        separators = options['separators'] if options and ('separators' in options) else None
+        leftSep = _G.leftTplSep
+        rightSep = _G.rightTplSep
         
+        separators = options['separators'] if options and ('separators' in options) else None
         if separators:
-            tmp = [_G.leftTplSep, _G.rightTplSep]
-            _G.leftTplSep = separators[ 0 ]  
-            _G.rightTplSep = separators[ 1 ]
+            leftSep = separators[ 0 ]  
+            rightSep = separators[ 1 ]
         
         _ctx = _G.context
         _G.context = contx
-        reset_state()
-        parsed = parse( tpl )
-        clear_state()
+        reset_state( )
+        parsed = parse( tpl, leftSep, rightSep )
+        clear_state( )
         _G.context = _ctx
-        
-        if separators:
-            _G.leftTplSep = tmp[ 0 ]
-            _G.rightTplSep = tmp[ 1 ]
         
         return parsed
         

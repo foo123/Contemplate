@@ -53,7 +53,7 @@ var __version__ = "1.0.0", Contemplate, Template, InlineTemplate, Ctx,
     $__EOL = "\n", $__TEOL = isNode ? require('os').EOL : "\n", $__escape = true,
     $__preserveLinesDefault = "' + \"\\n\" + '", $__preserveLines = '',  
     
-    $__stack = null, $__level = 0, $__pad = "    ", $__idcnt = 0,
+    $__level = 0, $__pad = "    ", $__idcnt = 0,
     $__locals, $__variables, $__loops = 0, $__ifs = 0, $__loopifs = 0, $__forType = 2,
     $__allblocks = null, $__allblockscnt = null,  $__openblocks = null,
     $__currentblock, $__startblock = null, $__endblock = null, $__blockptr = -1,
@@ -111,21 +111,20 @@ function clear_state( )
 {
     $__loops = 0; $__ifs = 0; $__loopifs = 0; $__forType = 2; $__level = 0;
     $__allblocks = null; $__allblockscnt = null; $__openblocks = null;
-    /*$__extends = null;*/ $__locals = null; $__variables = null; $__currentblock = null;
-    $__idcnt = 0; $__stack = [];
-    $__strings = null;
+    $__locals = null; $__variables = null; $__currentblock = null;
+    $__idcnt = 0; $__strings = null;
+    /*$__extends = null;*/
 }
 function push_state( )
 {
-    $__stack.push([$__loops, $__ifs, $__loopifs, $__forType, $__level,
-    $__allblocks, $__allblockscnt, $__openblocks, $__extends, $__locals, $__variables, $__currentblock]);
+    return [$__loops, $__ifs, $__loopifs, $__forType, $__level,
+    $__allblocks, $__allblockscnt, $__openblocks, $__extends, $__locals, $__variables, $__currentblock];
 }
-function pop_state( )
+function pop_state( state )
 {
-    var t = $__stack.pop( );
-    $__loops = t[0]; $__ifs = t[1]; $__loopifs = t[2]; $__forType = t[3]; $__level = t[4];
-    $__allblocks = t[5]; $__allblockscnt = t[6]; $__openblocks = t[7];
-    $__extends = t[8]; $__locals = t[9]; $__variables = t[10]; $__currentblock = t[11];
+    $__loops = state[0]; $__ifs = state[1]; $__loopifs = state[2]; $__forType = state[3]; $__level = state[4];
+    $__allblocks = state[5]; $__allblockscnt = state[6]; $__openblocks = state[7];
+    $__extends = state[8]; $__locals = state[9]; $__variables = state[10]; $__currentblock = state[11];
 }
 function pad_lines( lines, level )
 {
@@ -460,21 +459,23 @@ function t_endfor( )
 }
 function t_include( id/*, asyncCB*/ )
 {
-    var ch, contx = $__context;
+    var tpl, state, ch, contx = $__context;
     id = trim( id );
     if ( $__strings && $__strings[HAS](id) ) id = $__strings[id];
     ch = id.charAt(0);
     if ( '"' === ch || "'" === ch ) id = id.slice(1,-1); // quoted id
     
     // cache it
-    if ( !contx.partials[id] )
+    if ( !contx.partials[id] /*&& !$__global.partials[id]*/ )
     {
-        push_state();
-        reset_state();
-        contx.partials[id] = " " + parse( get_separators( get_template_contents( id, contx ) ), false ) + "';" + $__TEOL;
-        pop_state();
+        state = push_state( );
+        reset_state( );
+        tpl = get_template_contents( id, contx );
+        tpl = get_separators( tpl );
+        contx.partials[id] = " " + parse( tpl, $__leftTplSep, $__rightTplSep, false ) + "';" + $__TEOL;
+        pop_state( state );
     }
-    return pad_lines( contx.partials[id] );
+    return pad_lines( contx.partials[id] /*|| $__global.partials[id]*/ );
 }
 function t_extends( id )
 { 
@@ -527,20 +528,6 @@ function t_endblock( )
 //
 // auxilliary parsing methods
 //
-function split( s, leftTplSep, rightTplSep )
-{
-    var parts1, len, parts, i, tmp;
-    parts1 = s.split( leftTplSep );
-    len = parts1.length;
-    parts = [];
-    for (i=0; i<len; i++)
-    {
-        tmp = parts1[i].split( rightTplSep );
-        parts.push ( tmp[0] );
-        if (tmp.length > 1) parts.push ( tmp[1] );
-    }
-    return parts;
-}
 function parse_constructs( match, prefix, ctrl, startParen, rest )
 {
     rest = rest || '';
@@ -811,7 +798,7 @@ function parse_variable( s, i, l )
                 /*'"' === ch || "'" === ch*/
                 if ( '"' === ch || "'" === ch )
                 {
-                    //property = parseString(s, ch, i+1, l);
+                    //property = parse_string(s, ch, i+1, l);
                     str_ = q = ch; escaped = false; si = i+1;
                     while ( si < l )
                     {
@@ -923,9 +910,9 @@ function parse_variable( s, i, l )
     }
     return null;
 }
-function parse( tpl, withblocks )
+function parse( tpl, leftTplSep, rightTplSep, withblocks )
 {
-    var parts, len, parsed, s, i, isTag,
+    var t1, t2, p1, p2, l1, l2, len, parsed, s, i,
         tag, tagTpl, strings, variables, hasVariables, hasStrings, varname, id,
         countl, index, ch, out, tok, v, tokv, 
         multisplit_re = Contemplate.InlineTemplate.multisplit_re,
@@ -935,101 +922,94 @@ function parse( tpl, withblocks )
         blockTag, hasBlock, notFoundBlock
     ;
     
-    parts = split( tpl, $__leftTplSep, $__rightTplSep );
-    len = parts.length;
-    isTag = false;
+    t1 = leftTplSep; l1 = t1.length;
+    t2 = rightTplSep; l2 = t2.length;
     parsed = '';
-    
-    for (i=0; i<len; i++)
+    while ( tpl.length )
     {
-        s = parts[ i ];
-        
-        if ( isTag )
+        p1 = tpl.indexOf( t1 );
+        if ( -1 === p1 )
         {
-            // parse each template tag section accurately
-            // refined parsing
-            countl = s.length;
-            variables = [];
-            strings = {};
-            hasVariables = false; 
-            hasStrings = false;
-            hasBlock = false;
-            index = 0; 
-            space = 0;
-            ch = ''; 
-            out = ''; 
+            s = tpl;
+            if ( $__escape ) s = s.split( "\\" ).join( "\\\\" ); // escape escapes
+            parsed += s
+                .split( "'" ).join( "\\'" )  // escape single quotes accurately (used by parse function)
+                .split( /*"\n"*/ /\n/ ).join( $__preserveLines ) // preserve lines
+            ;
+            break;
+        }
+        p2 = tpl.indexOf( t2, p1+l1 );
+        if ( -1 === p2 ) p2 = tpl.length;
+        
+        s = tpl.slice( 0, p1 );
+        if ( $__escape ) s = s.split( "\\" ).join( "\\\\" ); // escape escapes
+        parsed += s
+            .split( "'" ).join( "\\'" )  // escape single quotes accurately (used by parse function)
+            .split( /*"\n"*/ /\n/ ).join( $__preserveLines ) // preserve lines
+        ;
+        
+        // template TAG
+        s = tpl.slice(p1+l1, p2); tpl = tpl.slice(p2+l2);
+        
+        // parse each template tag section accurately
+        // refined parsing
+        countl = s.length;
+        variables = [];
+        strings = {};
+        hasVariables = false; 
+        hasStrings = false;
+        hasBlock = false;
+        index = 0; 
+        space = 0;
+        ch = ''; 
+        out = ''; 
+        
+        while ( index < countl )
+        {
+            ch = s[ index++ ];
+            ind = special_chars.indexOf( ch );
             
-            while ( index < countl )
+            // special chars
+            if ( -1 < ind )
             {
-                ch = s[ index++ ];
-                ind = special_chars.indexOf( ch );
-                
-                // special chars
-                if ( -1 < ind )
+                // variable
+                /*'$' === ch*/
+                if ( 0 === ind )
                 {
-                    // variable
-                    /*'$' === ch*/
-                    if ( 0 === ind )
+                    if ( space > 0 )
                     {
-                        if ( space > 0 )
-                        {
-                            out += " ";
-                            space = 0;
-                        }
-                        tok = parse_variable(s, index, countl);
-                        if ( tok )
-                        {
-                            for (v=0; v<tok.length; v++)
-                            {
-                                tokv = tok[ v ];
-                                id = tokv[ 0 ];
-                                $__variables[$__currentblock][ id ] = tokv[ 1 ];
-                                if ( tokv[ 5 ] ) strings = merge( strings, tokv[ 6 ] );
-                            }
-                            out += id;
-                            index += tokv[ 4 ];
-                            variables = variables.concat( tok );
-                            hasVariables = true; 
-                            hasStrings = hasStrings || tokv[ 5 ];
-                        }
-                        else
-                        {
-                            out += '$';
-                        }
+                        out += " ";
+                        space = 0;
                     }
-                    // special chars
-                    /*SPACE.test(ch), "\n" === ch || "\r" === ch || "\t" === ch || "\v" === ch*/
-                    else if ( ind < 6 )  
+                    tok = parse_variable(s, index, countl);
+                    if ( tok )
                     {
-                        space++;
+                        for (v=0,len=tok.length; v<len; v++)
+                        {
+                            tokv = tok[ v ];
+                            id = tokv[ 0 ];
+                            $__variables[$__currentblock][ id ] = tokv[ 1 ];
+                            if ( tokv[ 5 ] ) strings = merge( strings, tokv[ 6 ] );
+                        }
+                        out += id;
+                        index += tokv[ 4 ];
+                        variables = variables.concat( tok );
+                        hasVariables = true; 
+                        hasStrings = hasStrings || tokv[ 5 ];
                     }
-                    // literal string
-                    /*'"' === ch || "'" === ch*/
                     else
                     {
-                        if ( space > 0 )
-                        {
-                            out += " ";
-                            space = 0;
-                        }
-                        //tok = parseString(s, ch, index, countl);
-                        str_ = q = ch; escaped = false; si = index;
-                        while ( si < countl )
-                        {
-                            str_ += (ch=s[si++]);
-                            if ( q === ch && !escaped )  break;
-                            escaped = (!escaped && '\\' === ch);
-                        }
-                        tok = str_;
-                        $__idcnt++;
-                        id = "#STR"+$__idcnt+"#";
-                        strings[id] = tok;
-                        out += id;
-                        index += tok.length-1;
-                        hasStrings = true;
+                        out += '$';
                     }
                 }
-                // rest, bypass
+                // special chars
+                /*SPACE.test(ch), "\n" === ch || "\r" === ch || "\t" === ch || "\v" === ch*/
+                else if ( ind < 6 )  
+                {
+                    space++;
+                }
+                // literal string
+                /*'"' === ch || "'" === ch*/
                 else
                 {
                     if ( space > 0 )
@@ -1037,146 +1017,151 @@ function parse( tpl, withblocks )
                         out += " ";
                         space = 0;
                     }
-                    out += ch;
-                }
-            }
-            
-            // fix literal data notation, not needed here
-            //out = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), out);
-        
-            tag = "\t" + out + "\v";
-        
-            $__startblock = null;  $__endblock = null; $__blockptr = -1;
-            $__strings = strings;
-            
-            // replace constructs, functions, etc..
-            tag = tag.replace( re_controls, parse_constructs );
-            
-            // check for blocks
-            if ( $__startblock )
-            {
-                $__startblock = "#|"+$__startblock+"|#";
-                hasBlock = true;
-            }
-            else if ( $__endblock )
-            {
-                $__endblock = "#|/"+$__endblock+"|#";
-                hasBlock = true;
-            }
-            notFoundBlock = hasBlock;
-            
-            // replacements
-            /*.replace( re_repls, "' + ($1) + '" );*/
-            if ( 9 === tag.charCodeAt(0) && 11 === tag.charCodeAt(tag.length-1) ) 
-                tag = "' + ("+tag.slice(1,-1)+") + '";
-            
-            if ( hasVariables )
-            {
-                // replace variables
-                for (v=variables.length-1; v>=0; v--)
-                {
-                    id = variables[ v ][ 0 ]; varname = variables[ v ][ 1 ];
-                    tag = tag
-                        .split( id+'__RAW__' ).join( varname )
-                        .split( id ).join(( 
-                            $__locals[$__currentblock][HAS](varname) 
-                            ? ('_loc_' + varname) /* local (loop) variable */
-                            : (variables[ v ][ 2 ]) /* default (data) variable */
-                            ) + variables[ v ][ 3 ])
-                    ;
-                }
-            }
-            
-            if ( hasStrings )
-            {
-                // replace strings (accurately)
-                tagTpl = multisplit_re(tag, str_re);
-                tag = '';
-                for (v=0; v<tagTpl.length; v++)
-                {
-                    if ( tagTpl[v][0] )
+                    //tok = parse_string(s, ch, index, countl);
+                    str_ = q = ch; escaped = false; si = index;
+                    while ( si < countl )
                     {
-                        // and replace blocks (accurately)
-                        if ( notFoundBlock )
+                        str_ += (ch=s[si++]);
+                        if ( q === ch && !escaped )  break;
+                        escaped = (!escaped && '\\' === ch);
+                    }
+                    tok = str_;
+                    $__idcnt++;
+                    id = "#STR"+$__idcnt+"#";
+                    strings[id] = tok;
+                    out += id;
+                    index += tok.length-1;
+                    hasStrings = true;
+                }
+            }
+            // rest, bypass
+            else
+            {
+                if ( space > 0 )
+                {
+                    out += " ";
+                    space = 0;
+                }
+                out += ch;
+            }
+        }
+        
+        // fix literal data notation, not needed here
+        //out = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), out);
+    
+        tag = "\t" + out + "\v";
+    
+        $__startblock = null;  $__endblock = null; $__blockptr = -1;
+        $__strings = strings;
+        
+        // replace constructs, functions, etc..
+        tag = tag.replace( re_controls, parse_constructs );
+        
+        // check for blocks
+        if ( $__startblock )
+        {
+            $__startblock = "#|"+$__startblock+"|#";
+            hasBlock = true;
+        }
+        else if ( $__endblock )
+        {
+            $__endblock = "#|/"+$__endblock+"|#";
+            hasBlock = true;
+        }
+        notFoundBlock = hasBlock;
+        
+        // replacements
+        /*.replace( re_repls, "' + ($1) + '" );*/
+        if ( 9 === tag.charCodeAt(0) && 11 === tag.charCodeAt(tag.length-1) ) 
+            tag = "' + ("+tag.slice(1,-1)+") + '";
+        
+        if ( hasVariables )
+        {
+            // replace variables
+            for (v=variables.length-1; v>=0; v--)
+            {
+                id = variables[ v ][ 0 ]; varname = variables[ v ][ 1 ];
+                tag = tag
+                    .split( id+'__RAW__' ).join( varname )
+                    .split( id ).join(( 
+                        $__locals[$__currentblock][HAS](varname) 
+                        ? ('_loc_' + varname) /* local (loop) variable */
+                        : (variables[ v ][ 2 ]) /* default (data) variable */
+                        ) + variables[ v ][ 3 ])
+                ;
+            }
+        }
+        
+        if ( hasStrings )
+        {
+            // replace strings (accurately)
+            tagTpl = multisplit_re(tag, str_re);
+            tag = '';
+            for (v=0,len=tagTpl.length; v<len; v++)
+            {
+                if ( tagTpl[v][0] )
+                {
+                    // and replace blocks (accurately)
+                    if ( notFoundBlock )
+                    {
+                        if ( $__startblock )
                         {
-                            if ( $__startblock )
+                            blockTag = tagTpl[v][1].indexOf( $__startblock );
+                            if ( -1 !== blockTag )
                             {
-                                blockTag = tagTpl[v][1].indexOf( $__startblock );
-                                if ( -1 !== blockTag )
-                                {
-                                    $__allblocks[ $__blockptr-1 ][ 1 ] = blockTag + parsed.length + tag.length;
-                                    notFoundBlock = false;
-                                }
-                            }
-                            else //if ( $__endblock )
-                            {
-                                blockTag = tagTpl[v][1].indexOf( $__endblock );
-                                if ( -1 !== blockTag )
-                                {
-                                    $__allblocks[ $__blockptr-1 ][ 2 ] = blockTag + parsed.length + tag.length + $__endblock.length;
-                                    notFoundBlock = false;
-                                }
+                                $__allblocks[ $__blockptr-1 ][ 1 ] = blockTag + parsed.length + tag.length;
+                                notFoundBlock = false;
                             }
                         }
-                        tag += tagTpl[v][1];
+                        else //if ( $__endblock )
+                        {
+                            blockTag = tagTpl[v][1].indexOf( $__endblock );
+                            if ( -1 !== blockTag )
+                            {
+                                $__allblocks[ $__blockptr-1 ][ 2 ] = blockTag + parsed.length + tag.length + $__endblock.length;
+                                notFoundBlock = false;
+                            }
+                        }
                     }
-                    else
-                    {
-                        tag += strings[ tagTpl[v][1] ];
-                    }
+                    tag += tagTpl[v][1];
                 }
-            }
-            else if ( hasBlock )
-            {
-                // replace blocks (accurately)
-                if ( $__startblock )
-                    $__allblocks[ $__blockptr-1 ][ 1 ] = parsed.length + tag.indexOf( $__startblock );
-                else //if ( $__endblock )
-                    $__allblocks[ $__blockptr-1 ][ 2 ] = parsed.length + tag.indexOf( $__endblock ) + $__endblock.length;
-            }
-            
-            // replace tpl separators
-            if ( /*"\v"*/11 === tag.charCodeAt(tag.length-1) ) 
-            {
-                tag = tag.slice(0,-1) + pad_lines($__tplEnd);
-            }
-            if ( /*"\t"*/9 === tag.charCodeAt(0) ) 
-            {
-                tag = $__tplStart + tag.slice(1);
-                if ( hasBlock )
+                else
                 {
-                    // update blocks (accurately)
-                    blockTag = $__tplStart.length-1;
-                    if ( $__startblock )
-                        $__allblocks[ $__blockptr-1 ][ 1 ] += blockTag;
-                    else //if ( $__endblock )
-                        $__allblocks[ $__blockptr-1 ][ 2 ] += blockTag;
+                    tag += strings[ tagTpl[v][1] ];
                 }
             }
-            
-            s = tag;
-            isTag = false;
         }
-        else
+        else if ( hasBlock )
         {
-            if ( $__escape )
-                s = s.split( "\\" ).join( "\\\\" ); // escape escapes
-            
-            s = s
-                .split( "'" ).join( "\\'" )  // escape single quotes accurately (used by parse function)
-                .split( /*"\n"*/ /\n/ ).join( $__preserveLines ) // preserve lines
-            ;
-            
-            isTag = true;
+            // replace blocks (accurately)
+            if ( $__startblock )
+                $__allblocks[ $__blockptr-1 ][ 1 ] = parsed.length + tag.indexOf( $__startblock );
+            else //if ( $__endblock )
+                $__allblocks[ $__blockptr-1 ][ 2 ] = parsed.length + tag.indexOf( $__endblock ) + $__endblock.length;
         }
         
-        parsed += s;
+        // replace tpl separators
+        if ( /*"\v"*/11 === tag.charCodeAt(tag.length-1) ) 
+        {
+            tag = tag.slice(0,-1) + pad_lines($__tplEnd);
+        }
+        if ( /*"\t"*/9 === tag.charCodeAt(0) ) 
+        {
+            tag = $__tplStart + tag.slice(1);
+            if ( hasBlock )
+            {
+                // update blocks (accurately)
+                blockTag = $__tplStart.length-1;
+                if ( $__startblock )
+                    $__allblocks[ $__blockptr-1 ][ 1 ] += blockTag;
+                else //if ( $__endblock )
+                    $__allblocks[ $__blockptr-1 ][ 2 ] += blockTag;
+            }
+        }
+        
+        parsed += tag;
     }
-
-    if ( false !== withblocks ) 
-        return $__allblocks.length>0 ? parse_blocks( parsed ) : [parsed, []]; // render any blocks
-    
-    return parsed;
+    return false !== withblocks ? ($__allblocks.length>0 ? parse_blocks( parsed ) : [parsed, []]) : parsed;
 }
 function get_cached_template_name( id, ctx, cacheDir )
 { 
@@ -1188,13 +1173,15 @@ function get_cached_template_class( id, ctx )
 }
 function create_template_render_function( id, contx, seps )
 {
-    var blocks, funcs = {}, b, bl, func, renderf, _ctx, EOL = $__TEOL;
+    var tpl, blocks, funcs = {}, b, bl, func, renderf, _ctx, EOL = $__TEOL;
     
     _ctx = $__context;
     $__context = contx;
-    reset_state();
-    blocks = parse( get_separators( get_template_contents( id, contx ), seps ) );
-    clear_state();
+    reset_state( );
+    tpl = get_template_contents( id, contx );
+    tpl = get_separators( tpl, seps );
+    blocks = parse( tpl, $__leftTplSep, $__rightTplSep );
+    clear_state( );
     $__context = _ctx;
     
     renderf = blocks[0];
@@ -1215,14 +1202,16 @@ function create_template_render_function( id, contx, seps )
 }
 function create_cached_template( id, contx, filename, classname, seps )
 {
-    var funcs = {}, prefixCode, extendCode, renderCode,
+    var tpl, funcs = {}, prefixCode, extendCode, renderCode,
         b, bl, sblocks, blocks, renderf, _ctx, EOL = $__TEOL;
     
     _ctx = $__context;
     $__context = contx;
-    reset_state();
-    blocks = parse( get_separators( get_template_contents( id, contx ), seps ) );
-    clear_state();
+    reset_state( );
+    tpl = get_template_contents( id, contx );
+    tpl = get_separators( tpl, seps );
+    blocks = parse( tpl, $__leftTplSep, $__rightTplSep );
+    clear_state( );
     $__context = _ctx;
     
     renderf = blocks[0];
@@ -1376,7 +1365,6 @@ function InlineTemplate( tpl, replacements, compiled )
         //self.render = InlineTemplate.prototype.render;
     }
 }
-InlineTemplate.VERSION = __version__;
 InlineTemplate.multisplit = function multisplit( tpl, reps, as_array ) {
     var r, sr, s, i, j, a, b, c, al, bl/*, as_array = is_array(reps)*/;
     as_array = !!as_array;
@@ -1482,7 +1470,6 @@ function Template( id )
     self.id = null;
     if ( id ) self.id = id; 
 }
-Template.VERSION = __version__;
 Template.spr = function( data, __i__ ) {
     var self = this, r, __ctx = null;
     if ( !__i__ )
@@ -1607,7 +1594,6 @@ function Ctx( id )
     self.plugins          = { };
     self.prefixCode       = '';
 }
-Ctx.VERSION = __version__;
 Ctx[PROTO] = {
     constructor: Ctx
     
@@ -2067,7 +2053,7 @@ Contemplate = {
     }
     
     ,parseTpl: function( tpl, options ) {
-        var tmp, parsed, separators, _ctx, contx = null;
+        var parsed, leftSep, rightSep, separators, _ctx, contx = null;
         
         // see what context this template may use
         if ( options && options.substr )
@@ -2093,24 +2079,17 @@ Contemplate = {
         }
         if ( !contx ) contx = $__global; // global context
         
+        leftSep = $__leftTplSep; rightSep = $__rightTplSep;
         separators = options && options.separators ? options.separators : null;
-        if ( separators )
-        {
-            tmp = [$__leftTplSep, $__rightTplSep];
-            $__leftTplSep = separators[ 0 ];  $__rightTplSep = separators[ 1 ];
-        }
+        if ( separators ) { leftSep = separators[ 0 ];  rightSep = separators[ 1 ]; }
         
         _ctx = $__context;
         $__context = contx;
         reset_state( );
-        parsed = parse( tpl );
-        clear_state();
+        parsed = parse( tpl, leftSep, rightSep );
+        clear_state( );
         $__context = _ctx;
         
-        if ( separators )
-        {
-            $__leftTplSep = tmp[ 0 ]; $__rightTplSep = tmp[ 1 ];
-        }
         return parsed;
     }
     

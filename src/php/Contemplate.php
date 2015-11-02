@@ -266,7 +266,8 @@ class ContemplateCtx
     public $locale = null;
     public $plurals = null;
     public $plugins = null;
-    public $prefixCode = null;
+    public $prefix = null;
+    public $encoding = null;
     
     public function __construct( $id )
     {
@@ -279,7 +280,8 @@ class ContemplateCtx
         $this->locale           = array( );
         $this->plurals          = array( );
         $this->plugins          = array( );
-        $this->prefixCode       = '';
+        $this->prefix           = '';
+        $this->encoding         = 'utf8';
     }
 }
 
@@ -663,16 +665,12 @@ class Contemplate
     
     public static function setPreserveLines( $enable=true ) 
     { 
-        if ( $enable )  
-            self::$__preserveLines = self::$__preserveLinesDefault;  
-        else 
-            self::$__preserveLines = ''; 
+        self::$__preserveLines = $enable ? self::$__preserveLinesDefault : '';
     }
     
     public static function hasPlugin( $name, $ctx='__GLOBAL__' ) 
     {
-        if ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
-        else $contx = self::$__context;
+        $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
         return !empty($name) && (isset($contx->plugins[ $name ]) || isset(self::$__global->plugins[ $name ]));
     }
     
@@ -680,8 +678,7 @@ class Contemplate
     {
         if ( $name && $pluginCode )
         {
-            if ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
-            else $contx = self::$__context;
+            $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
             $contx->plugins[ $name ] = $pluginCode;
         }
     }
@@ -702,22 +699,25 @@ class Contemplate
     
     public static function setPrefixCode( $preCode=null, $ctx='__GLOBAL__' )
     {
-        if ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
-        else $contx = self::$__context;
-        if ( $preCode ) $contx->prefixCode = (string)$preCode;
+        $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
+        if ( $preCode ) $contx->prefix = (string)$preCode;
+    }
+    
+    public static function setEncoding( $encoding, $ctx='__GLOBAL__' )
+    {
+        $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
+        $contx->encoding = $encoding;
     }
     
     public static function setLocales( $locales, $ctx='__GLOBAL__' ) 
     { 
-        if ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
-        else $contx = self::$__context;
+        $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
         $contx->locale = self::merge($contx->locale, (array)$locales); 
     }
     
     public static function clearLocales( $ctx='__GLOBAL__' ) 
     { 
-        if ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
-        else $contx = self::$__context;
+        $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
         $contx->locale = array(); 
     }
     
@@ -725,8 +725,7 @@ class Contemplate
     { 
         if ( is_array($plurals) )
         {
-            if ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
-            else $contx = self::$__context;
+            $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
             foreach ($plurals as $singular=>$plural)
             {
                 if ( null == $plural )
@@ -741,37 +740,32 @@ class Contemplate
     
     public static function clearPlurals( $ctx='__GLOBAL__' ) 
     { 
-        if ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
-        else $contx = self::$__context;
+        $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
         $contx->plurals = array(); 
     }
     
     public static function setCacheDir( $dir, $ctx='__GLOBAL__' ) 
     {  
-        if ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
-        else $contx = self::$__context;
+        $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
         $contx->cacheDir = rtrim($dir,'/').'/'; 
     }
     
     public static function setCacheMode( $mode, $ctx='__GLOBAL__' ) 
     { 
-        if ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
-        else $contx = self::$__context;
+        $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
         $contx->cacheMode = $mode; 
     }
     
     public static function clearCache( $all=false, $ctx='__GLOBAL__' ) 
     { 
-        if ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
-        else $contx = self::$__context;
+        $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
         $contx->cache = array(); 
         if ( $all ) $contx->partials = array(); 
     }
     
     public static function hasTpl( $tpl, $ctx='__GLOBAL__' ) 
     {
-        if ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
-        else $contx = self::$__context;
+        $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
         return !empty($tpl) && (isset($contx->templates[ $tpl ]) || isset(self::$__global->templates[ $tpl ]));
     }
     
@@ -779,8 +773,7 @@ class Contemplate
     { 
         if ( is_array($tpls) )
         {
-            if ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
-            else $contx = self::$__context;
+            $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
             foreach ($tpls as $tplID=>$tplData)
             {
                 if ( is_array( $tplData ) )
@@ -800,9 +793,7 @@ class Contemplate
     
     public static function getTemplateContents( $id, $ctx='__GLOBAL__' )
     {
-        if ( $ctx instanceof ContemplateCtx ) $contx = $ctx;
-        elseif ( $ctx && isset(self::$__ctx[$ctx]) ) $contx = self::$__ctx[$ctx];
-        else $contx = self::$__context;
+        $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
         return self::get_template_contents( $id, $contx );
     }
     
@@ -2101,7 +2092,7 @@ class Contemplate
         ,'RCODE'                => self::$__extends ? "\$__p__ = '';" : "\$__p__ .= '" . $renderf . "';"
         ));
         $extendCode = self::$__extends ? "\$self->extend('".self::$__extends."');" : '';
-        $prefixCode = $contx->prefixCode ? $contx->prefixCode : '';
+        $prefixCode = $contx->prefix ? $contx->prefix : '';
             
         // generate tpl class
         $renderer = self::$TT_ClassCode;
@@ -2115,7 +2106,6 @@ class Contemplate
         ,'RENDERCODE'           => self::pad_lines($renderCode, 2)
         ));
         
-        //return self::set_cached_template($filename, $class);
         return file_put_contents( $filename, $class );
     }
     
@@ -2129,7 +2119,7 @@ class Contemplate
             {
                 // dynamic in-memory caching during page-request
                 //return new Contemplate($id, self::create_template_render_function($id));
-                $tpl = new ContemplateTemplate( $id );
+                $tpl = new ContemplateTemplate( $id ); $tpl->ctx( $contx->id );
                 if ( isset($options['parsed']) && is_string($options['parsed']) )
                 {
                     // already parsed code was given
@@ -2138,10 +2128,9 @@ class Contemplate
                 else
                 {
                     $fns = self::create_template_render_function( $id, $contx, $options['separators'] );
-                    $tpl->setRenderFunction( $fns[0] ); $tpl->setBlocks( $fns[1] );
+                    $tpl->setRenderFunction( $fns[0] )->setBlocks( $fns[1] );
                 }
                 if ( self::$__extends ) $tpl->extend( self::tpl(self::$__extends, null, $contx->id) );
-                $tpl->ctx( $contx->id );
                 return $tpl;
             }
             
@@ -2188,24 +2177,15 @@ class Contemplate
                 else
                 {
                     // dynamic in-memory caching during page-request
-                    //return new Contemplate($id, self::create_template_render_function($id));
-                    $tpl = new ContemplateTemplate( );
-                    $tpl->setId( $id );
                     $fns = self::create_template_render_function( $id, $contx, $options['separators'] );
-                    $tpl->setRenderFunction( $fns[0] ); 
-                    $tpl->setBlocks( $fns[1] );
+                    $tpl = new ContemplateTemplate( $id );
+                    $tpl->ctx( $contx->id )->setRenderFunction( $fns[0] )->setBlocks( $fns[1] );
                     if ( self::$__extends ) $tpl->extend( self::tpl(self::$__extends, null, $contx->id) );
-                    $tpl->ctx( $contx->id );
                     return $tpl;
                 }
             }
         }
         return null;
-    }
-    
-    private static function set_cached_template( $filename, $tplContents ) 
-    { 
-        return file_put_contents($filename, $tplContents); 
     }
     
     private static function reset_state( ) 

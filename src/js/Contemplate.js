@@ -213,7 +213,7 @@ function get_template_contents( id, contx, asyncCB )
                 else
                 {
                     // sync
-                    return fread(template[0], Contemplate.ENCODING); 
+                    return fread( template[0], contx.encoding );
                 }
             }
             // client-side js and #id of DOM script-element given as template holder
@@ -246,7 +246,7 @@ function get_template_contents( id, contx, asyncCB )
                 else
                 {
                     // sync
-                    return fread(template[0], Contemplate.ENCODING); 
+                    return fread( template[0], contx.encoding );
                 }
             }
         }
@@ -1197,7 +1197,6 @@ function create_template_render_function( id, contx, seps )
     // defined blocks
     for (b=0; b<bl; b++) funcs[blocks[b][0]] = FUNC("Contemplate,data,self,__i__", blocks[b][1]);
     
-    //return [FUNC("Contemplate,__i__", func), funcs];
     return [FUNC("Contemplate", func), funcs];
 }
 function create_cached_template( id, contx, filename, classname, seps )
@@ -1234,7 +1233,7 @@ function create_cached_template( id, contx, filename, classname, seps )
     ,'RCODE'                : $__extends ? "__p__ = '';" : "__p__ += '" + renderf + "';"
     });
     extendCode = $__extends ? "self.extend('" + $__extends + "');" : '';
-    prefixCode = contx.prefixCode ? contx.prefixCode : '';
+    prefixCode = contx.prefix ? contx.prefix : '';
     
   // generate tpl class
     var classCode = TT_ClassCode({
@@ -1246,30 +1245,30 @@ function create_cached_template( id, contx, filename, classname, seps )
     ,'BLOCKS'               : pad_lines(sblocks, 1)
     ,'RENDERCODE'           : pad_lines(renderCode, 1)
     });
-    return set_cached_template( filename, classCode );
+    return fwrite( filename, classCode, contx.encoding );
 }
 function get_cached_template( id, contx, options )
 {
-    var template, tplclass, tpl, funcs, cachedTplFile, cachedTplClass, stat;
+    var template, tplclass, tpl, funcs, cachedTplFile, cachedTplClass, stat, stat2;
     if ( template=contx.templates[id] )
     {
         // inline templates saved only in-memory
         if ( template[1] )
         {
             // dynamic in-memory caching during page-request
+            tpl = new Contemplate.Template( id ).ctx( contx.id );
             if ( options && options.parsed )
             {
                 // already parsed code was given
-                tpl = Contemplate.Template( id ).setRenderFunction( FUNC("Contemplate", options.parsed) );
+                tpl.setRenderFunction( FUNC("Contemplate", options.parsed) );
             }
             else
             {
                 // parse code and create template class
                 funcs = create_template_render_function( id, contx, options.separators ); 
-                tpl = Contemplate.Template( id ).setRenderFunction( funcs[ 0 ] ).setBlocks( funcs[ 1 ] );
+                tpl.setRenderFunction( funcs[ 0 ] ).setBlocks( funcs[ 1 ] );
             }
             if ( $__extends ) tpl.extend( Contemplate.tpl($__extends, null, contx.id) );
-            tpl.ctx( contx.id );
             return tpl;
         }
         
@@ -1305,7 +1304,7 @@ function get_cached_template( id, contx, options )
                 }
                 else
                 {
-                    stat = fstat(cachedTplFile), stat2 = fstat(template[0]);
+                    stat = fstat(cachedTplFile); stat2 = fstat(template[0]);
                     if ( stat.mtime.getTime() <= stat2.mtime.getTime() )
                     {
                         // is out-of-sync re-create it
@@ -1325,23 +1324,14 @@ function get_cached_template( id, contx, options )
             {    
                 // dynamic in-memory caching during page-request
                 funcs = create_template_render_function( id, contx, options.separators );
-                tpl = Contemplate.Template( id ).setRenderFunction( funcs[ 0 ] ).setBlocks( funcs[ 1 ] );
+                tpl = new Contemplate.Template( id ).ctx( contx.id ).setRenderFunction( funcs[ 0 ] ).setBlocks( funcs[ 1 ] );
                 if ($__extends) tpl.extend( Contemplate.tpl($__extends, null, contx.id) );
-                tpl.ctx( contx.id );
                 return tpl;
             }
         }
     }
     return null;
 }
-function set_cached_template( filename, tplContents, asyncCB )
-{ 
-    if ( asyncCB )
-        fwrite_async(filename, tplContents, Contemplate.ENCODING, asyncCB);
-    else
-        fwrite(filename, tplContents, Contemplate.ENCODING); 
-}
-
 
 
 // can use inline templates for plugins etc.. to enable non-linear plugin compile-time replacement
@@ -1481,14 +1471,13 @@ Template.spr = function( data, __i__ ) {
     if ( __ctx )  Contemplate._set_ctx( __ctx );
     return r;
 };
-Template.fixr = function( self ) { 
-    var sprTpl = self._extends;
-    self.render = sprTpl && (sprTpl instanceof Template)
+Template.fixr = function( tpl ) { 
+    tpl.render = tpl._extends instanceof Template
                 ? Template.spr
-                : ('function'===typeof self._renderer
-                ? self._renderer
-                : self.constructor[PROTO].render);
-    return self;
+                : ('function'===typeof tpl._renderer
+                ? tpl._renderer
+                : tpl.constructor[PROTO].render);
+    return tpl;
 };
 Template[PROTO] = {
     constructor: Template
@@ -1592,7 +1581,8 @@ function Ctx( id )
     self.locale           = { };
     self.plurals          = { };
     self.plugins          = { };
-    self.prefixCode       = '';
+    self.prefix           = '';
+    self.encoding         = 'utf8';
 }
 Ctx[PROTO] = {
     constructor: Ctx
@@ -1618,8 +1608,6 @@ Contemplate = {
     ,CACHE_TO_DISK_NONE: 0
     ,CACHE_TO_DISK_AUTOUPDATE: 2
     ,CACHE_TO_DISK_NOUPDATE: 4
-    
-    ,ENCODING: 'utf8'
     
     ,Template: Template
     ,InlineTemplate: InlineTemplate
@@ -1896,15 +1884,13 @@ Contemplate = {
     
     ,setPreserveLines: function( enable ) { 
         if ( arguments.length < 1 ) enable = true; 
-        if ( !!enable ) $__preserveLines = $__preserveLinesDefault; 
-        else $__preserveLines = ''; 
+        $__preserveLines = !!enable ? $__preserveLinesDefault : '';
     }
     
     ,hasPlugin: function( name, ctx ) {
         var contx;
         if ( arguments.length < 2 ) ctx = '__GLOBAL__';
-        if ( ctx && $__ctx[HAS](ctx) ) contx = $__ctx[ctx];
-        else contx = $__context;
+        contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
         return !!name && (contx.plugins[HAS](name) || $__global.plugins[HAS](name));
     }
     
@@ -1913,8 +1899,7 @@ Contemplate = {
         if ( name && pluginCode )
         {
             if ( arguments.length < 2 ) ctx = '__GLOBAL__';
-            if ( ctx && $__ctx[HAS](ctx) ) contx = $__ctx[ctx];
-            else contx = $__context;
+            contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
             contx.plugins[ name ] = pluginCode;
         }
     }
@@ -1935,18 +1920,23 @@ Contemplate = {
     ,setPrefixCode: function( preCode, ctx ) {
         var contx;
         if ( arguments.length < 2 ) ctx = '__GLOBAL__';
-        if ( ctx && $__ctx[HAS](ctx) ) contx = $__ctx[ctx];
-        else contx = $__context;
-        if ( preCode ) contx.prefixCode = '' + preCode;
+        contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
+        if ( preCode ) contx.prefix = '' + preCode;
     }
 
+    ,setEncoding: function( encoding, ctx ) {
+        var contx;
+        if ( arguments.length < 2 ) ctx = '__GLOBAL__';
+        contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
+        contx.encoding = encoding;
+    }
+    
     ,setLocales: function( locales, ctx ) { 
         var contx;
         if ( "object" === typeof locales )
         {
             if ( arguments.length < 2 ) ctx = '__GLOBAL__';
-            if ( ctx && $__ctx[HAS](ctx) ) contx = $__ctx[ctx];
-            else contx = $__context;
+            contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
             contx.locale = merge(contx.locale, locales);
         }
     }
@@ -1954,8 +1944,7 @@ Contemplate = {
     ,clearLocales: function( ctx ) { 
         var contx;
         if ( arguments.length < 2 ) ctx = '__GLOBAL__';
-        if ( ctx && $__ctx[HAS](ctx) ) contx = $__ctx[ctx];
-        else contx = $__context;
+        contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
         contx.locale = { }; 
     }
     
@@ -1964,8 +1953,7 @@ Contemplate = {
         if ( "object" === typeof plurals )
         {
             if ( arguments.length < 2 ) ctx = '__GLOBAL__';
-            if ( ctx && $__ctx[HAS](ctx) ) contx = $__ctx[ctx];
-            else contx = $__context;
+            contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
             for (singular in plurals)
             {
                 if ( plurals[HAS](singular) && null == plurals[ singular ] )
@@ -1981,32 +1969,28 @@ Contemplate = {
     ,clearPlurals: function( ctx ) { 
         var contx;
         if ( arguments.length < 2 ) ctx = '__GLOBAL__';
-        if ( ctx && $__ctx[HAS](ctx) ) contx = $__ctx[ctx];
-        else contx = $__context;
+        contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
         contx.plurals = { }; 
     }
     
     ,setCacheDir: function( dir, ctx ) { 
         var contx;
         if ( arguments.length < 2 ) ctx = '__GLOBAL__';
-        if ( ctx && $__ctx[HAS](ctx) ) contx = $__ctx[ctx];
-        else contx = $__context;
+        contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
         contx.cacheDir = rtrim(dir, '/') + '/';  
     }
     
     ,setCacheMode: function( mode, ctx ) { 
         var contx;
         if ( arguments.length < 2 ) ctx = '__GLOBAL__';
-        if ( ctx && $__ctx[HAS](ctx) ) contx = $__ctx[ctx];
-        else contx = $__context;
+        contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
         contx.cacheMode = isNode ? mode : Contemplate.CACHE_TO_DISK_NONE; 
     }
     
     ,clearCache: function( all, ctx ) { 
         var contx;
         if ( arguments.length < 2 ) ctx = '__GLOBAL__';
-        if ( ctx && $__ctx[HAS](ctx) ) contx = $__ctx[ctx];
-        else contx = $__context;
+        contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
         contx.cache = { }; 
         if ( all ) contx.partials = { }; 
     }
@@ -2016,8 +2000,7 @@ Contemplate = {
         if ( "object" === typeof tpls )
         {
             if ( arguments.length < 2 ) ctx = '__GLOBAL__';
-            if ( ctx && $__ctx[HAS](ctx) ) contx = $__ctx[ctx];
-            else contx = $__context;
+            contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
             for (tplID in tpls)
             {
                 if ( !tpls[HAS](tplID) ) continue;
@@ -2039,16 +2022,14 @@ Contemplate = {
     ,hasTpl: function( tpl, ctx ) { 
         var contx;
         if ( arguments.length < 2 ) ctx = '__GLOBAL__';
-        if ( ctx && $__ctx[HAS](ctx) ) contx = $__ctx[ctx];
-        else contx = $__context;
+        contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
         return !!tpl && (contx.templates[HAS](tpl) || $__global.templates[HAS](tpl));
     }
 
     ,getTemplateContents: function( id, ctx ) {
         var contx;
         if ( arguments.length < 2 ) ctx = '__GLOBAL__';
-        if ( ctx && $__ctx[HAS](ctx) ) contx = $__ctx[ctx];
-        else contx = $__context;
+        contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
         return get_template_contents( id, contx );
     }
     
@@ -2146,7 +2127,7 @@ Contemplate = {
         }
         
         // Provide some basic currying to the user
-        return "object" === typeof data ? tmpl.render( data ) : tmpl;
+        return "object"===typeof data ? tmpl.render( data ) : tmpl;
     }
     
     

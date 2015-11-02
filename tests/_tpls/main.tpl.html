@@ -18,7 +18,7 @@
         <script type="text/x-contemplate" id="demo_tpl"><% $templates["demo"] %></script>
         <script type="text/x-contemplate" id="date_tpl"><% $templates["date"] %></script>
         <script type="text/x-contemplate" id="sub_tpl"><% $templates["sub"] %></script>
-        <script src="./js/Contemplate.min.js"></script>
+        <script src="./js/Contemplate.min.js?nocache=1"></script>
     </head>
 
     <body>
@@ -50,10 +50,10 @@
 
         /* add the templates */
         Contemplate.add({
-            'base': "#base_tpl",
-            'demo': "#demo_tpl",
-            "sub" : "#sub_tpl",
-            'date': "#date_tpl"
+         'base'     : "#base_tpl"
+        ,'demo'     : "#demo_tpl"
+        ,'sub'      : "#sub_tpl"
+        ,'date'     : "#date_tpl"
         });
         Contemplate.addPlugin('plg_test', function(v){
             if ( v ) return 'Plugin Test value: ' + v;

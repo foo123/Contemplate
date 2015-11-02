@@ -177,22 +177,17 @@ default_date_locale = {
 ,'month_short': [ 'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec' ]
 }
 
-def open_file( file, op ):
-    #if Contemplate.ENCODING: 
-    #    f = open(file, op, encoding=Contemplate.ENCODING)
-    #else: 
-    #    f = open(file, op)
-    #return f
-    return open(file, op, -1, Contemplate.ENCODING)
+def open_file( file, op, encoding ):
+    return open(file, op, -1, encoding)
 
-def read_file( file ):
+def read_file( file, encoding ):
     buffer=''
-    with open_file(file, 'r') as f:
+    with open_file(file, 'r', encoding) as f:
         buffer = f.read( )
     return buffer
 
-def write_file( file, text ):
-    with open_file(file, 'w') as f:
+def write_file( file, text, encoding ):
+    with open_file(file, 'w', encoding) as f:
         f.write(text)
 
 def php_time( ):
@@ -470,208 +465,6 @@ def create_function( funcName, args, sourceCode, additional_symbols=dict() ):
     
     # return the compiled function object
     return fct
-
-
-
-# can use inline templates for plugins etc.. to enable non-linear plugin compile-time replacement
-class InlineTemplate:
- 
-    def multisplit( tpl, reps=dict(), as_array=False ): 
-        #as_array = isinstance(reps, (list,tuple))
-        a = [ [1, tpl] ]
-        items = enumerate(reps) if as_array else reps.items()
-        for r,s in items:
-            c = [ ]
-            sr = s if as_array else r
-            s = [ 0, s ]
-            for ai in a:
-                if 1 == ai[0]:
-                    b = ai[1].split( sr ) 
-                    bl = len(b)
-                    c.append([1, b[0]])
-                    if bl > 1:
-                        for j in range(bl-1):
-                            c.append(s)
-                            c.append([1, b[j+1]])
-                    
-                else:
-                    c.append(ai)
-            a = c
-        return a
-    
-    def multisplit_re( tpl, rex ):
-        a = [ ]
-        i = 0
-        m = rex.search(tpl, i)
-        while m:
-            a.append([1, tpl[i:m.start()]])
-            try:
-                mg = m.group(1)
-            except:
-                mg = m.group(0)
-            
-            is_numeric = False
-            try:
-                mn = int(mg,10)
-                is_numeric = False if math.isnan(mn) else True
-            except ValueError:
-                is_numeric = False
-            a.append([0, mn if is_numeric else mg])
-            i = m.end()
-            m = rex.search(tpl, i)
-        a.append([1, tpl[i:]])
-        return a
-    
-    def compile( tpl ): 
-        global _G
-        l = len(tpl)
-        out = 'return ('
-        for s in tpl:
-        
-            notIsSub = s[ 0 ] 
-            s = s[ 1 ]
-            if notIsSub: out += "'" + re.sub(_G.NEWLINE, "' + \"\\n\" + '", re.sub(_G.SQUOTE, "\\'", s)) + "'"
-            else: out += " + str(args['" + s + "']) + "
-        
-        out += ')'
-        _G.funcId += 1
-        funcName = '_contemplateInlineFn' + str(_G.funcId)
-        return create_function(funcName, 'args', '    ' + out,{})
-    
-    def __init__( self, tpl='', replacements=None, compiled=False ): 
-        if not replacements: replacements = {}
-        self.id = None
-        self._renderer = None
-        self.tpl = InlineTemplate.multisplit_re( tpl, replacements ) if isinstance(replacements, T_REGEXP) else InlineTemplate.multisplit( tpl, replacements )
-        if compiled is True:
-            self._renderer = InlineTemplate.compile( self.tpl )
-    
-    def __del__( self ):
-        self.dispose()
-
-    def dispose( self ): 
-        self.id = None
-        self.tpl = None
-        self._renderer = None
-        return self
-    
-    def render( self, args=None ): 
-        if not args: args = []
-        if self._renderer is not None: 
-            return self._renderer( args )
-        
-        tpl = self.tpl
-        out = ''
-        for s in tpl:
-        
-            notIsSub = s[ 0 ] 
-            s = s[ 1 ]
-            out += str(s) if notIsSub else str(args[ s ])
-        
-        return out
-    
-
-    
-class Template:
-    
-    def __init__( self, id=None ):
-        self._renderer = None
-        self._blocks = None
-        self._extends = None
-        self._ctx = None
-        self.id = None
-        if id is not None: self.id = id 
-    
-    def __del__( self ):
-        self.dispose()
-
-    def dispose( self ):
-        self._renderer = None
-        self._blocks = None
-        self._extends = None
-        self._ctx = None
-        self.id = None
-        return self
-    
-    def setId( self, id=None ):
-        if id is not None: self.id = id
-        return self
-    
-    def ctx( self, ctx ):
-        self._ctx = ctx
-        return self
-    
-    def extend( self, tpl ): 
-        if tpl and isinstance(tpl, str):
-            self._extends = Contemplate.tpl( tpl )
-        elif isinstance(tpl, Template):
-            self._extends = tpl
-        else:
-            self._extends = None
-        return self
-    
-    def setBlocks( self, blocks ): 
-        if not self._blocks: self._blocks = {} 
-        self._blocks = Contemplate.merge(self._blocks, blocks)
-        return self
-    
-    def setRenderFunction( self, renderFunc=None ): 
-        self._renderer = renderFunc if renderFunc else None
-        return self
-    
-    def renderBlock( self, block, data, __i__=None ):
-        __ctx = None
-        if not __i__:
-            __i__ = self
-            __ctx = Contemplate._set_ctx( self._ctx )
-        
-        r = ''
-        if (self._blocks) and (block in self._blocks):
-            blockfunc = self._blocks[block]
-            r = blockfunc(data, self, __i__)
-        elif self._extends:
-            r = self._extends.renderBlock(block, data, __i__)
-        
-        if __ctx: Contemplate._set_ctx( __ctx )
-        return r
-        
-    def renderSuperBlock( self, block, data ):
-        #if not __i__: __i__ = self
-        if self._extends:
-            return self._extends.renderBlock(block, data, self._extends)
-        return ''
-        
-    def render( self, data, __i__=None ):
-        __ctx = None
-        if not __i__:
-            __i__ = self
-            __ctx = Contemplate._set_ctx( self._ctx )
-            
-        __p__ = ''
-        if self._extends:  
-            __p__ = self._extends.render(data, __i__)
-        elif self._renderer is not None: 
-            # dynamic function
-            renderer = self._renderer
-            __p__ = renderer(data, self, __i__)
-        
-        if __ctx: Contemplate._set_ctx( __ctx )
-        return __p__
-    
-
-class Ctx:
-    
-    def __init__( self, id ):
-        self.id               = id
-        self.cacheDir         = './'
-        self.cacheMode        = 0
-        self.cache            = { }
-        self.templates        = { }
-        self.partials         = { }
-        self.locale           = { }
-        self.plurals          = { }
-        self.plugins          = { }
-        self.prefixCode       = ''
 
 
 
@@ -1533,7 +1326,7 @@ def get_template_contents( id, contx ):
     else: return ''
     
     if template[1]: return template[0] # inline tpl
-    elif os.path.exists(template[0]): return read_file(template[0])
+    elif os.path.exists(template[0]): return read_file( template[0], contx.encoding )
     return ''
 
 def create_template_render_function( id, contx, seps=None ):
@@ -1602,7 +1395,7 @@ def create_cached_template( id, contx, filename, classname, seps=None ):
     ,'RCODE'                : "__p__ = ''" if _G.extends else "__p__ += '" + renderf + "'" 
     })
     extendCode = "self_.extend('"+_G.extends+"')" if _G.extends else ''
-    prefixCode = contx.prefixCode if contx.prefixCode else ''
+    prefixCode = contx.prefix if contx.prefix else ''
         
     # generate tpl class
     classCode = _G.TT_ClassCode({
@@ -1614,7 +1407,7 @@ def create_cached_template( id, contx, filename, classname, seps=None ):
     ,'BLOCKS'               : pad_lines(sblocks, 2)
     ,'RENDERCODE'           : pad_lines(renderCode, 4)
     })
-    return write_file( filename, classCode )
+    return write_file( filename, classCode, contx.encoding )
 
 def get_cached_template( id, contx, options=dict() ):
     global _G
@@ -1625,18 +1418,15 @@ def get_cached_template( id, contx, options=dict() ):
         if template[1]:
             # dynamic in-memory caching during page-request
             tpl = Contemplate.Template( )
-            tpl.setId( id )
-            
+            tpl.setId( id ).ctx( contx.id )
             if 'parsed' in options:
                 _G.funcId += 1
                 tpl.setRenderFunction( create_function('_contemplateFn' + str(_G.funcId), 'data,self_,__i__', pad_lines(options['parsed'], 1), {'Contemplate': Contemplate}) )
             else:
                 fns = create_template_render_function( id, contx, options['separators'] )
-                tpl.setRenderFunction( fns[0] )
-                tpl.setBlocks( fns[1] )
+                tpl.setRenderFunction( fns[0] ).setBlocks( fns[1] )
             
             if _G.extends: tpl.extend( Contemplate.tpl(_G.extends, None, contx.id) )
-            tpl.ctx( contx.id )
             return tpl
         
         CM = contx.cacheMode
@@ -1650,7 +1440,7 @@ def get_cached_template( id, contx, options=dict() ):
                 # if not exist, create it
                 create_cached_template( id, contx, cachedTplPath, cachedTplClass, options['separators'] )
             if os.path.isfile(cachedTplPath):
-                tpl = import_tpl( cachedTplFile, cachedTplClass, contx.cacheDir )()
+                tpl = import_tpl( cachedTplFile, cachedTplClass, contx.cacheDir )( )
                 tpl.setId( id ).ctx( contx.id )
                 return tpl
             return None
@@ -1665,7 +1455,7 @@ def get_cached_template( id, contx, options=dict() ):
                 # if tpl not exist or is out-of-sync (re-)create it
                 create_cached_template( id, contx, cachedTplPath, cachedTplClass, options['separators'] )
             if os.path.isfile(cachedTplPath):
-                tpl = import_tpl( cachedTplFile, cachedTplClass, contx.cacheDir )()
+                tpl = import_tpl( cachedTplFile, cachedTplClass, contx.cacheDir )( )
                 tpl.setId( id ).ctx( contx.id )
                 return tpl
             return None
@@ -1673,18 +1463,214 @@ def get_cached_template( id, contx, options=dict() ):
         else:
         
             # dynamic in-memory caching during page-request
-            tpl = Contemplate.Template( )
-            tpl.setId( id ).ctx( contx.id )
             fns = create_template_render_function( id, contx, options['separators'] )
-            tpl.setRenderFunction( fns[0] )
-            tpl.setBlocks( fns[1] )
+            tpl = Contemplate.Template( id )
+            tpl.ctx( contx.id ).setRenderFunction( fns[0] ).setBlocks( fns[1] )
             if _G.extends: tpl.extend( Contemplate.tpl(_G.extends, None, contx.id) )
             return tpl
         
     return None
 
-def set_cached_template( filename, tplContents ): 
-    return write_file(filename, tplContents)
+
+class InlineTemplate:
+ 
+    def multisplit( tpl, reps=dict(), as_array=False ): 
+        #as_array = isinstance(reps, (list,tuple))
+        a = [ [1, tpl] ]
+        items = enumerate(reps) if as_array else reps.items()
+        for r,s in items:
+            c = [ ]
+            sr = s if as_array else r
+            s = [ 0, s ]
+            for ai in a:
+                if 1 == ai[0]:
+                    b = ai[1].split( sr ) 
+                    bl = len(b)
+                    c.append([1, b[0]])
+                    if bl > 1:
+                        for j in range(bl-1):
+                            c.append(s)
+                            c.append([1, b[j+1]])
+                    
+                else:
+                    c.append(ai)
+            a = c
+        return a
+    
+    def multisplit_re( tpl, rex ):
+        a = [ ]
+        i = 0
+        m = rex.search(tpl, i)
+        while m:
+            a.append([1, tpl[i:m.start()]])
+            try:
+                mg = m.group(1)
+            except:
+                mg = m.group(0)
+            
+            is_numeric = False
+            try:
+                mn = int(mg,10)
+                is_numeric = False if math.isnan(mn) else True
+            except ValueError:
+                is_numeric = False
+            a.append([0, mn if is_numeric else mg])
+            i = m.end()
+            m = rex.search(tpl, i)
+        a.append([1, tpl[i:]])
+        return a
+    
+    def compile( tpl ): 
+        global _G
+        l = len(tpl)
+        out = 'return ('
+        for s in tpl:
+        
+            notIsSub = s[ 0 ] 
+            s = s[ 1 ]
+            if notIsSub: out += "'" + re.sub(_G.NEWLINE, "' + \"\\n\" + '", re.sub(_G.SQUOTE, "\\'", s)) + "'"
+            else: out += " + str(args['" + s + "']) + "
+        
+        out += ')'
+        _G.funcId += 1
+        funcName = '_contemplateInlineFn' + str(_G.funcId)
+        return create_function(funcName, 'args', '    ' + out,{})
+    
+    def __init__( self, tpl='', replacements=None, compiled=False ): 
+        if not replacements: replacements = {}
+        self.id = None
+        self._renderer = None
+        self.tpl = InlineTemplate.multisplit_re( tpl, replacements ) if isinstance(replacements, T_REGEXP) else InlineTemplate.multisplit( tpl, replacements )
+        if compiled is True:
+            self._renderer = InlineTemplate.compile( self.tpl )
+    
+    def __del__( self ):
+        self.dispose()
+
+    def dispose( self ): 
+        self.id = None
+        self.tpl = None
+        self._renderer = None
+        return self
+    
+    def render( self, args=None ): 
+        if not args: args = []
+        if self._renderer is not None: 
+            return self._renderer( args )
+        
+        tpl = self.tpl
+        out = ''
+        for s in tpl:
+        
+            notIsSub = s[ 0 ] 
+            s = s[ 1 ]
+            out += str(s) if notIsSub else str(args[ s ])
+        
+        return out
+    
+
+    
+class Template:
+    
+    def __init__( self, id=None ):
+        self._renderer = None
+        self._blocks = None
+        self._extends = None
+        self._ctx = None
+        self.id = None
+        if id is not None: self.id = id 
+    
+    def __del__( self ):
+        self.dispose()
+
+    def dispose( self ):
+        self._renderer = None
+        self._blocks = None
+        self._extends = None
+        self._ctx = None
+        self.id = None
+        return self
+    
+    def setId( self, id=None ):
+        if id is not None: self.id = id
+        return self
+    
+    def ctx( self, ctx ):
+        self._ctx = ctx
+        return self
+    
+    def extend( self, tpl ): 
+        if tpl and isinstance(tpl, str):
+            self._extends = Contemplate.tpl( tpl )
+        elif isinstance(tpl, Template):
+            self._extends = tpl
+        else:
+            self._extends = None
+        return self
+    
+    def setBlocks( self, blocks ): 
+        if not self._blocks: self._blocks = {} 
+        self._blocks = Contemplate.merge(self._blocks, blocks)
+        return self
+    
+    def setRenderFunction( self, renderFunc=None ): 
+        self._renderer = renderFunc if renderFunc else None
+        return self
+    
+    def renderBlock( self, block, data, __i__=None ):
+        __ctx = None
+        if not __i__:
+            __i__ = self
+            __ctx = Contemplate._set_ctx( self._ctx )
+        
+        r = ''
+        if (self._blocks) and (block in self._blocks):
+            blockfunc = self._blocks[block]
+            r = blockfunc(data, self, __i__)
+        elif self._extends:
+            r = self._extends.renderBlock(block, data, __i__)
+        
+        if __ctx: Contemplate._set_ctx( __ctx )
+        return r
+        
+    def renderSuperBlock( self, block, data ):
+        #if not __i__: __i__ = self
+        if self._extends:
+            return self._extends.renderBlock(block, data, self._extends)
+        return ''
+        
+    def render( self, data, __i__=None ):
+        __ctx = None
+        if not __i__:
+            __i__ = self
+            __ctx = Contemplate._set_ctx( self._ctx )
+            
+        __p__ = ''
+        if self._extends:  
+            __p__ = self._extends.render(data, __i__)
+        elif self._renderer is not None: 
+            # dynamic function
+            renderer = self._renderer
+            __p__ = renderer(data, self, __i__)
+        
+        if __ctx: Contemplate._set_ctx( __ctx )
+        return __p__
+    
+
+class Ctx:
+    
+    def __init__( self, id ):
+        self.id               = id
+        self.cacheDir         = './'
+        self.cacheMode        = 0
+        self.cache            = { }
+        self.templates        = { }
+        self.partials         = { }
+        self.locale           = { }
+        self.plurals          = { }
+        self.plugins          = { }
+        self.prefix           = ''
+        self.encoding         = 'utf-8'
 
 
 #
@@ -1702,9 +1688,6 @@ class Contemplate:
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
     CACHE_TO_DISK_NOUPDATE = 4
-    
-    # set file encoding if needed, here (eg 'utf8')
-    ENCODING = 'utf-8'
     
     InlineTemplate = InlineTemplate
     Template = Template
@@ -1954,15 +1937,13 @@ class Contemplate:
     
     def hasPlugin( name, ctx='__GLOBAL__' ):
         global _G
-        if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
-        else: contx = _G.context
+        contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         return name and ((name in contx.plugins) or (name in _G.glob.plugins))
     
     def addPlugin( name, pluginCode, ctx='__GLOBAL__' ):
         global _G
         if name and pluginCode:
-            if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
-            else: contx = _G.context
+            contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
             contx.plugins[ str(name) ] = pluginCode
     
     def plg_( plg, *args ):
@@ -1975,26 +1956,27 @@ class Contemplate:
     
     def setPrefixCode( preCode=None, ctx='__GLOBAL__' ):
         global _G
-        if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
-        else: contx = _G.context
-        if preCode: contx.prefixCode = str(preCode)
+        contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
+        if preCode: contx.prefix = str(preCode)
+    
+    def setEncoding( encoding, ctx='__GLOBAL__' ): 
+        global _G
+        contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
+        contx.encoding = encoding
     
     def setLocales( locales, ctx='__GLOBAL__' ): 
         global _G
-        if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
-        else: contx = _G.context
+        contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         contx.locale = Contemplate.merge(contx.locale, locales)
     
     def clearLocales( ctx='__GLOBAL__' ): 
         global _G
-        if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
-        else: contx = _G.context
+        contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         contx.locale = {}
     
     def setPlurals( plurals, ctx='__GLOBAL__' ): 
         global _G
-        if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
-        else: contx = _G.context
+        contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         for singular in plurals:
             if plurals[ singular ] is None: 
                 # auto plural
@@ -2003,14 +1985,12 @@ class Contemplate:
     
     def clearPlurals( ctx='__GLOBAL__' ): 
         global _G
-        if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
-        else: contx = _G.context
+        contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         contx.plurals = {}
     
     def setCacheDir( dir, ctx='__GLOBAL__' ): 
         global _G
-        if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
-        else: contx = _G.context
+        contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         _self = Contemplate
         _dir = contx.cacheDir = os.path.abspath(dir)
         
@@ -2022,7 +2002,7 @@ class Contemplate:
 # used with Contemplate 'import'
 # to import_tpl cached templates as modules, for optimization
 """
-            write_file(initPyFile, _initPy_)
+            write_file( initPyFile, _initPy_, contx.encoding )
             
         #if _dir not in os.sys.path:
         #    # allow to use 'import' in order to import_tpl cached templates
@@ -2031,28 +2011,24 @@ class Contemplate:
     
     def setCacheMode( mode, ctx='__GLOBAL__' ): 
         global _G
-        if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
-        else: contx = _G.context
+        contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         contx.cacheMode = mode
     
     def clearCache( all=False, ctx='__GLOBAL__' ): 
         global _G
-        if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
-        else: contx = _G.context
+        contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         contx.cache = {}
         if all: contx.partials = {}
     
     def hasTpl( tpl, ctx='__GLOBAL__' ):
         global _G
-        if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
-        else: contx = _G.context
+        contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         return tpl and ((tpl in contx.templates) or (tpl in _G.glob.templates))
     
     def add( tpls, ctx='__GLOBAL__' ):
         global _G
         if isinstance(tpls, dict):
-            if ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
-            else: contx = _G.context
+            contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
             
             for tplID in tpls:
                 if isinstance(tpls[ tplID ], (list, tuple)):
@@ -2066,9 +2042,7 @@ class Contemplate:
     
     def getTemplateContents( id, ctx='__GLOBAL__' ):
         global _G
-        if isinstance(ctx, Ctx): contx = ctx
-        elif ctx and (ctx in _G.ctx): contx = _G.ctx[ctx]
-        else: contx = _G.context
+        contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         return get_template_contents( id, contx )
     
     

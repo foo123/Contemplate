@@ -171,22 +171,24 @@ The following tests were made on a revision of a 2013 jsperf test for various ja
 
 This resulted in great performance increase as shown below. (see changelog)
 
-Previous tests are here [jsperf/0.6.5](http://jsperf.com/js-template-engines-performance/94), [jsperf/0.6.7](http://jsperf.com/js-template-engines-performance/96), [jsperf/0.7](http://jsperf.com/js-template-engines-performance/112), [jsperf/0.7.1](http://jsperf.com/js-template-engines-performance/116), [jsperf/0.8](http://jsperf.com/js-template-engines-performance/117), [jsperf/0.8.1](http://jsperf.com/js-template-engines-performance/120)
+Previous tests are here [jsperf/0.6.5](http://jsperf.com/js-template-engines-performance/94), [jsperf/0.6.7](http://jsperf.com/js-template-engines-performance/96), [jsperf/0.7](http://jsperf.com/js-template-engines-performance/112), [jsperf/0.7.1](http://jsperf.com/js-template-engines-performance/116), [jsperf/0.8](http://jsperf.com/js-template-engines-performance/117), [jsperf/0.8.1](http://jsperf.com/js-template-engines-performance/120),
+[jsperf/1.0.0](http://jsperf.com/js-template-engines-performance/161)
 
-`Contemplate` (`0.8.1`) is (consistently) 1st place on almost all browsers.
+`Contemplate` (`1.0.0`) is (consistently) 1st place on all browsers.
 
-[![contemplate rendering jsperf](/screenshots/jsperf-rendering.png)](http://jsperf.com/js-template-engines-performance/120)
+[![contemplate rendering jsperf](/screenshots/jsperf-rendering.png)](http://jsperf.com/js-template-engines-performance/161)
 
 
 **Parse / Compilation Time**
 
 The following tests involve `swig`, `handlebars`, `contemplate` and `mustache` `javascript` template engines. More tests should be done.
 
-Previous tests are here [jsperf/0.6.7](http://jsperf.com/js-template-engines-compilation/3), [jsperf/0.7](http://jsperf.com/js-template-engines-compilation/7), [jsperf/0.7.1](http://jsperf.com/js-template-engines-compilation/8), [jsperf/0.8](http://jsperf.com/js-template-engines-compilation/11), [jsperf/0.8.1](http://jsperf.com/js-template-engines-compilation/12)
+Previous tests are here [jsperf/0.6.7](http://jsperf.com/js-template-engines-compilation/3), [jsperf/0.7](http://jsperf.com/js-template-engines-compilation/7), [jsperf/0.7.1](http://jsperf.com/js-template-engines-compilation/8), [jsperf/0.8](http://jsperf.com/js-template-engines-compilation/11), [jsperf/0.8.1](http://jsperf.com/js-template-engines-compilation/12),
+[jsperf/1.0.0](http://jsperf.com/js-template-engines-compilation/14)
 
-`Contemplate` engine (`0.8.1`) is (consistently) 1st place on almost all browsers.
+`Contemplate` engine (`1.0.0`) is (consistently) 1st place on all browsers.
 
-[![contemplate parse jsperf](/screenshots/jsperf-compilation.png)](http://jsperf.com/js-template-engines-compilation/12)
+[![contemplate parse jsperf](/screenshots/jsperf-compilation.png)](http://jsperf.com/js-template-engines-compilation/14)
 
 
 

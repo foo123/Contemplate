@@ -27,7 +27,7 @@ def plg3(msg):
 # global ctx
 Contemplate.setCacheDir('./')
 Contemplate.setCacheMode(Contemplate.CACHE_TO_DISK_AUTOUPDATE)
-Contemplate.add({'global' : os.path.join(__dirname, '/global.html')})
+Contemplate.add({'global' : os.path.join('./global.html')})
 Contemplate.setLocales({
  'ctx' : 'ctxglobal',
  'global': 'locale global'
@@ -37,7 +37,7 @@ Contemplate.setLocales({
 Contemplate.createCtx("ctx1")
 Contemplate.setCacheDir('./',"ctx1")
 Contemplate.setCacheMode(Contemplate.CACHE_TO_DISK_AUTOUPDATE,"ctx1")
-Contemplate.add({'tpl' : os.path.join(__dirname, '/tpl1.html')},"ctx1")
+Contemplate.add({'tpl' : os.path.join('./tpl1.html')},"ctx1")
 Contemplate.setLocales({'ctx' : 'ctx1'},"ctx1")
 Contemplate.addPlugin('my_plugin',plg1,"ctx1")
 
@@ -45,7 +45,7 @@ Contemplate.addPlugin('my_plugin',plg1,"ctx1")
 Contemplate.createCtx("ctx2")
 Contemplate.setCacheDir('./',"ctx2")
 Contemplate.setCacheMode(Contemplate.CACHE_TO_DISK_AUTOUPDATE,"ctx2")
-Contemplate.add({'tpl' : os.path.join(__dirname, '/tpl2.html')},"ctx2")
+Contemplate.add({'tpl' : os.path.join('./tpl2.html')},"ctx2")
 Contemplate.setLocales({'ctx' : 'ctx2'},"ctx2")
 Contemplate.addPlugin('my_plugin',plg2,"ctx2")
 
@@ -53,7 +53,7 @@ Contemplate.addPlugin('my_plugin',plg2,"ctx2")
 Contemplate.createCtx("ctx3")
 Contemplate.setCacheDir('./',"ctx3")
 Contemplate.setCacheMode(Contemplate.CACHE_TO_DISK_AUTOUPDATE,"ctx3")
-Contemplate.add({'tpl' : os.path.join(__dirname, '/tpl3.html')},"ctx3")
+Contemplate.add({'tpl' : os.path.join('./tpl3.html')},"ctx3")
 Contemplate.setLocales({'ctx' : 'ctx3'},"ctx3")
 Contemplate.addPlugin('my_plugin',plg3,"ctx3")
 

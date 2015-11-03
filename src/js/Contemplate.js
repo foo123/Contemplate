@@ -447,7 +447,6 @@ function t_endblock( )
 
 //
 // auxilliary parsing methods
-//
 function parse_constructs( match, prefix, ctrl, startParen, rest )
 {
     rest = rest || '';
@@ -830,6 +829,7 @@ function parse_variable( s, i, l )
     }
     return null;
 }
+var str_re = /#STR\d+#/g;
 function parse( tpl, leftTplSep, rightTplSep, withblocks )
 {
     var t1, t2, p1, p2, l1, l2, len, parsed, s, i,
@@ -838,7 +838,6 @@ function parse( tpl, leftTplSep, rightTplSep, withblocks )
         multisplit_re = Contemplate.InlineTemplate.multisplit_re,
         special_chars = "$ \n\r\t\v'\"", ind,
         q, str_, escaped, si, space,
-        str_re = /#STR\d+#/g, 
         blockTag, hasBlock, notFoundBlock
     ;
     
@@ -1093,10 +1092,7 @@ function get_cached_template_class( id, ctx )
 }
 function get_template_contents( id, contx, asyncCB )
 {
-    var template;
-    
-    template = contx.templates[id] || $__global.templates[id];
-    
+    var template = contx.templates[id] || $__global.templates[id] || null;
     if ( template )
     {
         if ( template[1] ) //inline tpl
@@ -1249,7 +1245,7 @@ function create_cached_template( id, contx, filename, classname, seps )
 function get_cached_template( id, contx, options )
 {
     var template, tplclass, tpl, sprTpl, funcs, cachedTplFile, cachedTplClass, stat, stat2;
-    template = contx.templates[id] || $__global.templates[id];
+    template = contx.templates[id] || $__global.templates[id] || null;
     if ( template )
     {
         // inline templates saved only in-memory
@@ -1281,11 +1277,11 @@ function get_cached_template( id, contx, options )
             {
                 cachedTplFile = get_cached_template_name( id, contx.id, contx.cacheDir );
                 cachedTplClass = get_cached_template_class( id, contx.id );
-                if ( !fexists(cachedTplFile) )
+                if ( !fexists( cachedTplFile ) )
                 {
                     create_cached_template( id, contx, cachedTplFile, cachedTplClass, options.separators );
                 }
-                if ( fexists(cachedTplFile) )
+                if ( fexists( cachedTplFile ) )
                 {
                     tplclass = require( cachedTplFile )( Contemplate ); 
                     tpl = new tplclass( id )/*.setId( id )*/.ctx( contx.id );
@@ -1298,21 +1294,21 @@ function get_cached_template( id, contx, options )
             {    
                 cachedTplFile = get_cached_template_name( id, contx.id, contx.cacheDir );
                 cachedTplClass = get_cached_template_class( id, contx.id );
-                if ( !fexists(cachedTplFile) )
+                if ( !fexists( cachedTplFile ) )
                 {
                     // if tpl not exist create it
                     create_cached_template( id, contx, cachedTplFile, cachedTplClass, options.separators );
                 }
                 else
                 {
-                    stat = fstat(cachedTplFile); stat2 = fstat(template[0]);
+                    stat = fstat( cachedTplFile ); stat2 = fstat( template[0] );
                     if ( stat.mtime.getTime() <= stat2.mtime.getTime() )
                     {
                         // is out-of-sync re-create it
                         create_cached_template( id, contx, cachedTplFile, cachedTplClass, options.separators );
                     }
                 }
-                if ( fexists(cachedTplFile) )
+                if ( fexists( cachedTplFile ) )
                 {
                     tplclass = require( cachedTplFile )( Contemplate );
                     tpl = new tplclass( id )/*.setId( id )*/.ctx( contx.id );
@@ -1514,7 +1510,7 @@ Template[PROTO] = {
     ,extend: function( tpl ) { 
         var self = this;
         self._extends = tpl && tpl.substr
-                    ? Contemplate.tpl( tpl, null, self._ctx )
+                    ? Contemplate.tpl( tpl )
                     : (tpl instanceof Template
                     ? tpl
                     : null);
@@ -1935,7 +1931,7 @@ Contemplate = {
     
     ,setLocales: function( locales, ctx ) { 
         var contx;
-        if ( "object" === typeof locales )
+        if ( locales && "object"===typeof locales )
         {
             if ( arguments.length < 2 ) ctx = '__GLOBAL__';
             contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
@@ -1952,7 +1948,7 @@ Contemplate = {
     
     ,setPlurals: function( plurals, ctx ) { 
         var contx, singular;
-        if ( "object" === typeof plurals )
+        if ( plurals && "object"===typeof plurals )
         {
             if ( arguments.length < 2 ) ctx = '__GLOBAL__';
             contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
@@ -2081,7 +2077,7 @@ Contemplate = {
     //
     
     ,tpl: function( tpl, data, options ) {
-        var tmpl, contx;
+        var tmpl, contx, _ctx;
         if ( tpl instanceof Contemplate.Template )
         {
             tmpl = tpl;
@@ -2122,7 +2118,10 @@ Contemplate = {
             // load the template - and be sure to cache the result.
             if ( !!options.refresh || (!contx.cache[ tpl ] && !$__global.cache[ tpl ]) )
             {
+                _ctx = $__context;
+                $__context = contx;
                 contx.cache[ tpl ] = get_cached_template( tpl, contx, options );
+                $__context = _ctx;
             }
             
             tmpl = contx.cache[ tpl ] || $__global.cache[ tpl ];

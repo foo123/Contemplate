@@ -104,9 +104,8 @@ tpl.render( data );
 ```
 
 ####Dynamic Contexts
-**(in progress)**
 
-The engine can use **multiple dynanic contexts** to have contextual settings, like `locales`, `caching`, `plugins` so that different modules of an application can **use the engine independantly**.
+The engine can use **multiple dynanic contexts** to have contextual settings, like `templates`, `locales`, `caching`, `plugins` so that different modules of an application can **use the engine independantly**.
 
 A dynamic context is created with `Contemplate.createCtx( 'my-context' );`
 A dynamic context is disposed with `Contemplate.disposeCtx( 'my-context' );`

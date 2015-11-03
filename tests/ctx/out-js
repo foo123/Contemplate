@@ -1,0 +1,18 @@
+--tpl1--
+
+locale global
+
+ctx1 ctx1
+
+--tpl2--
+
+locale global
+
+ctx2 ctx2
+
+--tpl3--
+
+locale global
+
+ctx3 ctx3
+

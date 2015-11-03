@@ -176,7 +176,7 @@ class ContemplateTemplate
     
     public function extend( $tpl ) 
     { 
-        $this->_extends = $tpl && is_string($tpl) ? Contemplate::tpl( $tpl, null, $this->_ctx ) : ($tpl instanceof ContemplateTemplate ? $tpl : null);
+        $this->_extends = $tpl && is_string($tpl) ? Contemplate::tpl( $tpl ) : ($tpl instanceof ContemplateTemplate ? $tpl : null);
         return $this; 
     }
     
@@ -706,8 +706,11 @@ class Contemplate
     
     public static function setLocales( $locales, $ctx='__GLOBAL__' ) 
     { 
-        $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
-        $contx->locale = self::merge($contx->locale, (array)$locales); 
+        if ( $locales && is_array($locales) )
+        {
+            $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
+            $contx->locale = self::merge($contx->locale, (array)$locales);
+        }
     }
     
     public static function clearLocales( $ctx='__GLOBAL__' ) 
@@ -718,7 +721,7 @@ class Contemplate
     
     public static function setPlurals( $plurals, $ctx='__GLOBAL__' ) 
     { 
-        if ( is_array($plurals) )
+        if ( $plurals && is_array($plurals) )
         {
             $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
             foreach ($plurals as $singular=>$plural)
@@ -766,7 +769,7 @@ class Contemplate
     
     public static function add( $tpls, $ctx='__GLOBAL__' ) 
     { 
-        if ( is_array($tpls) )
+        if ( $tpls && is_array($tpls) )
         {
             $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
             foreach ($tpls as $tplID=>$tplData)
@@ -880,7 +883,10 @@ class Contemplate
             if ( $options['refresh'] || (!isset($contx->cache[ $tpl ]) && !isset(self::$__global->cache[ $tpl ])) ) 
             {
                 // load/parse required tpl (and any associated tpl)
+                $_ctx = self::$__context;
+                self::$__context = $contx;
                 $contx->cache[ $tpl ] = self::get_cached_template( $tpl, $contx, $options );
+                self::$__context = $_ctx;
             }
             
             $tmpl = isset($contx->cache[ $tpl ]) ? $contx->cache[ $tpl ] : self::$__global->cache[ $tpl ];
@@ -2105,9 +2111,11 @@ class Contemplate
     
     private static function get_cached_template( $id, $contx, $options=array() )
     {
-        if ( isset($contx->templates[$id]) )
+        if ( isset($contx->templates[$id]) ) $template = $contx->templates[$id];
+        elseif ( isset(self::$__global->templates[$id]) ) $template = self::$__global->templates[$id];
+        else $template = null;
+        if ( $template )
         {
-            $template = $contx->templates[$id];
             // inline templates saved only in-memory
             if ( $template[1] )
             {
@@ -2135,12 +2143,12 @@ class Contemplate
                 {
                     $cachedTplFile = self::get_cached_template_name( $id, $contx->id, $contx->cacheDir );
                     $cachedTplClass = self::get_cached_template_class( $id, $contx->id );
-                    if ( !is_file($cachedTplFile) )
+                    if ( !is_file( $cachedTplFile ) )
                     {
                         // if not exist, create it
                         self::create_cached_template( $id, $contx, $cachedTplFile, $cachedTplClass, $options['separators'] );
                     }
-                    if (is_file($cachedTplFile))
+                    if ( is_file( $cachedTplFile ) )
                     {
                         include( $cachedTplFile );
                         $tpl = new $cachedTplClass( );
@@ -2154,12 +2162,12 @@ class Contemplate
                 {
                     $cachedTplFile = self::get_cached_template_name( $id, $contx->id, $contx->cacheDir );
                     $cachedTplClass = self::get_cached_template_class( $id, $contx->id );
-                    if ( !is_file($cachedTplFile) || (filemtime($cachedTplFile) <= filemtime($template[0])) )
+                    if ( !is_file( $cachedTplFile ) || (filemtime( $cachedTplFile ) <= filemtime( $template[0] )) )
                     {
                         // if tpl not exist or is out-of-sync (re-)create it
                         self::create_cached_template( $id, $contx, $cachedTplFile, $cachedTplClass, $options['separators'] );
                     }
-                    if ( is_file($cachedTplFile) )
+                    if ( is_file( $cachedTplFile ) )
                     {
                         include( $cachedTplFile );
                         $tpl = new $cachedTplClass( );

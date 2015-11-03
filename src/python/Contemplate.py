@@ -134,9 +134,7 @@ class _G:
     TT_FUNC = None
     TT_RCODE = None
     
-    #re_plugin = re.compile(r'^(plg_|plugin_)([a-zA-Z0-9_]+)')
     re_controls = re.compile(r'(\t|[ ]?)[ ]*%([a-zA-Z_][a-zA-Z0-9_]*)\b[ ]*(\()(.*)$')
-    
     directives = [
     'set', 'unset', 'isset',
     'if', 'elseif', 'else', 'endif',
@@ -1120,7 +1118,6 @@ def parse_variable( s, i, l ):
     return None
 
 str_re = re.compile(r'#STR\d+#', re.M|re.S)
-
 def parse( tpl, leftTplSep, rightTplSep, withblocks=True ):
     global _G
     global str_re
@@ -1411,8 +1408,10 @@ def create_cached_template( id, contx, filename, classname, seps=None ):
 def get_cached_template( id, contx, options=dict() ):
     global _G
     # inline templates saved only in-memory
-    if id in contx.templates:
-        template = contx.templates[id]
+    if id in contx.templates: template = contx.templates[id]
+    elif id in _G.glob.templates: template = _G.glob.templates[id]
+    else: template = None
+    if template:
         # inline templates saved only in-memory
         if template[1]:
             # dynamic in-memory caching during page-request
@@ -1433,12 +1432,12 @@ def get_cached_template( id, contx, options=dict() ):
         if True != options['autoUpdate'] and CM == Contemplate.CACHE_TO_DISK_NOUPDATE:
         
             cachedTplFile = get_cached_template_name( id, contx.id )
-            cachedTplPath = os.path.join(contx.cacheDir, cachedTplFile)
+            cachedTplPath = os.path.join( contx.cacheDir, cachedTplFile )
             cachedTplClass = get_cached_template_class( id, contx.id )
             if not os.path.isfile(cachedTplPath):
                 # if not exist, create it
                 create_cached_template( id, contx, cachedTplPath, cachedTplClass, options['separators'] )
-            if os.path.isfile(cachedTplPath):
+            if os.path.isfile( cachedTplPath ):
                 tpl = import_tpl( cachedTplFile, cachedTplClass, contx.cacheDir )( )
                 tpl.setId( id ).ctx( contx.id )
                 return tpl
@@ -1448,12 +1447,12 @@ def get_cached_template( id, contx, options=dict() ):
         elif True == options['autoUpdate'] or CM == Contemplate.CACHE_TO_DISK_AUTOUPDATE:
         
             cachedTplFile = get_cached_template_name( id, contx.id )
-            cachedTplPath = os.path.join(contx.cacheDir, cachedTplFile)
+            cachedTplPath = os.path.join( contx.cacheDir, cachedTplFile )
             cachedTplClass = get_cached_template_class( id, contx.id )
-            if not os.path.isfile(cachedTplPath) or (os.path.getmtime(cachedTplPath) <= os.path.getmtime(template[0])):
+            if not os.path.isfile( cachedTplPath ) or (os.path.getmtime( cachedTplPath ) <= os.path.getmtime( template[0] )):
                 # if tpl not exist or is out-of-sync (re-)create it
                 create_cached_template( id, contx, cachedTplPath, cachedTplClass, options['separators'] )
-            if os.path.isfile(cachedTplPath):
+            if os.path.isfile( cachedTplPath ):
                 tpl = import_tpl( cachedTplFile, cachedTplClass, contx.cacheDir )( )
                 tpl.setId( id ).ctx( contx.id )
                 return tpl
@@ -1600,7 +1599,7 @@ class Template:
         return self
     
     def extend( self, tpl ): 
-        self._extends = Contemplate.tpl( tpl, None, self._ctx ) if tpl and isinstance(tpl, str) else (tpl if isinstance(tpl, Template) else None)
+        self._extends = Contemplate.tpl( tpl ) if tpl and isinstance(tpl, str) else (tpl if isinstance(tpl, Template) else None)
         return self
     
     def setBlocks( self, blocks ): 
@@ -1961,8 +1960,9 @@ class Contemplate:
     
     def setLocales( locales, ctx='__GLOBAL__' ): 
         global _G
-        contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
-        contx.locale = Contemplate.merge(contx.locale, locales)
+        if locales and isinstance(locales, dict):
+            contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
+            contx.locale = Contemplate.merge(contx.locale, locales)
     
     def clearLocales( ctx='__GLOBAL__' ): 
         global _G
@@ -1971,12 +1971,13 @@ class Contemplate:
     
     def setPlurals( plurals, ctx='__GLOBAL__' ): 
         global _G
-        contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
-        for singular in plurals:
-            if plurals[ singular ] is None: 
-                # auto plural
-                plurals[ singular ] = str(singular) + 's'
-        contx.plurals = Contemplate.merge(contx.plurals, plurals)
+        if plurals and isinstance(plurals, dict):
+            contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
+            for singular in plurals:
+                if plurals[ singular ] is None: 
+                    # auto plural
+                    plurals[ singular ] = str(singular) + 's'
+            contx.plurals = Contemplate.merge(contx.plurals, plurals)
     
     def clearPlurals( ctx='__GLOBAL__' ): 
         global _G
@@ -2022,9 +2023,8 @@ class Contemplate:
     
     def add( tpls, ctx='__GLOBAL__' ):
         global _G
-        if isinstance(tpls, dict):
+        if tpls and isinstance(tpls, dict):
             contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
-            
             for tplID in tpls:
                 if isinstance(tpls[ tplID ], (list, tuple)):
                     # unified way to add tpls both as reference and inline
@@ -2043,7 +2043,6 @@ class Contemplate:
     
     def parseTpl( tpl, options=dict() ):
         global _G
-        
         # see what context this template may use
         contx = None
         if isinstance(options, str):
@@ -2123,7 +2122,10 @@ class Contemplate:
             # load the template - and be sure to cache the result.
             if options['refresh'] or ((tpl not in contx.cache) and (tpl not in _G.glob.cache)): 
                 
+                _ctx = _G.context
+                _G.context = contx
                 contx.cache[ tpl ] = get_cached_template( tpl, contx, options )
+                _G.context = _ctx
             
             tmpl = contx.cache[ tpl ] if tpl in contx.cache else _G.glob.cache[ tpl ]
         

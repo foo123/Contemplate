@@ -1,48 +1,43 @@
 # -*- coding: UTF-8 -*-
+
 # Contemplate cached template 'sub'
-
-# imports start here, if any
-
-# imports end here
 def __getTplClass__(Contemplate):
     # extends the main Contemplate.Template class
-    class Contemplate_sub_Cached(Contemplate.Template):
+    class Contemplate_sub_Cached____GLOBAL__(Contemplate.Template):
         'Contemplate cached template sub'
-
         # constructor
         def __init__(self, id=None):
-            # initialize internal vars
             self_ = self
-            self_._renderer = None
-            self_._extends = None
-            self_._blocks = None
-            self_.id = None
-            self_.id = id
-            
+            super(Contemplate_sub_Cached____GLOBAL__, self_).__init__( id )
             # extend tpl assign code starts here
             
             # extend tpl assign code ends here
-
         # tpl-defined blocks render code starts here
         
         # tpl-defined blocks render code ends here
-
         # render a tpl block method
         def renderBlock(self, block, data, __i__=None):
             self_ = self
-            if not __i__: __i__ = self_
+            __ctx = None
+            if not __i__:
+                __i__ = self_
+                __ctx = Contemplate._set_ctx( self_._ctx )
+            r = ''
             method = '_blockfn_' + block
             if (hasattr(self_, method) and callable(getattr(self_, method))):
-                return getattr(self_, method)(data, self_, __i__)
+                r = getattr(self_, method)(data, self_, __i__)
             elif self_._extends:
-                return self_._extends.renderBlock(block, data, __i__)
-            return ''
-            
-        # tpl render method
+                r = self_._extends.renderBlock(block, data, __i__)
+            if __ctx:  Contemplate._set_ctx( __ctx )
+            return r
+        # render method
         def render(self, data, __i__=None):
             self_ = self
-            if  not __i__: __i__ = self_
+            __ctx = None
             __p__ = ''
+            if not __i__:
+                __i__ = self_
+                __ctx = Contemplate._set_ctx( self_._ctx )
             if self_._extends:
                 __p__ = self_._extends.render(data, __i__)
 
@@ -51,7 +46,7 @@ def __getTplClass__(Contemplate):
                 
                 __p__ += '<div>' + "\n" + '    <br />' + "\n" + '    <strong>Number of Items:' + str(Contemplate.count(data['users'][data['i']]) ) + '</strong>' + "\n" + '    <br />' + "\n" + '    '
                 _loc_7 = data['users'][data['i']]
-                _loc_8 = (enumerate(_loc_7) if isinstance(_loc_7,(list, tuple)) else _loc_7.items()) if _loc_7 else None
+                _loc_8 = (enumerate(_loc_7) if isinstance(_loc_7,(list,tuple)) else _loc_7.items()) if _loc_7 else None
                 if (_loc_8):
                     for _loc_j,_loc_user in _loc_8:
                          
@@ -80,9 +75,8 @@ def __getTplClass__(Contemplate):
                 
                 # tpl main render code ends here
 
+            if __ctx:  Contemplate._set_ctx( __ctx )
             return __p__
-    
-    return Contemplate_sub_Cached
-
+    return Contemplate_sub_Cached____GLOBAL__
 # allow to 'import *'  from this file as a module
 __all__ = ['__getTplClass__']

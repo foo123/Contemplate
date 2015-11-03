@@ -151,7 +151,7 @@ syntax, yet work the same in all the engine's implementations.
 
 ###Todo
 
-* add support for multiple `contexts` (which include separate templates, `cache` directories and related parameters) so that the same engine can be used in same application by different modules independantly [ALMOST DONE]
+* add support for multiple `contexts` (which include separate `templates`, `cache` directories and related parameters) so that the engine can be **used in same application by different modules independantly** [DONE]
 * support asynchronous template loading/rendering for `node/browser`
 * add `Contemplate` implementations for `ActionScript, Perl, Java, Scala` [TODO?]
 * transform `Contemplate` (for `PHP`) into a `PHP` `C`-extension, `Contemplate` (for node) into standalone executable (eg. https://github.com/crcn/nexe)

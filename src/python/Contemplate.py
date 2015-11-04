@@ -1570,6 +1570,7 @@ class Template:
         self._blocks = None
         self._extends = None
         self._ctx = None
+        self._autonomus = False
         self.id = None
         if id is not None: self.id = id 
     
@@ -1581,6 +1582,7 @@ class Template:
         self._blocks = None
         self._extends = None
         self._ctx = None
+        self._autonomus = None
         self.id = None
         return self
     
@@ -1590,6 +1592,10 @@ class Template:
     
     def ctx( self, ctx ):
         self._ctx = ctx
+        return self
+    
+    def autonomus( self, enable=True ):
+        self._autonomus = bool(enable)
         return self
     
     def extend( self, tpl ): 
@@ -1605,13 +1611,19 @@ class Template:
         self._renderer = renderFunc if renderFunc else None
         return self
     
+    def renderSuperBlock( self, block, data ):
+        #if not __i__: __i__ = self
+        if self._extends:
+            return self._extends.renderBlock(block, data, self._extends)
+        return ''
+        
     def renderBlock( self, block, data, __i__=None ):
-        __ctx = None
+        __ctx = False
+        r = ''
         if not __i__:
             __i__ = self
-            __ctx = Contemplate._set_ctx( self._ctx )
+            if not self._autonomus: __ctx = Contemplate._set_ctx( self._ctx )
         
-        r = ''
         if (self._blocks) and (block in self._blocks):
             blockfunc = self._blocks[block]
             r = blockfunc(data, self, __i__)
@@ -1621,19 +1633,13 @@ class Template:
         if __ctx: Contemplate._set_ctx( __ctx )
         return r
         
-    def renderSuperBlock( self, block, data ):
-        #if not __i__: __i__ = self
-        if self._extends:
-            return self._extends.renderBlock(block, data, self._extends)
-        return ''
-        
     def render( self, data, __i__=None ):
-        __ctx = None
+        __ctx = False
+        __p__ = ''
         if not __i__:
             __i__ = self
-            __ctx = Contemplate._set_ctx( self._ctx )
+            if not self._autonomus: __ctx = Contemplate._set_ctx( self._ctx )
             
-        __p__ = ''
         if self._extends:  
             __p__ = self._extends.render(data, __i__)
         elif self._renderer is not None: 
@@ -1707,9 +1713,9 @@ class Contemplate:
         if _G.isInited: return
             
         # a default global context
-        _G.glob = Ctx('__GLOBAL__')
+        _G.glob = Ctx('global')
         _G.ctx = {
-        '__GLOBAL__'  : _G.glob
+        'global'  : _G.glob
         }
         _G.context = _G.glob
         
@@ -1740,11 +1746,11 @@ class Contemplate:
             ,"        # render a tpl block method"
             ,"        def renderBlock(self, block, data, __i__=None):"
             ,"            self_ = self"
-            ,"            __ctx = None"
+            ,"            __ctx = False"
+            ,"            r = ''"
             ,"            if not __i__:"
             ,"                __i__ = self_"
-            ,"                __ctx = Contemplate._set_ctx( self_._ctx )"
-            ,"            r = ''"
+            ,"                if not self._autonomus: __ctx = Contemplate._set_ctx( self._ctx )"
             ,"            method = '_blockfn_' + block"
             ,"            if (hasattr(self_, method) and callable(getattr(self_, method))):"
             ,"                r = getattr(self_, method)(data, self_, __i__)"
@@ -1755,11 +1761,11 @@ class Contemplate:
             ,"        # render method"
             ,"        def render(self, data, __i__=None):"
             ,"            self_ = self"
-            ,"            __ctx = None"
+            ,"            __ctx = False"
             ,"            __p__ = ''"
             ,"            if not __i__:"
             ,"                __i__ = self_"
-            ,"                __ctx = Contemplate._set_ctx( self_._ctx )"
+            ,"                if not self._autonomus: __ctx = Contemplate._set_ctx( self._ctx )"
             ,"            if self_._extends:"
             ,"                __p__ = self_._extends.render(data, __i__)"
             ,""
@@ -1925,11 +1931,11 @@ class Contemplate:
     
     def createCtx( ctx ):
         global _G
-        if ctx and ('__GLOBAL__' != ctx) and (ctx not in _G.ctx): _G.ctx[ctx] = Ctx( ctx )
+        if ctx and ('global' != ctx) and (ctx not in _G.ctx): _G.ctx[ctx] = Ctx( ctx )
     
     def disposeCtx( ctx ):
         global _G
-        if ctx and ('__GLOBAL__' != ctx) and (ctx in _G.ctx):
+        if ctx and ('global' != ctx) and (ctx in _G.ctx):
             _G.ctx[ctx].dispose( )
             del _G.ctx[ctx]
     
@@ -1943,12 +1949,12 @@ class Contemplate:
         global _G
         _G.preserveLines = _G.preserveLinesDefault if enable else ''
     
-    def hasPlugin( name, ctx='__GLOBAL__' ):
+    def hasPlugin( name, ctx='global' ):
         global _G
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         return name and ((name in contx.plugins) or (name in _G.glob.plugins))
     
-    def addPlugin( name, pluginCode, ctx='__GLOBAL__' ):
+    def addPlugin( name, pluginCode, ctx='global' ):
         global _G
         if name and pluginCode:
             contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
@@ -1962,28 +1968,28 @@ class Contemplate:
             return _G.glob.plugins[ plg ]( *args )
         return ''
     
-    def setPrefixCode( preCode=None, ctx='__GLOBAL__' ):
+    def setPrefixCode( preCode=None, ctx='global' ):
         global _G
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         if preCode: contx.prefix = str(preCode)
     
-    def setEncoding( encoding, ctx='__GLOBAL__' ): 
+    def setEncoding( encoding, ctx='global' ): 
         global _G
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         contx.encoding = encoding
     
-    def setLocales( locales, ctx='__GLOBAL__' ): 
+    def setLocales( locales, ctx='global' ): 
         global _G
         if locales and isinstance(locales, dict):
             contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
             contx.locale = Contemplate.merge(contx.locale, locales)
     
-    def clearLocales( ctx='__GLOBAL__' ): 
+    def clearLocales( ctx='global' ): 
         global _G
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         contx.locale = {}
     
-    def setPlurals( plurals, ctx='__GLOBAL__' ): 
+    def setPlurals( plurals, ctx='global' ): 
         global _G
         if plurals and isinstance(plurals, dict):
             contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
@@ -1993,12 +1999,12 @@ class Contemplate:
                     plurals[ singular ] = str(singular) + 's'
             contx.plurals = Contemplate.merge(contx.plurals, plurals)
     
-    def clearPlurals( ctx='__GLOBAL__' ): 
+    def clearPlurals( ctx='global' ): 
         global _G
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         contx.plurals = {}
     
-    def setCacheDir( dir, ctx='__GLOBAL__' ): 
+    def setCacheDir( dir, ctx='global' ): 
         global _G
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         _self = Contemplate
@@ -2019,23 +2025,23 @@ class Contemplate:
         #    os.sys.path.append(_dir)
 
     
-    def setCacheMode( mode, ctx='__GLOBAL__' ): 
+    def setCacheMode( mode, ctx='global' ): 
         global _G
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         contx.cacheMode = mode
     
-    def clearCache( all=False, ctx='__GLOBAL__' ): 
+    def clearCache( all=False, ctx='global' ): 
         global _G
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         contx.cache = {}
         if all: contx.partials = {}
     
-    def hasTpl( tpl, ctx='__GLOBAL__' ):
+    def hasTpl( tpl, ctx='global' ):
         global _G
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         return tpl and ((tpl in contx.templates) or (tpl in _G.glob.templates))
     
-    def add( tpls, ctx='__GLOBAL__' ):
+    def add( tpls, ctx='global' ):
         global _G
         if tpls and isinstance(tpls, dict):
             contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
@@ -2049,7 +2055,7 @@ class Contemplate:
                     contx.templates[ tplID ] = [tpls[ tplID ], False]
     
     
-    def getTemplateContents( id, ctx='__GLOBAL__' ):
+    def getTemplateContents( id, ctx='global' ):
         global _G
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         return get_template_contents( id, contx )
@@ -2115,10 +2121,11 @@ class Contemplate:
                 options = {}
             
             options = merge({
-                'autoUpdate': False, 
-                'refresh': False, 
-                'escape': False,
-                'separators': None
+                 'separators': None
+                ,'autoUpdate': False
+                ,'refresh': False
+                ,'escape': False
+                ,'standalone': False
             }, {} if not options else options)
             
             if 'context' in options:
@@ -2142,6 +2149,7 @@ class Contemplate:
                 _G.context = _ctx
             
             tmpl = contx.cache[ tpl ] if tpl in contx.cache else _G.glob.cache[ tpl ]
+            tmpl.autonomus( options['standalone'] )
         
         # Provide some basic currying to the user
         return str(tmpl.render( data )) if isinstance(data, dict) else tmpl

@@ -1449,18 +1449,15 @@ function Template( id )
     self._blocks = null;
     self._extends = null;
     self._ctx = null;
+    self._autonomus = false;
     self.id = null;
     if ( id ) self.id = id; 
 }
 Template.spr = function( data, __i__ ) {
-    var self = this, r, __ctx = null;
-    if ( 1 === arguments.length )
-    {
-        __i__ = self;
-        __ctx = Contemplate._set_ctx( self._ctx );
-    }
-    r = self._extends.render(data, __i__);
-    if ( __ctx )  Contemplate._set_ctx( __ctx );
+    var self = this, r, __ctx = false;
+    !__i__&&(__i__=self)&&(self._autonomus||(__ctx=Contemplate._set_ctx( self._ctx )));
+    r = self._extends.render( data, __i__ );
+    __ctx&&Contemplate._set_ctx( __ctx );
     return r;
 };
 Template.fixr = function( tpl ) { 
@@ -1479,6 +1476,7 @@ Template[PROTO] = {
     ,_blocks: null
     ,_extends: null
     ,_ctx: null
+    ,_autonomus: false
     
     // public methods
     ,dispose: function( ) {
@@ -1487,6 +1485,7 @@ Template[PROTO] = {
         self._blocks = null;
         self._extends = null;
         self._ctx = null;
+        self._autonomus = null;
         self.id = null;
         return self;
     }
@@ -1499,6 +1498,11 @@ Template[PROTO] = {
     ,ctx: function( ctx ) { 
         this._ctx = ctx;
         return this; 
+    }
+    
+    ,autonomus: function( enable ) {
+        this._autonomus = !arguments.length ? true : !!enable;
+        return this;
     }
     
     ,extend: function( tpl ) { 
@@ -1528,20 +1532,6 @@ Template[PROTO] = {
         return self; 
     }
     
-    ,renderBlock: function( block, data, __i__ ) {
-        var self = this, r = '', __ctx = null, blocks;
-        if ( 1 === arguments.length )
-        {
-            __i__ = self;
-            __ctx = Contemplate._set_ctx( self._ctx );
-        }
-        blocks = self._blocks;
-        if ( blocks && blocks[HAS](block) ) r = blocks[block](Contemplate, data, self, __i__);
-        else if ( self._extends ) r = self._extends.renderBlock(block, data, __i__);
-        if ( __ctx )  Contemplate._set_ctx( __ctx );
-        return r;
-    }
-    
     ,renderSuperBlock: function( block, data/*, __i__*/ ) {
         var self = this;
         //__i__ = __i__ || self;
@@ -1549,15 +1539,17 @@ Template[PROTO] = {
         return '';
     }
     
+    ,renderBlock: function( block, data, __i__ ) {
+        var self = this, r = '', __ctx = false, blocks = self._blocks;
+        !__i__&&(__i__=self)&&(self._autonomus||(__ctx=Contemplate._set_ctx( self._ctx )));
+        if ( blocks && blocks[HAS](block) ) r = blocks[block](Contemplate, data, self, __i__);
+        else if ( self._extends ) r = self._extends.renderBlock(block, data, __i__);
+        __ctx&&Contemplate._set_ctx( __ctx );
+        return r;
+    }
+    
     ,render: function( data, __i__ ) {
-        var self = this, __p__ = '', __ctx = null;
-        if ( 1 === arguments.length )
-        {
-            __i__ = self;
-            __ctx = Contemplate._set_ctx( self._ctx );
-        }
-        if ( __ctx )  Contemplate._set_ctx( __ctx );
-        return __p__;
+        return '';
     }
 }
 
@@ -1631,9 +1623,9 @@ Contemplate = {
         if ( $__isInited ) return;
         
         // a default global context
-        $__global = new Ctx('__GLOBAL__');
+        $__global = new Ctx('global');
         $__ctx = {
-        '__GLOBAL__'  : $__global
+        'global'  : $__global
         };
         $__context = $__global;
         
@@ -1671,16 +1663,12 @@ Contemplate = {
             ,"/* render method */"
             ,"#CLASSNAME#.prototype.render = function( data, __i__ ) {"
             ,"    \"use strict\";"
-            ,"    var self = this, __p__ = '', __ctx = null;"
-            ,"    if ( 1 === arguments.length )"
-            ,"    {"
-            ,"        __i__ = self;"
-            ,"        __ctx = Contemplate._set_ctx( self._ctx );"
-            ,"    }"
+            ,"    var self = this, __p__ = '', __ctx = false;"
+            ,"    !__i__&&(__i__=self)&&(self._autonomus||(__ctx=Contemplate._set_ctx( self._ctx )));"
             ,"    /* tpl main render code starts here */"
             ,"#RENDERCODE#"
             ,"    /* tpl main render code ends here */"
-            ,"    if ( __ctx )  Contemplate._set_ctx( __ctx );"
+            ,"    __ctx&&Contemplate._set_ctx( __ctx );"
             ,"    return __p__;"
             ,"};"
             ,"// export it"
@@ -1840,14 +1828,10 @@ Contemplate = {
         TT_FUNC = InlineTemplate.compile(InlineTemplate.multisplit([
             "return function( data, __i__ ){"
             ,"\"use strict\";"
-            ,"var self = this, __p__ = '', __ctx = null;"
-            ,"if ( 1 === arguments.length )"
-            ,"{"
-            ,"    __i__ = self;"
-            ,"    __ctx = Contemplate._set_ctx( self._ctx );"
-            ,"}"
+            ,"var self = this, __p__ = '', __ctx = false;"
+            ,"!__i__&&(__i__=self)&&(self._autonomus||(__ctx=Contemplate._set_ctx( self._ctx )));"
             ,"#FCODE#"
-            ,"if ( __ctx )  Contemplate._set_ctx( __ctx );"
+            ,"__ctx&&Contemplate._set_ctx( __ctx );"
             ,"return __p__;"
             ,"};"
         ].join( "#EOL#" ), {
@@ -1882,11 +1866,11 @@ Contemplate = {
     //
     
     ,createCtx: function( ctx ) {
-        if ( ctx && '__GLOBAL__' !== ctx && !$__ctx[HAS](ctx) ) $__ctx[ctx] = new Ctx( ctx );
+        if ( ctx && 'global' !== ctx && !$__ctx[HAS](ctx) ) $__ctx[ctx] = new Ctx( ctx );
     }
     
     ,disposeCtx: function( ctx ) {
-        if ( ctx && '__GLOBAL__' !== ctx && $__ctx[HAS](ctx) )
+        if ( ctx && 'global' !== ctx && $__ctx[HAS](ctx) )
         {
             $__ctx[ctx].dispose( );
             delete $__ctx[ctx];
@@ -1908,7 +1892,7 @@ Contemplate = {
     
     ,hasPlugin: function( name, ctx ) {
         var contx;
-        if ( arguments.length < 2 ) ctx = '__GLOBAL__';
+        if ( arguments.length < 2 ) ctx = 'global';
         contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
         return !!name && (contx.plugins[HAS](name) || $__global.plugins[HAS](name));
     }
@@ -1917,7 +1901,7 @@ Contemplate = {
         var contx;
         if ( name && pluginCode )
         {
-            if ( arguments.length < 2 ) ctx = '__GLOBAL__';
+            if ( arguments.length < 2 ) ctx = 'global';
             contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
             contx.plugins[ name ] = pluginCode;
         }
@@ -1938,14 +1922,14 @@ Contemplate = {
     
     ,setPrefixCode: function( preCode, ctx ) {
         var contx;
-        if ( arguments.length < 2 ) ctx = '__GLOBAL__';
+        if ( arguments.length < 2 ) ctx = 'global';
         contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
         if ( preCode ) contx.prefix = '' + preCode;
     }
 
     ,setEncoding: function( encoding, ctx ) {
         var contx;
-        if ( arguments.length < 2 ) ctx = '__GLOBAL__';
+        if ( arguments.length < 2 ) ctx = 'global';
         contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
         contx.encoding = encoding;
     }
@@ -1954,7 +1938,7 @@ Contemplate = {
         var contx;
         if ( locales && "object"===typeof locales )
         {
-            if ( arguments.length < 2 ) ctx = '__GLOBAL__';
+            if ( arguments.length < 2 ) ctx = 'global';
             contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
             contx.locale = merge(contx.locale, locales);
         }
@@ -1962,7 +1946,7 @@ Contemplate = {
     
     ,clearLocales: function( ctx ) { 
         var contx;
-        if ( arguments.length < 2 ) ctx = '__GLOBAL__';
+        if ( arguments.length < 2 ) ctx = 'global';
         contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
         contx.locale = { }; 
     }
@@ -1971,7 +1955,7 @@ Contemplate = {
         var contx, singular;
         if ( plurals && "object"===typeof plurals )
         {
-            if ( arguments.length < 2 ) ctx = '__GLOBAL__';
+            if ( arguments.length < 2 ) ctx = 'global';
             contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
             for (singular in plurals)
             {
@@ -1987,28 +1971,28 @@ Contemplate = {
     
     ,clearPlurals: function( ctx ) { 
         var contx;
-        if ( arguments.length < 2 ) ctx = '__GLOBAL__';
+        if ( arguments.length < 2 ) ctx = 'global';
         contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
         contx.plurals = { }; 
     }
     
     ,setCacheDir: function( dir, ctx ) { 
         var contx;
-        if ( arguments.length < 2 ) ctx = '__GLOBAL__';
+        if ( arguments.length < 2 ) ctx = 'global';
         contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
         contx.cacheDir = rtrim(dir, '/') + '/';  
     }
     
     ,setCacheMode: function( mode, ctx ) { 
         var contx;
-        if ( arguments.length < 2 ) ctx = '__GLOBAL__';
+        if ( arguments.length < 2 ) ctx = 'global';
         contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
         contx.cacheMode = isNode ? mode : Contemplate.CACHE_TO_DISK_NONE; 
     }
     
     ,clearCache: function( all, ctx ) { 
         var contx;
-        if ( arguments.length < 2 ) ctx = '__GLOBAL__';
+        if ( arguments.length < 2 ) ctx = 'global';
         contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
         contx.cache = { }; 
         if ( all ) contx.partials = { }; 
@@ -2018,7 +2002,7 @@ Contemplate = {
         var contx, tplID;
         if ( tpls && "object"===typeof tpls )
         {
-            if ( arguments.length < 2 ) ctx = '__GLOBAL__';
+            if ( arguments.length < 2 ) ctx = 'global';
             contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
             for (tplID in tpls)
             {
@@ -2040,14 +2024,14 @@ Contemplate = {
 
     ,hasTpl: function( tpl, ctx ) { 
         var contx;
-        if ( arguments.length < 2 ) ctx = '__GLOBAL__';
+        if ( arguments.length < 2 ) ctx = 'global';
         contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
         return !!tpl && (contx.templates[HAS](tpl) || $__global.templates[HAS](tpl));
     }
 
     ,getTemplateContents: function( id, ctx ) {
         var contx;
-        if ( arguments.length < 2 ) ctx = '__GLOBAL__';
+        if ( arguments.length < 2 ) ctx = 'global';
         contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
         return get_template_contents( id, contx );
     }
@@ -2117,10 +2101,11 @@ Contemplate = {
             }
             
             options = merge({
-                'autoUpdate': false,
-                'refresh': false,
-                'escape': true,
-                'separators': null
+                 'separators': null
+                ,'autoUpdate': false
+                ,'refresh': false
+                ,'escape': true
+                ,'standalone': false
             }, options);
             
             if ( options.context )
@@ -2146,6 +2131,7 @@ Contemplate = {
             }
             
             tmpl = contx.cache[ tpl ] || $__global.cache[ tpl ];
+            tmpl.autonomus( options.standalone );
         }
         
         // Provide some basic currying to the user

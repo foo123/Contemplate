@@ -5,11 +5,11 @@ var m;
 if ( 'object' === typeof(module) && module.exports ) module.exports = moduleDefinition();
 // browser and AMD, etc..
 else (root[ moduleName ] = m = moduleDefinition()) && ('function' === typeof(define) && define.amd && define(moduleName,[],function(){return m;}));
-}(this, 'Contemplate_tpl2_Cached____GLOBAL__', function( ){
+}(this, 'Contemplate_tpl1_Cached__global', function( ){
 "use strict";
 return function( Contemplate ) {
-/* Contemplate cached template 'tpl2', constructor */
-function Contemplate_tpl2_Cached____GLOBAL__( id )
+/* Contemplate cached template 'tpl1', constructor */
+function Contemplate_tpl1_Cached__global( id )
 {
     var self = this;
     Contemplate.Template.call( self, id );
@@ -23,7 +23,7 @@ function Contemplate_tpl2_Cached____GLOBAL__( id )
         "use strict";
         var __p__ = '';
         
-        __p__ += '(2 3)' + "\n" + '        ' + (self.renderSuperBlock("3", data)) + '' + "\n" + '        ';
+        __p__ += '(1 3)';
         return __p__;
         
     }
@@ -35,8 +35,8 @@ function Contemplate_tpl2_Cached____GLOBAL__( id )
         "use strict";
         var __p__ = '';
         
-        __p__ += '(2 2)' + "\n" + '        ' +  __i__.renderBlock('3', data);
-        __p__ += '' + "\n" + '    ' + (self.renderSuperBlock("2", data)) + '' + "\n" + '    ';
+        __p__ += '(1 2)' + "\n" + '        ' +  __i__.renderBlock('3', data);
+        __p__ += '' + "\n" + '    ';
         return __p__;
         
     }
@@ -48,8 +48,8 @@ function Contemplate_tpl2_Cached____GLOBAL__( id )
         "use strict";
         var __p__ = '';
         
-        __p__ += '(2 1)' + "\n" + '    ' +  __i__.renderBlock('2', data);
-        __p__ += '' + "\n" + '' + (self.renderSuperBlock("1", data)) + '' + "\n" + '';
+        __p__ += '(1 1)' + "\n" + '    ' +  __i__.renderBlock('2', data);
+        __p__ += '' + "\n" + '';
         return __p__;
         
     }
@@ -58,29 +58,26 @@ function Contemplate_tpl2_Cached____GLOBAL__( id )
     
     /* tpl-defined blocks render code ends here */
     /* extend tpl assign code starts here */
-    self.extend('tpl1');
+    
     /* extend tpl assign code ends here */
 }
 /* extends main Contemplate.Template class */
-Contemplate_tpl2_Cached____GLOBAL__.prototype = Object.create(Contemplate.Template.prototype);
+Contemplate_tpl1_Cached__global.prototype = Object.create(Contemplate.Template.prototype);
 /* render method */
-Contemplate_tpl2_Cached____GLOBAL__.prototype.render = function( data, __i__ ) {
+Contemplate_tpl1_Cached__global.prototype.render = function( data, __i__ ) {
     "use strict";
-    var self = this, __p__ = '', __ctx = null;
-    if ( !__i__ )
-    {
-        __i__ = self;
-        __ctx = Contemplate._set_ctx( self._ctx );
-    }
+    var self = this, __p__ = '', __ctx = false;
+    !__i__&&(__i__=self)&&(self._autonomus||(__ctx=Contemplate._set_ctx( self._ctx )));
     /* tpl main render code starts here */
     
-    __p__ = '';
+    __p__ += '' +  __i__.renderBlock('1', data);
+    __p__ += '';
     
     /* tpl main render code ends here */
-    if ( __ctx )  Contemplate._set_ctx( __ctx );
+    __ctx&&Contemplate._set_ctx( __ctx );
     return __p__;
 };
 // export it
-return Contemplate_tpl2_Cached____GLOBAL__;
+return Contemplate_tpl1_Cached__global;
 };
 });

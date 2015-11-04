@@ -3,12 +3,12 @@
 # Contemplate cached template 'tpl2'
 def __getTplClass__(Contemplate):
     # extends the main Contemplate.Template class
-    class Contemplate_tpl2_Cached____GLOBAL__(Contemplate.Template):
+    class Contemplate_tpl2_Cached__global(Contemplate.Template):
         'Contemplate cached template tpl2'
         # constructor
         def __init__(self, id=None):
             self_ = self
-            super(Contemplate_tpl2_Cached____GLOBAL__, self_).__init__( id )
+            super(Contemplate_tpl2_Cached__global, self_).__init__( id )
             # extend tpl assign code starts here
             self_.extend('tpl1')
             # extend tpl assign code ends here
@@ -50,11 +50,11 @@ def __getTplClass__(Contemplate):
         # render a tpl block method
         def renderBlock(self, block, data, __i__=None):
             self_ = self
-            __ctx = None
+            __ctx = False
+            r = ''
             if not __i__:
                 __i__ = self_
-                __ctx = Contemplate._set_ctx( self_._ctx )
-            r = ''
+                if not self._autonomus: __ctx = Contemplate._set_ctx( self._ctx )
             method = '_blockfn_' + block
             if (hasattr(self_, method) and callable(getattr(self_, method))):
                 r = getattr(self_, method)(data, self_, __i__)
@@ -65,11 +65,11 @@ def __getTplClass__(Contemplate):
         # render method
         def render(self, data, __i__=None):
             self_ = self
-            __ctx = None
+            __ctx = False
             __p__ = ''
             if not __i__:
                 __i__ = self_
-                __ctx = Contemplate._set_ctx( self_._ctx )
+                if not self._autonomus: __ctx = Contemplate._set_ctx( self._ctx )
             if self_._extends:
                 __p__ = self_._extends.render(data, __i__)
 
@@ -82,6 +82,6 @@ def __getTplClass__(Contemplate):
 
             if __ctx:  Contemplate._set_ctx( __ctx )
             return __p__
-    return Contemplate_tpl2_Cached____GLOBAL__
+    return Contemplate_tpl2_Cached__global
 # allow to 'import *'  from this file as a module
 __all__ = ['__getTplClass__']

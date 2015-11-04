@@ -1,9 +1,9 @@
 <?php 
 
-if (!class_exists('Contemplate_demo_Cached____GLOBAL__'))
+if (!class_exists('Contemplate_demo_Cached__global'))
 {
 /* Contemplate cached template 'demo' */
-final class Contemplate_demo_Cached____GLOBAL__ extends ContemplateTemplate
+final class Contemplate_demo_Cached__global extends ContemplateTemplate
 {
 /* constructor */
 public function __construct($id=null)
@@ -190,11 +190,11 @@ private function _blockfn_Block12(&$data, $self, $__i__)
 /* tpl renderBlock method */
 public function renderBlock($block, &$data, $__i__=null)
 {
-    $self = $this; $r = ''; $__ctx = null;
+    $self = $this; $r = ''; $__ctx = false;
     if ( !$__i__ )
     {
         $__i__ = $self;
-        $__ctx = Contemplate::_set_ctx( $self->_ctx );
+        if ( !$self->_autonomus ) $__ctx = Contemplate::_set_ctx( $self->_ctx );
     }
     $method = '_blockfn_' . $block;
     if ( method_exists($self, $method) ) $r = $self->{$method}($data, $self, $__i__);
@@ -205,13 +205,13 @@ public function renderBlock($block, &$data, $__i__=null)
 /* tpl render method */
 public function render(&$data, $__i__=null)
 {
-    $self = $this; $__ctx = null;
+    $self = $this; $__ctx = false;
+    $__p__ = '';
     if ( !$__i__ )
     {
         $__i__ = $self;
-        $__ctx = Contemplate::_set_ctx( $self->_ctx );
+        if ( !$self->_autonomus ) $__ctx = Contemplate::_set_ctx( $self->_ctx );
     }
-    $__p__ = '';
     if ( $self->_extends )
     {
         $__p__ = $self->_extends->render($data, $__i__);

@@ -114,7 +114,7 @@ If a context already exists, it is not re-created in `createCtx` method. If a co
 
 All other `API` methods of `Contemplate` can accept a `context id` (so operations take place in that context) either via `options` (in methods that accept an `options` parameter) or via an additional `ctx` string parameter (see examples).
 
-If no context is given, API operations take place in the `global` context `"__GLOBAL__"`.
+If no context is given, API operations take place in the `global` context `"global"`.
 TEMPLATE operations take place in the `current` context (which defaults to `global` if no other context specified)
 
 
@@ -215,34 +215,34 @@ Contemplate.add({
     'tpl2': './path/to/template2',
     'inline_tpl': ['<% $var %>'], // inline template
     'dom_tpl': '#dom_tpl_id' // DOM template (for browser)
-} [, ctx="__GLOBAL__"]);
+} [, ctx="global"]);
 
 // add localisation
 Contemplate.setLocales({
     "locale": "γλωσσική περιοχή"
-} [, ctx="__GLOBAL__"]);
+} [, ctx="global"]);
 
-Contemplate.clearLocales([ctx="__GLOBAL__"]);
+Contemplate.clearLocales([ctx="global"]);
 
 // add pluralisation
 Contemplate.setPlurals({
     'item': 'items'
-} [, ctx="__GLOBAL__"]);
+} [, ctx="global"]);
 
-Contemplate.clearPlurals([ctx="__GLOBAL__"]);
+Contemplate.clearPlurals([ctx="global"]);
 
 // add plugins
 Contemplate.addPlugin('print', function(v){
     return '<pre>' + JSON.stringify(v, null, 4) + '</pre>';
-} [, ctx="__GLOBAL__"]);
+} [, ctx="global"]);
 
 // set cache directory for Node, make sure it exists
-Contemplate.setCacheDir( fs.realpathSync(path.join(__dirname, '/_tplcache')) [, ctx="__GLOBAL__"] );
+Contemplate.setCacheDir( fs.realpathSync(path.join(__dirname, '/_tplcache')) [, ctx="global"] );
 
 
 // set caching mode for Node
 // Contemplate.CACHE_TO_DISK_AUTOUPDATE, Contemplate.CACHE_TO_DISK_NOUPDATE, Contemplate.CACHE_TO_DISK_NONE
-Contemplate.setCacheMode( Contemplate.CACHE_TO_DISK_AUTOUPDATE [, ctx="__GLOBAL__"] );
+Contemplate.setCacheMode( Contemplate.CACHE_TO_DISK_AUTOUPDATE [, ctx="global"] );
 
 
 // get a template by id, load it and cache it if needed

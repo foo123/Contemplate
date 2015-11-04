@@ -12,7 +12,6 @@
 **/
 if (!class_exists('Contemplate'))
 {
-// can use inline templates for plugins etc.. to enable non-linear plugin compile-time replacement
 class ContemplateInlineTemplate
 { 
     public $id = null;
@@ -134,6 +133,7 @@ class ContemplateTemplate
     protected $_ctx = null;
     protected $_blocks = null;
     protected $_renderer = null;
+    protected $_autonomus = null;
     
     
     public function __construct( $id=null )
@@ -143,6 +143,7 @@ class ContemplateTemplate
         $this->_blocks = null;
         $this->_extends = null;
         $this->_ctx = null;
+        $this->_autonomus = false;
         $this->id = null; 
         if ( $id ) $this->id = $id; 
     }
@@ -158,6 +159,7 @@ class ContemplateTemplate
         $this->_blocks = null;
         $this->_extends = null;
         $this->_ctx = null;
+        $this->_autonomus = null;
         $this->id = null;
         return $this;
     }
@@ -171,6 +173,12 @@ class ContemplateTemplate
     public function ctx( $ctx ) 
     { 
         $this->_ctx = $ctx; 
+        return $this; 
+    }
+    
+    public function autonomus( $enable=true ) 
+    { 
+        $this->_autonomus = (bool)$enable; 
         return $this; 
     }
     
@@ -194,13 +202,24 @@ class ContemplateTemplate
         return $this; 
     }
     
+    public function renderSuperBlock( $block, &$data/*, $__i__=null*/ )
+    {
+        $self = $this;
+        //if ( !$__i__ ) $__i__ = $self;
+        if ( $self->_extends ) 
+        {
+            return $self->_extends->renderBlock($block, $data, $self->_extends);
+        }
+        return '';
+    }
+    
     public function renderBlock( $block, &$data, $__i__=null )
     {
-        $self = $this; $r = ''; $__ctx = null;
+        $self = $this; $r = ''; $__ctx = false;
         if ( !$__i__ )
         {
             $__i__ = $self;
-            $__ctx = Contemplate::_set_ctx( $self->_ctx );
+            if ( !$this->_autonomus ) $__ctx = Contemplate::_set_ctx( $self->_ctx );
         }
         if ( $self->_blocks && isset($self->_blocks[$block]) ) 
         {
@@ -215,26 +234,15 @@ class ContemplateTemplate
         return $r;
     }
     
-    public function renderSuperBlock( $block, &$data/*, $__i__=null*/ )
-    {
-        $self = $this;
-        //if ( !$__i__ ) $__i__ = $self;
-        if ( $self->_extends ) 
-        {
-            return $self->_extends->renderBlock($block, $data, $self->_extends);
-        }
-        return '';
-    }
-    
     public function render( &$data, $__i__=null ) 
     {
-        $self = $this; $__ctx = null;
+        $self = $this; $__ctx = false;
+        $__p__ = '';
         if ( !$__i__ )
         {
             $__i__ = $self;
-            $__ctx = Contemplate::_set_ctx( $self->_ctx );
+            if ( !$this->_autonomus ) $__ctx = Contemplate::_set_ctx( $self->_ctx );
         }
-        $__p__ = ''; 
         if ( $self->_extends ) 
         { 
             $__p__ = $self->_extends->render($data, $__i__); 
@@ -421,9 +429,9 @@ class Contemplate
         if ( self::$__isInited ) return;
         
         // a default global context
-        self::$__global = new ContemplateCtx('__GLOBAL__');
+        self::$__global = new ContemplateCtx('global');
         self::$__ctx = array(
-        '__GLOBAL__'  => self::$__global
+        'global'  => self::$__global
         );
         self::$__context = self::$__global;
         
@@ -456,11 +464,11 @@ class Contemplate
             ,"/* tpl renderBlock method */"
             ,"public function renderBlock(\$block, &\$data, \$__i__=null)"
             ,"{"
-            ,"    \$self = \$this; \$r = ''; \$__ctx = null;"
+            ,"    \$self = \$this; \$r = ''; \$__ctx = false;"
             ,"    if ( !\$__i__ )"
             ,"    {"
             ,"        \$__i__ = \$self;"
-            ,"        \$__ctx = Contemplate::_set_ctx( \$self->_ctx );"
+            ,"        if ( !\$self->_autonomus ) \$__ctx = Contemplate::_set_ctx( \$self->_ctx );"
             ,"    }"
             ,"    \$method = '_blockfn_' . \$block;"
             ,"    if ( method_exists(\$self, \$method) ) \$r = \$self->{\$method}(\$data, \$self, \$__i__);"
@@ -471,13 +479,13 @@ class Contemplate
             ,"/* tpl render method */"
             ,"public function render(&\$data, \$__i__=null)"
             ,"{"
-            ,"    \$self = \$this; \$__ctx = null;"
+            ,"    \$self = \$this; \$__ctx = false;"
+            ,"    \$__p__ = '';"
             ,"    if ( !\$__i__ )"
             ,"    {"
             ,"        \$__i__ = \$self;"
-            ,"        \$__ctx = Contemplate::_set_ctx( \$self->_ctx );"
+            ,"        if ( !\$self->_autonomus ) \$__ctx = Contemplate::_set_ctx( \$self->_ctx );"
             ,"    }"
-            ,"    \$__p__ = '';"
             ,"    if ( \$self->_extends )"
             ,"    {"
             ,"        \$__p__ = \$self->_extends->render(\$data, \$__i__);"
@@ -666,12 +674,12 @@ class Contemplate
     
     public static function createCtx( $ctx )
     {
-        if ( $ctx && '__GLOBAL__' !== $ctx && !isset(self::$__ctx[$ctx]) ) self::$__ctx[$ctx] = new ContemplateCtx( $ctx );
+        if ( $ctx && 'global' !== $ctx && !isset(self::$__ctx[$ctx]) ) self::$__ctx[$ctx] = new ContemplateCtx( $ctx );
     }
     
     public static function disposeCtx( $ctx )
     {
-        if ( $ctx && '__GLOBAL__' !== $ctx && isset(self::$__ctx[$ctx]) )
+        if ( $ctx && 'global' !== $ctx && isset(self::$__ctx[$ctx]) )
         {
             self::$__ctx[$ctx]->dispose( );
             unset( self::$__ctx[$ctx] );
@@ -692,13 +700,13 @@ class Contemplate
         self::$__preserveLines = $enable ? self::$__preserveLinesDefault : '';
     }
     
-    public static function hasPlugin( $name, $ctx='__GLOBAL__' ) 
+    public static function hasPlugin( $name, $ctx='global' ) 
     {
         $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
         return !empty($name) && (isset($contx->plugins[ $name ]) || isset(self::$__global->plugins[ $name ]));
     }
     
-    public static function addPlugin( $name, $pluginCode, $ctx='__GLOBAL__' ) 
+    public static function addPlugin( $name, $pluginCode, $ctx='global' ) 
     {
         if ( $name && $pluginCode )
         {
@@ -721,19 +729,19 @@ class Contemplate
         return '';
     }
     
-    public static function setPrefixCode( $preCode=null, $ctx='__GLOBAL__' )
+    public static function setPrefixCode( $preCode=null, $ctx='global' )
     {
         $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
         if ( $preCode ) $contx->prefix = (string)$preCode;
     }
     
-    public static function setEncoding( $encoding, $ctx='__GLOBAL__' )
+    public static function setEncoding( $encoding, $ctx='global' )
     {
         $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
         $contx->encoding = $encoding;
     }
     
-    public static function setLocales( $locales, $ctx='__GLOBAL__' ) 
+    public static function setLocales( $locales, $ctx='global' ) 
     { 
         if ( $locales && is_array($locales) )
         {
@@ -742,13 +750,13 @@ class Contemplate
         }
     }
     
-    public static function clearLocales( $ctx='__GLOBAL__' ) 
+    public static function clearLocales( $ctx='global' ) 
     { 
         $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
         $contx->locale = array(); 
     }
     
-    public static function setPlurals( $plurals, $ctx='__GLOBAL__' ) 
+    public static function setPlurals( $plurals, $ctx='global' ) 
     { 
         if ( $plurals && is_array($plurals) )
         {
@@ -765,38 +773,38 @@ class Contemplate
         }
     }
     
-    public static function clearPlurals( $ctx='__GLOBAL__' ) 
+    public static function clearPlurals( $ctx='global' ) 
     { 
         $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
         $contx->plurals = array(); 
     }
     
-    public static function setCacheDir( $dir, $ctx='__GLOBAL__' ) 
+    public static function setCacheDir( $dir, $ctx='global' ) 
     {  
         $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
         $contx->cacheDir = rtrim($dir,'/').'/'; 
     }
     
-    public static function setCacheMode( $mode, $ctx='__GLOBAL__' ) 
+    public static function setCacheMode( $mode, $ctx='global' ) 
     { 
         $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
         $contx->cacheMode = $mode; 
     }
     
-    public static function clearCache( $all=false, $ctx='__GLOBAL__' ) 
+    public static function clearCache( $all=false, $ctx='global' ) 
     { 
         $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
         $contx->cache = array(); 
         if ( $all ) $contx->partials = array(); 
     }
     
-    public static function hasTpl( $tpl, $ctx='__GLOBAL__' ) 
+    public static function hasTpl( $tpl, $ctx='global' ) 
     {
         $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
         return !empty($tpl) && (isset($contx->templates[ $tpl ]) || isset(self::$__global->templates[ $tpl ]));
     }
     
-    public static function add( $tpls, $ctx='__GLOBAL__' ) 
+    public static function add( $tpls, $ctx='global' ) 
     { 
         if ( $tpls && is_array($tpls) )
         {
@@ -818,7 +826,7 @@ class Contemplate
         }
     }
     
-    public static function getTemplateContents( $id, $ctx='__GLOBAL__' )
+    public static function getTemplateContents( $id, $ctx='global' )
     {
         $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
         return self::get_template_contents( $id, $contx );
@@ -889,10 +897,11 @@ class Contemplate
             }
             
             $options = array_merge(array(
-                'autoUpdate'=> false,
-                'refresh'=> false,
-                'escape'=> true,
-                'separators'=> null
+                 'separators'=> null
+                ,'autoUpdate'=> false
+                ,'refresh'=> false
+                ,'escape'=> true
+                ,'standalone'=> false
             ), (array)$options);
             
             if ( isset($options['context']) )
@@ -919,6 +928,7 @@ class Contemplate
             }
             
             $tmpl = isset($contx->cache[ $tpl ]) ? $contx->cache[ $tpl ] : self::$__global->cache[ $tpl ];
+            $tmpl->autonomus( $options['standalone'] );
         }
         
         // Provide some basic currying to the user

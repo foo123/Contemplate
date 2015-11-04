@@ -1168,16 +1168,13 @@ function get_template_contents( id, contx, asyncCB )
 }
 function create_template_render_function( id, contx, seps )
 {
-    var tpl, blocks, funcs = {}, b, bl, func, renderf, _ctx, EOL = $__TEOL;
+    var tpl, blocks, funcs = {}, b, bl, func, renderf, EOL = $__TEOL;
     
-    _ctx = $__context;
-    $__context = contx;
     reset_state( );
     tpl = get_template_contents( id, contx );
     tpl = get_separators( tpl, seps );
     blocks = parse( tpl, $__leftTplSep, $__rightTplSep );
     clear_state( );
-    $__context = _ctx;
     
     renderf = blocks[0];
     blocks = blocks[1];
@@ -1197,16 +1194,13 @@ function create_template_render_function( id, contx, seps )
 function create_cached_template( id, contx, filename, classname, seps )
 {
     var tpl, funcs = {}, prefixCode, extendCode, renderCode,
-        b, bl, sblocks, blocks, renderf, _ctx, EOL = $__TEOL;
+        b, bl, sblocks, blocks, renderf, EOL = $__TEOL;
     
-    _ctx = $__context;
-    $__context = contx;
     reset_state( );
     tpl = get_template_contents( id, contx );
     tpl = get_separators( tpl, seps );
     blocks = parse( tpl, $__leftTplSep, $__rightTplSep );
     clear_state( );
-    $__context = _ctx;
     
     renderf = blocks[0];
     blocks = blocks[1];
@@ -1252,7 +1246,7 @@ function get_cached_template( id, contx, options )
         if ( template[1] )
         {
             // dynamic in-memory caching during page-request
-            tpl = new Contemplate.Template( id ).ctx( contx.id );
+            tpl = new Contemplate.Template( id ).ctx( contx );
             if ( options && options.parsed )
             {
                 // already parsed code was given
@@ -1284,7 +1278,7 @@ function get_cached_template( id, contx, options )
                 if ( fexists( cachedTplFile ) )
                 {
                     tplclass = require( cachedTplFile )( Contemplate ); 
-                    tpl = new tplclass( id )/*.setId( id )*/.ctx( contx.id );
+                    tpl = new tplclass( id )/*.setId( id )*/.ctx( contx );
                     return tpl;
                 }
                 return null;
@@ -1311,7 +1305,7 @@ function get_cached_template( id, contx, options )
                 if ( fexists( cachedTplFile ) )
                 {
                     tplclass = require( cachedTplFile )( Contemplate );
-                    tpl = new tplclass( id )/*.setId( id )*/.ctx( contx.id );
+                    tpl = new tplclass( id )/*.setId( id )*/.ctx( contx );
                     return tpl;
                 }
                 return null;
@@ -1321,7 +1315,7 @@ function get_cached_template( id, contx, options )
             {    
                 // dynamic in-memory caching during page-request
                 funcs = create_template_render_function( id, contx, options.separators );
-                tpl = new Contemplate.Template( id ).ctx( contx.id ).setRenderFunction( funcs[ 0 ] ).setBlocks( funcs[ 1 ] );
+                tpl = new Contemplate.Template( id ).ctx( contx ).setRenderFunction( funcs[ 0 ] ).setBlocks( funcs[ 1 ] );
                 sprTpl = $__extends;
                 if ( sprTpl ) tpl.extend( Contemplate.tpl(sprTpl, null, contx.id) );
                 return tpl;
@@ -1460,7 +1454,7 @@ function Template( id )
 }
 Template.spr = function( data, __i__ ) {
     var self = this, r, __ctx = null;
-    if ( !__i__ )
+    if ( 1 === arguments.length )
     {
         __i__ = self;
         __ctx = Contemplate._set_ctx( self._ctx );
@@ -1536,7 +1530,7 @@ Template[PROTO] = {
     
     ,renderBlock: function( block, data, __i__ ) {
         var self = this, r = '', __ctx = null, blocks;
-        if ( !__i__ )
+        if ( 1 === arguments.length )
         {
             __i__ = self;
             __ctx = Contemplate._set_ctx( self._ctx );
@@ -1557,7 +1551,7 @@ Template[PROTO] = {
     
     ,render: function( data, __i__ ) {
         var self = this, __p__ = '', __ctx = null;
-        if ( !__i__ )
+        if ( 1 === arguments.length )
         {
             __i__ = self;
             __ctx = Contemplate._set_ctx( self._ctx );
@@ -1594,7 +1588,29 @@ Ctx[PROTO] = {
     ,locale: null
     ,plurals: null
     ,plugins: null
-    ,prefixCode: null
+    ,prefix: null
+    ,encoding: null
+    
+    ,dispose: function( ) {
+        var self = this;
+        self.id = null;
+        self.cacheDir = null;
+        self.cacheMode = null;
+        self.templates = null;
+        self.partials = null;
+        self.locale = null;
+        self.plurals = null;
+        self.plugins = null;
+        self.prefix = null;
+        self.encoding = null;
+        if ( self.cache )
+        {
+            for(var tpl in self.cache)
+                if ( self.cache[HAS](tpl) )
+                    self.cache[tpl].dispose( );
+        }
+        self.cache = null;
+    }
 };
 
 
@@ -1656,7 +1672,7 @@ Contemplate = {
             ,"#CLASSNAME#.prototype.render = function( data, __i__ ) {"
             ,"    \"use strict\";"
             ,"    var self = this, __p__ = '', __ctx = null;"
-            ,"    if ( !__i__ )"
+            ,"    if ( 1 === arguments.length )"
             ,"    {"
             ,"        __i__ = self;"
             ,"        __ctx = Contemplate._set_ctx( self._ctx );"
@@ -1825,7 +1841,7 @@ Contemplate = {
             "return function( data, __i__ ){"
             ,"\"use strict\";"
             ,"var self = this, __p__ = '', __ctx = null;"
-            ,"if ( !__i__ )"
+            ,"if ( 1 === arguments.length )"
             ,"{"
             ,"    __i__ = self;"
             ,"    __ctx = Contemplate._set_ctx( self._ctx );"
@@ -1854,9 +1870,10 @@ Contemplate = {
     
     ,_set_ctx: function( ctx ) {
         var contx = $__context;
-        if ( ctx instanceof Ctx ) $__context = ctx;
+        /*if ( ctx instanceof Ctx ) $__context = ctx;
         else if ( ctx && $__ctx[HAS](ctx) ) $__context = $__ctx[ctx];
-        else $__context = $__global;
+        else $__context = $__global;*/
+        $__context = ctx ? ctx : $__global;
         return contx;
     }
     
@@ -1869,7 +1886,11 @@ Contemplate = {
     }
     
     ,disposeCtx: function( ctx ) {
-        if ( ctx && '__GLOBAL__' !== ctx && $__ctx[HAS](ctx) ) delete $__ctx[ctx];
+        if ( ctx && '__GLOBAL__' !== ctx && $__ctx[HAS](ctx) )
+        {
+            $__ctx[ctx].dispose( );
+            delete $__ctx[ctx];
+        }
     }
     
     ,setTemplateSeparators: function( seps ) {

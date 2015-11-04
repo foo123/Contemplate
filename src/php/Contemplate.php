@@ -278,6 +278,30 @@ class ContemplateCtx
         $this->prefix           = '';
         $this->encoding         = 'utf8';
     }
+    
+    public function __destruct( )
+    {
+        $this->dispose();
+    }
+    
+    public function dispose( )
+    {
+        $this->id = null;
+        $this->cacheDir = null;
+        $this->cacheMode = null;
+        $this->templates = null;
+        $this->partials = null;
+        $this->locale = null;
+        $this->plurals = null;
+        $this->plugins = null;
+        $this->prefix = null;
+        $this->encoding = null;
+        if ( $this->cache )
+        {
+            foreach ($this->cache as $tpl) $tpl->dispose( );
+        }
+        $this->cache = null;
+    }
 }
 
 class Contemplate
@@ -629,9 +653,10 @@ class Contemplate
     public static function _set_ctx( $ctx )
     {
         $contx = self::$__context;
-        if ( $ctx instanceof ContemplateCtx ) self::$__context = $ctx;
+        /*if ( $ctx instanceof ContemplateCtx ) self::$__context = $ctx;
         elseif ( $ctx && isset(self::$__ctx[$ctx]) ) self::$__context = self::$__ctx[$ctx];
-        else self::$__context = self::$__global;
+        else self::$__context = self::$__global;*/
+        self::$__context = $ctx ? $ctx : self::$__global;
         return $contx;
     }
     
@@ -646,7 +671,11 @@ class Contemplate
     
     public static function disposeCtx( $ctx )
     {
-        if ( $ctx && '__GLOBAL__' !== $ctx && isset(self::$__ctx[$ctx]) ) unset( self::$__ctx[$ctx] );
+        if ( $ctx && '__GLOBAL__' !== $ctx && isset(self::$__ctx[$ctx]) )
+        {
+            self::$__ctx[$ctx]->dispose( );
+            unset( self::$__ctx[$ctx] );
+        }
     }
     
     public static function setTemplateSeparators( $seps=null )
@@ -2027,14 +2056,11 @@ class Contemplate
     
     private static function create_template_render_function( $id, $contx, $seps=null )
     {
-        $_ctx = self::$__context;
-        self::$__context = $contx;
         self::reset_state( );
         $tpl = self::get_template_contents( $id, $contx );
         $tpl = self::get_separators( $tpl, $seps );
         $blocks = self::parse( $tpl, self::$__leftTplSep, self::$__rightTplSep );
         self::clear_state( );
-        self::$__context = $_ctx;
         
         $renderf = $blocks[0];
         $blocks = $blocks[1];
@@ -2060,14 +2086,11 @@ class Contemplate
     
     private static function create_cached_template( $id, $contx, $filename, $classname, $seps=null )
     {
-        $_ctx = self::$__context;
-        self::$__context = $contx;
         self::reset_state( );
         $tpl = self::get_template_contents( $id, $contx );
         $tpl = self::get_separators( $tpl, $seps );
         $blocks = self::parse( $tpl, self::$__leftTplSep, self::$__rightTplSep );
         self::clear_state( );
-        self::$__context = $_ctx;
         
         $renderf = $blocks[0];
         $blocks = $blocks[1];
@@ -2121,7 +2144,7 @@ class Contemplate
             {
                 // dynamic in-memory caching during page-request
                 //return new Contemplate($id, self::create_template_render_function($id));
-                $tpl = new ContemplateTemplate( $id ); $tpl->ctx( $contx->id );
+                $tpl = new ContemplateTemplate( $id ); $tpl->ctx( $contx );
                 if ( isset($options['parsed']) && is_string($options['parsed']) )
                 {
                     // already parsed code was given
@@ -2152,7 +2175,7 @@ class Contemplate
                     {
                         include( $cachedTplFile );
                         $tpl = new $cachedTplClass( );
-                        $tpl->setId( $id )->ctx( $contx->id );
+                        $tpl->setId( $id )->ctx( $contx );
                         return $tpl;
                     }
                     return null;
@@ -2171,7 +2194,7 @@ class Contemplate
                     {
                         include( $cachedTplFile );
                         $tpl = new $cachedTplClass( );
-                        $tpl->setId( $id )->ctx( $contx->id );
+                        $tpl->setId( $id )->ctx( $contx );
                         return $tpl;
                     }
                     return null;
@@ -2182,7 +2205,7 @@ class Contemplate
                     // dynamic in-memory caching during page-request
                     $fns = self::create_template_render_function( $id, $contx, $options['separators'] );
                     $tpl = new ContemplateTemplate( $id );
-                    $tpl->ctx( $contx->id )->setRenderFunction( $fns[0] )->setBlocks( $fns[1] );
+                    $tpl->ctx( $contx )->setRenderFunction( $fns[0] )->setBlocks( $fns[1] );
                     $sprTpl = self::$__extends;
                     if ( $sprTpl ) $tpl->extend( self::tpl($sprTpl, null, $contx->id) );
                     return $tpl;

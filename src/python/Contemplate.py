@@ -1328,14 +1328,11 @@ def get_template_contents( id, contx ):
 def create_template_render_function( id, contx, seps=None ):
     global _G
     
-    _ctx = _G.context
-    _G.context = contx
     reset_state( )
     tpl = get_template_contents( id, contx )
     tpl = get_separators( tpl, seps )
     blocks = parse( tpl, _G.leftTplSep, _G.rightTplSep )
     clear_state( )
-    _G.context = _ctx
     
     renderf = blocks[0]
     blocks = blocks[1]
@@ -1362,14 +1359,11 @@ def create_template_render_function( id, contx, seps=None ):
 def create_cached_template( id, contx, filename, classname, seps=None ):
     global _G
     
-    _ctx = _G.context
-    _G.context = contx
     reset_state( )
     tpl = get_template_contents( id, contx )
     tpl = get_separators( tpl, seps )
     blocks = parse( tpl, _G.leftTplSep, _G.rightTplSep )
     clear_state( )
-    _G.context = _ctx
     
     renderf = blocks[0]
     blocks = blocks[1]
@@ -1416,7 +1410,7 @@ def get_cached_template( id, contx, options=dict() ):
         if template[1]:
             # dynamic in-memory caching during page-request
             tpl = Contemplate.Template( )
-            tpl.setId( id ).ctx( contx.id )
+            tpl.setId( id ).ctx( contx )
             if 'parsed' in options:
                 _G.funcId += 1
                 tpl.setRenderFunction( create_function('_contemplateFn' + str(_G.funcId), 'data,self_,__i__', pad_lines(options['parsed'], 1), {'Contemplate': Contemplate}) )
@@ -1439,7 +1433,7 @@ def get_cached_template( id, contx, options=dict() ):
                 create_cached_template( id, contx, cachedTplPath, cachedTplClass, options['separators'] )
             if os.path.isfile( cachedTplPath ):
                 tpl = import_tpl( cachedTplFile, cachedTplClass, contx.cacheDir )( )
-                tpl.setId( id ).ctx( contx.id )
+                tpl.setId( id ).ctx( contx )
                 return tpl
             return None
 
@@ -1454,7 +1448,7 @@ def get_cached_template( id, contx, options=dict() ):
                 create_cached_template( id, contx, cachedTplPath, cachedTplClass, options['separators'] )
             if os.path.isfile( cachedTplPath ):
                 tpl = import_tpl( cachedTplFile, cachedTplClass, contx.cacheDir )( )
-                tpl.setId( id ).ctx( contx.id )
+                tpl.setId( id ).ctx( contx )
                 return tpl
             return None
         
@@ -1463,7 +1457,7 @@ def get_cached_template( id, contx, options=dict() ):
             # dynamic in-memory caching during page-request
             fns = create_template_render_function( id, contx, options['separators'] )
             tpl = Contemplate.Template( id )
-            tpl.ctx( contx.id ).setRenderFunction( fns[0] ).setBlocks( fns[1] )
+            tpl.ctx( contx ).setRenderFunction( fns[0] ).setBlocks( fns[1] )
             sprTpl = _G.extends
             if sprTpl: tpl.extend( Contemplate.tpl(sprTpl, None, contx.id) )
             return tpl
@@ -1666,6 +1660,23 @@ class Ctx:
         self.prefix           = ''
         self.encoding         = 'utf-8'
 
+    def __del__( self ):
+        self.dispose()
+
+    def dispose( self ):
+        self.id = None
+        self.cacheDir = None
+        self.cacheMode = None
+        self.templates = None
+        self.partials = None
+        self.locale = None
+        self.plurals = None
+        self.plugins = None
+        self.prefix = None
+        self.encoding = None
+        if self.cache:
+            for tpl in self.cache: self.cache[tpl].dispose( )
+        self.cache = None
 
 #
 # The Contemplate Engine Main Python Class
@@ -1902,9 +1913,10 @@ class Contemplate:
     def _set_ctx( ctx ):
         global _G
         contx = _G.context
-        if isinstance(ctx, Ctx): _G.context = ctx
-        elif ctx and (ctx in _G.ctx): _G.context = _G.ctx[ctx]
-        else: _G.context = _G.glob
+        #if isinstance(ctx, Ctx): _G.context = ctx
+        #elif ctx and (ctx in _G.ctx): _G.context = _G.ctx[ctx]
+        #else: _G.context = _G.glob
+        _G.context = ctx if ctx else _G.glob
         return contx
     
     #
@@ -1917,7 +1929,9 @@ class Contemplate:
     
     def disposeCtx( ctx ):
         global _G
-        if ctx and ('__GLOBAL__' != ctx) and (ctx in _G.ctx): del _G.ctx[ctx]
+        if ctx and ('__GLOBAL__' != ctx) and (ctx in _G.ctx):
+            _G.ctx[ctx].dispose( )
+            del _G.ctx[ctx]
     
     def setTemplateSeparators( seps=None ):
         global _G

@@ -165,7 +165,7 @@ syntax, yet work the same in all the engine's implementations.
 
 **Render Time**
 
-The following tests were made on a revision of a 2013 jsperf test for `resig micro-templating`, `handlebars`, `contemplate`, `mustache`, `underscore`, 'doT' and `kendoui` template engines. More tests should be done.
+The following tests were made on a revision of a 2013 jsperf test for `resig micro-templating`, `handlebars`, `contemplate`, `mustache`, `underscore`, `doT` and `kendoui` template engines. More tests should be done.
 
 `Contemplate` (`0.6.5`) was 2nd place on Firefox and 3rd (or close) place on Opera, IE, while `Contemplate` was average to slower on Chrome. The reason was mostly that `Contemplate` was using a code to copy/isolate the input data every time inside the render function, which most of the time is redundant, else user can use the `Contemplate.data` method to create a shallow copy suitable to be used as render data. So this was removed, plus some minor refactoring and minor loop optimisation.
 

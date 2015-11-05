@@ -1,11 +1,11 @@
 <% %>
-<% %extends("tpl1") %>
-<% %block("1") %>(2 1)
-    <% %block("2") %>(2 2)
-        <% %block("3") %>(2 3)
-        <% %super("3") %>
-        <% %endblock() %>
-    <% %super("2") %>
-    <% %endblock() %>
-<% %super("1") %>
-<% %endblock() %>
+<% extends("tpl1") %>
+<% block("1") %>(2 1)
+    <% block("2") %>(2 2)
+        <% block("3") %>(2 3)
+        <% super("3") %>
+        <% endblock %>
+    <% super("2") %>
+    <% endblock %>
+<% super("1") %>
+<% endblock %>

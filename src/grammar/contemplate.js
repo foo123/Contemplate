@@ -1,6 +1,6 @@
 // 1. JSON grammar for Contemplate Engine ( https://github.com/foo123/Contemplate )
 // to be used with CodeMirrorGrammar add-on (https://github.com/foo123/codemirror-grammar)
-var contemplate_grammar = {
+var contemplate_grammar_base = {
         
 // prefix ID for regular expressions used in the grammar
 "RegExpID"                      : "RE::",
@@ -12,6 +12,7 @@ var contemplate_grammar = {
     ,"atom"                     : "atom"
     ,"keyword"                  : "keyword"
     ,"function"                 : "builtin"
+    ,"plugin"                   : "variable-2"
     ,"variable"                 : "variable"
     ,"property"                 : "variable"
     ,"number"                   : "number"
@@ -39,13 +40,9 @@ var contemplate_grammar = {
     ,"atom"                     : {"autocomplete":true,"tokens":[
                                 "true", "false", "null"
                                 ]}
-    ,"keyword"                  : {"autocomplete":true,"tokens":[
-                                "%extends", "%block", "%endblock", "%super", "%getblock", "%include",
-                                "%if", "%elseif", "%elif", "%else", "%endif", "%fi", 
-                                "%for", "%elsefor", "%endfor", "as", "in",
-                                "%set", "%unset", "%isset"
-                                ]}
-    ,"function"                 : "RE::/%[a-zA-Z_][a-zA-Z0-9_]*/"
+    ,"keyword"                  : null
+    ,"function"                 : null
+    ,"plugin"                   : null
 
 },
 
@@ -53,6 +50,7 @@ var contemplate_grammar = {
 "Parser"                        : [
                                 "keyword",
                                 "function",
+                                "plugin",
                                 "atom",
                                 "number",
                                 "string",
@@ -61,3 +59,48 @@ var contemplate_grammar = {
                                 ]
 
 };
+
+var contemplate_grammar = {
+// Lexical model
+"Lex"                           : {
+
+     "keyword"                  : {"autocomplete":true,"tokens":[
+                                "extends", "block", "endblock", "super", "getblock", "include",
+                                "if", "elseif", "elif", "else", "endif", "fi", 
+                                "for", "elsefor", "endfor", "as", "in",
+                                "set", "unset", "isset"
+                                ]}
+    ,"function"                 : {"autocomplete":true,"tokens":[
+                                "n","s","f","q","qq","dq","addslashes","stripslashes","sprintf",
+                                "concat","ltrim","rtrim","trim","lowercase","uppercase",
+                                "lcfirst","ucfirst","camelcase","snakecase","count","haskey",
+                                "uuid","time","now","date","ldate","locale","l","plural",
+                                "inline","tpl","e","url"
+                                ]}
+    ,"plugin"                   : "RE::/[a-zA-Z_][a-zA-Z0-9_]*/"
+
+}
+};
+
+var contemplate_grammar_compat = {
+// Lexical model
+"Lex"                           : {
+
+     "keyword"                  : {"autocomplete":true,"tokens":[
+                                "%extends", "%block", "%endblock", "%super", "%getblock", "%include",
+                                "%if", "%elseif", "%elif", "%else", "%endif", "%fi", 
+                                "%for", "%elsefor", "%endfor", "as", "in",
+                                "%set", "%unset", "%isset"
+                                ]}
+    ,"function"                 : {"autocomplete":true,"tokens":[
+                                "%n","%s","%f","%q","%qq","%dq","%addslashes","%stripslashes","%sprintf",
+                                "%concat","%ltrim","%rtrim","%trim","%lowercase","%uppercase",
+                                "%lcfirst","%ucfirst","%camelcase","%snakecase","%count","%haskey",
+                                "%uuid","%time","%now","%date","%ldate","%locale","%l","%plural",
+                                "%inline","%tpl","%e","%url"
+                                ]}
+    ,"plugin"                   : "RE::/%[a-zA-Z_][a-zA-Z0-9_]*/"
+
+}
+};
+

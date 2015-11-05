@@ -202,18 +202,18 @@ class ContemplateTemplate
         return $this; 
     }
     
-    public function renderSuperBlock( $block, &$data/*, $__i__=null*/ )
+    public function sprblock( $block, &$data/*, $__i__=null*/ )
     {
         $self = $this;
         //if ( !$__i__ ) $__i__ = $self;
         if ( $self->_extends ) 
         {
-            return $self->_extends->renderBlock($block, $data, $self->_extends);
+            return $self->_extends->block($block, $data, $self->_extends);
         }
         return '';
     }
     
-    public function renderBlock( $block, &$data, $__i__=null )
+    public function block( $block, &$data, $__i__=null )
     {
         $self = $this; $r = ''; $__ctx = false;
         if ( !$__i__ )
@@ -228,7 +228,7 @@ class ContemplateTemplate
         }
         elseif ( $self->_extends ) 
         {
-            $r = $self->_extends->renderBlock($block, $data, $__i__);
+            $r = $self->_extends->block($block, $data, $__i__);
         }
         if ( $__ctx )  Contemplate::_set_ctx( $__ctx );
         return $r;
@@ -255,6 +255,16 @@ class ContemplateTemplate
         }
         if ( $__ctx )  Contemplate::_set_ctx( $__ctx );
         return $__p__;
+    }
+    
+    // aliases
+    public function renderBlock( $block, &$data, $__i__=null )
+    {
+        return $this->block( $block, $data, $__i__ );
+    }
+    public function renderSuperBlock( $block, &$data )
+    {
+        return $this->sprblock( $block, $data );
     }
 }
 
@@ -335,6 +345,7 @@ class Contemplate
     private static $__tplEnd = '';
     private static $__preserveLinesDefault = "' . \"\\n\" . '";
     private static $__preserveLines = '';
+    private static $__compatibility = false;
     private static $__EOL = "\n";
     private static $__TEOL = PHP_EOL;
     private static $__pad = "    ";
@@ -381,7 +392,8 @@ class Contemplate
     private static $TT_FUNC = null;
     private static $TT_RCODE = null;
     
-    private static $re_controls = '/(\\t|[ ]?)[ ]*%([a-zA-Z_][a-zA-Z0-9_]*)\\b[ ]*(\\()(.*)$/';
+    private static $re_controls = '/(\\t|\\s?)\\s*((#ID_(endblock|elsefor|endfor|endif|else|fi)#(\\s*\\(\\s*\\))?)|(#ID_([^#]+)#\\s*(\\()))(.*)$/';
+    
     private static $__directives = array(
     'set', 'unset', 'isset',
     'if', 'elseif', 'else', 'endif',
@@ -439,9 +451,9 @@ class Contemplate
         self::$__preserveLines = self::$__preserveLinesDefault;
         self::$__tplStart = "'; " . self::$__TEOL;
         self::$__tplEnd = self::$__TEOL . "\$__p__ .= '";
-        
+
         // make compilation templates
-        self::$TT_ClassCode = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+        self::$TT_ClassCode = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
             "#PREFIXCODE#"
             ,"if (!class_exists('#CLASSNAME#'))"
             ,"{"
@@ -461,8 +473,8 @@ class Contemplate
             ,"/* tpl-defined blocks render code starts here */"
             ,"#BLOCKS#"
             ,"/* tpl-defined blocks render code ends here */"
-            ,"/* tpl renderBlock method */"
-            ,"public function renderBlock(\$block, &\$data, \$__i__=null)"
+            ,"/* tpl block method */"
+            ,"public function block(\$block, &\$data, \$__i__=null)"
             ,"{"
             ,"    \$self = \$this; \$r = ''; \$__ctx = false;"
             ,"    if ( !\$__i__ )"
@@ -472,7 +484,7 @@ class Contemplate
             ,"    }"
             ,"    \$method = '_blockfn_' . \$block;"
             ,"    if ( method_exists(\$self, \$method) ) \$r = \$self->{\$method}(\$data, \$self, \$__i__);"
-            ,"    elseif ( \$self->_extends ) \$r = \$self->_extends->renderBlock(\$block, \$data, \$__i__);"
+            ,"    elseif ( \$self->_extends ) \$r = \$self->_extends->block(\$block, \$data, \$__i__);"
             ,"    if ( \$__ctx )  Contemplate::_set_ctx( \$__ctx );"
             ,"    return \$r;"
             ,"}"
@@ -503,16 +515,16 @@ class Contemplate
             ,"}"
             ,""
         )), array(
-             "#EOL#"=>            "EOL"
-            ,"#PREFIXCODE#"=>     "PREFIXCODE"
-            ,"#CLASSNAME#"=>      "CLASSNAME"
-            ,"#TPLID#"=>          "TPLID"
-            ,"#BLOCKS#"=>         "BLOCKS"
-            ,"#EXTENDCODE#"=>     "EXTENDCODE"
-            ,"#RENDERCODE#"=>     "RENDERCODE"
+             "#PREFIXCODE#"         => "PREFIXCODE"
+            ,"#CLASSNAME#"          => "CLASSNAME"
+            ,"#TPLID#"              => "TPLID"
+            ,"#BLOCKS#"             => "BLOCKS"
+            ,"#EXTENDCODE#"         => "EXTENDCODE"
+            ,"#RENDERCODE#"         => "RENDERCODE"
+            ,"#EOL#"                => "EOL"
         )));
         
-        self::$TT_BlockCode = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+        self::$TT_BlockCode = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
             ""
             ,"/* tpl block render method for block '#BLOCKNAME#' */"
             ,"private function #BLOCKMETHODNAME#(&\$data, \$self, \$__i__) "
@@ -521,63 +533,63 @@ class Contemplate
             ,"}"
             ,""
         )), array(
-             "#EOL#"=>                  "EOL"
-            ,"#BLOCKNAME#"=>            "BLOCKNAME"
-            ,"#BLOCKMETHODNAME#"=>      "BLOCKMETHODNAME"
-            ,"#BLOCKMETHODCODE#"=>      "BLOCKMETHODCODE"
+             "#BLOCKNAME#"          => "BLOCKNAME"
+            ,"#BLOCKMETHODNAME#"    => "BLOCKMETHODNAME"
+            ,"#BLOCKMETHODCODE#"    => "BLOCKMETHODCODE"
+            ,"#EOL#"                => "EOL"
         )));
         
-        self::$TT_BLOCK = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+        self::$TT_BLOCK = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
             ""
             ,"\$__p__ = '';"
             ,"#BLOCKCODE#"
             ,"return \$__p__;"
             ,""
         )), array(
-             "#EOL#"=>      "EOL"
-            ,"#BLOCKCODE#"=>   "BLOCKCODE"
+             "#BLOCKCODE#"          => "BLOCKCODE"
+            ,"#EOL#"                => "EOL"
         )));
         
-        self::$TT_IF = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+        self::$TT_IF = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
             ""
             ,"if (#IFCOND#)"
             ,"{"
             ,""
         )), array(
-             "#EOL#"=>      "EOL"
-            ,"#IFCOND#"=>   "IFCOND"
+             "#IFCOND#"             => "IFCOND"
+            ,"#EOL#"                => "EOL"
         )));
         
-        self::$TT_ELSEIF = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+        self::$TT_ELSEIF = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
             ""
             ,"}"
             ,"elseif (#ELIFCOND#)"
             ,"{"
             ,""
         )), array(
-             "#EOL#"=>      "EOL"
-            ,"#ELIFCOND#"=>   "ELIFCOND"
+             "#ELIFCOND#"           => "ELIFCOND"
+            ,"#EOL#"                => "EOL"
         )));
 
-        self::$TT_ELSE = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+        self::$TT_ELSE = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
             ""
             ,"}"
             ,"else"
             ,"{"
             ,""
         )), array(
-             "#EOL#"=>      "EOL"
+             "#EOL#"                => "EOL"
         )));
         
-        self::$TT_ENDIF = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+        self::$TT_ENDIF = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
             ""
             ,"}"
             ,""
         )), array(
-             "#EOL#"=>      "EOL"
+             "#EOL#"                => "EOL"
         )));
         
-        self::$TT_FOR2 = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+        self::$TT_FOR2 = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
             ""
             ,"#_O# = #O#;"
             ,"if (!empty(#_O#))"
@@ -586,13 +598,13 @@ class Contemplate
             ,"    {"
             ,""
         )), array(
-             "#EOL#"=>      "EOL"
-            ,"#O#"=>   "O"
-            ,"#_O#"=>   "_O"
-            ,"#K#"=>   "K"
-            ,"#V#"=>   "V"
+             "#O#"                  => "O"
+            ,"#_O#"                 => "_O"
+            ,"#K#"                  => "K"
+            ,"#V#"                  => "V"
+            ,"#EOL#"                => "EOL"
         )));
-        self::$TT_FOR1 = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+        self::$TT_FOR1 = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
             ""
             ,"#_O# = #O#;"
             ,"if (!empty(#_O#))"
@@ -601,13 +613,13 @@ class Contemplate
             ,"    {"
             ,""
         )), array(
-             "#EOL#"=>      "EOL"
-            ,"#O#"=>   "O"
-            ,"#_O#"=>   "_O"
-            ,"#V#"=>   "V"
+             "#O#"                  => "O"
+            ,"#_O#"                 => "_O"
+            ,"#V#"                  => "V"
+            ,"#EOL#"                => "EOL"
         )));
         
-        self::$TT_ELSEFOR = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+        self::$TT_ELSEFOR = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
             ""
             ,"    }"
             ,"}"
@@ -615,46 +627,46 @@ class Contemplate
             ,"{"
             ,""
         )), array(
-             "#EOL#"=>      "EOL"
+             "#EOL#"                => "EOL"
         )));
         
-        self::$TT_ENDFOR2 = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+        self::$TT_ENDFOR2 = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
             ""
             ,"}"
             ,""
         )), array(
-             "#EOL#"=>      "EOL"
+             "#EOL#"                => "EOL"
         )));
-        self::$TT_ENDFOR1 = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+        self::$TT_ENDFOR1 = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
             ""
             ,"    }"
             ,"}"
             ,""
         )), array(
-             "#EOL#"=>      "EOL"
+             "#EOL#"                => "EOL"
         )));
         
-        self::$TT_FUNC = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+        self::$TT_FUNC = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
             ""
             ,"\$__p__ = '';"  
             ,"#FCODE#"
             ,"return \$__p__;"
             ,""
         )), array(
-             "#EOL#"=>      "EOL"
-            ,"#FCODE#"=>   "FCODE"
+             "#FCODE#"              => "FCODE"
+            ,"#EOL#"                => "EOL"
         )));
 
-        self::$TT_RCODE = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode("#EOL#", array(
+        self::$TT_RCODE = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
             ""
             ,"#RCODE#"
             ,""
         )), array(
-             "#EOL#"=>      "EOL"
-            ,"#RCODE#"=>   "RCODE"
+             "#RCODE#"              => "RCODE"
+            ,"#EOL#"                => "EOL"
         )));
         
-        self::clear_state();
+        self::clear_state( );
         self::$__isInited = true;
     }
     
@@ -684,6 +696,11 @@ class Contemplate
             self::$__ctx[$ctx]->dispose( );
             unset( self::$__ctx[$ctx] );
         }
+    }
+    
+    public static function setCompatibilityMode( $enable=true )
+    { 
+        self::$__compatibility = (bool)$enable;
     }
     
     public static function setTemplateSeparators( $seps=null )
@@ -1171,8 +1188,8 @@ class Contemplate
     {  
         $renderer = self::$TT_IF;
         $out = "';" . self::pad_lines($renderer(array(
-             'EOL'          => self::$__TEOL
-            ,'IFCOND'       => $cond
+             'IFCOND'       => $cond
+            ,'EOL'          => self::$__TEOL
             )));
         self::$__ifs++;  
         self::$__level++;
@@ -1185,8 +1202,8 @@ class Contemplate
         $renderer = self::$TT_ELSEIF;
         self::$__level--;
         $out = "';" . self::pad_lines($renderer(array(
-             'EOL'          => self::$__TEOL
-            ,'ELIFCOND'     => $cond
+             'ELIFCOND'     => $cond
+            ,'EOL'          => self::$__TEOL
             )));
         self::$__level++;
         
@@ -1198,7 +1215,7 @@ class Contemplate
         $renderer = self::$TT_ELSE;
         self::$__level--;
         $out = "';" . self::pad_lines($renderer(array( 
-        'EOL'           => self::$__TEOL
+         'EOL'          => self::$__TEOL
         )));
         self::$__level++;
         
@@ -1211,7 +1228,7 @@ class Contemplate
         self::$__ifs--;  
         self::$__level--;
         $out = "';" . self::pad_lines($renderer(array( 
-        'EOL'           => self::$__TEOL
+         'EOL'          => self::$__TEOL
         )));
         
         return $out;
@@ -1247,12 +1264,12 @@ class Contemplate
             self::$__locals[self::$__currentblock][self::$__variables[self::$__currentblock][$v]] = 1;
             $renderer = self::$TT_FOR2;
             $out = "';" . self::pad_lines($renderer(array(
-                 'EOL'          => self::$__TEOL
-                ,'O'            => $o
+                 'O'            => $o
                 ,'_O'           => $_o 
                 ,'K'            => $k
                 ,'V'            => $v
                 //,'ASSIGN1'=> ""
+                ,'EOL'          => self::$__TEOL
                 )));
             self::$__level+=2;
         }
@@ -1263,11 +1280,11 @@ class Contemplate
             self::$__locals[self::$__currentblock][self::$__variables[self::$__currentblock][$v]] = 1;
             $renderer = self::$TT_FOR1;
             $out = "';" . self::pad_lines($renderer(array(
-                 'EOL'          => self::$__TEOL
-                ,'O'            => $o
+                 'O'            => $o
                 ,'_O'           => $_o
                 ,'V'            => $v
                 //,'ASSIGN1'=> ""
+                ,'EOL'          => self::$__TEOL
                 )));
             self::$__level+=2;
         }
@@ -1283,7 +1300,7 @@ class Contemplate
         self::$__loopifs--;  
         self::$__level+=-2;
         $out = "';" . self::pad_lines($renderer(array( 
-        'EOL'           => self::$__TEOL
+         'EOL'          => self::$__TEOL
         )));
         self::$__level+=1;
         
@@ -1298,7 +1315,7 @@ class Contemplate
             self::$__level+=-2;
             $renderer = self::$TT_ENDFOR1;
             $out = "';" . self::pad_lines($renderer(array(
-            'EOL'           => self::$__TEOL
+             'EOL'          => self::$__TEOL
             )));
         }
         else
@@ -1307,7 +1324,7 @@ class Contemplate
             self::$__level+=-1;
             $renderer = self::$TT_ENDFOR2;
             $out = "';" . self::pad_lines($renderer(array(
-            'EOL'           => self::$__TEOL
+             'EOL'          => self::$__TEOL
             )));
         }
         return $out;
@@ -1362,7 +1379,7 @@ class Contemplate
         self::$__currentblock = $block;
         if ( !isset(self::$__locals[self::$__currentblock]) ) self::$__locals[self::$__currentblock] = array();
         if ( !isset(self::$__variables[self::$__currentblock]) ) self::$__variables[self::$__currentblock] = array();
-        return "' .  #|" . $block . "|#";
+        return "' .  #BLOCK_" . $block . "#";
     }
     
     private static function t_endblock( ) 
@@ -1374,7 +1391,7 @@ class Contemplate
             self::$__blockptr = $block[1]+1;
             self::$__startblock = null;
             self::$__currentblock = empty(self::$__openblocks) ? '_' : self::$__openblocks[0][0];
-            return "#|/" . $block[0] . "|#";
+            return "#/BLOCK_" . $block[0] . "#";
         }
         else
         {
@@ -1386,30 +1403,31 @@ class Contemplate
     //
     // auxilliary parsing methods
     //
-    private static function parse_constructs( $m )
+    private static function parse_constructs( $match )
     {
+        $parse_constructs = array(__CLASS__, 'parse_constructs');
         $re_controls = self::$re_controls;
-        $prefix = $m[1];
-        $ctrl = $m[2];
-        $startParen = $m[3];
-        $rest = isset($m[4]) ? $m[4] : '';
-        $l = strlen($rest);
+        
+        $prefix = !empty($match[1]) ? $match[1] : '';
+        $ctrl = !empty($match[4]) ? $match[4] : (!empty($match[7]) ? $match[7] : '');
+        $rest = !empty($match[9]) ? $match[9] : '';
+        $startParen = !empty($match[8]) ? $match[8] : false;
         $args = '';
         $out = '';
-        $paren = 1;
-        $i = 0;
-        
-        $parse_constructs = array(__CLASS__, 'parse_constructs');
         
         // parse parentheses and arguments, accurately
-        while ( $i < $l && $paren > 0 )
+        if ( $startParen && strlen($startParen) )
         {
-            $ch = $rest[$i++];
-            if ( '(' === $ch ) $paren++;
-            else if ( ')' === $ch ) $paren--;
-            if ( $paren > 0 ) $args .= $ch;
+            $paren = 1; $l = strlen($rest); $i = 0;
+            while ( $i < $l && $paren > 0 )
+            {
+                $ch = $rest[$i++];
+                if ( '(' === $ch ) $paren++;
+                else if ( ')' === $ch ) $paren--;
+                if ( $paren > 0 ) $args .= $ch;
+            }
+            $rest = substr($rest, strlen($args)+1);
         }
-        $rest = substr($rest, strlen($args)+1);
         
         if ( isset(self::$__directive_aliases[$ctrl]) ) $ctrl = self::$__directive_aliases[$ctrl];
         $m = array_search($ctrl, self::$__directives);
@@ -1443,11 +1461,11 @@ class Contemplate
                     break;
                 
                 case 5 /*'else'*/:
-                    $out = self::t_else($args);  
+                    $out = self::t_else();  
                     break;
                 
                 case 6 /*'endif'*/:
-                    $out = self::t_endif($args);  
+                    $out = self::t_endif();  
                     break;
                 
                 case 7 /*'for'*/:
@@ -1456,11 +1474,11 @@ class Contemplate
                     break;
                 
                 case 8 /*'elsefor'*/:
-                    $out = self::t_elsefor($args); 
+                    $out = self::t_elsefor(); 
                     break;
                 
                 case 9 /*'endfor'*/:
-                    $out = self::t_endfor($args); 
+                    $out = self::t_endfor(); 
                     break;
                 
                 case 10 /*'extends'*/:
@@ -1472,7 +1490,7 @@ class Contemplate
                     break;
                 
                 case 12 /*'endblock'*/:
-                    $out = self::t_endblock($args); 
+                    $out = self::t_endblock(); 
                     break;
                 
                 case 13 /*'include'*/:
@@ -1481,12 +1499,12 @@ class Contemplate
                     
                 case 14 /*'super'*/:
                     $args = preg_replace_callback( $re_controls, $parse_constructs, $args );
-                    $out = $prefix . '$self->renderSuperBlock(' . $args . ', $data)';
+                    $out = $prefix . '$self->sprblock(' . $args . ', $data)';
                     break;
                 
                 case 15 /*'getblock'*/:
                     $args = preg_replace_callback( $re_controls, $parse_constructs, $args );
-                    $out = $prefix . '$__i__->renderBlock(' . $args . ', $data)';
+                    $out = $prefix . '$__i__->block(' . $args . ', $data)';
                     break;
             }
             return $out . preg_replace_callback( $re_controls, $parse_constructs, $rest );
@@ -1532,7 +1550,7 @@ class Contemplate
             return $prefix . $out . preg_replace_callback( $re_controls, $parse_constructs, $rest );
         }
         
-        return $m[0];
+        return $match[0];
     }
     
     private static function parse_blocks( $s ) 
@@ -1551,8 +1569,8 @@ class Contemplate
             $off = $delims[ 3 ];
             $containerblock = $delims[ 4 ];
             $echoed = $delims[ 5 ];
-            $tag = "#|" . $block . "|#";
-            $rep = $echoed ? "\$__i__->renderBlock('" . $block . "', \$data);" : "'';";
+            $tag = "#BLOCK_" . $block . "#";
+            $rep = $echoed ? "\$__i__->block('" . $block . "', \$data);" : "'';";
             $tl = strlen($tag); $rl = strlen($rep);
             
             if ( -1 < $containerblock )
@@ -1569,8 +1587,8 @@ class Contemplate
             {
                 // 1st occurance, block definition
                 array_push($blocks, array($block, $renderer(array(
-                 'EOL'              => $EOL
-                ,'BLOCKCODE'        => substr($s, $pos1+$tl, $pos2-$tl-1-$pos1-$tl) ."';"
+                 'BLOCKCODE'        => substr($s, $pos1+$tl, $pos2-$tl-1-$pos1-$tl) ."';"
+                ,'EOL'              => $EOL
                 ))));
             }
             /*
@@ -1606,7 +1624,7 @@ class Contemplate
             $variable_main = "\$data['" . $variable_raw . "']";
             $variable_rest = "";
             self::$__idcnt++;
-            $id = "#VAR" . self::$__idcnt . "#";
+            $id = "#VAR_" . self::$__idcnt . "#";
             $len = strlen($variable_raw);
             
             // extra space
@@ -1677,7 +1695,7 @@ class Contemplate
                         }
                         $property = $str_;
                         self::$__idcnt++;
-                        $strid = "#STR" .self::$__idcnt . "#";
+                        $strid = "#STR_" .self::$__idcnt . "#";
                         $strings[$strid] = $property;
                         $variable_rest .= $delim . $strid;
                         $lp = strlen($property);
@@ -1782,9 +1800,12 @@ class Contemplate
     
     private static function parse( $tpl, $leftTplSep, $rightTplSep, $withblocks=true ) 
     {
+        static $str_re = '/#STR_\\d+#/';
         $re_controls = self::$re_controls;
+        $ALPHA = self::$ALPHA;
+        $ALPHANUM = self::$ALPHANUM;
+        $non_compatibility_mode = !self::$__compatibility;
         $parse_constructs = array(__CLASS__, 'parse_constructs');
-        $str_re = '/#STR\\d+#/';
         
         $t1 = $leftTplSep; $l1 = strlen($t1);
         $t2 = $rightTplSep; $l2 = strlen($t2);
@@ -1830,37 +1851,8 @@ class Contemplate
             {
                 $ch = $s[$index++];
                 
-                // parse mainly literal strings and variables
-                
-                // literal string
-                if ( '"' == $ch || "'" == $ch )
-                {
-                    if ( $space > 0 )
-                    {
-                        $out .= " ";
-                        $space = 0;
-                    }
-                    //$tok = self::parse_string($s, $ch, $index, $count);
-                    $str_ = $q = $ch;
-                    $si = $index;
-                    $escaped = false;
-                    while ( $si < $count )
-                    {
-                        $ch = $s[$si++];
-                        $str_ .= $ch;
-                        if ( $q == $ch && !$escaped )  break;
-                        $escaped = (!$escaped && '\\' == $ch);
-                    }
-                    $tok = $str_;
-                    self::$__idcnt++;
-                    $id = "#STR" . self::$__idcnt . "#";
-                    $strings[ $id ] = $tok;
-                    $out .= $id;
-                    $index += strlen($tok)-1;
-                    $hasStrings = true;
-                }
                 // variable
-                elseif ( '$' == $ch )
+                if ( '$' == $ch )
                 {
                     if ( $space > 0 )
                     {
@@ -1887,10 +1879,101 @@ class Contemplate
                         $out .= '$';
                     }
                 }
-                // special chars
+                // literal string
+                elseif ( '"' == $ch || "'" == $ch )
+                {
+                    if ( $space > 0 )
+                    {
+                        $out .= " ";
+                        $space = 0;
+                    }
+                    //$tok = self::parse_string($s, $ch, $index, $count);
+                    $str_ = $q = $ch;
+                    $si = $index;
+                    $escaped = false;
+                    while ( $si < $count )
+                    {
+                        $ch = $s[$si++];
+                        $str_ .= $ch;
+                        if ( $q == $ch && !$escaped )  break;
+                        $escaped = (!$escaped && '\\' == $ch);
+                    }
+                    $tok = $str_;
+                    self::$__idcnt++;
+                    $id = "#STR_" . self::$__idcnt . "#";
+                    $strings[ $id ] = $tok;
+                    $out .= $id;
+                    $index += strlen($tok)-1;
+                    $hasStrings = true;
+                }
+                // spaces
                 elseif ( " " === $ch || "\n" === $ch || "\r" === $ch || "\t" === $ch || "\v" === $ch )
                 {
                     $space++;
+                }
+                // directive or identifier or atom in compatibility mode
+                elseif ( '%' === $ch )
+                {
+                    if ( $space > 0 )
+                    {
+                        $out .= " ";
+                        $space = 0;
+                    }
+                    $q = $ch;
+                    if ( $non_compatibility_mode || $index >= $count )
+                    {
+                        $out .= $q;
+                        continue;
+                    }
+                    $ch = $s[$index];
+                    if ( preg_match($ALPHA, $ch, $m) )
+                    {
+                        $tok = $ch;
+                        $index++;
+                        while ( $index < $count )
+                        {
+                            
+                            $ch = $s[$index];
+                            if ( preg_match($ALPHANUM, $ch, $m) )
+                            {
+                                $index ++;
+                                $tok .= $ch;
+                            }
+                            else break;
+                        }
+                        $tok = '#ID_'.$tok.'#';
+                        $out .= $tok;
+                    }
+                    else
+                    {
+                        $out .= $q;
+                    }
+                }
+                // directive or identifier or atom
+                elseif ( $non_compatibility_mode && preg_match($ALPHA, $ch, $m) )
+                {
+                    if ( $space > 0 )
+                    {
+                        $out .= " ";
+                        $space = 0;
+                    }
+                    $tok = $ch;
+                    while ( $index < $count )
+                    {
+                        
+                        $ch = $s[$index];
+                        if ( preg_match($ALPHANUM, $ch, $m) )
+                        {
+                            $index ++;
+                            $tok .= $ch;
+                        }
+                        else break;
+                    }
+                    if ( 'as' !== $tok && 'in' !== $tok && 'null' !== $tok && 'false' !== $tok && 'true' !== $tok )
+                    {
+                        $tok = '#ID_'.$tok.'#';
+                    }
+                    $out .= $tok;
                 }
                 // rest, bypass
                 else
@@ -1918,19 +2001,19 @@ class Contemplate
             // check for blocks
             if ( self::$__startblock )
             {
-                self::$__startblock = "#|".self::$__startblock."|#";
+                self::$__startblock = "#BLOCK_".self::$__startblock."#";
                 $hasBlock = true;
             }
             elseif ( self::$__endblock )
             {
-                self::$__endblock = "#|/".self::$__endblock."|#";
+                self::$__endblock = "#/BLOCK_".self::$__endblock."#";
                 $hasBlock = true;
             }
             $notFoundBlock = $hasBlock;
                 
             // other replacements
             if ( "\t" === $tag[0] && "\v" === $tag[strlen($tag)-1] ) 
-                $tag = '\' . (' . substr($tag,1,-1) . ') . \'';
+                $tag = '\' . (' . trim(substr($tag,1,-1)) . ') . \'';
             
             if ( $hasVariables )
             {
@@ -2030,15 +2113,20 @@ class Contemplate
         else
         {
             // tpl separators are defined on 1st (non-empty) line of tpl content
-            $lines = explode( "\n", $text );
-            while ( count($lines)>0 && !strlen( trim( $lines[ 0 ] ) ) ) array_shift( $lines );
-            if ( count($lines)>0 )
+            $l = strlen( $text ); $i = 0; $pos = -1; $line = "";
+            while ( $i < $l && false !== $pos && empty($line) )
             {
-                $seps = explode( " ", trim( array_shift( $lines ) ) );
+                $i = $pos+1;
+                $pos = strpos( $text, "\n", $i );
+                $line = false !== $pos ? trim(substr($text, $i, $pos+1-$i)) : "";
+            }
+            if ( !empty($line) )
+            {
+                $seps = explode( " ", $line );
                 self::$__leftTplSep = trim( $seps[ 0 ] );
                 self::$__rightTplSep = trim( $seps[ 1 ] );
+                $text = substr( $text, $pos+1 );
             }
-            $text = implode("\n", $lines);
         }
         return $text;
     }
@@ -2050,7 +2138,7 @@ class Contemplate
     
     private static function get_cached_template_class( $id, $ctx ) 
     { 
-        return 'Contemplate_' .  preg_replace('/[\\W]+/', '_', $id) . '_Cached__' . preg_replace('/[\\W]+/', '_', $ctx);  
+        return 'Contemplate_' .  preg_replace('/[\\W]+/', '_', $id) . '__' . preg_replace('/[\\W]+/', '_', $ctx);  
     }
     
     private static function get_template_contents( $id, $contx )
@@ -2080,8 +2168,8 @@ class Contemplate
         
         $renderer = self::$TT_FUNC;
         $func = $renderer(array(
-         'EOL'          => $EOL
-        ,'FCODE'        => self::$__extends ? "" : "\$__p__ .= '" . $renderf . "';"
+         'FCODE'        => self::$__extends ? "" : "\$__p__ .= '" . $renderf . "';"
+        ,'EOL'          => $EOL
         ));
         
         $fn = create_function('&$data,$self,$__i__', $func);
@@ -2113,16 +2201,16 @@ class Contemplate
         $sblocks = '';
         for($b=0; $b<$bl; $b++) 
             $sblocks .= $EOL . $renderer(array(
-             "EOL"                  => $EOL
-            ,'BLOCKNAME'            => $blocks[$b][0]
+             'BLOCKNAME'            => $blocks[$b][0]
             ,'BLOCKMETHODNAME'      => "_blockfn_" . $blocks[$b][0]
             ,'BLOCKMETHODCODE'      => self::pad_lines($blocks[$b][1], 1)
+            ,'EOL'                  => $EOL
             ));
         
         $renderer = self::$TT_RCODE;
         $renderCode = $renderer(array(
-         'EOL'                  => $EOL
-        ,'RCODE'                => self::$__extends ? "\$__p__ = '';" : "\$__p__ .= '" . $renderf . "';"
+         'RCODE'                => self::$__extends ? "\$__p__ = '';" : "\$__p__ .= '" . $renderf . "';"
+        ,'EOL'                  => $EOL
         ));
         $extendCode = self::$__extends ? "\$self->extend('".self::$__extends."');" : '';
         $prefixCode = $contx->prefix ? $contx->prefix : '';
@@ -2130,13 +2218,13 @@ class Contemplate
         // generate tpl class
         $renderer = self::$TT_ClassCode;
         $class = '<?php ' . $EOL . $renderer(array(
-         "EOL"                  => $EOL
-        ,'PREFIXCODE'           => $prefixCode
+         'PREFIXCODE'           => $prefixCode
         ,'TPLID'                => $id
         ,'CLASSNAME'            => $classname
         ,'EXTENDCODE'           => self::pad_lines($extendCode, 1)
         ,'BLOCKS'               => $sblocks
         ,'RENDERCODE'           => self::pad_lines($renderCode, 2)
+        ,'EOL'                  => $EOL
         ));
         
         return file_put_contents( $filename, $class );

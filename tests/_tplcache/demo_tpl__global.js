@@ -5,11 +5,11 @@ var m;
 if ( 'object' === typeof(module) && module.exports ) module.exports = moduleDefinition();
 // browser and AMD, etc..
 else (root[ moduleName ] = m = moduleDefinition()) && ('function' === typeof(define) && define.amd && define(moduleName,[],function(){return m;}));
-}(this, 'Contemplate_demo_Cached__global', function( ){
+}(this, 'Contemplate_demo__global', function( ){
 "use strict";
 return function( Contemplate ) {
 /* Contemplate cached template 'demo', constructor */
-function Contemplate_demo_Cached__global( id )
+function Contemplate_demo__global( id )
 {
     var self = this;
     Contemplate.Template.call( self, id );
@@ -35,7 +35,7 @@ function Contemplate_demo_Cached__global( id )
         "use strict";
         var __p__ = '';
         
-        __p__ += '' + "\n" + '' + "\n" + '    <strong>Block2 is overriden by the demo template</strong>' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '' + "\n" + '    <strong>Can reference the super Block2 directly if needed in OO manner</strong>' + "\n" + '    <br /><br />' + "\n" + '' + "\n" + '    <!-- call the super block here in OO manner, if any -->' + "\n" + '    ' + (self.renderSuperBlock("Block2", data)) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '' + "\n" + '    <strong>Contemplate Constructs</strong><hr /><br />' + "\n" + '    ' + "\n" + '    <strong>FOR Loop Associative (php-style, literal array data)</strong><br />' + "\n" + '    <pre>' + "\n" + '    &lt;% %for(["a", "b", "c"] as $index=>$value) %&gt;' + "\n" + '        [&lt;% $index %&gt;] = &lt;strong&gt;&lt;% $value %&gt;&lt;/strong&gt;&lt;br /&gt; ' + "\n" + '    &lt;% %endfor() %&gt;' + "\n" + '    </pre><br />' + "\n" + '    ';
+        __p__ += '' + "\n" + '' + "\n" + '    <strong>Block2 is overriden by the demo template</strong>' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '' + "\n" + '    <strong>Can reference the super Block2 directly if needed in OO manner</strong>' + "\n" + '    <br /><br />' + "\n" + '' + "\n" + '    <!-- call the super block here in OO manner, if any -->' + "\n" + '    ' + (self.sprblock("Block2", data)) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '' + "\n" + '    <strong>Contemplate Constructs</strong><hr /><br />' + "\n" + '    ' + "\n" + '    <strong>FOR Loop Associative (php-style, literal array data)</strong><br />' + "\n" + '    <pre>' + "\n" + '    &lt;% %for(["a", "b", "c"] as $index=>$value) %&gt;' + "\n" + '        [&lt;% $index %&gt;] = &lt;strong&gt;&lt;% $value %&gt;&lt;/strong&gt;&lt;br /&gt; ' + "\n" + '    &lt;% %endfor() %&gt;' + "\n" + '    </pre><br />' + "\n" + '    ';
         var _loc_10 = ["a", "b", "c"], _loc_11 = _loc_10 ? Object.keys(_loc_10) : null,
             _loc_12, _loc_index, _loc_value, _loc_13 = _loc_11 ? _loc_11.length : 0;
         if (_loc_13)
@@ -45,7 +45,7 @@ function Contemplate_demo_Cached__global( id )
                 _loc_index = _loc_11[_loc_12]; _loc_value = _loc_10[_loc_index];
                 
                 
-                __p__ += '' + "\n" + '        [' + ( _loc_index) + '] = <strong>' + ( _loc_value) + '</strong><br /> ' + "\n" + '    ';
+                __p__ += '' + "\n" + '        [' + (_loc_index) + '] = <strong>' + (_loc_value) + '</strong><br /> ' + "\n" + '    ';
             }
         }
         
@@ -61,7 +61,7 @@ function Contemplate_demo_Cached__global( id )
                 _loc_value2 = _loc_22 ? _loc_24 : _loc_20[_loc_24];
                 
                 
-                __p__ += '' + "\n" + '        <strong>' + ( _loc_value2) + '</strong><br /> ' + "\n" + '    ';
+                __p__ += '' + "\n" + '        <strong>' + (_loc_value2) + '</strong><br /> ' + "\n" + '    ';
             }
         }
         
@@ -75,7 +75,7 @@ function Contemplate_demo_Cached__global( id )
                 _loc_index3 = _loc_36[_loc_37]; _loc_value3 = _loc_35[_loc_index3];
                 
                 
-                __p__ += '' + "\n" + '        [' + ( _loc_index3) + '] = <strong>' + ( _loc_value3) + '</strong><br /> ' + "\n" + '    ';
+                __p__ += '' + "\n" + '        [' + (_loc_index3) + '] = <strong>' + (_loc_value3) + '</strong><br /> ' + "\n" + '    ';
             }
         }
         
@@ -91,7 +91,7 @@ function Contemplate_demo_Cached__global( id )
                 _loc_value4 = _loc_50 ? _loc_52 : _loc_48[_loc_52];
                 
                 
-                __p__ += '' + "\n" + '        <strong>' + ( _loc_value4) + '</strong><br /> ' + "\n" + '    ';
+                __p__ += '' + "\n" + '        <strong>' + (_loc_value4) + '</strong><br /> ' + "\n" + '    ';
             }
         }
         
@@ -105,7 +105,7 @@ function Contemplate_demo_Cached__global( id )
                 _loc_index4 = _loc_61[_loc_62]; _loc_value4 = _loc_60[_loc_index4];
                 
                 
-                __p__ += '' + "\n" + '        [' + ( _loc_index4) + '] = <strong>' + ( _loc_value4) + '</strong><br /> ' + "\n" + '    ';
+                __p__ += '' + "\n" + '        [' + (_loc_index4) + '] = <strong>' + (_loc_value4) + '</strong><br /> ' + "\n" + '    ';
             }
         }
         
@@ -121,7 +121,7 @@ function Contemplate_demo_Cached__global( id )
                 _loc_value5 = _loc_72 ? _loc_74 : _loc_70[_loc_74];
                 
                 
-                __p__ += '' + "\n" + '        <strong>' + ( _loc_value5) + '</strong><br /> ' + "\n" + '    ';
+                __p__ += '' + "\n" + '        <strong>' + (_loc_value5) + '</strong><br /> ' + "\n" + '    ';
             }
         }
         
@@ -135,7 +135,7 @@ function Contemplate_demo_Cached__global( id )
                 _loc_index6 = _loc_86[_loc_87]; _loc_value7 = _loc_85[_loc_index6];
                 
                 
-                __p__ += '' + "\n" + '        [' + ( _loc_index6) + '] = <strong>' + ( _loc_value7) + '</strong><br /> ' + "\n" + '    ';
+                __p__ += '' + "\n" + '        [' + (_loc_index6) + '] = <strong>' + (_loc_value7) + '</strong><br /> ' + "\n" + '    ';
             }
         }
         
@@ -151,7 +151,7 @@ function Contemplate_demo_Cached__global( id )
                 _loc_value8 = _loc_100 ? _loc_102 : _loc_98[_loc_102];
                 
                 
-                __p__ += '' + "\n" + '        <strong>' + ( _loc_value8) + '</strong><br /> ' + "\n" + '    ';
+                __p__ += '' + "\n" + '        <strong>' + (_loc_value8) + '</strong><br /> ' + "\n" + '    ';
             }
         }
         
@@ -228,9 +228,9 @@ function Contemplate_demo_Cached__global( id )
     /* extend tpl assign code ends here */
 }
 /* extends main Contemplate.Template class */
-Contemplate_demo_Cached__global.prototype = Object.create(Contemplate.Template.prototype);
+Contemplate_demo__global.prototype = Object.create(Contemplate.Template.prototype);
 /* render method */
-Contemplate_demo_Cached__global.prototype.render = function( data, __i__ ) {
+Contemplate_demo__global.prototype.render = function( data, __i__ ) {
     "use strict";
     var self = this, __p__ = '', __ctx = false;
     !__i__&&(__i__=self)&&(self._autonomus||(__ctx=Contemplate._set_ctx( self._ctx )));
@@ -243,6 +243,6 @@ Contemplate_demo_Cached__global.prototype.render = function( data, __i__ ) {
     return __p__;
 };
 // export it
-return Contemplate_demo_Cached__global;
+return Contemplate_demo__global;
 };
 });

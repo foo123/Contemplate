@@ -5,11 +5,11 @@ var m;
 if ( 'object' === typeof(module) && module.exports ) module.exports = moduleDefinition();
 // browser and AMD, etc..
 else (root[ moduleName ] = m = moduleDefinition()) && ('function' === typeof(define) && define.amd && define(moduleName,[],function(){return m;}));
-}(this, 'Contemplate_tpl2_Cached__global', function( ){
+}(this, 'Contemplate_tpl2__global', function( ){
 "use strict";
 return function( Contemplate ) {
 /* Contemplate cached template 'tpl2', constructor */
-function Contemplate_tpl2_Cached__global( id )
+function Contemplate_tpl2__global( id )
 {
     var self = this;
     Contemplate.Template.call( self, id );
@@ -23,7 +23,7 @@ function Contemplate_tpl2_Cached__global( id )
         "use strict";
         var __p__ = '';
         
-        __p__ += '(2 3)' + "\n" + '        ' + (self.renderSuperBlock("3", data)) + '' + "\n" + '        ';
+        __p__ += '(2 3)' + "\n" + '        ' + (self.sprblock("3", data)) + '' + "\n" + '        ';
         return __p__;
         
     }
@@ -35,8 +35,8 @@ function Contemplate_tpl2_Cached__global( id )
         "use strict";
         var __p__ = '';
         
-        __p__ += '(2 2)' + "\n" + '        ' +  __i__.renderBlock('3', data);
-        __p__ += '' + "\n" + '    ' + (self.renderSuperBlock("2", data)) + '' + "\n" + '    ';
+        __p__ += '(2 2)' + "\n" + '        ' +  __i__.block('3', data);
+        __p__ += '' + "\n" + '    ' + (self.sprblock("2", data)) + '' + "\n" + '    ';
         return __p__;
         
     }
@@ -48,8 +48,8 @@ function Contemplate_tpl2_Cached__global( id )
         "use strict";
         var __p__ = '';
         
-        __p__ += '(2 1)' + "\n" + '    ' +  __i__.renderBlock('2', data);
-        __p__ += '' + "\n" + '' + (self.renderSuperBlock("1", data)) + '' + "\n" + '';
+        __p__ += '(2 1)' + "\n" + '    ' +  __i__.block('2', data);
+        __p__ += '' + "\n" + '' + (self.sprblock("1", data)) + '' + "\n" + '';
         return __p__;
         
     }
@@ -62,9 +62,9 @@ function Contemplate_tpl2_Cached__global( id )
     /* extend tpl assign code ends here */
 }
 /* extends main Contemplate.Template class */
-Contemplate_tpl2_Cached__global.prototype = Object.create(Contemplate.Template.prototype);
+Contemplate_tpl2__global.prototype = Object.create(Contemplate.Template.prototype);
 /* render method */
-Contemplate_tpl2_Cached__global.prototype.render = function( data, __i__ ) {
+Contemplate_tpl2__global.prototype.render = function( data, __i__ ) {
     "use strict";
     var self = this, __p__ = '', __ctx = false;
     !__i__&&(__i__=self)&&(self._autonomus||(__ctx=Contemplate._set_ctx( self._ctx )));
@@ -77,6 +77,6 @@ Contemplate_tpl2_Cached__global.prototype.render = function( data, __i__ ) {
     return __p__;
 };
 // export it
-return Contemplate_tpl2_Cached__global;
+return Contemplate_tpl2__global;
 };
 });

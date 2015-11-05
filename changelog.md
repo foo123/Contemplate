@@ -1,8 +1,9 @@
 ###ChangeLog
 
 __1.0.0__
-* enable dynamic contexts (see examples), different parts of an application can use the engine in a **modular way**, with their contextual template settings (including caching, directories, locales, plugins, etc..) **independantly**
-* `%elif` **alias of** `%elseif`, `%fi` **alias of** `%endif`
+* enable multiple dynamic contexts (see examples), different parts of an application can use the engine in a **modular way**, with their contextual template settings (including templates, caching, directories, locales, plugins, etc..) **independantly**
+* template `directives`, `functions` and `plugins` **no longer use** the `%` prefix i.e `%for`, `%if`, .. but `for`, `if`, .. if compatibility to older format is needed use `Contemplate.setCompatibilityMode( true )`
+* `elif` **alias of** `elseif`, `fi` **alias of** `endif`
 * optimisations, typo fixes
 
 __0.9.2__

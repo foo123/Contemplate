@@ -23,6 +23,8 @@ define('ABSPATH', dirname(__FILE__));
 // include the Contemplate Class
 include dirname(ABSPATH).'/src/php/Contemplate.php';
 
+Contemplate::setCompatibilityMode( true );
+
 Contemplate::setLocales(array(
     "locale"=> "γλωσσική περιοχή"
 ));

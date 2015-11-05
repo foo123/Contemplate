@@ -5,11 +5,11 @@ var m;
 if ( 'object' === typeof(module) && module.exports ) module.exports = moduleDefinition();
 // browser and AMD, etc..
 else (root[ moduleName ] = m = moduleDefinition()) && ('function' === typeof(define) && define.amd && define(moduleName,[],function(){return m;}));
-}(this, 'Contemplate_base_Cached__global', function( ){
+}(this, 'Contemplate_base__global', function( ){
 "use strict";
 return function( Contemplate ) {
 /* Contemplate cached template 'base', constructor */
-function Contemplate_base_Cached__global( id )
+function Contemplate_base__global( id )
 {
     var self = this;
     Contemplate.Template.call( self, id );
@@ -35,7 +35,7 @@ function Contemplate_base_Cached__global( id )
         "use strict";
         var __p__ = '';
         
-        __p__ += 'Base template Block2' + "\n" + '<!-- call the super block here in OO manner, if any -->' + "\n" + '' + (self.renderSuperBlock("Block2", data)) + '' + "\n" + '';
+        __p__ += 'Base template Block2' + "\n" + '<!-- call the super block here in OO manner, if any -->' + "\n" + '' + (self.sprblock("Block2", data)) + '' + "\n" + '';
         return __p__;
         
     }
@@ -71,8 +71,8 @@ function Contemplate_base_Cached__global( id )
         "use strict";
         var __p__ = '';
         
-        __p__ += '' + "\n" + 'Base template Block1' + "\n" + '<br /><br />' + "\n" + '' +  __i__.renderBlock('Block11', data);
-        __p__ += '' + "\n" + '<br /><br />' + "\n" + '' +  __i__.renderBlock('Block12', data);
+        __p__ += '' + "\n" + 'Base template Block1' + "\n" + '<br /><br />' + "\n" + '' +  __i__.block('Block11', data);
+        __p__ += '' + "\n" + '<br /><br />' + "\n" + '' +  __i__.block('Block12', data);
         __p__ += '' + "\n" + '<br /><br />' + "\n" + '';
         return __p__;
         
@@ -86,25 +86,25 @@ function Contemplate_base_Cached__global( id )
     /* extend tpl assign code ends here */
 }
 /* extends main Contemplate.Template class */
-Contemplate_base_Cached__global.prototype = Object.create(Contemplate.Template.prototype);
+Contemplate_base__global.prototype = Object.create(Contemplate.Template.prototype);
 /* render method */
-Contemplate_base_Cached__global.prototype.render = function( data, __i__ ) {
+Contemplate_base__global.prototype.render = function( data, __i__ ) {
     "use strict";
     var self = this, __p__ = '', __ctx = false;
     !__i__&&(__i__=self)&&(self._autonomus||(__ctx=Contemplate._set_ctx( self._ctx )));
     /* tpl main render code starts here */
     
-    __p__ += '<!-- this is the base template -->' + "\n" + '' + "\n" + '<strong>This is the base template</strong>' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block1</strong><br />' + "\n" + '' +  __i__.renderBlock('Block1', data);
-    __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2</strong><br />' + "\n" + '' +  __i__.renderBlock('Block2', data);
-    __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block3</strong><br />' + "\n" + '' +  __i__.renderBlock('Block3', data);
+    __p__ += '<!-- this is the base template -->' + "\n" + '' + "\n" + '<strong>This is the base template</strong>' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block1</strong><br />' + "\n" + '' +  __i__.block('Block1', data);
+    __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2</strong><br />' + "\n" + '' +  __i__.block('Block2', data);
+    __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block3</strong><br />' + "\n" + '' +  __i__.block('Block3', data);
     __p__ += '' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2 Again</strong><br />' + "\n" + '' +  '';
-    __p__ += '' + "\n" + '<strong>This is Block2 using getblock</strong><br />' + "\n" + '' + (__i__.renderBlock("Block2", data)) + '' + "\n" + '';
+    __p__ += '' + "\n" + '<strong>This is Block2 using getblock</strong><br />' + "\n" + '' + (__i__.block("Block2", data)) + '' + "\n" + '';
     
     /* tpl main render code ends here */
     __ctx&&Contemplate._set_ctx( __ctx );
     return __p__;
 };
 // export it
-return Contemplate_base_Cached__global;
+return Contemplate_base__global;
 };
 });

@@ -51,6 +51,8 @@ PORT = 8001
 import json
 
 
+Contemplate.setCompatibilityMode( True )
+
 Contemplate.setLocales({
     "locale": "γλωσσική περιοχή"
 })

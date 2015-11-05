@@ -22,6 +22,7 @@ var http = require('http'), httpPort = 1337,
     Contemplate = require(path.join(__dirname, '../src/js/Contemplate.js'))
 ;
 
+Contemplate.setCompatibilityMode( true );
 
 Contemplate.setLocales({
     "locale": "γλωσσική περιοχή"

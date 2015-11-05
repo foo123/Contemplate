@@ -76,6 +76,7 @@ class _G:
     tplEnd = ''
     preserveLinesDefault = "' + \"\\n\" + '"
     preserveLines = ''
+    compatibility = False
     EOL = "\n"
     TEOL = os.linesep
     pad = "    "
@@ -134,7 +135,8 @@ class _G:
     TT_FUNC = None
     TT_RCODE = None
     
-    re_controls = re.compile(r'(\t|[ ]?)[ ]*%([a-zA-Z_][a-zA-Z0-9_]*)\b[ ]*(\()(.*)$')
+    re_controls = re.compile(r'(\t|\s?)\s*((#ID_(endblock|elsefor|endfor|endif|else|fi)#(\s*\(\s*\))?)|(#ID_([^#]+)#\s*(\()))(.*)$')
+    
     directives = [
     'set', 'unset', 'isset',
     'if', 'elseif', 'else', 'endif',
@@ -552,14 +554,19 @@ def get_separators( text, separators=None ):
         _G.rightTplSep = seps[ 1 ].strip( )
     else:
         # tpl separators are defined on 1st (non-empty) line of tpl content
-        lines = text.split( "\n" )
-        while  len(lines)>0 and 0 == len( lines[ 0 ].strip() ): lines.pop( 0 )
-        if len(lines):
-            seps = lines.pop( 0 ).strip( ).split( " " )
+        l = len(text)
+        i = 0
+        pos = 0
+        line = ""
+        while i < l and -1 < pos and not len(line):
+            pos = text.find( "\n", i )
+            line = text[i:pos+1].strip() if -1 < pos else ""
+            i = pos+1
+        if len(line):
+            seps = line.split( " " )
             _G.leftTplSep = seps[ 0 ].strip( )
             _G.rightTplSep = seps[ 1 ].strip( )
-        
-        text = "\n".join( lines )
+            text = text[pos+1:]
     return text
     
 
@@ -587,8 +594,8 @@ def t_unset( varname=None ):
 def t_if( cond='False' ):
     global _G
     out = "'" + pad_lines(_G.TT_IF({
-         "EOL"          : _G.TEOL
-        ,'IFCOND'       : cond
+         'IFCOND'       : cond
+        ,'EOL'          : _G.TEOL
         }))
     _G.ifs += 1
     _G.level += 1
@@ -599,8 +606,8 @@ def t_elseif( cond='False' ):
     global _G
     _G.level -= 1
     out = "'" + pad_lines(_G.TT_ELSEIF({
-         "EOL"          : _G.TEOL
-        ,'ELIFCOND'     : cond
+         'ELIFCOND'     : cond
+        ,'EOL'          : _G.TEOL
         }))
     _G.level += 1
     
@@ -610,7 +617,7 @@ def t_else( args='' ):
     global _G
     _G.level -= 1
     out = "'" + pad_lines(_G.TT_ELSE({ 
-    "EOL"           : _G.TEOL
+     'EOL'          : _G.TEOL
     }))
     _G.level += 1
     
@@ -621,7 +628,7 @@ def t_endif( args='' ):
     _G.ifs -= 1
     _G.level -= 1
     out = "'" + pad_lines(_G.TT_ENDIF({ 
-    "EOL"           : _G.TEOL
+     'EOL'          : _G.TEOL
     }))
     
     return out
@@ -654,14 +661,14 @@ def t_for( for_expr ):
         _G.locals[_G.currentblock][_G.variables[_G.currentblock][k]] = 1
         _G.locals[_G.currentblock][_G.variables[_G.currentblock][v]] = 1
         out = "'" + pad_lines(_G.TT_FOR2({
-         "EOL"          : _G.TEOL
-        ,'O'            : o
+         'O'            : o
         ,'_O'           : _o
         ,'_OI'          : _oI
         ,'K'            : k
         ,'V'            : v
         #,'ASSIGN1': '',
         #'ASSIGN2': ''
+        ,'EOL'          : _G.TEOL
         }))
         _G.level += 2
     
@@ -672,12 +679,12 @@ def t_for( for_expr ):
         
         _G.locals[_G.currentblock][_G.variables[_G.currentblock][v]] = 1
         out = "'" + pad_lines(_G.TT_FOR1({
-         "EOL"          : _G.TEOL
-        ,'O'            : o
+         'O'            : o
         ,'_O'           : _o
         ,'_OV'          : _oV 
         ,'V'            : v
         #,'ASSIGN1': ''
+        ,'EOL'          : _G.TEOL
         }))
         _G.level += 2
     
@@ -691,7 +698,7 @@ def t_elsefor( args='' ):
     _G.loopifs -= 1
     _G.level += -2
     out = "'" + pad_lines(_G.TT_ELSEFOR({ 
-    "EOL"           : _G.TEOL
+     'EOL'          : _G.TEOL
     }))
     _G.level += 1
     
@@ -704,13 +711,13 @@ def t_endfor( args='' ):
         _G.loopifs -= 1
         _G.level += -2
         out = "'" + pad_lines(_G.TT_ENDFOR({ 
-        "EOL"           : _G.TEOL
+         'EOL'          : _G.TEOL
         }))
     else:
         _G.loops -= 1
         _G.level += -1
         out = "'" + pad_lines(_G.TT_ENDFOR({ 
-        "EOL"           : _G.TEOL
+         'EOL'          : _G.TEOL
         }))
     
     return out
@@ -758,7 +765,7 @@ def t_block( block ):
     _G.openblocks[:0] = [[block, _G.blockptr-1]]
     _G.startblock = block
     _G.endblock = None
-    return "' +  #|" + block + "|#"
+    return "' +  #BLOCK_" + block + "#"
     
 def t_endblock( args='' ):
     global _G
@@ -767,7 +774,7 @@ def t_endblock( args='' ):
         _G.endblock = block[ 0 ]
         _G.blockptr = block[ 1 ]+1
         _G.startblock = None
-        return "#|/" + block[0] + "|#"
+        return "#/BLOCK_" + block[0] + "#"
     return ''
 
 
@@ -789,26 +796,27 @@ def merge( m, *args ):
 def parse_constructs( match ):
     global _G
     re_controls = _G.re_controls
-    prefix = match.group(1)
-    ctrl = match.group(2) 
-    startParen = match.group(3)
-    rest = match.group(4)
-    out = ''
+    
+    prefix = match.group(1) if match.group(1) else ''
+    ctrl = match.group(4) if match.group(4) else (match.group(7) if match.group(7) else '')
+    rest = match.group(9) if match.group(9) else ''
+    startParen = match.group(8) if match.group(8) else False
     args = ''
-    paren = 1 
-    l = len(rest)
-    i = 0
+    out = ''
     
     # parse parentheses and arguments, accurately
-    while i < l and paren > 0:
-    
-        ch = rest[i]
-        i += 1
-        if '(' == ch: paren += 1
-        elif ')' == ch: paren -= 1
-        if paren > 0: args += ch
-    
-    rest = rest[len(args)+1:]
+    if startParen and len(startParen):
+        paren = 1 
+        l = len(rest)
+        i = 0
+        while i < l and paren > 0:
+        
+            ch = rest[i]
+            i += 1
+            if '(' == ch: paren += 1
+            elif ')' == ch: paren -= 1
+            if paren > 0: args += ch
+        rest = rest[len(args)+1:]
     
     if ctrl in _G.directive_aliases: ctrl = _G.directive_aliases[ctrl]
     try:
@@ -837,20 +845,20 @@ def parse_constructs( match ):
             out = t_elseif(args)
         
         elif 5==m: # else
-            out = t_else(args)
+            out = t_else()
         
         elif 6==m: # endif
-            out = t_endif(args)
+            out = t_endif()
         
         elif 7==m: # for
             args = re.sub(re_controls, parse_constructs, args)
             out = t_for(args)
         
         elif 8==m: # elsefor
-            out = t_elsefor(args)
+            out = t_elsefor()
         
         elif 9==m: # endfor
-            out = t_endfor(args)
+            out = t_endfor()
         
         elif 10==m: # extends
             out = t_extends(args)
@@ -859,18 +867,18 @@ def parse_constructs( match ):
             out = t_block(args)
         
         elif 12==m: # endblock
-            out = t_endblock(args)
+            out = t_endblock()
         
         elif 13==m: # import_tpl
             out = t_include(args)
         
         elif 14==m: # super
             args = re.sub(re_controls, parse_constructs, args)
-            out = prefix + 'self_.renderSuperBlock(' + args + ', data)'
+            out = prefix + 'self_.sprblock(' + args + ', data)'
         
         elif 15==m: # getblock
             args = re.sub(re_controls, parse_constructs, args)
-            out = prefix + '__i__.renderBlock(' + args + ', data)'
+            out = prefix + '__i__.block(' + args + ', data)'
         
         return out + re.sub(re_controls, parse_constructs, rest)
     
@@ -934,8 +942,8 @@ def parse_blocks( s ):
         off = delims[ 3 ]
         containerblock = delims[ 4 ]
         echoed = delims[ 5 ]
-        tag = "#|" + block + "|#"
-        rep = "__i__.renderBlock('" + block + "', data) " if echoed else "'' "
+        tag = "#BLOCK_" + block + "#"
+        rep = "__i__.block('" + block + "', data) " if echoed else "'' "
         tl = len(tag) 
         rl = len(rep)
         
@@ -952,8 +960,8 @@ def parse_blocks( s ):
         
             # 1st occurance, block definition
             blocks.append([ block, _G.TT_BLOCK({
-             "EOL"           : EOL
-            ,'BLOCKCODE'     : s[pos1+tl:pos2-tl-1] + "'"
+             'BLOCKCODE'     : s[pos1+tl:pos2-tl-1] + "'"
+            ,'EOL'           : EOL
             })])
         
         s = s[0:pos1] + rep + s[pos2+1:]
@@ -985,7 +993,7 @@ def parse_variable( s, i, l ):
         variable_main = "data['" + variable_raw + "']"
         variable_rest = ""
         _G.id += 1
-        id = "#VAR"+str(_G.id)+"#"
+        id = "#VAR_"+str(_G.id)+"#"
         _len = len(variable_raw)
         
         # extra space
@@ -1041,7 +1049,7 @@ def parse_variable( s, i, l ):
                         escaped = (not escaped and '\\' == ch)
                     property = str_
                     _G.id += 1
-                    strid = "#STR"+str(_G.id)+"#"
+                    strid = "#STR_"+str(_G.id)+"#"
                     strings[strid] = property
                     variable_rest += delim + strid
                     lp = len(property)
@@ -1117,12 +1125,17 @@ def parse_variable( s, i, l ):
         return variables
     return None
 
-str_re = re.compile(r'#STR\d+#', re.M|re.S)
+str_re = re.compile(r'#STR_\d+#', re.M|re.S)
 def parse( tpl, leftTplSep, rightTplSep, withblocks=True ):
     global _G
     global str_re
     
     re_controls = _G.re_controls
+    ALPHA = _G.ALPHA
+    ALPHANUM = _G.ALPHANUM
+    compatibility_mode = _G.compatibility
+    non_compatibility_mode = not compatibility_mode
+    
     t1 = leftTplSep
     l1 = len(t1)
     t2 = rightTplSep
@@ -1169,33 +1182,8 @@ def parse( tpl, leftTplSep, rightTplSep, withblocks=True ):
             ch = s[index]
             index  += 1
             
-            # parse mainly literal strings and variables
-            # literal string
-            if '"' == ch or "'" == ch:
-                if space > 0:
-                    out += " "
-                    space = 0
-                #tok = parse_string(s, ch, index, count)
-                q = ch
-                str_ = q
-                escaped = False
-                si = index
-                while si < count:
-                    ch = s[si]
-                    si += 1
-                    str_ += ch
-                    if ( q == ch and not escaped ):  break
-                    escaped = (not escaped and '\\' == ch)
-                tok = str_
-                _G.id += 1
-                id = "#STR"+str(_G.id)+"#"
-                strings[id] = tok
-                out += id
-                index += len(tok)-1
-                hasStrings = True
-            
             # variable
-            elif '$' == ch:
+            if '$' == ch:
                 if space > 0:
                     out += " "
                     space = 0
@@ -1212,10 +1200,78 @@ def parse( tpl, leftTplSep, rightTplSep, withblocks=True ):
                     hasStrings = hasStrings or tokv[ 6 ]
                 else:
                     out += '$'
-                
-            # special chars
+            
+            # literal string
+            elif '"' == ch or "'" == ch:
+                if space > 0:
+                    out += " "
+                    space = 0
+                #tok = parse_string(s, ch, index, count)
+                q = ch
+                str_ = q
+                escaped = False
+                si = index
+                while si < count:
+                    ch = s[si]
+                    si += 1
+                    str_ += ch
+                    if ( q == ch and not escaped ):  break
+                    escaped = (not escaped and '\\' == ch)
+                tok = str_
+                _G.id += 1
+                id = "#STR_"+str(_G.id)+"#"
+                strings[id] = tok
+                out += id
+                index += len(tok)-1
+                hasStrings = True
+            
+            # spaces
             elif "\n" == ch or "\r" == ch or "\t" == ch or "\v" == ch:
                 space += 1
+            
+            # directive or identifier or atom in compatibility mode
+            elif '%' == ch:
+                if space > 0:
+                    out += " "
+                    space = 0
+                
+                q = ch
+                if non_compatibility_mode or index >= count:
+                    out += q
+                    continue
+                
+                ch = s[index]
+                if ALPHA.match(ch):
+                    index += 1
+                    tok = ch
+                    while index < count:
+                        ch = s[index]
+                        if ALPHANUM.match(ch):
+                            index += 1
+                            tok += ch
+                        else: break
+                    tok = '#ID_'+tok+'#'
+                    out += tok
+                else:
+                    out += q
+            
+            # directive or identifier or atom
+            elif non_compatibility_mode and ALPHA.match(ch):
+                if space > 0:
+                    out += " "
+                    space = 0
+                tok = ch
+                while index < count:
+                    ch = s[index]
+                    if ALPHANUM.match(ch):
+                        index += 1
+                        tok += ch
+                    else: break
+                if 'null' == tok: tok = 'None'
+                elif 'false' == tok: tok = 'False'
+                elif 'true' == tok: tok = 'True'
+                elif 'as' != tok and 'in' != tok: tok = '#ID_'+tok+'#'
+                out += tok
             
             # rest, bypass
             else:
@@ -1225,7 +1281,8 @@ def parse( tpl, leftTplSep, rightTplSep, withblocks=True ):
                 out += ch
             
         # fix literal data notation python-style
-        out = out.replace('true', 'True').replace('false', 'False').replace('null', 'None').replace('&&', ' and ').replace(' || ', ' or ').replace('!', ' not ')
+        if compatibility_mode: out = out.replace('true', 'True').replace('false', 'False').replace('null', 'None')
+        out = out.replace('&&', ' and ').replace(' || ', ' or ').replace('!', ' not ')
         
         tag = "\t" + out + "\v"
             
@@ -1239,16 +1296,16 @@ def parse( tpl, leftTplSep, rightTplSep, withblocks=True ):
         
         # check for blocks
         if _G.startblock:
-            _G.startblock = "#|"+_G.startblock+"|#"
+            _G.startblock = "#BLOCK_"+_G.startblock+"#"
             hasBlock = True
         elif _G.endblock:
-            _G.endblock = "#|/"+_G.endblock+"|#"
+            _G.endblock = "#/BLOCK_"+_G.endblock+"#"
             hasBlock = True
         notFoundBlock = hasBlock
         
         # replacements
         if "\t" == tag[0] and "\v" == tag[-1]: 
-            tag = "' + str("+tag[1:-1]+") + '"
+            tag = "' + str("+tag[1:-1].strip()+") + '"
         
         if hasVariables:
             # replace variables
@@ -1263,7 +1320,7 @@ def parse( tpl, leftTplSep, rightTplSep, withblocks=True ):
         
         if hasStrings:
             # replace strings (accurately)
-            tagTpl = Contemplate.InlineTemplate.multisplit_re(tag, str_re)
+            tagTpl = InlineTemplate.multisplit_re(tag, str_re)
             tag = ''
             for v in tagTpl:
                 if v[0]:
@@ -1313,7 +1370,7 @@ def get_cached_template_name( id, ctx ):
 
 def get_cached_template_class( id, ctx ):
     global _G
-    return 'Contemplate_' + re.sub(_G.UNDERL, '_', id) + '_Cached__' + re.sub(_G.UNDERL, '_', ctx)
+    return 'Contemplate_' + re.sub(_G.UNDERL, '_', id) + '__' + re.sub(_G.UNDERL, '_', ctx)
 
 def get_template_contents( id, contx ):
     global _G
@@ -1340,8 +1397,8 @@ def create_template_render_function( id, contx, seps=None ):
     EOL = _G.TEOL
     
     func = _G.TT_FUNC({
-     "EOL"          : EOL
-    ,'FCODE'        : "" if _G.extends else "__p__ += '" + renderf + "'"
+     'FCODE'        : "" if _G.extends else "__p__ += '" + renderf + "'"
+    ,'EOL'          : EOL
     })
     
     _G.funcId += 1
@@ -1374,28 +1431,28 @@ def create_cached_template( id, contx, filename, classname, seps=None ):
     sblocks = ''
     for b in blocks:
         sblocks += EOL + _G.TT_BlockCode({
-         "EOL"                  : EOL
-        ,'BLOCKNAME'            : b[0]
+         'BLOCKNAME'            : b[0]
         ,'BLOCKMETHODNAME'      : "_blockfn_"+b[0]
         ,'BLOCKMETHODCODE'      : pad_lines(b[1], 1)
+        ,'EOL'                  : EOL
         })
     
     renderCode = _G.TT_RCODE({
-     "EOL"                  : EOL
-    ,'RCODE'                : "__p__ = ''" if _G.extends else "__p__ += '" + renderf + "'" 
+     'RCODE'                : "__p__ = ''" if _G.extends else "__p__ += '" + renderf + "'" 
+    ,'EOL'                  : EOL
     })
     extendCode = "self_.extend('"+_G.extends+"')" if _G.extends else ''
     prefixCode = contx.prefix if contx.prefix else ''
         
     # generate tpl class
     classCode = _G.TT_ClassCode({
-     "EOL"                  : EOL
-    ,'PREFIXCODE'           : prefixCode
+     'PREFIXCODE'           : prefixCode
     ,'TPLID'                : id
     ,'CLASSNAME'            : classname
     ,'EXTENDCODE'           : pad_lines(extendCode, 3)
     ,'BLOCKS'               : pad_lines(sblocks, 2)
     ,'RENDERCODE'           : pad_lines(renderCode, 4)
+    ,'EOL'                  : EOL
     })
     return write_file( filename, classCode, contx.encoding )
 
@@ -1611,13 +1668,13 @@ class Template:
         self._renderer = renderFunc if renderFunc else None
         return self
     
-    def renderSuperBlock( self, block, data ):
+    def sprblock( self, block, data ):
         #if not __i__: __i__ = self
         if self._extends:
-            return self._extends.renderBlock(block, data, self._extends)
+            return self._extends.block(block, data, self._extends)
         return ''
         
-    def renderBlock( self, block, data, __i__=None ):
+    def block( self, block, data, __i__=None ):
         __ctx = False
         r = ''
         if not __i__:
@@ -1628,7 +1685,7 @@ class Template:
             blockfunc = self._blocks[block]
             r = blockfunc(data, self, __i__)
         elif self._extends:
-            r = self._extends.renderBlock(block, data, __i__)
+            r = self._extends.block(block, data, __i__)
         
         if __ctx: Contemplate._set_ctx( __ctx )
         return r
@@ -1650,6 +1707,12 @@ class Template:
         if __ctx: Contemplate._set_ctx( __ctx )
         return __p__
     
+    # aliases
+    def renderBlock( self, block, data, __i__=None ):
+        return self.block( self, block, data, __i__ )
+    
+    def renderSuperBlock( self, block, data ):
+        return self.sprblock( self, block, data )
 
 class Ctx:
     
@@ -1744,7 +1807,7 @@ class Contemplate:
             ,"#BLOCKS#"
             ,"        # tpl-defined blocks render code ends here"
             ,"        # render a tpl block method"
-            ,"        def renderBlock(self, block, data, __i__=None):"
+            ,"        def block(self, block, data, __i__=None):"
             ,"            self_ = self"
             ,"            __ctx = False"
             ,"            r = ''"
@@ -1755,7 +1818,7 @@ class Contemplate:
             ,"            if (hasattr(self_, method) and callable(getattr(self_, method))):"
             ,"                r = getattr(self_, method)(data, self_, __i__)"
             ,"            elif self_._extends:"
-            ,"                r = self_._extends.renderBlock(block, data, __i__)"
+            ,"                r = self_._extends.block(block, data, __i__)"
             ,"            if __ctx:  Contemplate._set_ctx( __ctx )"
             ,"            return r"
             ,"        # render method"
@@ -1781,13 +1844,13 @@ class Contemplate:
             ,"__all__ = ['__getTplClass__']"
             ,""
         ]), {
-             "#EOL#":           "EOL"
-            ,"#PREFIXCODE#":    "PREFIXCODE"
-            ,"#CLASSNAME#":     "CLASSNAME"
-            ,"#TPLID#":         "TPLID"
-            ,"#BLOCKS#":        "BLOCKS"
-            ,"#EXTENDCODE#":    "EXTENDCODE"
-            ,"#RENDERCODE#":    "RENDERCODE"
+             "#PREFIXCODE#"         : "PREFIXCODE"
+            ,"#CLASSNAME#"          : "CLASSNAME"
+            ,"#TPLID#"              : "TPLID"
+            ,"#BLOCKS#"             : "BLOCKS"
+            ,"#EXTENDCODE#"         : "EXTENDCODE"
+            ,"#RENDERCODE#"         : "RENDERCODE"
+            ,'#EOL#'                : 'EOL'
         }))
         
         _G.TT_BlockCode = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
@@ -1797,10 +1860,10 @@ class Contemplate:
             ,"#BLOCKMETHODCODE#"
             ,""
         ]), {
-             "#EOL#":               "EOL"
-            ,"#BLOCKNAME#":         "BLOCKNAME"
-            ,"#BLOCKMETHODNAME#":   "BLOCKMETHODNAME"
-            ,"#BLOCKMETHODCODE#":   "BLOCKMETHODCODE"
+             "#BLOCKNAME#"          : "BLOCKNAME"
+            ,"#BLOCKMETHODNAME#"    : "BLOCKMETHODNAME"
+            ,"#BLOCKMETHODCODE#"    : "BLOCKMETHODCODE"
+            ,'#EOL#'                : 'EOL'
         }))
 
         _G.TT_BLOCK = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
@@ -1810,8 +1873,8 @@ class Contemplate:
             ,"return __p__"
             ,""
         ]), {
-             "#EOL#":       "EOL"
-            ,"#BLOCKCODE#": "BLOCKCODE"
+             "#BLOCKCODE#"          : "BLOCKCODE"
+            ,'#EOL#'                : 'EOL'
         }))
 
             
@@ -1820,8 +1883,8 @@ class Contemplate:
             ,"if (#IFCOND#):"
             ,""
         ]), {
-             "#EOL#":       "EOL"
-            ,"#IFCOND#":    "IFCOND"
+             "#IFCOND#"             : "IFCOND"
+            ,'#EOL#'                : 'EOL'
         }))
             
         _G.TT_ELSEIF = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
@@ -1829,8 +1892,8 @@ class Contemplate:
             ,"elif (#ELIFCOND#):"
             ,""
         ]), {
-             "#EOL#":       "EOL"
-            ,"#ELIFCOND#":  "ELIFCOND"
+             "#ELIFCOND#"           : "ELIFCOND"
+            ,'#EOL#'                : 'EOL'
         }))
 
         _G.TT_ELSE = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
@@ -1838,13 +1901,13 @@ class Contemplate:
             ,"else:"
             ,""
         ]), {
-            "#EOL#":               "EOL"
+             '#EOL#'                : 'EOL'
         }))
             
         _G.TT_ENDIF = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
             "",""
         ]), {
-            "#EOL#":               "EOL"
+             '#EOL#'                : 'EOL'
         }))
             
         # a = [51,27,13,56]   dict(enumerate(a))
@@ -1856,12 +1919,12 @@ class Contemplate:
             ,"    for #K#,#V# in #_OI#:"
             ,""
         ]), {
-             "#EOL#":   "EOL"
-            ,"#O#":     "O"
-            ,"#_O#":    "_O"
-            ,"#_OI#":    "_OI"
-            ,"#K#":     "K"
-            ,"#V#":     "V"
+             "#O#"                  : "O"
+            ,"#_O#"                 : "_O"
+            ,"#_OI#"                : "_OI"
+            ,"#K#"                  : "K"
+            ,"#V#"                  : "V"
+            ,'#EOL#'                : 'EOL'
         }))
         _G.TT_FOR1 = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
             ""
@@ -1871,11 +1934,11 @@ class Contemplate:
             ,"    for #V# in #_OV#:"
             ,""
         ]), {
-             "#EOL#":   "EOL"
-            ,"#O#":     "O"
-            ,"#_O#":    "_O"
-            ,"#_OV#":    "_OV"
-            ,"#V#":     "V"
+             "#O#"                  : "O"
+            ,"#_O#"                 : "_O"
+            ,"#_OV#"                : "_OV"
+            ,"#V#"                  : "V"
+            ,'#EOL#'                : 'EOL'
         }))
             
         _G.TT_ELSEFOR = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
@@ -1883,13 +1946,13 @@ class Contemplate:
             ,"else:"
             ,""
         ]), {
-             "#EOL#":               "EOL"
+             '#EOL#'                : 'EOL'
         }))
             
         _G.TT_ENDFOR = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
             "",""
         ]), {
-             "#EOL#":               "EOL"
+             '#EOL#'                : 'EOL'
         }))
             
         _G.TT_FUNC = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
@@ -1899,8 +1962,8 @@ class Contemplate:
             ,"return __p__"
             ,""
         ]), {
-             "#EOL#":    "EOL"
-            ,"#FCODE#":  "FCODE"
+             "#FCODE#"              : "FCODE"
+            ,'#EOL#'                : 'EOL'
         }))
 
         _G.TT_RCODE = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
@@ -1908,11 +1971,11 @@ class Contemplate:
             ,"#RCODE#"
             ,""
         ]), {
-             "#EOL#":    "EOL"
-            ,"#RCODE#":  "RCODE"
+             "#RCODE#"              : "RCODE"
+            ,'#EOL#'                : 'EOL'
         }))
         
-        clear_state()
+        clear_state( )
         _G.isInited = True
     
     
@@ -1938,6 +2001,10 @@ class Contemplate:
         if ctx and ('global' != ctx) and (ctx in _G.ctx):
             _G.ctx[ctx].dispose( )
             del _G.ctx[ctx]
+    
+    def setCompatibilityMode( enable=True ):
+        global _G
+        _G.compatibility = bool(enable)
     
     def setTemplateSeparators( seps=None ):
         global _G

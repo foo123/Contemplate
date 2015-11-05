@@ -1,9 +1,9 @@
 <?php 
 
-if (!class_exists('Contemplate_sub_Cached__global'))
+if (!class_exists('Contemplate_sub__global'))
 {
 /* Contemplate cached template 'sub' */
-final class Contemplate_sub_Cached__global extends ContemplateTemplate
+final class Contemplate_sub__global extends ContemplateTemplate
 {
 /* constructor */
 public function __construct($id=null)
@@ -18,8 +18,8 @@ public function __construct($id=null)
 /* tpl-defined blocks render code starts here */
 
 /* tpl-defined blocks render code ends here */
-/* tpl renderBlock method */
-public function renderBlock($block, &$data, $__i__=null)
+/* tpl block method */
+public function block($block, &$data, $__i__=null)
 {
     $self = $this; $r = ''; $__ctx = false;
     if ( !$__i__ )
@@ -29,7 +29,7 @@ public function renderBlock($block, &$data, $__i__=null)
     }
     $method = '_blockfn_' . $block;
     if ( method_exists($self, $method) ) $r = $self->{$method}($data, $self, $__i__);
-    elseif ( $self->_extends ) $r = $self->_extends->renderBlock($block, $data, $__i__);
+    elseif ( $self->_extends ) $r = $self->_extends->block($block, $data, $__i__);
     if ( $__ctx )  Contemplate::_set_ctx( $__ctx );
     return $r;
 }
@@ -58,7 +58,7 @@ public function render(&$data, $__i__=null)
             foreach ($_loc_7 as $_loc_j=>$_loc_user)
             {
                 
-                $__p__ .= '' . "\n" . '        <div id=\'' . ( $_loc_user["id"]) . '\' class="';        
+                $__p__ .= '' . "\n" . '        <div id=\'' . ($_loc_user["id"]) . '\' class="';        
                 if (0 == ($_loc_j % 2))
                 {
                             
@@ -70,7 +70,7 @@ public function render(&$data, $__i__=null)
                     $__p__ .= 'odd';        
                 }
                         
-                $__p__ .= '">' . "\n" . '            <a href="/' . ( $_loc_user["name"]) . '">' . ( $_loc_user['name']) . '' . ( $_loc_user['text']) . ' ' . (intval($data['i']) + intval($_loc_j)) . '</a>: <strong>' . ( $_loc_user["text"]) . '</strong>' . "\n" . '        </div>' . "\n" . '        ';        
+                $__p__ .= '">' . "\n" . '            <a href="/' . ($_loc_user["name"]) . '">' . ($_loc_user['name']) . '' . ($_loc_user['text']) . ' ' . (intval($data['i']) + intval($_loc_j)) . '</a>: <strong>' . ($_loc_user["text"]) . '</strong>' . "\n" . '        </div>' . "\n" . '        ';        
                 if ( Contemplate::haskey($_loc_user, "key1") )
                 {
                             

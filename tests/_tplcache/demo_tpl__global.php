@@ -1,9 +1,9 @@
 <?php 
 
-if (!class_exists('Contemplate_demo_Cached__global'))
+if (!class_exists('Contemplate_demo__global'))
 {
 /* Contemplate cached template 'demo' */
-final class Contemplate_demo_Cached__global extends ContemplateTemplate
+final class Contemplate_demo__global extends ContemplateTemplate
 {
 /* constructor */
 public function __construct($id=null)
@@ -36,14 +36,14 @@ private function _blockfn_Block2(&$data, $self, $__i__)
     
     $__p__ = '';
     
-    $__p__ .= '' . "\n" . '' . "\n" . '    <strong>Block2 is overriden by the demo template</strong>' . "\n" . '' . "\n" . '    <br /><br />' . "\n" . '' . "\n" . '    <strong>Can reference the super Block2 directly if needed in OO manner</strong>' . "\n" . '    <br /><br />' . "\n" . '' . "\n" . '    <!-- call the super block here in OO manner, if any -->' . "\n" . '    ' . ($self->renderSuperBlock("Block2", $data)) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '' . "\n" . '    <strong>Contemplate Constructs</strong><hr /><br />' . "\n" . '    ' . "\n" . '    <strong>FOR Loop Associative (php-style, literal array data)</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% %for(["a", "b", "c"] as $index=>$value) %&gt;' . "\n" . '        [&lt;% $index %&gt;] = &lt;strong&gt;&lt;% $value %&gt;&lt;/strong&gt;&lt;br /&gt; ' . "\n" . '    &lt;% %endfor() %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ';
+    $__p__ .= '' . "\n" . '' . "\n" . '    <strong>Block2 is overriden by the demo template</strong>' . "\n" . '' . "\n" . '    <br /><br />' . "\n" . '' . "\n" . '    <strong>Can reference the super Block2 directly if needed in OO manner</strong>' . "\n" . '    <br /><br />' . "\n" . '' . "\n" . '    <!-- call the super block here in OO manner, if any -->' . "\n" . '    ' . ($self->sprblock("Block2", $data)) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '' . "\n" . '    <strong>Contemplate Constructs</strong><hr /><br />' . "\n" . '    ' . "\n" . '    <strong>FOR Loop Associative (php-style, literal array data)</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% %for(["a", "b", "c"] as $index=>$value) %&gt;' . "\n" . '        [&lt;% $index %&gt;] = &lt;strong&gt;&lt;% $value %&gt;&lt;/strong&gt;&lt;br /&gt; ' . "\n" . '    &lt;% %endfor() %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ';
     $_loc_10 = array("a", "b", "c");
     if (!empty($_loc_10))
     {
         foreach ($_loc_10 as $_loc_index=>$_loc_value)
         {
             
-            $__p__ .= '' . "\n" . '        [' . ( $_loc_index) . '] = <strong>' . ( $_loc_value) . '</strong><br /> ' . "\n" . '    ';
+            $__p__ .= '' . "\n" . '        [' . ($_loc_index) . '] = <strong>' . ($_loc_value) . '</strong><br /> ' . "\n" . '    ';
         }
     }
     
@@ -54,7 +54,7 @@ private function _blockfn_Block2(&$data, $self, $__i__)
         foreach ($_loc_17 as $_loc_value2)
         {
             
-            $__p__ .= '' . "\n" . '        <strong>' . ( $_loc_value2) . '</strong><br /> ' . "\n" . '    ';
+            $__p__ .= '' . "\n" . '        <strong>' . ($_loc_value2) . '</strong><br /> ' . "\n" . '    ';
         }
     }
     
@@ -65,7 +65,7 @@ private function _blockfn_Block2(&$data, $self, $__i__)
         foreach ($_loc_27 as $_loc_index3=>$_loc_value3)
         {
             
-            $__p__ .= '' . "\n" . '        [' . ( $_loc_index3) . '] = <strong>' . ( $_loc_value3) . '</strong><br /> ' . "\n" . '    ';
+            $__p__ .= '' . "\n" . '        [' . ($_loc_index3) . '] = <strong>' . ($_loc_value3) . '</strong><br /> ' . "\n" . '    ';
         }
     }
     
@@ -76,7 +76,7 @@ private function _blockfn_Block2(&$data, $self, $__i__)
         foreach ($_loc_37 as $_loc_value4)
         {
             
-            $__p__ .= '' . "\n" . '        <strong>' . ( $_loc_value4) . '</strong><br /> ' . "\n" . '    ';
+            $__p__ .= '' . "\n" . '        <strong>' . ($_loc_value4) . '</strong><br /> ' . "\n" . '    ';
         }
     }
     
@@ -87,7 +87,7 @@ private function _blockfn_Block2(&$data, $self, $__i__)
         foreach ($_loc_44 as $_loc_index4=>$_loc_value4)
         {
             
-            $__p__ .= '' . "\n" . '        [' . ( $_loc_index4) . '] = <strong>' . ( $_loc_value4) . '</strong><br /> ' . "\n" . '    ';
+            $__p__ .= '' . "\n" . '        [' . ($_loc_index4) . '] = <strong>' . ($_loc_value4) . '</strong><br /> ' . "\n" . '    ';
         }
     }
     
@@ -98,7 +98,7 @@ private function _blockfn_Block2(&$data, $self, $__i__)
         foreach ($_loc_51 as $_loc_value5)
         {
             
-            $__p__ .= '' . "\n" . '        <strong>' . ( $_loc_value5) . '</strong><br /> ' . "\n" . '    ';
+            $__p__ .= '' . "\n" . '        <strong>' . ($_loc_value5) . '</strong><br /> ' . "\n" . '    ';
         }
     }
     
@@ -109,7 +109,7 @@ private function _blockfn_Block2(&$data, $self, $__i__)
         foreach ($_loc_61 as $_loc_index6=>$_loc_value7)
         {
             
-            $__p__ .= '' . "\n" . '        [' . ( $_loc_index6) . '] = <strong>' . ( $_loc_value7) . '</strong><br /> ' . "\n" . '    ';
+            $__p__ .= '' . "\n" . '        [' . ($_loc_index6) . '] = <strong>' . ($_loc_value7) . '</strong><br /> ' . "\n" . '    ';
         }
     }
     
@@ -120,7 +120,7 @@ private function _blockfn_Block2(&$data, $self, $__i__)
         foreach ($_loc_71 as $_loc_value8)
         {
             
-            $__p__ .= '' . "\n" . '        <strong>' . ( $_loc_value8) . '</strong><br /> ' . "\n" . '    ';
+            $__p__ .= '' . "\n" . '        <strong>' . ($_loc_value8) . '</strong><br /> ' . "\n" . '    ';
         }
     }
     
@@ -187,8 +187,8 @@ private function _blockfn_Block12(&$data, $self, $__i__)
 }
 
 /* tpl-defined blocks render code ends here */
-/* tpl renderBlock method */
-public function renderBlock($block, &$data, $__i__=null)
+/* tpl block method */
+public function block($block, &$data, $__i__=null)
 {
     $self = $this; $r = ''; $__ctx = false;
     if ( !$__i__ )
@@ -198,7 +198,7 @@ public function renderBlock($block, &$data, $__i__=null)
     }
     $method = '_blockfn_' . $block;
     if ( method_exists($self, $method) ) $r = $self->{$method}($data, $self, $__i__);
-    elseif ( $self->_extends ) $r = $self->_extends->renderBlock($block, $data, $__i__);
+    elseif ( $self->_extends ) $r = $self->_extends->block($block, $data, $__i__);
     if ( $__ctx )  Contemplate::_set_ctx( $__ctx );
     return $r;
 }

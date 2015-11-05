@@ -3,12 +3,12 @@
 # Contemplate cached template 'tpl2'
 def __getTplClass__(Contemplate):
     # extends the main Contemplate.Template class
-    class Contemplate_tpl2_Cached__global(Contemplate.Template):
+    class Contemplate_tpl2__global(Contemplate.Template):
         'Contemplate cached template tpl2'
         # constructor
         def __init__(self, id=None):
             self_ = self
-            super(Contemplate_tpl2_Cached__global, self_).__init__( id )
+            super(Contemplate_tpl2__global, self_).__init__( id )
             # extend tpl assign code starts here
             self_.extend('tpl1')
             # extend tpl assign code ends here
@@ -20,7 +20,7 @@ def __getTplClass__(Contemplate):
             
             __p__ = ''
              
-            __p__ += '(2 3)' + "\n" + '        ' + str(self_.renderSuperBlock("3", data) ) + '' + "\n" + '        '
+            __p__ += '(2 3)' + "\n" + '        ' + str(self_.sprblock("3", data)) + '' + "\n" + '        '
             return __p__
             
         
@@ -30,8 +30,8 @@ def __getTplClass__(Contemplate):
             
             __p__ = ''
              
-            __p__ += '(2 2)' + "\n" + '        ' +  __i__.renderBlock('3', data) 
-            __p__ += '' + "\n" + '    ' + str(self_.renderSuperBlock("2", data) ) + '' + "\n" + '    '
+            __p__ += '(2 2)' + "\n" + '        ' +  __i__.block('3', data) 
+            __p__ += '' + "\n" + '    ' + str(self_.sprblock("2", data)) + '' + "\n" + '    '
             return __p__
             
         
@@ -41,14 +41,14 @@ def __getTplClass__(Contemplate):
             
             __p__ = ''
              
-            __p__ += '(2 1)' + "\n" + '    ' +  __i__.renderBlock('2', data) 
-            __p__ += '' + "\n" + '' + str(self_.renderSuperBlock("1", data) ) + '' + "\n" + ''
+            __p__ += '(2 1)' + "\n" + '    ' +  __i__.block('2', data) 
+            __p__ += '' + "\n" + '' + str(self_.sprblock("1", data)) + '' + "\n" + ''
             return __p__
             
         
         # tpl-defined blocks render code ends here
         # render a tpl block method
-        def renderBlock(self, block, data, __i__=None):
+        def block(self, block, data, __i__=None):
             self_ = self
             __ctx = False
             r = ''
@@ -59,7 +59,7 @@ def __getTplClass__(Contemplate):
             if (hasattr(self_, method) and callable(getattr(self_, method))):
                 r = getattr(self_, method)(data, self_, __i__)
             elif self_._extends:
-                r = self_._extends.renderBlock(block, data, __i__)
+                r = self_._extends.block(block, data, __i__)
             if __ctx:  Contemplate._set_ctx( __ctx )
             return r
         # render method
@@ -82,6 +82,6 @@ def __getTplClass__(Contemplate):
 
             if __ctx:  Contemplate._set_ctx( __ctx )
             return __p__
-    return Contemplate_tpl2_Cached__global
+    return Contemplate_tpl2__global
 # allow to 'import *'  from this file as a module
 __all__ = ['__getTplClass__']

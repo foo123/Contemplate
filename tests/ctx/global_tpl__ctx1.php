@@ -1,9 +1,9 @@
 <?php 
 
-if (!class_exists('Contemplate_global_Cached__ctx1'))
+if (!class_exists('Contemplate_global__ctx1'))
 {
 /* Contemplate cached template 'global' */
-final class Contemplate_global_Cached__ctx1 extends ContemplateTemplate
+final class Contemplate_global__ctx1 extends ContemplateTemplate
 {
 /* constructor */
 public function __construct($id=null)
@@ -18,31 +18,31 @@ public function __construct($id=null)
 /* tpl-defined blocks render code starts here */
 
 /* tpl-defined blocks render code ends here */
-/* tpl renderBlock method */
-public function renderBlock($block, &$data, $__i__=null)
+/* tpl block method */
+public function block($block, &$data, $__i__=null)
 {
-    $self = $this; $r = ''; $__ctx = null;
+    $self = $this; $r = ''; $__ctx = false;
     if ( !$__i__ )
     {
         $__i__ = $self;
-        $__ctx = Contemplate::_set_ctx( $self->_ctx );
+        if ( !$self->_autonomus ) $__ctx = Contemplate::_set_ctx( $self->_ctx );
     }
     $method = '_blockfn_' . $block;
     if ( method_exists($self, $method) ) $r = $self->{$method}($data, $self, $__i__);
-    elseif ( $self->_extends ) $r = $self->_extends->renderBlock($block, $data, $__i__);
+    elseif ( $self->_extends ) $r = $self->_extends->block($block, $data, $__i__);
     if ( $__ctx )  Contemplate::_set_ctx( $__ctx );
     return $r;
 }
 /* tpl render method */
 public function render(&$data, $__i__=null)
 {
-    $self = $this; $__ctx = null;
+    $self = $this; $__ctx = false;
+    $__p__ = '';
     if ( !$__i__ )
     {
         $__i__ = $self;
-        $__ctx = Contemplate::_set_ctx( $self->_ctx );
+        if ( !$self->_autonomus ) $__ctx = Contemplate::_set_ctx( $self->_ctx );
     }
-    $__p__ = '';
     if ( $self->_extends )
     {
         $__p__ = $self->_extends->render($data, $__i__);

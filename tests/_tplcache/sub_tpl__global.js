@@ -5,11 +5,11 @@ var m;
 if ( 'object' === typeof(module) && module.exports ) module.exports = moduleDefinition();
 // browser and AMD, etc..
 else (root[ moduleName ] = m = moduleDefinition()) && ('function' === typeof(define) && define.amd && define(moduleName,[],function(){return m;}));
-}(this, 'Contemplate_sub_Cached__global', function( ){
+}(this, 'Contemplate_sub__global', function( ){
 "use strict";
 return function( Contemplate ) {
 /* Contemplate cached template 'sub', constructor */
-function Contemplate_sub_Cached__global( id )
+function Contemplate_sub__global( id )
 {
     var self = this;
     Contemplate.Template.call( self, id );
@@ -21,9 +21,9 @@ function Contemplate_sub_Cached__global( id )
     /* extend tpl assign code ends here */
 }
 /* extends main Contemplate.Template class */
-Contemplate_sub_Cached__global.prototype = Object.create(Contemplate.Template.prototype);
+Contemplate_sub__global.prototype = Object.create(Contemplate.Template.prototype);
 /* render method */
-Contemplate_sub_Cached__global.prototype.render = function( data, __i__ ) {
+Contemplate_sub__global.prototype.render = function( data, __i__ ) {
     "use strict";
     var self = this, __p__ = '', __ctx = false;
     !__i__&&(__i__=self)&&(self._autonomus||(__ctx=Contemplate._set_ctx( self._ctx )));
@@ -39,7 +39,7 @@ Contemplate_sub_Cached__global.prototype.render = function( data, __i__ ) {
             _loc_j = _loc_8[_loc_9]; _loc_user = _loc_7[_loc_j];
             
             
-            __p__ += '' + "\n" + '        <div id=\'' + ( _loc_user["id"]) + '\' class="';        
+            __p__ += '' + "\n" + '        <div id=\'' + (_loc_user["id"]) + '\' class="';        
             if (0 == (_loc_j % 2))
             {
                         
@@ -51,7 +51,7 @@ Contemplate_sub_Cached__global.prototype.render = function( data, __i__ ) {
                 __p__ += 'odd';        
             }
                     
-            __p__ += '">' + "\n" + '            <a href="/' + ( _loc_user["name"]) + '">' + ( _loc_user.name) + '' + ( _loc_user.text) + ' ' + (parseInt(data.i) + parseInt(_loc_j)) + '</a>: <strong>' + ( _loc_user["text"]) + '</strong>' + "\n" + '        </div>' + "\n" + '        ';        
+            __p__ += '">' + "\n" + '            <a href="/' + (_loc_user["name"]) + '">' + (_loc_user.name) + '' + (_loc_user.text) + ' ' + (parseInt(data.i) + parseInt(_loc_j)) + '</a>: <strong>' + (_loc_user["text"]) + '</strong>' + "\n" + '        </div>' + "\n" + '        ';        
             if ( Contemplate.haskey(_loc_user, "key1") )
             {
                         
@@ -79,6 +79,6 @@ Contemplate_sub_Cached__global.prototype.render = function( data, __i__ ) {
     return __p__;
 };
 // export it
-return Contemplate_sub_Cached__global;
+return Contemplate_sub__global;
 };
 });

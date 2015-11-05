@@ -1,9 +1,9 @@
 <?php 
 
-if (!class_exists('Contemplate_tpl3_Cached__global'))
+if (!class_exists('Contemplate_tpl3__global'))
 {
 /* Contemplate cached template 'tpl3' */
-final class Contemplate_tpl3_Cached__global extends ContemplateTemplate
+final class Contemplate_tpl3__global extends ContemplateTemplate
 {
 /* constructor */
 public function __construct($id=null)
@@ -24,7 +24,7 @@ private function _blockfn_3(&$data, $self, $__i__)
     
     $__p__ = '';
     
-    $__p__ .= '(3 3)' . "\n" . '        ' . ($self->renderSuperBlock("3", $data)) . '' . "\n" . '        ';
+    $__p__ .= '(3 3)' . "\n" . '        ' . ($self->sprblock("3", $data)) . '' . "\n" . '        ';
     return $__p__;
     
 }
@@ -36,8 +36,8 @@ private function _blockfn_2(&$data, $self, $__i__)
     
     $__p__ = '';
     
-    $__p__ .= '(3 2)' . "\n" . '        ' .  $__i__->renderBlock('3', $data);
-    $__p__ .= '' . "\n" . '    ' . ($self->renderSuperBlock("2", $data)) . '' . "\n" . '    ';
+    $__p__ .= '(3 2)' . "\n" . '        ' .  $__i__->block('3', $data);
+    $__p__ .= '' . "\n" . '    ' . ($self->sprblock("2", $data)) . '' . "\n" . '    ';
     return $__p__;
     
 }
@@ -49,15 +49,15 @@ private function _blockfn_1(&$data, $self, $__i__)
     
     $__p__ = '';
     
-    $__p__ .= '(3 1)' . "\n" . '    ' .  $__i__->renderBlock('2', $data);
-    $__p__ .= '' . "\n" . '' . ($self->renderSuperBlock("1", $data)) . '' . "\n" . '';
+    $__p__ .= '(3 1)' . "\n" . '    ' .  $__i__->block('2', $data);
+    $__p__ .= '' . "\n" . '' . ($self->sprblock("1", $data)) . '' . "\n" . '';
     return $__p__;
     
 }
 
 /* tpl-defined blocks render code ends here */
-/* tpl renderBlock method */
-public function renderBlock($block, &$data, $__i__=null)
+/* tpl block method */
+public function block($block, &$data, $__i__=null)
 {
     $self = $this; $r = ''; $__ctx = false;
     if ( !$__i__ )
@@ -67,7 +67,7 @@ public function renderBlock($block, &$data, $__i__=null)
     }
     $method = '_blockfn_' . $block;
     if ( method_exists($self, $method) ) $r = $self->{$method}($data, $self, $__i__);
-    elseif ( $self->_extends ) $r = $self->_extends->renderBlock($block, $data, $__i__);
+    elseif ( $self->_extends ) $r = $self->_extends->block($block, $data, $__i__);
     if ( $__ctx )  Contemplate::_set_ctx( $__ctx );
     return $r;
 }

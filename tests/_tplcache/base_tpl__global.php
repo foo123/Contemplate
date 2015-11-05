@@ -1,9 +1,9 @@
 <?php 
 
-if (!class_exists('Contemplate_base_Cached__global'))
+if (!class_exists('Contemplate_base__global'))
 {
 /* Contemplate cached template 'base' */
-final class Contemplate_base_Cached__global extends ContemplateTemplate
+final class Contemplate_base__global extends ContemplateTemplate
 {
 /* constructor */
 public function __construct($id=null)
@@ -36,7 +36,7 @@ private function _blockfn_Block2(&$data, $self, $__i__)
     
     $__p__ = '';
     
-    $__p__ .= 'Base template Block2' . "\n" . '<!-- call the super block here in OO manner, if any -->' . "\n" . '' . ($self->renderSuperBlock("Block2", $data)) . '' . "\n" . '';
+    $__p__ .= 'Base template Block2' . "\n" . '<!-- call the super block here in OO manner, if any -->' . "\n" . '' . ($self->sprblock("Block2", $data)) . '' . "\n" . '';
     return $__p__;
     
 }
@@ -72,16 +72,16 @@ private function _blockfn_Block1(&$data, $self, $__i__)
     
     $__p__ = '';
     
-    $__p__ .= '' . "\n" . 'Base template Block1' . "\n" . '<br /><br />' . "\n" . '' .  $__i__->renderBlock('Block11', $data);
-    $__p__ .= '' . "\n" . '<br /><br />' . "\n" . '' .  $__i__->renderBlock('Block12', $data);
+    $__p__ .= '' . "\n" . 'Base template Block1' . "\n" . '<br /><br />' . "\n" . '' .  $__i__->block('Block11', $data);
+    $__p__ .= '' . "\n" . '<br /><br />' . "\n" . '' .  $__i__->block('Block12', $data);
     $__p__ .= '' . "\n" . '<br /><br />' . "\n" . '';
     return $__p__;
     
 }
 
 /* tpl-defined blocks render code ends here */
-/* tpl renderBlock method */
-public function renderBlock($block, &$data, $__i__=null)
+/* tpl block method */
+public function block($block, &$data, $__i__=null)
 {
     $self = $this; $r = ''; $__ctx = false;
     if ( !$__i__ )
@@ -91,7 +91,7 @@ public function renderBlock($block, &$data, $__i__=null)
     }
     $method = '_blockfn_' . $block;
     if ( method_exists($self, $method) ) $r = $self->{$method}($data, $self, $__i__);
-    elseif ( $self->_extends ) $r = $self->_extends->renderBlock($block, $data, $__i__);
+    elseif ( $self->_extends ) $r = $self->_extends->block($block, $data, $__i__);
     if ( $__ctx )  Contemplate::_set_ctx( $__ctx );
     return $r;
 }
@@ -113,11 +113,11 @@ public function render(&$data, $__i__=null)
     {
         /* tpl main render code starts here */
         
-        $__p__ .= '<!-- this is the base template -->' . "\n" . '' . "\n" . '<strong>This is the base template</strong>' . "\n" . '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block1</strong><br />' . "\n" . '' .  $__i__->renderBlock('Block1', $data);
-        $__p__ .= '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block2</strong><br />' . "\n" . '' .  $__i__->renderBlock('Block2', $data);
-        $__p__ .= '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block3</strong><br />' . "\n" . '' .  $__i__->renderBlock('Block3', $data);
+        $__p__ .= '<!-- this is the base template -->' . "\n" . '' . "\n" . '<strong>This is the base template</strong>' . "\n" . '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block1</strong><br />' . "\n" . '' .  $__i__->block('Block1', $data);
+        $__p__ .= '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block2</strong><br />' . "\n" . '' .  $__i__->block('Block2', $data);
+        $__p__ .= '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block3</strong><br />' . "\n" . '' .  $__i__->block('Block3', $data);
         $__p__ .= '' . "\n" . '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block2 Again</strong><br />' . "\n" . '' .  '';
-        $__p__ .= '' . "\n" . '<strong>This is Block2 using getblock</strong><br />' . "\n" . '' . ($__i__->renderBlock("Block2", $data)) . '' . "\n" . '';
+        $__p__ .= '' . "\n" . '<strong>This is Block2 using getblock</strong><br />' . "\n" . '' . ($__i__->block("Block2", $data)) . '' . "\n" . '';
         
         /* tpl main render code ends here */
     }

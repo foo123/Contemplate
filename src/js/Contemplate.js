@@ -35,14 +35,31 @@ var __version__ = "1.0.1", Contemplate, Template, InlineTemplate, Ctx,
 
     PROTO = 'prototype', HAS = 'hasOwnProperty',
     Obj = Object, Arr = Array, toString = Obj[PROTO].toString,
+    NOP = function( ){ },
     
     isXPCOM = ("undefined" !== typeof Components) && ("object" === typeof Components.classes) && ("object" === typeof Components.classesByID) && Components.utils && ("function" === typeof Components.utils['import']),
     isNode = "undefined" !== typeof(global) && '[object global]' === toString.call(global),
     
+    Cu = isXPCOM ? Components.utils : {},
+    Cc = isXPCOM ? Components.classes : {},
+    Ci = isXPCOM ? Components.interfaces : {},
+    import_ = isXPCOM ? Cu['import'] : (isNode ? require : NOP),
+    fs = isNode ? import_('fs') : {},
+    XHR = function( ) {
+    return window.XMLHttpRequest
+        // code for IE7+, Firefox, Chrome, Opera, Safari
+        ? new XMLHttpRequest( )
+        // code for IE6, IE5
+        : new ActiveXObject("Microsoft.XMLHTTP") // or ActiveXObject("Msxml2.XMLHTTP"); ??
+    ;
+    },
+    
     $__isInited = false, $__async = false, 
     
     $__leftTplSep = "<%", $__rightTplSep = "%>", $__tplStart = "", $__tplEnd = "",
-    $__EOL = "\n", $__TEOL = isNode ? require('os').EOL : "\n", $__escape = true,
+    // https://nodejs.org/api/os.html#os_os_eol
+    // 
+    $__EOL = "\n", $__TEOL = isNode ? import_('os').EOL : "\n", $__escape = true,
     $__preserveLinesDefault = "' + \"\\n\" + '", $__preserveLines = '',  $__compatibility = false,
     
     $__level = 0, $__pad = "    ", $__idcnt = 0,
@@ -1150,8 +1167,8 @@ function get_template_contents( id, contx, asyncCB )
         }
         else
         {
-            // nodejs
-            if ( isNode ) 
+            // nodejs, xpcom
+            if ( isNode || isXPCOM ) 
             { 
                 if ( $__async && asyncCB )
                 {
@@ -1304,7 +1321,7 @@ function get_cached_template( id, contx, options )
         
         else
         {
-            if ( !isNode ) contx.cacheMode = Contemplate.CACHE_TO_DISK_NONE;
+            if ( !isNode && !isXPCOM ) contx.cacheMode = Contemplate.CACHE_TO_DISK_NONE;
             
             if ( true !== options.autoUpdate && Contemplate.CACHE_TO_DISK_NOUPDATE === contx.cacheMode )
             {
@@ -2037,7 +2054,7 @@ Contemplate = {
         var contx;
         if ( arguments.length < 2 ) ctx = 'global';
         contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
-        contx.cacheMode = isNode ? mode : Contemplate.CACHE_TO_DISK_NONE; 
+        contx.cacheMode = isNode || isXPCOM ? mode : Contemplate.CACHE_TO_DISK_NONE; 
     }
     
     ,clearCache: function( all, ctx ) { 
@@ -2397,63 +2414,27 @@ var default_date_locale = {
     ltrim_re = /^[ \s\u00A0]+/g,
     trim_re = /^[ \n\r\t\f\x0b\xa0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u2028\u2029\u3000]+|[ \n\r\t\f\x0b\xa0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u2028\u2029\u3000]+$/g,
     
-    frealpath = isXPCOM
-    ? function frealpath( file ) {
-        return file;
-    }
-    : (isNode
-    ? function frealpath( file ) {
-        return require('fs').realpathSync(file);
-    }
-    : function frealpath( file ) {
-        var link, url;
-        if ( !frealpath.link ) frealpath.link = document.createElement('a');
-        // http://stackoverflow.com/a/14781678/3591273
-        // let the browser generate abs path
-        link = frealpath.link;
-        link.href = file;
-        url = link.protocol + "//" + link.host + link.pathname + link.search + link.hash;
-        return url;
-    }),
-    
-    frealpath_async = isXPCOM
-    ? function frealpath_async( file, cb ) {
-        if ( cb ) cb ( file );
-    }
-    : (isNode
-    ? function frealpath_async( file, cb ) {
-        require('fs').realpath(file, cb);
-    }
-    : function frealpath_async( file, cb ) {
-        var link, url;
-        if ( !frealpath_async.link ) frealpath_async.link = document.createElement('a');
-        // http://stackoverflow.com/a/14781678/3591273
-        // let the browser generate abs path
-        link = frealpath_async.link;
-        link.href = file;
-        url = link.protocol + "//" + link.host + link.pathname + link.search + link.hash;
-        if ( cb ) cb( url );
-    }),
-    
     fexists = isXPCOM
     ? function fexists( file ) {
-        return true;
+        // file is URI, i.e file://...
+        import_("resource://gre/modules/NetUtil.jsm");
+        return NetUtil.newURI(file).QueryInterface(Ci.nsIFileURL).file.exists( );
     }
     : (isNode
     ? function fexists( file ) {
-        require('fs').existsSync(file);
+        fs.existsSync(file);
     }
     : function fexists( file ) {
         return true;
     }),
-    
     fexists_async = isXPCOM
     ? function fexists_async( file, cb ) {
-        if ( cb ) cb ( true );
+        // file is URI, i.e file://...
+        if ( cb ) cb ( fexists(file) );
     }
     : (isNode
     ? function fexists_async( file, cb ) {
-        require('fs').exists(file, cb);
+        fs.exists(file, cb);
     }
     : function fexists_async( file, cb ) {
         if ( cb ) cb ( true );
@@ -2461,22 +2442,18 @@ var default_date_locale = {
     
     fstat = isXPCOM
     ? function fstat( file ) {
-        return {mtime: false};
+        // file is URI, i.e file://...
+        import_("resource://gre/modules/NetUtil.jsm");
+        var mtime = NetUtil.newURI(file).QueryInterface(Ci.nsIFileURL).file.lastModifiedTime;
+        return {mtime: !!mtime ? new Date(mtime) : false};
     }
     : (isNode
     ? function fstat( file ) {
-        return require('fs').statSync(file);
+        return fs.statSync(file);
     }
     : function fstat( file ) {
         // http://stackoverflow.com/a/5748207/3591273
-        var var xhr = window.XMLHttpRequest
-            // code for IE7+, Firefox, Chrome, Opera, Safari
-            ? new XMLHttpRequest( )
-            // code for IE6, IE5
-            : new ActiveXObject("Microsoft.XMLHTTP") // or ActiveXObject("Msxml2.XMLHTTP"); ??
-        ;
-        
-        var mtime, stats = {mtime: false};
+        var xhr = XHR( ), mtime, stats = {mtime: false};
         xhr.open('HEAD', file, false);  // 'false' makes the request synchronous
         xhr.send(null);
         if ( 200 === xhr.status )
@@ -2487,25 +2464,17 @@ var default_date_locale = {
         }
         return stats;
     }),
-    
     fstat_async = isXPCOM
     ? function fstat_async( file, cb ) {
-        if ( cb ) cb({mtime: false});
+        if ( cb ) cb( fstat(file) );
     }
     : (isNode
     ? function fstat_async( file, cb ) {
-        require('fs').stat(file, cb);
+        fs.stat(file, cb);
     }
     : function fstat_async( file, cb ) {
         // http://stackoverflow.com/a/5748207/3591273
-        var var xhr = window.XMLHttpRequest
-            // code for IE7+, Firefox, Chrome, Opera, Safari
-            ? new XMLHttpRequest( )
-            // code for IE6, IE5
-            : new ActiveXObject("Microsoft.XMLHTTP") // or ActiveXObject("Msxml2.XMLHTTP"); ??
-        ;
-        
-        var mtime, stats = {mtime: false};
+        var xhr = XHR( ), mtime, stats = {mtime: false};
         xhr.open('HEAD', file, true);  // 'true' makes the request asynchronous
         xhr.onload = function( ) {
             if ( 200 === xhr.status )
@@ -2521,33 +2490,28 @@ var default_date_locale = {
     
     fread = isXPCOM
     ? function fread( file, enc ) {
-        var data, file, stream, len;
+        // file is URI, i.e file://...
+        import_("resource://gre/modules/NetUtil.jsm");
+        var data, stream, conv, len, str = {}, read = 0;
         // https://developer.mozilla.org/en-US/Add-ons/Code_snippets/File_I_O
-        Components.utils.import("resource://gre/modules/FileUtils.jsm");
-        file = new FileUtils.File( file );
-        stream = Components.classes["@mozilla.org/network/file-input-stream;1"].createInstance(Components.interfaces.nsIFileInputStream);
-        var cstream = Components.classes["@mozilla.org/intl/converter-input-stream;1"].createInstance(Components.interfaces.nsIConverterInputStream), str = {}, read = 0
-        ;
-        stream.init(file, -1, 0, 0); cstream.init(stream, enc||'UTF-8', 0, 0);
+        stream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(Ci.nsIFileInputStream);
+        conv = Cc["@mozilla.org/intl/converter-input-stream;1"].createInstance(Ci.nsIConverterInputStream);
+        stream.init(NetUtil.newURI(file).QueryInterface(Ci.nsIFileURL).file, -1, 0, 0);
+        conv.init(stream, enc||'UTF-8', 0, 0);
         do { 
             // read as much as we can and put it in str.value
-            read = cstream.readString(0xffffffff, str);
+            read = conv.readString(0xffffffff, str);
             data += str.value;
         } while (0 != read);
-        cstream.close(); // this closes stream
+        conv.close(); // this closes stream
         return data;
     }
     : (isNode
     ? function fread( file, enc ) {
-        return require('fs').readFileSync(file, {encoding:enc||'utf8'})/*.toString()*/;
+        return fs.readFileSync(file, {encoding:enc||'utf8'})/*.toString()*/;
     }
     : function fread( file, enc ) {
-        var xhr = window.XMLHttpRequest
-            // code for IE7+, Firefox, Chrome, Opera, Safari
-            ? new XMLHttpRequest( )
-            // code for IE6, IE5
-            : new ActiveXObject("Microsoft.XMLHTTP") // or ActiveXObject("Msxml2.XMLHTTP"); ??
-        ;
+        var xhr = XHR( );
         // plain text with enc encoding format
         xhr.open('GET', file, false);  // 'false' makes the request synchronous
         // http://stackoverflow.com/questions/9855127/setting-xmlhttprequest-responsetype-forbidden-all-of-a-sudden
@@ -2556,58 +2520,81 @@ var default_date_locale = {
         xhr.send( null );
         return 200 === xhr.status ? xhr.responseText : '';
     }),
-    
     fread_async = isXPCOM
     ? function fread_async( file, enc, cb ) {
+        // file is URI, i.e file://...
+        import_("resource://gre/modules/NetUtil.jsm");
         // https://developer.mozilla.org/en-US/Add-ons/Code_snippets/File_I_O
-        Components.utils.import("resource://gre/modules/NetUtil.jsm");
-        NetUtil.asyncFetch(file, function( stream, status ) {
-            var data = Components.isSuccessCode( status )
-                ? NetUtil.readInputStreamToString( stream, stream.available(), {charset:enc||'UTF-8'} )
-                : '';
-            if ( cb ) cb( data );
+        NetUtil.asyncFetch(NetUtil.newURI(file).QueryInterface(Ci.nsIFileURL).file, function( stream, status ) {
+            var err = !Components.isSuccessCode( status ),
+                data = err
+                ? ''
+                : NetUtil.readInputStreamToString( stream, stream.available(), {charset:enc||'UTF-8'} );
+            if ( cb ) cb( err, data );
         });
     }
     : (isNode
     ? function fread_async( file, enc, cb ) {
-        require('fs').readFile(file, {encoding:enc||'utf8'}, cb);
+        fs.readFile(file, {encoding:enc||'utf8'}, cb);
     }
     : function fread_async( file, enc, cb ) {
-        var xhr = window.XMLHttpRequest
-            // code for IE7+, Firefox, Chrome, Opera, Safari
-            ? new XMLHttpRequest( )
-            // code for IE6, IE5
-            : new ActiveXObject("Microsoft.XMLHTTP") // or ActiveXObject("Msxml2.XMLHTTP"); ??
-        ;
+        var xhr = XHR( );
         // plain text with enc encoding format
         xhr.open('GET', file, true);  // 'true' makes the request asynchronous
         xhr.responseType = "text";
         xhr.setRequestHeader("Content-Type", "text/plain; charset="+(enc||'utf8')+"");
         xhr.overrideMimeType("text/plain; charset="+(enc||'utf8')+"");
         xhr.onload = function( ) {
-            var data = 200 === xhr.status ? xhr.responseText : '';
-            if ( cb ) cb( data );
+            var err = 200 !== xhr.status,
+                data = err ? '' : xhr.responseText;
+            if ( cb ) cb( err, data );
         };
         xhr.send( null );
     }),
     
     fwrite = isXPCOM
     ? function fwrite( file, data, enc ) {
+        // file is URI, i.e file://...
+        import_("resource://gre/modules/NetUtil.jsm");
+        var stream = Cc["@mozilla.org/network/file-output-stream;1"].createInstance(Ci.nsIFileOutputStream),
+            conv = Cc["@mozilla.org/intl/converter-output-stream;1"].createInstance(Ci.nsIConverterOutputStream);
+        // use 0x02 | 0x10 to open file for appending.
+        // write, create, truncate
+        // In a c file operation, we have no need to set file mode with or operation,
+        // directly using "r" or "w" usually.
+        // if you are sure there will never ever be any non-ascii text in data you can 
+        // also call foStream.write(data, data.length) directly
+        stream.init(NetUtil.newURI(file).QueryInterface(Ci.nsIFileURL).file, 0x02|0x08|0x20, 0666, 0); 
+        conv.init(stream, enc||"UTF-8", 0, 0);
+        conv.writeString( data );
+        conv.close( ); // this closes stream
     }
     : (isNode
     ? function fwrite( file, data, enc ) {
-        require('fs').writeFileSync(file, data, {encoding:enc||'utf8'})/*.toString()*/;
+        fs.writeFileSync(file, data, {encoding:enc||'utf8'})/*.toString()*/;
     }
     : function fwrite( file, data, enc ) {
     }),
-    
     fwrite_async = isXPCOM
     ? function fwrite_async( file, data, enc, cb ) {
-        if ( cb ) cb( );
+        // file is URI, i.e file://...
+        // http://stackoverflow.com/questions/9777773/reading-writing-file-on-local-machine
+        var istream, ostream, conv;
+        import_("resource://gre/modules/NetUtil.jsm");
+        import_("resource://gre/modules/FileUtils.jsm");
+
+        ostream = FileUtils.openSafeFileOutputStream( NetUtil.newURI(file).QueryInterface(Ci.nsIFileURL).file );
+        conv = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
+        conv.charset = enc||"UTF-8";
+        istream = conv.convertToInputStream( data );
+
+        NetUtil.asyncCopy(istream, ostream, function( status ) {
+            if ( cb  ) cb ( Components.isSuccessCode(status) )
+        });
     }
     : (isNode
     ? function fwrite_async( file, data, enc, cb ) {
-        require('fs').writeFile(file, data, {encoding: enc||'utf8'}, cb);
+        fs.writeFile(file, data, {encoding: enc||'utf8'}, cb);
     }
     : function fwrite_async( file, data, enc, cb ) {
         if ( cb ) cb( );
@@ -2619,7 +2606,24 @@ var default_date_locale = {
 // utilities
 function FUNC( a, f )
 {
-    return new Function( a, f );
+    if ( isXPCOM )
+    {
+        // create new sandbox instance
+        // https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Language_Bindings/Components.utils.Sandbox
+        var sandbox = Cu.Sandbox(window, {
+            sandboxName: 'sandbox_' + $__context.id,
+            //sameZoneAs: ,
+            wantComponents: false,
+            wantExportHelpers: false,
+            wantGlobalProperties: []
+        });
+        sandbox.Contemplate = Contemplate;
+        return Cu.evalInSandbox('function('+a+'){'+f+'}', sandbox);
+    }
+    else
+    {
+        return new Function( a, f );
+    }
 }
 function RE( r, f )
 {

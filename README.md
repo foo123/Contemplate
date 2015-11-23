@@ -13,7 +13,8 @@ __Light-weight, fast and flexible "object-oriented" template engine for PHP, Pyt
 **see also:**  
 
 * [HtmlWidget](https://github.com/foo123/HtmlWidget) html widgets used as (template) plugins and/or standalone for PHP, Node/JS, Python both client and server-side (can be used as [plugins for Contemplate](/src/js/plugins/plugins.txt))
-* [DateX](https://github.com/foo123/DateX) eXtended and localised Date parsing, diffing, formatting and validation for Node/JS, Python, PHP
+* [Importer](https://github.com/foo123/Importer) simple class &amp; dependency manager and loader for PHP, Node/JS, Python
+* [DateX](https://github.com/foo123/DateX) eXtended &amp; localised Date parsing, diffing, formatting and validation for Node/JS, Python, PHP
 * [Tao](https://github.com/foo123/Tao.js) A simple, tiny, isomorphic, precise and fast template engine for handling both string and live dom based templates
 * [ModelView](https://github.com/foo123/modelview.js) a light-weight and flexible MVVM framework for JavaScript/HTML5
 * [ModelView MVC jQueryUI Widgets](https://github.com/foo123/modelview-widgets) plug-n-play, state-full, full-MVC widgets for jQueryUI using modelview.js (e.g calendars, datepickers, colorpickers, tables/grids, etc..) (in progress)

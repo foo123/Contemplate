@@ -1,8 +1,8 @@
 /**
 *  Contemplate
-*  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
+*  Light-weight Template Engine for PHP, Python, Node, client-side and XPCOM JavaScript
 *
-*  @version: 1.0.0
+*  @version: 1.0.1
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -11,28 +11,19 @@
 **/
 !function( root, name, factory ) {
 "use strict";
-
-// export the module, umd-style (no other dependencies)
-var isCommonJS = ("object" === typeof(module)) && module.exports, 
-    isAMD = ("function" === typeof(define)) && define.amd, m;
-
-// CommonJS, node, etc..
-if ( isCommonJS ) 
-    module.exports = (module.$deps = module.$deps || {})[ name ] = module.$deps[ name ] || (factory.call( root, {NODE:module} ) || 1);
-
-// AMD, requireJS, etc..
-else if ( isAMD && ("function" === typeof(require)) && ("function" === typeof(require.specified)) && require.specified(name) ) 
-    define( name, ['require', 'exports', 'module'], function( require, exports, module ){ return factory.call( root, {AMD:module} ); } );
-
-// browser, web worker, etc.. + AMD, other loaders
-else if ( !(name in root) ) 
-    (root[ name ] = (m=factory.call( root, {} ) || 1)) && isAMD && define( name, [], function( ){ return m; } );
-
+var m;
+if ( ('undefined'!==typeof Components)&&('object'===typeof Components.classes)&&('object'===typeof Components.classesByID)&&Components.utils&&('function'===typeof Components.utils['import']) ) /* XPCOM */
+    (root.EXPORTED_SYMBOLS = [ name ]) && (root[ name ] = factory.call( root ));
+else if ( ('object'===typeof module)&&module.exports ) /* CommonJS */
+    module.exports = factory.call( root );
+else if ( ('function'===typeof(define))&&define.amd&&('function'===typeof(require))&&('function'===typeof(require.specified))&&require.specified(name) ) /* AMD */
+    define(name,['require','exports','module'],function( ){return factory.call( root );});
+else if ( !(name in root) ) /* Browser/WebWorker/.. */
+    (root[ name ] = (m=factory.call( root )))&&('function'===typeof(define))&&define.amd&&define(function( ){return m;} );
 }(  /* current root */          this, 
     /* module name */           "Contemplate",
-    /* module factory */        function( exports, undef ) {
+    /* module factory */        function( undef ) {
 "use strict";
-
 /////////////////////////////////////////////////////////////////////////////////////
 //
 //  Contemplate Engine Main Class
@@ -40,11 +31,12 @@ else if ( !(name in root) )
 //////////////////////////////////////////////////////////////////////////////////////
 
 // private vars
-var __version__ = "1.0.0", Contemplate, Template, InlineTemplate, Ctx,
+var __version__ = "1.0.1", Contemplate, Template, InlineTemplate, Ctx,
 
     PROTO = 'prototype', HAS = 'hasOwnProperty',
     Obj = Object, Arr = Array, toString = Obj[PROTO].toString,
     
+    isXPCOM = ("undefined" !== typeof Components) && ("object" === typeof Components.classes) && ("object" === typeof Components.classesByID) && Components.utils && ("function" === typeof Components.utils['import']),
     isNode = "undefined" !== typeof(global) && '[object global]' === toString.call(global),
     
     $__isInited = false, $__async = false, 
@@ -1685,14 +1677,19 @@ Contemplate = {
         // make compilation templates
         TT_ClassCode = InlineTemplate.compile(InlineTemplate.multisplit([
             "#PREFIXCODE#"
-            ,"!function (root, moduleName, moduleDefinition) {"
+            ,"!function (root,name,factory){"
+            ,"'use strict';"
             ,"var m;"
-            ,"// node, CommonJS, etc.."
-            ,"if ( 'object' === typeof(module) && module.exports ) module.exports = moduleDefinition();"
-            ,"// browser and AMD, etc.."
-            ,"else (root[ moduleName ] = m = moduleDefinition()) && ('function' === typeof(define) && define.amd && define(moduleName,[],function(){return m;}));"
-            ,"}(this, '#CLASSNAME#', function( ){"
-            ,"\"use strict\";"
+            ,"if ( ('undefined'!==typeof Components)&&('object'===typeof Components.classes)&&('object'===typeof Components.classesByID)&&Components.utils&&('function'===typeof Components.utils['import']) ) /* XPCOM */"
+            ,"    (root.EXPORTED_SYMBOLS = [ name ]) && (root[ name ] = factory( ));"
+            ,"else if ( ('object'===typeof module)&&module.exports ) /* CommonJS */"
+            ,"    module.exports = factory( );"
+            ,"else if ( ('function'===typeof(define))&&define.amd&&('function'===typeof(require))&&('function'===typeof(require.specified))&&require.specified(name) ) /* AMD */"
+            ,"    define(name,['require','exports','module'],factory);"
+            ,"else if ( !(name in root) ) /* Browser/Worker/.. */"
+            ,"    (root[ name ] = (m=factory( )))&&('function'===typeof(define))&&define.amd&&define(function( ){return m;} );"
+            ,"}(this,'#CLASSNAME#',function( ){"
+            ,"'use strict';"
             ,"return function( Contemplate ) {"
             ,"/* Contemplate cached template '#TPLID#', constructor */"
             ,"function #CLASSNAME#( id )"
@@ -2399,55 +2396,16 @@ var default_date_locale = {
     rtrim_re = /[ \s\u00A0]+$/g,
     ltrim_re = /^[ \s\u00A0]+/g,
     trim_re = /^[ \n\r\t\f\x0b\xa0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u2028\u2029\u3000]+|[ \n\r\t\f\x0b\xa0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u2028\u2029\u3000]+$/g,
-    fs = null, XMLHttp = null, frealpath, frealpath_async,
-    fexists, fexists_async, fstat, fstat_async, fread, fread_async, fwrite, fwrite_async
-;
-
-if ( isNode )
-{
-    fs = require('fs');
-    frealpath = function( file ) {
-        return fs.realpathSync(file);
-    };
-    frealpath_async = function( file, cb ) {
-        fs.realpath(file, cb);
-    };
-    fexists = function( file ) {
-        return fs.existsSync(file);
-    };
-    fexists_async = function( file, cb ) {
-        fs.exists(file, cb);
-        return false;
-    };
-    fstat = function( file ) {
-        return fs.statSync(file);
-    };
-    fstat_async = function( file, cb ) {
-        fs.stat(file, cb);
-    };
-    fread = function( file, enc ) {
-        return fs.readFileSync(file, {encoding: enc||'utf8'})/*.toString()*/;
-    };
-    fread_async = function( file, enc, cb ) {
-        fs.readFile(file, {encoding: enc||'utf8'}, cb);
-        return '';
-    };
-    fwrite = function( file, data, enc ) {
-        fs.writeFileSync(file, data, {encoding: enc||'utf8'})/*.toString()*/;
-    };
-    fwrite_async = function( file, data, enc, cb ) {
-        fs.writeFile(file, data, {encoding: enc||'utf8'}, cb);
-    };
-}
-else
-{
-    XMLHttp = window.XMLHttpRequest
-        // code for IE7+, Firefox, Chrome, Opera, Safari
-        ? function( ){return new XMLHttpRequest();}
-        // code for IE6, IE5
-        : function( ){return new ActiveXObject("Microsoft.XMLHTTP");} // or ActiveXObject("Msxml2.XMLHTTP"); ??
-    ;
-    frealpath = function frealpath( file ) {
+    
+    frealpath = isXPCOM
+    ? function frealpath( file ) {
+        return file;
+    }
+    : (isNode
+    ? function frealpath( file ) {
+        return require('fs').realpathSync(file);
+    }
+    : function frealpath( file ) {
         var link, url;
         if ( !frealpath.link ) frealpath.link = document.createElement('a');
         // http://stackoverflow.com/a/14781678/3591273
@@ -2456,8 +2414,17 @@ else
         link.href = file;
         url = link.protocol + "//" + link.host + link.pathname + link.search + link.hash;
         return url;
-    };
-    frealpath_async = function frealpath_async( file, cb ) {
+    }),
+    
+    frealpath_async = isXPCOM
+    ? function frealpath_async( file, cb ) {
+        if ( cb ) cb ( file );
+    }
+    : (isNode
+    ? function frealpath_async( file, cb ) {
+        require('fs').realpath(file, cb);
+    }
+    : function frealpath_async( file, cb ) {
         var link, url;
         if ( !frealpath_async.link ) frealpath_async.link = document.createElement('a');
         // http://stackoverflow.com/a/14781678/3591273
@@ -2466,85 +2433,189 @@ else
         link.href = file;
         url = link.protocol + "//" + link.host + link.pathname + link.search + link.hash;
         if ( cb ) cb( url );
-    };
-    fexists = function( file ) {
+    }),
+    
+    fexists = isXPCOM
+    ? function fexists( file ) {
         return true;
-    };
-    fexists_async = function( file, cb ) {
-        if ( cb ) cb( true );
+    }
+    : (isNode
+    ? function fexists( file ) {
+        require('fs').existsSync(file);
+    }
+    : function fexists( file ) {
         return true;
-    };
-    fstat = function( file ) {
+    }),
+    
+    fexists_async = isXPCOM
+    ? function fexists_async( file, cb ) {
+        if ( cb ) cb ( true );
+    }
+    : (isNode
+    ? function fexists_async( file, cb ) {
+        require('fs').exists(file, cb);
+    }
+    : function fexists_async( file, cb ) {
+        if ( cb ) cb ( true );
+    }),
+    
+    fstat = isXPCOM
+    ? function fstat( file ) {
+        return {mtime: false};
+    }
+    : (isNode
+    ? function fstat( file ) {
+        return require('fs').statSync(file);
+    }
+    : function fstat( file ) {
         // http://stackoverflow.com/a/5748207/3591273
-        var xmlhttp = XMLHttp( );
+        var var xhr = window.XMLHttpRequest
+            // code for IE7+, Firefox, Chrome, Opera, Safari
+            ? new XMLHttpRequest( )
+            // code for IE6, IE5
+            : new ActiveXObject("Microsoft.XMLHTTP") // or ActiveXObject("Msxml2.XMLHTTP"); ??
+        ;
         
-        var mtime, stats = {
-            mtime: false
-        };
-        xmlhttp.open('HEAD', file, false);  // 'false' makes the request synchronous
-        xmlhttp.send(null);
-        if ( 200 === xmlhttp.status )
+        var mtime, stats = {mtime: false};
+        xhr.open('HEAD', file, false);  // 'false' makes the request synchronous
+        xhr.send(null);
+        if ( 200 === xhr.status )
         {
-            mtime = new Date(xmlhttp.getResponseHeader('Last-Modified'));
-            if ( mtime.toString() === 'Invalid Date' ) mtime = false;
+            mtime = new Date(xhr.getResponseHeader('Last-Modified'));
+            if ( xhr.toString() === 'Invalid Date' ) mtime = false;
             stats.mtime = mtime;
         }
         return stats;
-    };
-    fstat_async = function( file, cb ) {
+    }),
+    
+    fstat_async = isXPCOM
+    ? function fstat_async( file, cb ) {
+        if ( cb ) cb({mtime: false});
+    }
+    : (isNode
+    ? function fstat_async( file, cb ) {
+        require('fs').stat(file, cb);
+    }
+    : function fstat_async( file, cb ) {
         // http://stackoverflow.com/a/5748207/3591273
-        var xmlhttp = XMLHttp( );
+        var var xhr = window.XMLHttpRequest
+            // code for IE7+, Firefox, Chrome, Opera, Safari
+            ? new XMLHttpRequest( )
+            // code for IE6, IE5
+            : new ActiveXObject("Microsoft.XMLHTTP") // or ActiveXObject("Msxml2.XMLHTTP"); ??
+        ;
         
-        var mtime, stats = {
-            mtime: false
-        };
-        xmlhttp.onload = function( ) {
-            if ( 200 === xmlhttp.status )
+        var mtime, stats = {mtime: false};
+        xhr.open('HEAD', file, true);  // 'true' makes the request asynchronous
+        xhr.onload = function( ) {
+            if ( 200 === xhr.status )
             {
-                mtime = new Date(xmlhttp.getResponseHeader('Last-Modified'));
+                mtime = new Date(xhr.getResponseHeader('Last-Modified'));
                 if ( mtime.toString() === 'Invalid Date' ) mtime = false;
                 stats.mtime = mtime;
             }
             if ( cb ) cb( stats );
         };
-        xmlhttp.open('HEAD', file, false);  // 'false' makes the request synchronous
-        xmlhttp.send(null);
-    };
-    fread = function( file, enc ) {
-        var xmlhttp = XMLHttp( );
-        
+        xhr.send(null);
+    }),
+    
+    fread = isXPCOM
+    ? function fread( file, enc ) {
+        var data, file, stream, len;
+        // https://developer.mozilla.org/en-US/Add-ons/Code_snippets/File_I_O
+        Components.utils.import("resource://gre/modules/FileUtils.jsm");
+        file = new FileUtils.File( file );
+        stream = Components.classes["@mozilla.org/network/file-input-stream;1"].createInstance(Components.interfaces.nsIFileInputStream);
+        var cstream = Components.classes["@mozilla.org/intl/converter-input-stream;1"].createInstance(Components.interfaces.nsIConverterInputStream), str = {}, read = 0
+        ;
+        stream.init(file, -1, 0, 0); cstream.init(stream, enc||'UTF-8', 0, 0);
+        do { 
+            // read as much as we can and put it in str.value
+            read = cstream.readString(0xffffffff, str);
+            data += str.value;
+        } while (0 != read);
+        cstream.close(); // this closes stream
+        return data;
+    }
+    : (isNode
+    ? function fread( file, enc ) {
+        return require('fs').readFileSync(file, {encoding:enc||'utf8'})/*.toString()*/;
+    }
+    : function fread( file, enc ) {
+        var xhr = window.XMLHttpRequest
+            // code for IE7+, Firefox, Chrome, Opera, Safari
+            ? new XMLHttpRequest( )
+            // code for IE6, IE5
+            : new ActiveXObject("Microsoft.XMLHTTP") // or ActiveXObject("Msxml2.XMLHTTP"); ??
+        ;
         // plain text with enc encoding format
-        enc = enc || 'utf8';
-        xmlhttp.open('GET', file, false);  // 'false' makes the request synchronous
-        xmlhttp.setRequestHeader("Content-Type", "text/plain; charset="+enc+"");
-        xmlhttp.overrideMimeType("text/plain; charset="+enc+"");
+        xhr.open('GET', file, false);  // 'false' makes the request synchronous
         // http://stackoverflow.com/questions/9855127/setting-xmlhttprequest-responsetype-forbidden-all-of-a-sudden
-        //xmlhttp.responseType = "text";
-        xmlhttp.send(null);
-        return 200 === xmlhttp.status ? xmlhttp.responseText : '';
-    };
-    fread_async = function( file, enc, cb ) {
-        var xmlhttp = XMLHttp( );
-        
+        xhr.setRequestHeader("Content-Type", "text/plain; charset="+(enc||'utf8')+"");
+        xhr.overrideMimeType("text/plain; charset="+(enc||'utf8')+"");
+        xhr.send( null );
+        return 200 === xhr.status ? xhr.responseText : '';
+    }),
+    
+    fread_async = isXPCOM
+    ? function fread_async( file, enc, cb ) {
+        // https://developer.mozilla.org/en-US/Add-ons/Code_snippets/File_I_O
+        Components.utils.import("resource://gre/modules/NetUtil.jsm");
+        NetUtil.asyncFetch(file, function( stream, status ) {
+            var data = Components.isSuccessCode( status )
+                ? NetUtil.readInputStreamToString( stream, stream.available(), {charset:enc||'UTF-8'} )
+                : '';
+            if ( cb ) cb( data );
+        });
+    }
+    : (isNode
+    ? function fread_async( file, enc, cb ) {
+        require('fs').readFile(file, {encoding:enc||'utf8'}, cb);
+    }
+    : function fread_async( file, enc, cb ) {
+        var xhr = window.XMLHttpRequest
+            // code for IE7+, Firefox, Chrome, Opera, Safari
+            ? new XMLHttpRequest( )
+            // code for IE6, IE5
+            : new ActiveXObject("Microsoft.XMLHTTP") // or ActiveXObject("Msxml2.XMLHTTP"); ??
+        ;
         // plain text with enc encoding format
-        enc = enc || 'utf8';
-        xmlhttp.open('GET', file, true);  // 'true' makes the request asynchronous
-        xmlhttp.setRequestHeader("Content-Type", "text/plain; charset="+enc+"");
-        xmlhttp.overrideMimeType("text/plain; charset="+enc+"");
-        xmlhttp.responseType = "text";
-        xmlhttp.onload = function( ) {
-            var err = 200 !== xmlhttp.status
-            if ( cb ) cb( err, err ? '' : xmlhttp.responseText );
+        xhr.open('GET', file, true);  // 'true' makes the request asynchronous
+        xhr.responseType = "text";
+        xhr.setRequestHeader("Content-Type", "text/plain; charset="+(enc||'utf8')+"");
+        xhr.overrideMimeType("text/plain; charset="+(enc||'utf8')+"");
+        xhr.onload = function( ) {
+            var data = 200 === xhr.status ? xhr.responseText : '';
+            if ( cb ) cb( data );
         };
-        xmlhttp.send(null);
-        return '';
-    };
-    fwrite = function( file, data, enc ) {
-    };
-    fwrite_async = function( file, data, enc, cb ) {
+        xhr.send( null );
+    }),
+    
+    fwrite = isXPCOM
+    ? function fwrite( file, data, enc ) {
+    }
+    : (isNode
+    ? function fwrite( file, data, enc ) {
+        require('fs').writeFileSync(file, data, {encoding:enc||'utf8'})/*.toString()*/;
+    }
+    : function fwrite( file, data, enc ) {
+    }),
+    
+    fwrite_async = isXPCOM
+    ? function fwrite_async( file, data, enc, cb ) {
         if ( cb ) cb( );
-    };
-}
+    }
+    : (isNode
+    ? function fwrite_async( file, data, enc, cb ) {
+        require('fs').writeFile(file, data, {encoding: enc||'utf8'}, cb);
+    }
+    : function fwrite_async( file, data, enc, cb ) {
+        if ( cb ) cb( );
+    })
+;
+
+
+
 // utilities
 function FUNC( a, f )
 {
@@ -2913,7 +2984,5 @@ function sprintf( )
 Contemplate.init( );
 
 // export it
-// add it to global namespace to be available for sub-templates, same as browser
-//if ( isNode ) global.Contemplate = Contemplate;
 return Contemplate;
 });

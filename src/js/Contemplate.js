@@ -1,6 +1,6 @@
 /**
 *  Contemplate
-*  Light-weight Template Engine for PHP, Python, Node, client-side and XPCOM JavaScript
+*  Light-weight Template Engine for PHP, Python, Node, client-side and XPCOM/SDK JavaScript
 *
 *  @version: 1.0.1
 *  https://github.com/foo123/Contemplate
@@ -40,11 +40,18 @@ var __version__ = "1.0.1", Contemplate, Template, InlineTemplate, Ctx,
     isXPCOM = ("undefined" !== typeof Components) && ("object" === typeof Components.classes) && ("object" === typeof Components.classesByID) && Components.utils && ("function" === typeof Components.utils['import']),
     isNode = "undefined" !== typeof(global) && '[object global]' === toString.call(global),
     
-    Cu = isXPCOM ? Components.utils : {},
-    Cc = isXPCOM ? Components.classes : {},
-    Ci = isXPCOM ? Components.interfaces : {},
+    $Scope = this,
+    
+    Cu = isXPCOM ? Components.utils : null,
+    Cc = isXPCOM ? Components.classes : null,
+    Ci = isXPCOM ? Components.interfaces : null,
     import_ = isXPCOM ? Cu['import'] : (isNode ? require : NOP),
-    fs = isNode ? import_('fs') : {},
+    fs = isNode ? import_('fs') : null,
+    import_module = isXPCOM
+    ? function import_module( name, path ){ import_( path, $Scope ); return $Scope[ name ]; }
+    : (isNode
+    ? function import_module( name, path ){ return import_( path ); }
+    : NOP),
     XHR = function( ) {
     return window.XMLHttpRequest
         // code for IE7+, Firefox, Chrome, Opera, Safari
@@ -107,6 +114,13 @@ var __version__ = "1.0.1", Contemplate, Template, InlineTemplate, Ctx,
     TT_FOR1,TT_FOR2, TT_ELSEFOR, TT_ENDFOR1,TT_ENDFOR2,
     TT_FUNC, TT_RCODE
 ;
+
+if ( isXPCOM )
+{
+    // do some necessary imports
+    import_("resource://gre/modules/NetUtil.jsm");
+    import_("resource://gre/modules/FileUtils.jsm");
+}
 
 function reset_state( )
 {
@@ -1333,7 +1347,7 @@ function get_cached_template( id, contx, options )
                 }
                 if ( fexists( cachedTplFile ) )
                 {
-                    tplclass = require( cachedTplFile )( Contemplate ); 
+                    tplclass = import_module( cachedTplClass, cachedTplFile )( Contemplate );
                     tpl = new tplclass( id )/*.setId( id )*/.ctx( contx );
                     return tpl;
                 }
@@ -1360,7 +1374,7 @@ function get_cached_template( id, contx, options )
                 }
                 if ( fexists( cachedTplFile ) )
                 {
-                    tplclass = require( cachedTplFile )( Contemplate );
+                    tplclass = import_module( cachedTplClass, cachedTplFile )( Contemplate );
                     tpl = new tplclass( id )/*.setId( id )*/.ctx( contx );
                     return tpl;
                 }
@@ -1623,7 +1637,7 @@ function Ctx( id )
     self.plurals          = { };
     self.plugins          = { };
     self.prefix           = '';
-    self.encoding         = 'utf8';
+    self.encoding         = isXPCOM ? 'UTF-8' : 'utf8';
 }
 Ctx[PROTO] = {
     constructor: Ctx
@@ -2414,15 +2428,24 @@ var default_date_locale = {
     ltrim_re = /^[ \s\u00A0]+/g,
     trim_re = /^[ \n\r\t\f\x0b\xa0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u2028\u2029\u3000]+|[ \n\r\t\f\x0b\xa0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u2028\u2029\u3000]+$/g,
     
+    fileurl_2_nsfile = function( file_uri ) {
+        // NetUtil.newURI(file_uri).QueryInterface(Ci.nsIFileURL).file
+        // http://stackoverflow.com/q/24817347/3591273
+        /*var ios = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService),
+            url = ios.newURI(file_uri, null, null), // url is a nsIURI
+            // file is a nsIFile    
+            file = url.QueryInterface(Ci.nsIFileURL).file;*/
+        return Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService).newURI(file_uri, null, null).QueryInterface(Ci.nsIFileURL).file;
+    },
+    
     fexists = isXPCOM
     ? function fexists( file ) {
         // file is URI, i.e file://...
-        import_("resource://gre/modules/NetUtil.jsm");
-        return NetUtil.newURI(file).QueryInterface(Ci.nsIFileURL).file.exists( );
+        return fileurl_2_nsfile( file ).exists( );
     }
     : (isNode
     ? function fexists( file ) {
-        fs.existsSync(file);
+        return fs.existsSync(file);
     }
     : function fexists( file ) {
         return true;
@@ -2443,8 +2466,7 @@ var default_date_locale = {
     fstat = isXPCOM
     ? function fstat( file ) {
         // file is URI, i.e file://...
-        import_("resource://gre/modules/NetUtil.jsm");
-        var mtime = NetUtil.newURI(file).QueryInterface(Ci.nsIFileURL).file.lastModifiedTime;
+        var mtime = fileurl_2_nsfile( file ).lastModifiedTime;
         return {mtime: !!mtime ? new Date(mtime) : false};
     }
     : (isNode
@@ -2491,12 +2513,11 @@ var default_date_locale = {
     fread = isXPCOM
     ? function fread( file, enc ) {
         // file is URI, i.e file://...
-        import_("resource://gre/modules/NetUtil.jsm");
-        var data, stream, conv, len, str = {}, read = 0;
+        var data = '', stream, conv, len, str = {value:''}, read = 0;
         // https://developer.mozilla.org/en-US/Add-ons/Code_snippets/File_I_O
         stream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(Ci.nsIFileInputStream);
         conv = Cc["@mozilla.org/intl/converter-input-stream;1"].createInstance(Ci.nsIConverterInputStream);
-        stream.init(NetUtil.newURI(file).QueryInterface(Ci.nsIFileURL).file, -1, 0, 0);
+        stream.init(fileurl_2_nsfile( file ), -1, 0, 0);
         conv.init(stream, enc||'UTF-8', 0, 0);
         do { 
             // read as much as we can and put it in str.value
@@ -2523,9 +2544,8 @@ var default_date_locale = {
     fread_async = isXPCOM
     ? function fread_async( file, enc, cb ) {
         // file is URI, i.e file://...
-        import_("resource://gre/modules/NetUtil.jsm");
         // https://developer.mozilla.org/en-US/Add-ons/Code_snippets/File_I_O
-        NetUtil.asyncFetch(NetUtil.newURI(file).QueryInterface(Ci.nsIFileURL).file, function( stream, status ) {
+        NetUtil.asyncFetch(fileurl_2_nsfile( file ), function( stream, status ) {
             var err = !Components.isSuccessCode( status ),
                 data = err
                 ? ''
@@ -2555,7 +2575,6 @@ var default_date_locale = {
     fwrite = isXPCOM
     ? function fwrite( file, data, enc ) {
         // file is URI, i.e file://...
-        import_("resource://gre/modules/NetUtil.jsm");
         var stream = Cc["@mozilla.org/network/file-output-stream;1"].createInstance(Ci.nsIFileOutputStream),
             conv = Cc["@mozilla.org/intl/converter-output-stream;1"].createInstance(Ci.nsIConverterOutputStream);
         // use 0x02 | 0x10 to open file for appending.
@@ -2564,7 +2583,8 @@ var default_date_locale = {
         // directly using "r" or "w" usually.
         // if you are sure there will never ever be any non-ascii text in data you can 
         // also call foStream.write(data, data.length) directly
-        stream.init(NetUtil.newURI(file).QueryInterface(Ci.nsIFileURL).file, 0x02|0x08|0x20, 0666, 0); 
+        // https://bugzilla.mozilla.org/show_bug.cgi?id=572890
+        stream.init(fileurl_2_nsfile( file ), 0x02|0x08|0x20, 0x1B6/*0666*/, 0); 
         conv.init(stream, enc||"UTF-8", 0, 0);
         conv.writeString( data );
         conv.close( ); // this closes stream
@@ -2580,14 +2600,10 @@ var default_date_locale = {
         // file is URI, i.e file://...
         // http://stackoverflow.com/questions/9777773/reading-writing-file-on-local-machine
         var istream, ostream, conv;
-        import_("resource://gre/modules/NetUtil.jsm");
-        import_("resource://gre/modules/FileUtils.jsm");
-
-        ostream = FileUtils.openSafeFileOutputStream( NetUtil.newURI(file).QueryInterface(Ci.nsIFileURL).file );
+        ostream = FileUtils.openSafeFileOutputStream( fileurl_2_nsfile( file ) );
         conv = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
         conv.charset = enc||"UTF-8";
         istream = conv.convertToInputStream( data );
-
         NetUtil.asyncCopy(istream, ostream, function( status ) {
             if ( cb  ) cb ( Components.isSuccessCode(status) )
         });
@@ -2610,15 +2626,19 @@ function FUNC( a, f )
     {
         // create new sandbox instance
         // https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Language_Bindings/Components.utils.Sandbox
-        var sandbox = Cu.Sandbox(window, {
-            sandboxName: 'sandbox_' + $__context.id,
-            //sameZoneAs: ,
-            wantComponents: false,
-            wantExportHelpers: false,
-            wantGlobalProperties: []
-        });
+        /*system principal*/ /*null*/ /*null principal*/
+        var principal = Cc["@mozilla.org/systemprincipal;1"].createInstance(Ci.nsIPrincipal),
+            sandbox = new Cu.Sandbox(principal, {
+                sandboxName: 'contemplate_sandbox_' + $__context.id,
+                sameZoneAs: Contemplate,
+                wantComponents: false,
+                wantExportHelpers: false,
+                wantXrays: true,
+                wantGlobalProperties: []
+            }), fn_uuid = Contemplate.uuid('dyna_func');
         sandbox.Contemplate = Contemplate;
-        return Cu.evalInSandbox('function('+a+'){'+f+'}', sandbox);
+        /*return */Cu.evalInSandbox(';function '+fn_uuid+'('+a+'){'+f+'};', sandbox);
+        return sandbox[fn_uuid];
     }
     else
     {

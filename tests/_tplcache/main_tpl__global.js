@@ -1,12 +1,17 @@
 
-!function (root, moduleName, moduleDefinition) {
+!function (root,name,factory){
+'use strict';
 var m;
-// node, CommonJS, etc..
-if ( 'object' === typeof(module) && module.exports ) module.exports = moduleDefinition();
-// browser and AMD, etc..
-else (root[ moduleName ] = m = moduleDefinition()) && ('function' === typeof(define) && define.amd && define(moduleName,[],function(){return m;}));
-}(this, 'Contemplate_main__global', function( ){
-"use strict";
+if ( ('undefined'!==typeof Components)&&('object'===typeof Components.classes)&&('object'===typeof Components.classesByID)&&Components.utils&&('function'===typeof Components.utils['import']) ) /* XPCOM */
+    (root.EXPORTED_SYMBOLS = [ name ]) && (root[ name ] = factory( ));
+else if ( ('object'===typeof module)&&module.exports ) /* CommonJS */
+    module.exports = factory( );
+else if ( ('function'===typeof(define))&&define.amd&&('function'===typeof(require))&&('function'===typeof(require.specified))&&require.specified(name) ) /* AMD */
+    define(name,['require','exports','module'],factory);
+else if ( !(name in root) ) /* Browser/Worker/.. */
+    (root[ name ] = (m=factory( )))&&('function'===typeof(define))&&define.amd&&define(function( ){return m;} );
+}(this,'Contemplate_main__global',function( ){
+'use strict';
 return function( Contemplate ) {
 /* Contemplate cached template 'main', constructor */
 function Contemplate_main__global( id )

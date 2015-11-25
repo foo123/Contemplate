@@ -31,7 +31,7 @@ else if ( !(name in root) ) /* Browser/WebWorker/.. */
 //////////////////////////////////////////////////////////////////////////////////////
 
 // private vars
-var __version__ = "1.0.1", Contemplate, Template, InlineTemplate, Ctx,
+var __version__ = "1.0.1", Contemplate,
 
     PROTO = 'prototype', HAS = 'hasOwnProperty',
     Obj = Object, Arr = Array, toString = Obj[PROTO].toString,

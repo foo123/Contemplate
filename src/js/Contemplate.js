@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node, client-side and XPCOM/SDK JavaScript
 *
-*  @version: 1.0.1
+*  @version: 1.1.0
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -31,7 +31,7 @@ else if ( !(name in root) ) /* Browser/WebWorker/.. */
 //////////////////////////////////////////////////////////////////////////////////////
 
 // private vars
-var __version__ = "1.0.1", Contemplate,
+var __version__ = "1.1.0", Contemplate,
 
     PROTO = 'prototype', HAS = 'hasOwnProperty',
     Obj = Object, Arr = Array, toString = Obj[PROTO].toString,
@@ -98,7 +98,7 @@ var __version__ = "1.0.1", Contemplate,
     'date', 'ldate', 'locale', 'plural',
     'inline', 'tpl', 'uuid', 'haskey',
     'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
-    'camelcase', 'snakecase', 'e', 'url'
+    'camelcase', 'snakecase', 'e', 'url', 'empty', 'iif'
     ],
     $__aliases = {
      'l'        : 'locale'
@@ -2237,6 +2237,8 @@ Contemplate = {
         }
         return true;
     }
+    ,empty: empty
+    ,iif: iif
     
     ,e: function( s, entities ) {
         // http://jsperf.com/split-join-vs-regex-replace/10
@@ -2614,16 +2616,9 @@ var default_date_locale = {
     }
     : function fwrite_async( file, data, enc, cb ) {
         if ( cb ) cb( );
-    })
-;
-
-
-
-// utilities
-function FUNC( a, f )
-{
-    if ( isXPCOM )
-    {
+    }),
+    FUNC = isXPCOM
+    ? function FUNC( a, f ) {
         // create new sandbox instance
         // https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Language_Bindings/Components.utils.Sandbox
         /*system principal*/ /*null*/ /*null principal*/
@@ -2640,14 +2635,30 @@ function FUNC( a, f )
         /*return */Cu.evalInSandbox(';function '+fn_uuid+'('+a+'){'+f+'};', sandbox);
         return sandbox[fn_uuid];
     }
-    else
-    {
+    : function FUNC( a, f ) {
         return new Function( a, f );
     }
-}
+;
+
+
+
+// utilities
 function RE( r, f )
 {
     return new RegExp( r, f||'' );
+}
+function empty( o )
+{
+    if ( !o ) return true;
+    var to_string = toString.call(o);
+    if ( (o instanceof Array || o instanceof String || '[object Array]' === to_string || '[object String]' === to_string) && !o.length ) return true;
+    if ( (o instanceof Object || '[object Array]' === to_string) && !Keys(o).length ) return true;
+    return false;
+}
+function iif( cond_, then_, else_ )
+{
+    if ( arguments.length < 3 ) else_ = null;
+    return cond_ ? then_ : else_;
 }
 // php-like functions, mostly adapted and optimised from phpjs project, https://github.com/kvz/phpjs
 // http://jsperf.com/instanceof-array-vs-array-isarray/6
@@ -2848,62 +2859,79 @@ function localized_date( format, timestamp )
     }
     return localised_datetime
 }
-function pad_( str, len, chr, leftJustify ) 
+function pad_( s, n, c, right )
 {
-    chr = chr || ' ';
-    var padding = (str.length >= len) ? '' : new Array(1 + len - str.length >>> 0).join(chr);
-    return leftJustify ? str + padding : padding + str;
+    if ( null == c ) c = ' ';
+    var str = String(s), l = str.length, p = l < n ? new Array(n-l+1).join(c) : '';
+    return !!right ? str+p : p+str;
 }
-function justify_( value, prefix, leftJustify, minWidth, zeroPad, customPadChar ) 
+function justify( value, prefix, leftJustify, minWidth, zeroPad, customPadChar )
 {
-    var diff = minWidth - value.length;
-    if ( diff > 0 ) 
+    var sv = String(value), diff = minWidth - sv.length;
+    if ( diff > 0 )
     {
-        if ( leftJustify || !zeroPad ) 
-            value = pad_(value, minWidth, customPadChar, leftJustify);
-        else 
-            value = value.slice(0, prefix.length) + pad_('', diff, '0', true) + value.slice(prefix.length);
+        if ( leftJustify || !zeroPad )
+            sv = pad_(sv, minWidth, customPadChar, leftJustify);
+        else
+            sv = sv.slice(0, prefix.length) + pad_('', diff, '0', true) + sv.slice(prefix.length);
     }
-    return value;
+    return sv;
 }
-function formatBaseX_( value, base, prefix, leftJustify, minWidth, precision, zeroPad )
+function formatBaseX( value, base, prefix, leftJustify, minWidth, precision, zeroPad )
 {
     // Note: casts negative numbers to positive ones
     var number = value >>> 0;
     prefix = prefix && number && {
-        '2': '0b',
-        '8': '0',
-        '16': '0x'
-        }[base] || '';
-    value = prefix + pad_(number.toString(base), precision || 0, '0', false);
-    return justify_(value, prefix, leftJustify, minWidth, zeroPad);
+    '2': '0b',
+    '8': '0',
+    '16': '0x'
+    }[base] || '';
+    value = prefix + pad_(number.toString(base), precision||0, '0', false);
+    return justify(value, prefix, leftJustify, minWidth, zeroPad);
 }
-function formatString_( value, leftJustify, minWidth, precision, zeroPad, customPadChar ) 
+function formatString( value, leftJustify, minWidth, precision, zeroPad, customPadChar )
 {
-    if ( null != precision )
-        value = value.slice(0, precision);
-    
-    return justify_(value, '', leftJustify, minWidth, zeroPad, customPadChar);
+    if ( null != precision ) value = value.slice(0, precision);
+    return justify(value, '', leftJustify, minWidth, zeroPad, customPadChar);
 }
-function sprintf( ) 
+function sprintf( )
 {
-    var a = arguments,
-    i = 0, format = a[i++];
-
-    // doFormat()
-    var doFormat = function( substring, valueIndex, flags, minWidth, _, precision, type ) {
+    /* 
+     * More info at: http://phpjs.org
+     * 
+     * This is version: 3.24
+     * php.js is copyright 2011 Kevin van Zonneveld.
+     */
+    // http://kevin.vanzonneveld.net
+    // +   original by: Ash Searle (http://hexmen.com/blog/)
+    // + namespaced by: Michael White (http://getsprink.com)
+    // +    tweaked by: Jack
+    // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+    // +      input by: Paulo Freitas
+    // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+    // +      input by: Brett Zamir (http://brett-zamir.me)
+    // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+    // +   improved by: Dj
+    // +   improved by: Allidylls
+    // *     example 1: sprintf("%01.2f", 123.1);
+    // *     returns 1: 123.10
+    // *     example 2: sprintf("[%10s]", 'monkey');
+    // *     returns 2: '[    monkey]'
+    // *     example 3: sprintf("[%'#10s]", 'monkey');
+    // *     returns 3: '[####monkey]'
+    // *     example 4: sprintf("%d", 123456789012345);
+    // *     returns 4: '123456789012345'
+    var i = 1, fmt = arguments[0], a = arguments;
+    var do_format = function do_format( substring, valueIndex, flags, minWidth, _, precision, type ) {
         var number, prefix, method, textTransform, value;
-
-        if ('%%' == substring) return '%';
+        if ( '%%' == substring ) return '%';
 
         // parse flags
-        var leftJustify = false, positivePrefix = '', zeroPad = false,
-            prefixBaseX = false, customPadChar = ' ',
-            flagsl = flags.length, j
-        ;
-        for (j = 0; flags && j < flagsl; j++) 
+        var leftJustify = false, positivePrefix = '', zeroPad = false, prefixBaseX = false,
+            j, customPadChar = ' ', flagsl = flags.length;
+        for (j=0; flags && j < flagsl; j++)
         {
-            switch (flags.charAt(j)) 
+            switch( flags.charAt(j) )
             {
                 case ' ':
                     positivePrefix = ' ';
@@ -2928,62 +2956,54 @@ function sprintf( )
 
         // parameters may be null, undefined, empty-string or real valued
         // we want to ignore null, undefined and empty-string values
-        if ( !minWidth ) 
-            minWidth = 0;
-        else if ( minWidth == '*' ) 
-            minWidth = +a[i++];
-        else if ( minWidth.charAt(0) == '*' ) 
-            minWidth = +a[minWidth.slice(1, -1)];
-        else 
-            minWidth = +minWidth;
+        if ( !minWidth ) minWidth = 0;
+        else if ( '*' == minWidth ) minWidth = +a[i++];
+        else if ( '*' == minWidth.charAt(0) ) minWidth = +a[minWidth.slice(1, -1)];
+        else minWidth = +minWidth;
 
         // Note: undocumented perl feature:
-        if ( minWidth < 0 ) 
+        if ( 0 > minWidth )
         {
             minWidth = -minWidth;
             leftJustify = true;
         }
 
-        if ( !isFinite(minWidth) ) 
+        if ( !isFinite(minWidth) )
         {
             throw new Error('sprintf: (minimum-)width must be finite');
         }
 
-        if ( !precision ) 
-            precision = 'fFeE'.indexOf(type) > -1 ? 6 : (type == 'd') ? 0 : undefined;
-        else if ( precision == '*' )
-            precision = +a[i++];
-        else if ( precision.charAt(0) == '*' )
-            precision = +a[precision.slice(1, -1)];
-        else
-            precision = +precision;
+        if ( !precision ) precision = 'fFeE'.indexOf(type) > -1 ? 6 : (type == 'd') ? 0 : undefined;
+        else if ( '*' == precision ) precision = +a[i++];
+        else if ( '*' == precision.charAt(0) ) precision = +a[precision.slice(1, -1)];
+        else precision = +precision;
 
         // grab value using valueIndex if required?
         value = valueIndex ? a[valueIndex.slice(0, -1)] : a[i++];
 
-        switch(type) 
+        switch( type )
         {
             case 's':
-                return formatString_(String(value), leftJustify, minWidth, precision, zeroPad, customPadChar);
+                return formatString(String(value), leftJustify, minWidth, precision, zeroPad, customPadChar);
             case 'c':
-                return formatString_(String.fromCharCode(+value), leftJustify, minWidth, precision, zeroPad);
+                return formatString(String.fromCharCode(+value), leftJustify, minWidth, precision, zeroPad);
             case 'b':
-                return formatBaseX_(value, 2, prefixBaseX, leftJustify, minWidth, precision, zeroPad);
+                return formatBaseX(value, 2, prefixBaseX, leftJustify, minWidth, precision, zeroPad);
             case 'o':
-                return formatBaseX_(value, 8, prefixBaseX, leftJustify, minWidth, precision, zeroPad);
+                return formatBaseX(value, 8, prefixBaseX, leftJustify, minWidth, precision, zeroPad);
             case 'x':
-                return formatBaseX_(value, 16, prefixBaseX, leftJustify, minWidth, precision, zeroPad);
+                return formatBaseX(value, 16, prefixBaseX, leftJustify, minWidth, precision, zeroPad);
             case 'X':
-                return formatBaseX_(value, 16, prefixBaseX, leftJustify, minWidth, precision, zeroPad).toUpperCase();
+                return formatBaseX(value, 16, prefixBaseX, leftJustify, minWidth, precision, zeroPad).toUpperCase();
             case 'u':
-                return formatBaseX_(value, 10, prefixBaseX, leftJustify, minWidth, precision, zeroPad);
+                return formatBaseX(value, 10, prefixBaseX, leftJustify, minWidth, precision, zeroPad);
             case 'i':
             case 'd':
                 number = +value || 0;
                 number = Math.round(number - number % 1); // Plain Math.round doesn't just truncate
                 prefix = number < 0 ? '-' : positivePrefix;
                 value = prefix + pad_(String(Math.abs(number)), precision, '0', false);
-                return justify_(value, prefix, leftJustify, minWidth, zeroPad);
+                return justify(value, prefix, leftJustify, minWidth, zeroPad);
             case 'e':
             case 'E':
             case 'f': // Should handle locales (as per setlocale)
@@ -2995,13 +3015,14 @@ function sprintf( )
                 method = ['toExponential', 'toFixed', 'toPrecision']['efg'.indexOf(type.toLowerCase())];
                 textTransform = ['toString', 'toUpperCase']['eEfFgG'.indexOf(type) % 2];
                 value = prefix + Math.abs(number)[method](precision);
-                return justify_(value, prefix, leftJustify, minWidth, zeroPad)[textTransform]();
+                return justify(value, prefix, leftJustify, minWidth, zeroPad)[textTransform]();
             default:
                 return substring;
         }
     };
-    return format.replace(re_8, doFormat);
+    return fmt.replace( sprintf.format_re, do_format );
 }
+sprintf.format_re = /%%|%(\d+\$)?([-+\'#0 ]*)(\*\d+\$|\*|\d+)?(\.(\*\d+\$|\*|\d+))?([scboxXuideEfFgG])/g;
 
 
 // init the engine on load

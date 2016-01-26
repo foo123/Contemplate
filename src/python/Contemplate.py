@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 1.0.1
+#  @version 1.1.0
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -155,7 +155,7 @@ class _G:
     'date', 'ldate', 'locale', 'plural',
     'inline', 'tpl', 'uuid', 'haskey',
     'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
-    'camelcase', 'snakecase', 'e', 'url'
+    'camelcase', 'snakecase', 'e', 'url', 'empty', 'iif'
     ]
     aliases = {
      'l'        : 'locale'
@@ -226,21 +226,21 @@ def php_date( format, timestamp=None ):
         
     # Day --
     D['d'] = str( d ).zfill(2)
-    D['D'] = locale['day_short'][ w ]
+    D['D'] = locale['day_short'][ 0 if 7 == w else w+1 ]
     D['j'] = str( d )
-    D['l'] = locale['day'][ w ]
+    D['l'] = locale['day'][ 0 if 7 == w else w+1 ]
     D['N'] = str( w if 0 < w else 7 )
     D['S'] = locale['ordinal']['ord'][ d ] if d in locale['ordinal']['ord'] else (locale['ordinal']['ord'][ dmod10 ] if dmod10 in locale['ordinal']['ord'] else locale['ordinal']['nth'])
-    D['w'] = str( w )
+    D['w'] = str( 1 if 7 == w else w+2 )
     D['z'] = str( dtime.timetuple().tm_yday )
     
     # Week --
     D['W'] = str( W )
     
     # Month --
-    D['F'] = locale['month'][ n ]
+    D['F'] = locale['month'][ n-1 ]
     D['m'] = str( n ).zfill(2)
-    D['M'] = locale['month_short'][ n ]
+    D['M'] = locale['month_short'][ n-1 ]
     D['n'] = str( n )
     D['t'] = str( calendar.monthrange(Y, n)[1] )
     
@@ -1757,7 +1757,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "1.0.1"
+    VERSION = "1.1.0"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -2236,6 +2236,12 @@ class Contemplate:
             tmp = tmp[args[i]]
         return True
         
+    def empty( v ):
+        return v == None or (isinstance(v, (tuple,list,str,dict)) and 0 == len(v))
+
+    def iif( cond_, then_, else_=None ):
+        return then_ if cond_ else else_
+    
     def e( s, entities=True ):
         f = ''
         if entities:

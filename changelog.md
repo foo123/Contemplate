@@ -1,5 +1,12 @@
 ###ChangeLog
 
+__1.1.0__
+* inline `if` function `iif()`
+* php-like `empty()` function
+* fix `date()` function in python implementation (wrong month,day of week)
+* minor changes
+
+
 __1.0.0__
 * enable multiple dynamic contexts (see examples), different parts of an application can use the engine in a **modular way**, with their contextual template settings (including templates, caching, directories, locales, plugins, etc..) **independantly**
 * template `directives`, `functions` and `plugins` **no longer use** the `%` prefix i.e `%for`, `%if`, .. but `for`, `if`, .. if compatibility to older format is needed use `Contemplate.setCompatibilityMode( true )`

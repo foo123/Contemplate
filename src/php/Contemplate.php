@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 1.0.1
+*  @version: 1.1.0
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -324,7 +324,7 @@ class ContemplateCtx
 
 class Contemplate
 {
-    const VERSION = "1.0.1";
+    const VERSION = "1.1.0";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -412,7 +412,7 @@ class Contemplate
     'date', 'ldate', 'locale', 'plural',
     'inline', 'tpl', 'uuid', 'haskey',
     'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
-    'camelcase', 'snakecase', 'e', 'url'
+    'camelcase', 'snakecase', 'e', 'url', 'empty', 'iif'
     );
     private static $__aliases = array(
      'l'         => 'locale'
@@ -970,6 +970,11 @@ class Contemplate
             $tmp = $tmp[$args[$i]];
         }
         return true;
+    }
+        
+    public static function iif( $cond, $then, $else=null ) 
+    {
+        return $cond ? $then : $else;
     }
         
     public static function e( $s, $entities=true ) 
@@ -1545,6 +1550,7 @@ class Contemplate
                 case 24: $out = 'trim(' . $args . ')'; break;
                 case 25: $out = 'addslashes(' . $args . ')'; break;
                 case 26: $out = 'stripslashes(' . $args . ')'; break;
+                case 31: $out = 'empty(' . $args . ')'; break;
                 default: $out = 'Contemplate::' . $ctrl . '(' . $args . ')';
             }
             return $prefix . $out . preg_replace_callback( $re_controls, $parse_constructs, $rest );

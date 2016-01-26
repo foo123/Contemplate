@@ -137,6 +137,14 @@
     
     <br /><br />
     
+    <strong>Inline (ternary) IF</strong><br />
+    <pre>
+    &lt;% %iif( 1+1 == 2, "1+1 = 2", "1+1 = 1" ) %&gt;
+    </pre><br />
+    <% %iif( 1+1 == 2, "1+1 = 2", "1+1 = 1" ) %>
+    
+    <br /><br />
+    
     <strong>SET a new tpl variable</strong><br />
     <pre>
     &lt;% %set($foo, "123") %&gt;
@@ -157,6 +165,22 @@
         $foo is SET
     <% %else() %>
         $foo is NOT SET
+    <% %fi() %>
+    
+    <br /><br />
+
+    <strong>CHECK EMPTY for a tpl variable</strong><br />
+    <pre>
+    &lt;% %if( %empty($foo) ) %&gt;
+        $foo is EMPTY
+    &lt;% %else() %&gt;
+        $foo is NOT EMPTY
+    &lt;% %fi() %&gt;
+    </pre><br />
+    <% %if( %empty($foo) ) %>
+        $foo is EMPTY
+    <% %else() %>
+        $foo is NOT EMPTY
     <% %fi() %>
     
     <br /><br />

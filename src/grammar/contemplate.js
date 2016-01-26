@@ -75,7 +75,7 @@ var contemplate_grammar = {
                                 "concat","ltrim","rtrim","trim","lowercase","uppercase",
                                 "lcfirst","ucfirst","camelcase","snakecase","count","haskey",
                                 "uuid","time","now","date","ldate","locale","l","plural",
-                                "inline","tpl","e","url"
+                                "inline","tpl","e","url","empty","iif"
                                 ]}
     ,"plugin"                   : "RE::/[a-zA-Z_][a-zA-Z0-9_]*/"
 
@@ -97,7 +97,7 @@ var contemplate_grammar_compat = {
                                 "%concat","%ltrim","%rtrim","%trim","%lowercase","%uppercase",
                                 "%lcfirst","%ucfirst","%camelcase","%snakecase","%count","%haskey",
                                 "%uuid","%time","%now","%date","%ldate","%locale","%l","%plural",
-                                "%inline","%tpl","%e","%url"
+                                "%inline","%tpl","%e","%url","%empty","%iif"
                                 ]}
     ,"plugin"                   : "RE::/%[a-zA-Z_][a-zA-Z0-9_]*/"
 

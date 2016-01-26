@@ -150,6 +150,8 @@ TEMPLATE operations take place in the `current` context (which defaults to `glob
 **IMPORTANT** As of version `1.0.0+`, template `directives`, `functions` and `plugins` **no longer use** the `%` prefix i.e `%for`, `%if`, .. but `for`, `if`, .. If compatibility to older format is needed use `Contemplate.setCompatibilityMode( true )`
 
 
+* `iif( cond, then_value, else_value )`   inline (ternary) `if` function
+* `empty( val )`   php-like `empty` function
 * `n( val )`   convert `val` to integer
 * `s( val )`   convert `val` to string
 * `f( val )`   convert `val` to float

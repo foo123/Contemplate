@@ -124,11 +124,11 @@ private function _blockfn_Block2(&$data, $self, $__i__)
         }
     }
     
-    $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>IF - ELSEIF - ELSE - ENDIF</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% %if( 1+1 == 2 ) %&gt;' . "\n" . '        1+1 = 2' . "\n" . '    &lt;% %elif( 1+1 == 1) %&gt;' . "\n" . '        1+1 = 1' . "\n" . '    &lt;% %else() %&gt;' . "\n" . '        unkonown result' . "\n" . '    &lt;% %fi() %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ';
-    if ( 1+1 == 2 )
+    $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>IF - ELSEIF - ELSE - ENDIF</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% %if( 1+1 != 2 ) %&gt;' . "\n" . '        1+1 != 2' . "\n" . '    &lt;% %elif( 1+1 == 1) %&gt;' . "\n" . '        1+1 = 1' . "\n" . '    &lt;% %else() %&gt;' . "\n" . '        1+1 = 2' . "\n" . '    &lt;% %fi() %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ';
+    if ( 1+1 != 2 )
     {
         
-        $__p__ .= '' . "\n" . '        1+1 = 2' . "\n" . '    ';
+        $__p__ .= '' . "\n" . '        1+1 != 2' . "\n" . '    ';
     }
     elseif ( 1+1 == 1)
     {
@@ -138,7 +138,7 @@ private function _blockfn_Block2(&$data, $self, $__i__)
     else
     {
         
-        $__p__ .= '' . "\n" . '        unkonown result' . "\n" . '    ';
+        $__p__ .= '' . "\n" . '        1+1 = 2' . "\n" . '    ';
     }
     
     $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>Inline (ternary) IF</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% %iif( 1+1 == 2, "1+1 = 2", "1+1 = 1" ) %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ' . (Contemplate::iif( 1+1 == 2, "1+1 = 2", "1+1 = 1" )) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>SET a new tpl variable</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% %set($foo, "123") %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ';

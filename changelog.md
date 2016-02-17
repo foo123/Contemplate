@@ -4,6 +4,7 @@ __1.1.0__
 * inline `if` function `iif()`
 * php-like `empty()` function
 * fix `date()` function in python implementation (wrong month,day of week)
+* fix `not`, `or`, `and` operator replacements in python implementation
 * minor changes
 
 

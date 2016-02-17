@@ -117,6 +117,10 @@ class _G:
     ALPHANUM = re.compile(r'^[a-zA-Z0-9_]')
     SPACE = re.compile(r'^\s')
     
+    T_OR = re.compile(r'(.)(\|\|)(.)')
+    T_AND = re.compile(r'(.)(&&)(.)')
+    T_NOT = re.compile(r'(.)(!)([^=])')
+    
     TT_ClassCode = None
 
     TT_BlockCode = None 
@@ -1282,7 +1286,7 @@ def parse( tpl, leftTplSep, rightTplSep, withblocks=True ):
             
         # fix literal data notation python-style
         if compatibility_mode: out = out.replace('true', 'True').replace('false', 'False').replace('null', 'None')
-        out = out.replace('&&', ' and ').replace(' || ', ' or ').replace('!', ' not ')
+        out = re.sub(_G.T_NOT, r'\1 not \3', re.sub(_G.T_OR, r'\1 or \3', re.sub(_G.T_AND, r'\1 and \3', out)))
         
         tag = "\t" + out + "\v"
             

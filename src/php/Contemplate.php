@@ -412,10 +412,11 @@ class Contemplate
     'date', 'ldate', 'locale', 'plural',
     'inline', 'tpl', 'uuid', 'haskey',
     'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
-    'camelcase', 'snakecase', 'e', 'url', 'empty', 'iif'
+    'camelcase', 'snakecase', 'e', 'url', 'empty', 'iif', 'nlocale'
     );
     private static $__aliases = array(
      'l'         => 'locale'
+    ,'nl'        => 'nlocale'
     ,'dq'        => 'qq'
     ,'now'       => 'time'
     ,'template'  => 'tpl'
@@ -760,10 +761,10 @@ class Contemplate
     
     public static function setLocales( $locales, $ctx='global' ) 
     { 
-        if ( $locales && is_array($locales) )
+        if ( $locales && (is_callable($locales) || is_array($locales)) )
         {
             $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
-            $contx->locale = self::merge($contx->locale, (array)$locales);
+            $contx->locale = is_callable($locales) ? $locales : self::merge($contx->locale, (array)$locales);
         }
     }
     
@@ -775,18 +776,25 @@ class Contemplate
     
     public static function setPlurals( $plurals, $ctx='global' ) 
     { 
-        if ( $plurals && is_array($plurals) )
+        if ( $plurals && (is_callable($plurals) || is_array($plurals)) )
         {
             $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
-            foreach ($plurals as $singular=>$plural)
+            if ( is_callable($plurals) )
             {
-                if ( null == $plural )
-                {
-                    // auto plural
-                    $plurals[ $singular ] = $singular.'s';
-                }
+                $contx->plurals = $plurals;
             }
-            $contx->plurals = self::merge($contx->plurals, $plurals); 
+            else
+            {
+                foreach ($plurals as $singular=>$plural)
+                {
+                    if ( null == $plural )
+                    {
+                        // auto plural
+                        $plurals[ $singular ] = $singular.'s';
+                    }
+                }
+                $contx->plurals = self::merge($contx->plurals, $plurals); 
+            }
         }
     }
     
@@ -1060,21 +1068,48 @@ class Contemplate
     
     public static function locale( $s ) 
     { 
-        return isset(self::$__context->locale[$s])
-            ? self::$__context->locale[$s]
-            : (isset(self::$__global->locale[$s])
-            ? self::$__global->locale[$s]
-            : $s); 
+        $locale = is_callable(self::$__context->locale) || isset(self::$__context->locale[$s])
+            ? self::$__context->locale
+            : (is_callable(self::$__global->locale) || isset(self::$__global->locale[$s])
+            ? self::$__global->locale
+            : null); 
+        if ( null === $locale ) return $s;
+        if ( is_callable($locale) )
+        {
+            $args = func_get_args( );
+            return call_user_func_array($locale, $args);
+        }
+        return $locale[$s];
     }
     
-    public static function plural( $singular, $count ) 
+    public static function nlocale( $n, $singular, $plural ) 
     { 
-        if ( 1 === $count ) return $singular;
-        return isset(self::$__context->plurals[$singular])
-            ? self::$__context->plurals[$singular]
-            : (isset(self::$__global->plurals[$singular])
-            ? self::$__global->plurals[$singular]
-            : $singular); 
+        $locale = is_callable(self::$__context->locale) || isset(self::$__context->locale[$singular])
+            ? self::$__context->locale
+            : (is_callable(self::$__global->locale) || isset(self::$__global->locale[$singular])
+            ? self::$__global->locale
+            : null); 
+        if ( null === $locale ) return 1 == $n ? $singular : $plural;
+        if ( is_callable($locale) )
+        {
+            $args = func_get_args( );
+            array_splice($args, 0, 3, array(1 == $n ? $singular : $plural));
+            return call_user_func_array($locale, $args);
+        }
+        return 1 == $n ? $locale[$singular] : (isset($locale[$plural]) ? $locale[$plural] : $plural);
+    }
+    
+    public static function plural( $singular ) 
+    { 
+        $plural = is_callable(self::$__context->plurals) || isset(self::$__context->plurals[$singular])
+            ? self::$__context->plurals
+            : (is_callable(self::$__global->plurals) || isset(self::$__global->plurals[$singular])
+            ? self::$__global->plurals
+            : null); 
+        if ( null === $plural ) return $singular;
+        $args = func_get_args( );
+        if ( is_callable($plural) ) return call_user_func_array($plural, $args);
+        return (2 > count($args)) || (1 === $args[1]) ? $singular : $plural[$singular];
     }
     
     public static function uuid( $namespace='UUID' ) 

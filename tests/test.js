@@ -25,7 +25,8 @@ var http = require('http'), httpPort = 1337,
 Contemplate.setCompatibilityMode( true );
 
 Contemplate.setLocales({
-    "locale": "γλωσσική περιοχή"
+    "locale": "γλωσσική περιοχή",
+    "locales": "γλωσσικές περιοχές"
 });
 Contemplate.setPlurals({
     'item': null // auto plural

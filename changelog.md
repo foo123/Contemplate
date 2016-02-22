@@ -2,6 +2,8 @@
 
 __1.1.1__
 * plugins (non-inlined) with empty arguments invalid output code generation, fixed
+* localisation settings accept a callback function as well for custom dynamic localisation (with optional extra arguments)
+* new localisation function `nlocale` for singular/plural dynamic localisation based on numeric parameter (1st argument)
 
 
 __1.1.0__

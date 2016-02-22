@@ -54,7 +54,8 @@ import json
 Contemplate.setCompatibilityMode( True )
 
 Contemplate.setLocales({
-    "locale": "γλωσσική περιοχή"
+    "locale": "γλωσσική περιοχή",
+    "locales": "γλωσσικές περιοχές"
 })
 Contemplate.setPlurals({
     'item': None # auto plural

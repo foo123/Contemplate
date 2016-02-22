@@ -159,10 +159,11 @@ class _G:
     'date', 'ldate', 'locale', 'plural',
     'inline', 'tpl', 'uuid', 'haskey',
     'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
-    'camelcase', 'snakecase', 'e', 'url', 'empty', 'iif'
+    'camelcase', 'snakecase', 'e', 'url', 'empty', 'iif', 'nlocale'
     ]
     aliases = {
      'l'        : 'locale'
+    ,'nl'       : 'nlocale'
     ,'dq'       : 'qq'
     ,'now'      : 'time'
     ,'template' : 'tpl'
@@ -2053,9 +2054,9 @@ class Contemplate:
     
     def setLocales( locales, ctx='global' ): 
         global _G
-        if locales and isinstance(locales, dict):
+        if locales and (callable(locales) or isinstance(locales, dict)):
             contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
-            contx.locale = Contemplate.merge(contx.locale, locales)
+            contx.locale = locales if callable(locales) else Contemplate.merge(contx.locale, locales)
     
     def clearLocales( ctx='global' ): 
         global _G
@@ -2064,13 +2065,16 @@ class Contemplate:
     
     def setPlurals( plurals, ctx='global' ): 
         global _G
-        if plurals and isinstance(plurals, dict):
+        if plurals and (callable(plurals) or isinstance(plurals, dict)):
             contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
-            for singular in plurals:
-                if plurals[ singular ] is None: 
-                    # auto plural
-                    plurals[ singular ] = str(singular) + 's'
-            contx.plurals = Contemplate.merge(contx.plurals, plurals)
+            if callable(plurals):
+                contx.plurals = plurals
+            else:
+                for singular in plurals:
+                    if plurals[ singular ] is None: 
+                        # auto plural
+                        plurals[ singular ] = str(singular) + 's'
+                contx.plurals = Contemplate.merge(contx.plurals, plurals)
     
     def clearPlurals( ctx='global' ): 
         global _G
@@ -2332,14 +2336,32 @@ class Contemplate:
         if timestamp is None: timestamp = php_time( ) 
         return localized_date( format, timestamp )
         
-    def locale( s ): 
+    def locale( s, *args ): 
         global _G
-        return _G.context.locale[s] if s in _G.context.locale else (_G.glob.locale[s] if s in _G.glob.locale else s)
+        locale = _G.context.locale if callable(_G.context.locale) or (s in _G.context.locale) else (_G.glob.locale if callable(_G.glob.locale) or (s in _G.glob.locale) else None)
+        if locale is None: return s
+        if callable(locale):
+            args = [s]+args
+            return locale(*args)
+        return locale[s]
     
-    def plural( singular, count ): 
+    def nlocale( n, singular, plural, *args ): 
         global _G
-        if 1 == count: return singular
-        return _G.context.plurals[singular] if singular in _G.context.plurals else (_G.glob.plurals[singular] if singular in _G.glob.plurals else singular)
+        locale = _G.context.locale if callable(_G.context.locale) or (singular in _G.context.locale) else (_G.glob.locale if callable(_G.glob.locale) or (singular in _G.glob.locale) else None)
+        if locale is None: return singular if 1 == n else plural
+        if callable(locale):
+            args = [singular if 1 == n else plural]+args
+            return locale(*args)
+        return locale[singular] if 1 == n else (locale[plural] if plural in locale else plural)
+    
+    def plural( singular, *args ): 
+        global _G
+        plural = _G.context.plurals if callable(_G.context.plurals) or (singular in _G.context.plurals) else (_G.glob.plurals if callable(_G.glob.plurals) or (singular in _G.glob.plurals) else None)
+        if plural is None: return singular
+        if callable(plural):
+            args = [singular]+args
+            return plural(*args)
+        return singular if (not args) or (1 == args[0]) else plural[singular]
     
     def uuid( namespace='UUID' ):
         global _G

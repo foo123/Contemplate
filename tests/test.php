@@ -26,7 +26,8 @@ include dirname(ABSPATH).'/src/php/Contemplate.php';
 Contemplate::setCompatibilityMode( true );
 
 Contemplate::setLocales(array(
-    "locale"=> "γλωσσική περιοχή"
+    "locale"=> "γλωσσική περιοχή",
+    "locales"=> "γλωσσικές περιοχές"
 ));
 Contemplate::setPlurals(array(
     'item'=> null // auto plural

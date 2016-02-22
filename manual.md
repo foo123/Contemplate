@@ -177,6 +177,7 @@ TEMPLATE operations take place in the `current` context (which defaults to `glob
 * `date( format [, timestamp=now] )`  return timestamp formatted according to format
 * `ldate( format [, timestamp=now] )`  return localised timestamp formatted according to format, localised strings are user-defined
 * `locale( val )` / `l( val )`  return localised string for `val`, if exists (localised strings are user-defined)
+* `nlocale( n, singular, plural )` / `nl( n, singular, plural )`  return localised string for `singular` or `plural`, if exists (localised strings are user-defined) based on numeric parameter `n`
 * `plural( singular, count )`  return plural string for `singular`, if exists depending on `count` (pluralised strings are user-defined)
 * `inline( tpl, [reps|data] )`  create or render an `inline` template referenced in 'tpl'
 * `tpl( tpl_id_string, {"var1" : val1, "var2" : val2, ..} )` / `template( tpl_id_string, {"var1" : val1, "var2" : val2, ..} )`  CALL a subtemplate referenced by 'tpl_id', passing the necessary data

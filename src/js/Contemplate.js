@@ -98,10 +98,11 @@ var __version__ = "1.1.1", Contemplate,
     'date', 'ldate', 'locale', 'plural',
     'inline', 'tpl', 'uuid', 'haskey',
     'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
-    'camelcase', 'snakecase', 'e', 'url', 'empty', 'iif'
+    'camelcase', 'snakecase', 'e', 'url', 'empty', 'iif', 'nlocale'
     ],
     $__aliases = {
      'l'        : 'locale'
+    ,'nl'       : 'nlocale'
     ,'dq'       : 'qq'
     ,'now'      : 'time'
     ,'template' : 'tpl'
@@ -2018,11 +2019,11 @@ Contemplate = {
     
     ,setLocales: function( locales, ctx ) { 
         var contx;
-        if ( locales && "object"===typeof locales )
+        if ( locales && ("function" === typeof locales || "object"===typeof locales) )
         {
             if ( arguments.length < 2 ) ctx = 'global';
             contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
-            contx.locale = merge(contx.locale, locales);
+            contx.locale = "function" === typeof locales ? locales : merge(contx.locale, locales);
         }
     }
     
@@ -2035,19 +2036,26 @@ Contemplate = {
     
     ,setPlurals: function( plurals, ctx ) { 
         var contx, singular;
-        if ( plurals && "object"===typeof plurals )
+        if ( plurals && ("function" === typeof plurals || "object"===typeof plurals) )
         {
             if ( arguments.length < 2 ) ctx = 'global';
             contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
-            for (singular in plurals)
+            if ( "function" === typeof plurals )
             {
-                if ( plurals[HAS](singular) && null == plurals[ singular ] )
-                {
-                    // auto plural
-                    plurals[ singular ] = singular+'s';
-                }
+                contx.plurals = plurals; 
             }
-            contx.plurals = merge(contx.plurals, plurals); 
+            else
+            {
+                for (singular in plurals)
+                {
+                    if ( plurals[HAS](singular) && null == plurals[ singular ] )
+                    {
+                        // auto plural
+                        plurals[ singular ] = singular+'s';
+                    }
+                }
+                contx.plurals = merge(contx.plurals, plurals); 
+            }
         }
     }
     
@@ -2357,19 +2365,38 @@ Contemplate = {
     }
     
     ,locale: function( s ) { 
-        return $__context.locale[HAS](s)
-            ? $__context.locale[s]
-            : ($__global.locale[HAS](s)
-            ? $__global.locale[s]
-            : s); 
+        var locale = ('function' === typeof $__context.locale) || $__context.locale[HAS](s)
+            ? $__context.locale
+            : (('function' === typeof $__global.locale) || $__global.locale[HAS](s)
+            ? $__global.locale
+            : null); 
+        if ( null === locale ) return s;
+        if ( 'function' === typeof locale ) return locale.apply(null, arguments);
+        return locale[s];
     }
-    ,plural: function( singular, count ) {
-        if ( 1 === count ) return singular;
-        return $__context.plurals[HAS](singular)
-            ? $__context.plurals[singular]
-            : ($__global.plurals[HAS](singular)
-            ? $__global.plurals[singular]
-            : singular); 
+    ,nlocale: function( n, singular, plural ) { 
+        var locale = ('function' === typeof $__context.locale) || $__context.locale[HAS](singular)
+            ? $__context.locale
+            : (('function' === typeof $__global.locale) || $__global.locale[HAS](singular)
+            ? $__global.locale
+            : null); 
+        if ( null === locale ) return 1 == n ? singular : plural;
+        if ( 'function' === typeof locale )
+        {
+            var args = Array.prototype.splice.call(arguments, 0, 3, 1 == n ? singular : plural);
+            return locale.apply(null, args);
+        }
+        return 1 == n ? locale[singular] : (locale[HAS](plural) ? locale[plural] : plural);
+    }
+    ,plural: function( singular ) {
+        var plural = ('function' === typeof $__context.plurals) || $__context.plurals[HAS](singular)
+            ? $__context.plurals
+            : (('function' === typeof $__global.plurals) || $__global.plurals[HAS](singular)
+            ? $__global.plurals
+            : null); 
+        if ( null === plural ) return singular;
+        if ( 'function' === typeof plural ) return plural.apply(null, arguments);
+        return (2 > arguments.length) || (1 === arguments[1]) ? singular : plural[singular];
     }
     
     ,uuid: function( namespace ) {

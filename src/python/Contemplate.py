@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 1.1.0
+#  @version 1.1.1
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -822,6 +822,8 @@ def parse_constructs( match ):
             if paren > 0: args += ch
         rest = rest[len(args)+1:]
     
+    args = args.strip()
+    
     if ctrl in _G.directive_aliases: ctrl = _G.directive_aliases[ctrl]
     try:
         m = _G.directives.index( ctrl )
@@ -889,7 +891,7 @@ def parse_constructs( match ):
     if (ctrl in _G.context.plugins) or (ctrl in _G.glob.plugins):
         pl = _G.context.plugins[ctrl] if ctrl in _G.context.plugins else _G.glob.plugins[ctrl]
         args = re.sub(re_controls, parse_constructs, args)
-        out = pl.render({'args':args}) if isinstance(pl,Contemplate.InlineTemplate) else 'Contemplate.plg_("' + ctrl + '",' + args + ')'
+        out = pl.render({'args':args}) if isinstance(pl,Contemplate.InlineTemplate) else 'Contemplate.plg_("' + ctrl + '"' + ('' if not len(args) else ','+args) + ')'
         return prefix + out + re.sub(re_controls, parse_constructs, rest)
     
     if ctrl in _G.aliases: ctrl = _G.aliases[ctrl]
@@ -1761,7 +1763,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "1.1.0"
+    VERSION = "1.1.1"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2

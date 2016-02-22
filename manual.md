@@ -1,6 +1,6 @@
 ###Contemplate Manual
 
-**version 1.0.0; platforms: PHP, Python, Node/JS**
+**version 1.1.1; platforms: PHP, Python, Node/JS**
 
 
 ###Contents

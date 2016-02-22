@@ -1,5 +1,9 @@
 ###ChangeLog
 
+__1.1.1__
+* plugins (non-inlined) with empty arguments invalid output code generation, fixed
+
+
 __1.1.0__
 * inline `if` function `iif()`
 * php-like `empty()` function

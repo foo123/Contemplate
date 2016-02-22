@@ -57,12 +57,12 @@ Contemplate_sub__global.prototype.render = function( data, __i__ ) {
             }
                     
             __p__ += '">' + "\n" + '            <a href="/' + (_loc_user["name"]) + '">' + (_loc_user.name) + '' + (_loc_user.text) + ' ' + (parseInt(data.i) + parseInt(_loc_j)) + '</a>: <strong>' + (_loc_user["text"]) + '</strong>' + "\n" + '        </div>' + "\n" + '        ';        
-            if ( Contemplate.haskey(_loc_user, "key1") )
+            if (Contemplate.haskey(_loc_user, "key1"))
             {
                         
                 __p__ += '' + "\n" + '            <div> User has key &quot;key1&quot; </div>' + "\n" + '        ';        
             }
-            else if ( Contemplate.haskey(_loc_user, "key", "key1") )
+            else if (Contemplate.haskey(_loc_user, "key", "key1"))
             {
                         
                 __p__ += '' + "\n" + '            <div> User has key [&quot;key&quot;][&quot;key1&quot;] </div>' + "\n" + '        ';        

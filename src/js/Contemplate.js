@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node, client-side and XPCOM/SDK JavaScript
 *
-*  @version: 1.1.0
+*  @version: 1.1.1
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -31,7 +31,7 @@ else if ( !(name in root) ) /* Browser/WebWorker/.. */
 //////////////////////////////////////////////////////////////////////////////////////
 
 // private vars
-var __version__ = "1.1.0", Contemplate,
+var __version__ = "1.1.1", Contemplate,
 
     PROTO = 'prototype', HAS = 'hasOwnProperty',
     Obj = Object, Arr = Array, toString = Obj[PROTO].toString,
@@ -496,6 +496,7 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
         }
         rest = rest.slice(args.length+1);
     }
+    args = trim(args);
     
     if ( $__directive_aliases[HAS](ctrl) ) ctrl = $__directive_aliases[ctrl];
     m = $__directives.indexOf( ctrl );
@@ -584,7 +585,7 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
         // allow custom plugins as template functions
         var pl = $__context.plugins[ ctrl ] || $__global.plugins[ ctrl ];
         args = args.replace( re_controls, parse_constructs );
-        out = pl instanceof Contemplate.InlineTemplate ? pl.render({'args':args}) : 'Contemplate.plg_("' + ctrl + '",' + args + ')';
+        out = pl instanceof Contemplate.InlineTemplate ? pl.render({'args':args}) : 'Contemplate.plg_("' + ctrl + '"' + (!args.length ? '' : ','+args) + ')';
         return prefix + out + rest.replace( re_controls, parse_constructs );
     }
     

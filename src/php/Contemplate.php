@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 1.1.0
+*  @version: 1.1.1
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -324,7 +324,7 @@ class ContemplateCtx
 
 class Contemplate
 {
-    const VERSION = "1.1.0";
+    const VERSION = "1.1.1";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -1433,6 +1433,7 @@ class Contemplate
             }
             $rest = substr($rest, strlen($args)+1);
         }
+        $args = trim($args);
         
         if ( isset(self::$__directive_aliases[$ctrl]) ) $ctrl = self::$__directive_aliases[$ctrl];
         $m = array_search($ctrl, self::$__directives);
@@ -1520,7 +1521,7 @@ class Contemplate
             // allow custom plugins as template functions
             $pl = isset(self::$__context->plugins[$ctrl]) ? self::$__context->plugins[$ctrl] : self::$__global->plugins[$ctrl];
             $args = preg_replace_callback( $re_controls, $parse_constructs, $args );
-            $out = $pl instanceof ContemplateInlineTemplate ? $pl->render(array('args'=>$args)) : 'Contemplate::plg_("' . $ctrl . '",' . $args . ')';
+            $out = $pl instanceof ContemplateInlineTemplate ? $pl->render(array('args'=>$args)) : 'Contemplate::plg_("' . $ctrl . '"' . (empty($args) ? '' : ',' . $args) . ')';
             return $prefix . $out . preg_replace_callback( $re_controls, $parse_constructs, $rest );
         }
         

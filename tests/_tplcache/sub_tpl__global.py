@@ -59,10 +59,10 @@ def __getTplClass__(Contemplate):
                             __p__ += 'odd'        
                                  
                         __p__ += '">' + "\n" + '            <a href="/' + str(_loc_user["name"]) + '">' + str(_loc_user['name']) + '' + str(_loc_user['text']) + ' ' + str(int(data['i']) + int(_loc_j)) + '</a>: <strong>' + str(_loc_user["text"]) + '</strong>' + "\n" + '        </div>' + "\n" + '        '        
-                        if ( Contemplate.haskey(_loc_user, "key1") ):
+                        if (Contemplate.haskey(_loc_user, "key1")):
                                      
                             __p__ += '' + "\n" + '            <div> User has key &quot;key1&quot; </div>' + "\n" + '        '        
-                        elif ( Contemplate.haskey(_loc_user, "key", "key1") ):
+                        elif (Contemplate.haskey(_loc_user, "key", "key1")):
                                      
                             __p__ += '' + "\n" + '            <div> User has key [&quot;key&quot;][&quot;key1&quot;] </div>' + "\n" + '        '        
                                  

@@ -2393,22 +2393,14 @@ class Contemplate
         $DATE = explode( "\n", date( implode( "\n", $F ), $timestamp ) );
         foreach($F as $i=>$f) $D[$f] = $DATE[$i];
         
-        $loc =& self::$__context->locale; $glo =& self::$__global->locale;
         // localise specific formats
-        if     ( isset($loc[$D['D']]) )  $D['D'] = $loc[ $D['D'] ];
-        elseif ( isset($glo[$D['D']]) )  $D['D'] = $glo[ $D['D'] ];
-        if     ( isset($loc[$D['l']]) )  $D['l'] = $loc[ $D['l'] ];
-        elseif ( isset($glo[$D['l']]) )  $D['l'] = $glo[ $D['l'] ];
-        if     ( isset($loc[$D['S']]) )  $D['S'] = $loc[ $D['S'] ];
-        elseif ( isset($glo[$D['S']]) )  $D['S'] = $glo[ $D['S'] ];
-        if     ( isset($loc[$D['F']]) )  $D['F'] = $loc[ $D['F'] ];
-        elseif ( isset($glo[$D['F']]) )  $D['F'] = $glo[ $D['F'] ];
-        if     ( isset($loc[$D['M']]) )  $D['M'] = $loc[ $D['M'] ];
-        elseif ( isset($glo[$D['M']]) )  $D['M'] = $glo[ $D['M'] ];
-        if     ( isset($loc[$D['a']]) )  $D['a'] = $loc[ $D['a'] ];
-        elseif ( isset($glo[$D['a']]) )  $D['a'] = $glo[ $D['a'] ];
-        if     ( isset($loc[$D['A']]) )  $D['A'] = $loc[ $D['A'] ];
-        elseif ( isset($glo[$D['A']]) )  $D['A'] = $glo[ $D['A'] ];
+        $D['D'] = self::locale( $D['D'] );
+        $D['l'] = self::locale( $D['l'] );
+        $D['S'] = self::locale( $D['S'] );
+        $D['F'] = self::locale( $D['F'] );
+        $D['M'] = self::locale( $D['M'] );
+        $D['a'] = self::locale( $D['a'] );
+        $D['A'] = self::locale( $D['A'] );
         
         // full date/time formats, constructed from localised parts
         $D['c'] = $D['Y'].'-'.$D['m'].'-'.$D['d'].'\\'.$D['T'].$D['H'].':'.$D['i'].':'.$D['s'].$D['P'];

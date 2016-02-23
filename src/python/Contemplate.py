@@ -294,23 +294,14 @@ def localized_date( format, timestamp ):
         D[ f ] = DATE[ i ]
         i += 1
         
-    loc = _G.context.locale
-    glo = _G.glob.locale
     # localise specific formats
-    if   D['D'] in loc:  D['D'] = loc[ D['D'] ]
-    elif D['D'] in glo:  D['D'] = glo[ D['D'] ]
-    if   D['l'] in loc:  D['l'] = loc[ D['l'] ]
-    elif D['l'] in glo:  D['l'] = glo[ D['l'] ]
-    if   D['S'] in loc:  D['S'] = loc[ D['S'] ]
-    elif D['S'] in glo:  D['S'] = glo[ D['S'] ]
-    if   D['F'] in loc:  D['F'] = loc[ D['F'] ]
-    elif D['F'] in glo:  D['F'] = glo[ D['F'] ]
-    if   D['M'] in loc:  D['M'] = loc[ D['M'] ]
-    elif D['M'] in glo:  D['M'] = glo[ D['M'] ]
-    if   D['a'] in loc:  D['a'] = loc[ D['a'] ]
-    elif D['a'] in glo:  D['a'] = glo[ D['a'] ]
-    if   D['A'] in loc:  D['A'] = loc[ D['A'] ]
-    elif D['A'] in glo:  D['A'] = glo[ D['A'] ]
+    D['D'] = Contemplate.locale( D['D'] )
+    D['l'] = Contemplate.locale( D['l'] )
+    D['S'] = Contemplate.locale( D['S'] )
+    D['F'] = Contemplate.locale( D['F'] )
+    D['M'] = Contemplate.locale( D['M'] )
+    D['a'] = Contemplate.locale( D['a'] )
+    D['A'] = Contemplate.locale( D['A'] )
     
     # full date/time formats, constructed from localised parts
     D['c'] = D['Y']+'-'+D['m']+'-'+D['d']+'\\'+D['T']+D['H']+':'+D['i']+':'+D['s']+D['P']

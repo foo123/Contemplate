@@ -120,6 +120,8 @@ syntax, yet work the same in all the engine's implementations.
 
 * __Localization__ , __Pluralisation__ , __Date formatting__ built-in and configurable easily ( simple __Data escaping__  is also supported)
 
+* `X-GetText` / `POEdit` translation-friendly localisation (**keywords:** `locale`, `nlocale`)
+
 * __Date manipulation__ similar to `PHP` format (ie `date` function). An extended, localized version of `php`'s date function `ldate` is also implemented in the framework
 
 * Loops can have optional `elsefor` statement when no data, or data is empty (see tests)

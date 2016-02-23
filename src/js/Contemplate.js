@@ -2854,26 +2854,19 @@ function localized_date( format, timestamp )
 {
     var F = ['d','D','j','l','N','S','w','z','W','F','m','M','t','L','o','Y','y','a','A','B','g','G','h','H','i','s','u','e','I','O','P','T','Z','U'],
         D = { }, DATE = php_date( F.join( "\n" ), timestamp ).split( "\n" ), i, l, f,
-        localised_datetime, loc = $__context.locale, glo = $__global.locale
+        localised_datetime, locale = Contemplate.locale
     ;
     
     for (i=0,l=F.length; i<l; i++) D[ F[i] ] = DATE[ i ];
         
     // localise specific formats
-    if      ( loc[D.D] )  D.D = loc[ D.D ];
-    else if ( glo[D.D] )  D.D = glo[ D.D ];
-    if      ( loc[D.l] )  D.l = loc[ D.l ];
-    else if ( glo[D.l] )  D.l = glo[ D.l ];
-    if      ( loc[D.S] )  D.S = loc[ D.S ];
-    else if ( glo[D.S] )  D.S = glo[ D.S ];
-    if      ( loc[D.F] )  D.F = loc[ D.F ];
-    else if ( glo[D.F] )  D.F = glo[ D.F ];
-    if      ( loc[D.M] )  D.M = loc[ D.M ];
-    else if ( glo[D.M] )  D.M = glo[ D.M ];
-    if      ( loc[D.a] )  D.a = loc[ D.a ];
-    else if ( glo[D.a] )  D.a = glo[ D.a ];
-    if      ( loc[D.A] )  D.A = loc[ D.A ];
-    else if ( glo[D.A] )  D.A = glo[ D.A ];
+    D.D = locale( D.D );
+    D.l = locale( D.l );
+    D.S = locale( D.S );
+    D.F = locale( D.F );
+    D.M = locale( D.M );
+    D.a = locale( D.a );
+    D.A = locale( D.A );
     
     // full date/time formats, constructed from localised parts
     D.c = D.Y+'-'+D.m+'-'+D.d+'\\'+D.T+D.H+':'+D.i+':'+D.s+D.P;

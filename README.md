@@ -164,7 +164,11 @@ syntax, yet work the same in all the engine's implementations.
 
 ###Performance
 
+*(for `php` see `/tests/perf/perf.php`)*
+
+
 **Note:** The engines included in the (following) tests, have different philosophy and in general provide different features. These are only illustrative modulo all the other features.
+
 
 
 **Render Time**

@@ -1,6 +1,6 @@
 ###Contemplate Manual
 
-**version 1.1.1; platforms: PHP, Python, Node/JS**
+**version 1.1.2; platforms: PHP, Python, Node/XPCOM/JS**
 
 
 ###Contents
@@ -126,6 +126,8 @@ TEMPLATE operations take place in the `current` context (which defaults to `glob
 * `set( $var, expression_or_value )`  SET / UPDATE a tpl variable `$var` to given value or expression
 * `unset( $var )`  UNSET / DELETE tpl variable `$var`
 * `isset( $var )`  CHECK whether a tpl variable `$var` is set
+* `iif( cond, then_value, else_value )`   inline (ternary) `IF` construct
+* `empty( val )`   php-like `empty` construct
 * `if( expression_or_value )`  IF construct
 * `elseif( expression_or_value )` / `elif( expression_or_value )`  ELSEIF construct
 * `else`  ELSE construct
@@ -150,8 +152,6 @@ TEMPLATE operations take place in the `current` context (which defaults to `glob
 **IMPORTANT** As of version `1.0.0+`, template `directives`, `functions` and `plugins` **no longer use** the `%` prefix i.e `%for`, `%if`, .. but `for`, `if`, .. If compatibility to older format is needed use `Contemplate.setCompatibilityMode( true )`
 
 
-* `iif( cond, then_value, else_value )`   inline (ternary) `if` function
-* `empty( val )`   php-like `empty` function
 * `n( val )`   convert `val` to integer
 * `s( val )`   convert `val` to string
 * `f( val )`   convert `val` to float

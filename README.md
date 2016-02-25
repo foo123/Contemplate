@@ -1,7 +1,7 @@
 Contemplate
 ===========
 
-__Light-weight, fast and flexible "object-oriented" template engine for PHP, Python, Node and client-side JavaScript, ActionScript(TODO)__
+__Light-weight, fast and flexible "object-oriented" template engine for PHP, Python, Node, XPCOM and client-side JavaScript, ActionScript(TODO)__
 
 
 ![Contemplate](/screenshots/contemplate.jpg)
@@ -102,13 +102,13 @@ and trying to contain the needed functionality inside the common language subset
 * Most of the time this can be accomplished, the rest functionality is built with __custom functions__ which mostly resemble the `PHP`
 syntax, yet work the same in all the engine's implementations.
 
-* __Uniform functionality__, Engine Implementations for __PHP__ , __Python__ , __Node__  and __client-side JavaScript__
+* __Uniform functionality__, Engine Implementations for __PHP__ , __Python__ , __Node__ , __XPCOM__ and __client-side JavaScript__
 
-* Simple and __light-weight__ ( only one relatively small class for each implementation, no other dependencies ) `~32kB` minified, `~11kB` zipped
+* Simple and __light-weight__ ( only one relatively small class for each implementation, no other dependencies ) `~35kB` minified, `~12kB` zipped
 
 * __Fast__ , can cache templates dynamically (filesystem caching has 3 modes, `NONE` which uses only in-memory caching, `NOUPDATE` which caches the templates only once and `AUTOUPDATE` which re-creates the cached template if original template has changed, useful for debugging)
 
-* Generated cached template code is __formatted and annotated__ with comments, for easy debugging (note: javascript cached templates are **`UMD` modules** which can be used in both `node`/`AMD`/`browser`)
+* Generated cached template code is __formatted and annotated__ with comments, for easy debugging (note: javascript cached templates are **`UMD` modules** which can be used in both `node`/`AMD`/`XPCOM`/`browser`)
 
 * Syntax __close to `PHP`__ (there was an effort to keep the engine syntax as close to `PHP` syntax as possible, to avoid learning another language syntax)
 
@@ -120,7 +120,7 @@ syntax, yet work the same in all the engine's implementations.
 
 * __Localization__ , __Pluralisation__ , __Date formatting__ built-in and configurable easily ( simple __Data escaping__  is also supported)
 
-* `X-GetText` / `POEdit` translation-friendly localisation (**keywords:** `locale`, `nlocale`)
+* `X-GetText` / `POEdit` translation-friendly localisation (**keywords:** `locale`, `nlocale:2`, `nlocale:3`)
 
 * __Date manipulation__ similar to `PHP` format (ie `date` function). An extended, localized version of `php`'s date function `ldate` is also implemented in the framework
 
@@ -150,6 +150,7 @@ syntax, yet work the same in all the engine's implementations.
 * `Node` `0.8+` supported
 * `Python` `2.x` or `3.x` supported
 * all major browsers
+* `Contemplate` is also a `XPCOM JavaScript Component` (Firefox) (e.g to be used in firefox browser addons/plugins for templating)
 
 
 ###Todo

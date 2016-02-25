@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 1.1.1
+*  @version: 1.1.2
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -324,7 +324,7 @@ class ContemplateCtx
 
 class Contemplate
 {
-    const VERSION = "1.1.1";
+    const VERSION = "1.1.2";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -399,7 +399,7 @@ class Contemplate
     'if', 'elseif', 'else', 'endif',
     'for', 'elsefor', 'endfor',
     'extends', 'block', 'endblock',
-    'include', 'super', 'getblock'
+    'include', 'super', 'getblock', 'iif', 'empty'
     );
     private static $__directive_aliases = array(
      'elif'      => 'elseif'
@@ -412,7 +412,7 @@ class Contemplate
     'date', 'ldate', 'locale', 'plural',
     'inline', 'tpl', 'uuid', 'haskey',
     'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
-    'camelcase', 'snakecase', 'e', 'url', 'empty', 'iif', 'nlocale'
+    'camelcase', 'snakecase', 'e', 'url', 'nlocale'
     );
     private static $__aliases = array(
      'l'         => 'locale'
@@ -980,10 +980,10 @@ class Contemplate
         return true;
     }
         
-    public static function iif( $cond, $then, $else=null ) 
+    /*public static function iif( $cond, $then, $else=null ) 
     {
         return $cond ? $then : $else;
-    }
+    }*/
         
     public static function e( $s, $entities=true ) 
     {
@@ -1208,8 +1208,8 @@ class Contemplate
         
     private static function t_set( $args ) 
     {
-        $args = explode(',', $args);
-        $varname = trim( array_shift($args) );
+        $args = self::split_arguments($args, ',');
+        $varname = trim(array_shift($args));
         $expr = trim(implode(',', $args));
         return "';" . self::$__TEOL . self::pad_lines( "$varname = ($expr);" ) . self::$__TEOL;
     }
@@ -1547,6 +1547,14 @@ class Contemplate
                     $args = preg_replace_callback( $re_controls, $parse_constructs, $args );
                     $out = $prefix . '$__i__->block(' . $args . ', $data)';
                     break;
+                case 16 /*'iif'*/:
+                    $args = self::split_arguments(preg_replace_callback( $re_controls, $parse_constructs, $args ),',');
+                    $out = $prefix . "(({$args[0]})?({$args[1]}):({$args[2]}))";
+                    break;
+                case 17 /*'empty'*/:
+                    $args = preg_replace_callback( $re_controls, $parse_constructs, $args );
+                    $out = $prefix . "empty($args)";
+                    break;
             }
             return $out . preg_replace_callback( $re_controls, $parse_constructs, $rest );
         }
@@ -1556,7 +1564,7 @@ class Contemplate
             // allow custom plugins as template functions
             $pl = isset(self::$__context->plugins[$ctrl]) ? self::$__context->plugins[$ctrl] : self::$__global->plugins[$ctrl];
             $args = preg_replace_callback( $re_controls, $parse_constructs, $args );
-            $out = $pl instanceof ContemplateInlineTemplate ? $pl->render(array('args'=>$args)) : 'Contemplate::plg_("' . $ctrl . '"' . (empty($args) ? '' : ',' . $args) . ')';
+            $out = $pl instanceof ContemplateInlineTemplate ? $pl->render(array_merge(array($args),self::split_arguments($args,','))) : 'Contemplate::plg_("' . $ctrl . '"' . (empty($args) ? '' : ',' . $args) . ')';
             return $prefix . $out . preg_replace_callback( $re_controls, $parse_constructs, $rest );
         }
         
@@ -1581,18 +1589,60 @@ class Contemplate
                 case 11: $out = 'lcfirst(' . $args . ')'; break;
                 case 12: $out = 'sprintf(' . $args . ')'; break;
                 case 13: $out = 'date(' . $args . ')'; break;
+                case 21: $out = 'implode(\'\',array(' . $args . '))'; break;
                 case 22: $out = 'ltrim(' . $args . ')'; break;
                 case 23: $out = 'rtrim(' . $args . ')'; break;
                 case 24: $out = 'trim(' . $args . ')'; break;
                 case 25: $out = 'addslashes(' . $args . ')'; break;
                 case 26: $out = 'stripslashes(' . $args . ')'; break;
-                case 31: $out = 'empty(' . $args . ')'; break;
                 default: $out = 'Contemplate::' . $ctrl . '(' . $args . ')';
             }
             return $prefix . $out . preg_replace_callback( $re_controls, $parse_constructs, $rest );
         }
         
         return $match[0];
+    }
+    
+    private static function split_arguments( $args, $delim=',' )
+    {
+        $args = trim( $args );
+        $l = strlen($args);
+        if ( !$l ) return array('');
+        $i = 0;
+        $a = array();
+        $paren = array();
+        $s = '';
+        while ($i < $l)
+        {
+            $c = $args[$i++];
+            if ( $delim === $c && empty($paren) )
+            {
+                $a[] = $s;
+                $s = '';
+                continue;
+            }
+            $s .= $c;
+            if ( '(' === $c )
+            {
+                array_unshift($paren, ')');
+            }
+            elseif ( '{' === $c )
+            {
+                array_unshift($paren, '}');
+            }
+            elseif ( '[' === $c )
+            {
+                array_unshift($paren, ']');
+            }
+            elseif ( ')' === $c || '}' === $c || ']' === $c )
+            {
+                if ( empty($paren) || $paren[0] !== $c ) break;
+                array_shift($paren);
+            }
+        }
+        if ( strlen($s) ) $a[] = $s;
+        if ( $i < $l ) $a[] = substr($args, $i);
+        return $a;
     }
     
     private static function parse_blocks( $s ) 

@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 1.1.1
+#  @version 1.1.2
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -146,7 +146,7 @@ class _G:
     'if', 'elseif', 'else', 'endif',
     'for', 'elsefor', 'endfor',
     'extends', 'block', 'endblock',
-    'include', 'super', 'getblock'
+    'include', 'super', 'getblock', 'iif', 'empty'
     ]
     directive_aliases = {
      'elif'         : 'elseif'
@@ -159,7 +159,7 @@ class _G:
     'date', 'ldate', 'locale', 'plural',
     'inline', 'tpl', 'uuid', 'haskey',
     'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
-    'camelcase', 'snakecase', 'e', 'url', 'empty', 'iif', 'nlocale'
+    'camelcase', 'snakecase', 'e', 'url', 'nlocale'
     ]
     aliases = {
      'l'        : 'locale'
@@ -566,16 +566,47 @@ def get_separators( text, separators=None ):
     return text
     
 
+def split_arguments( args, delim=',' ):
+    args = args.strip()
+    l = len(args)
+    if not l: return ['']
+    i = 0
+    a = []
+    paren = []
+    s = ''
+    while i < l:
+        c = args[i]
+        i += 1
+        if delim == c and not len(paren):
+            a.append(s)
+            s = ''
+            continue
+        
+        s += c
+        if '(' == c:
+            paren.insert(0, ')')
+        elif '{' == c:
+            paren.insert(0, '}')
+        elif '[' == c:
+            paren.insert(0, ']')
+        elif ')' == c or '}' == c or ']' == c:
+            if (not len(paren)) or (paren[0] != c): break
+            paren.pop(0)
+    
+    if len(s): a.append(s)
+    if i < l: a.append(args[i:])
+    return a
+
 #
 # Control structures
 #
 
 def t_isset( varname ):
-    return '("' + varname + '__RAW__" in data)'
+    return '(("' + varname + '__RAW__" in data) and (' + varname + ' is not None))'
         
 def t_set( args ):
     global _G
-    args = args.split(',')
+    args = split_arguments(args, ',')
     varname = args.pop(0).strip()
     expr = ','.join(args).strip()
     return "';" + _G.TEOL + pad_lines( varname + ' = ('+ expr +')' ) + _G.TEOL
@@ -878,12 +909,19 @@ def parse_constructs( match ):
             args = re.sub(re_controls, parse_constructs, args)
             out = prefix + '__i__.block(' + args + ', data)'
         
+        elif 16==m: # iif
+            args = split_arguments(re.sub(re_controls, parse_constructs, args),',')
+            out = prefix + "(("+args[1]+") if ("+args[0]+") else ("+args[2]+"))"
+        elif 17==m: #empty
+            args = re.sub(re_controls, parse_constructs, args)
+            out = prefix + '(("' + args + '__RAW__" not in data) or ('+args+' is None) or Contemplate.empty('+args+'))'
+        
         return out + re.sub(re_controls, parse_constructs, rest)
     
     if (ctrl in _G.context.plugins) or (ctrl in _G.glob.plugins):
         pl = _G.context.plugins[ctrl] if ctrl in _G.context.plugins else _G.glob.plugins[ctrl]
         args = re.sub(re_controls, parse_constructs, args)
-        out = pl.render({'args':args}) if isinstance(pl,Contemplate.InlineTemplate) else 'Contemplate.plg_("' + ctrl + '"' + ('' if not len(args) else ','+args) + ')'
+        out = pl.render([args]+split_arguments(args,',')) if isinstance(pl,Contemplate.InlineTemplate) else 'Contemplate.plg_("' + ctrl + '"' + ('' if not len(args) else ','+args) + ')'
         return prefix + out + re.sub(re_controls, parse_constructs, rest)
     
     if ctrl in _G.aliases: ctrl = _G.aliases[ctrl]
@@ -918,6 +956,8 @@ def parse_constructs( match ):
             out = 'Contemplate.lcfirst(' + args + ')'
         elif 12==m:
             out = 'Contemplate.sprintf(' + args + ')'
+        elif 21==m:
+            out = '\'\'.join([' + args + '])'
         else:
             out = 'Contemplate.' + ctrl + '(' + args + ')'
         return prefix + out + re.sub(re_controls, parse_constructs, rest)
@@ -1755,7 +1795,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "1.1.1"
+    VERSION = "1.1.2"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -2238,10 +2278,11 @@ class Contemplate:
         return True
         
     def empty( v ):
-        return v == None or (isinstance(v, (tuple,list,str,dict)) and 0 == len(v))
+        #return bool(v) or (isinstance(v, (tuple,list,str,dict)) and 0 == len(v))
+        return bool(v)
 
-    def iif( cond_, then_, else_=None ):
-        return then_ if cond_ else else_
+    #def iif( cond_, then_, else_=None ):
+    #    return then_ if cond_ else else_
     
     def e( s, entities=True ):
         f = ''

@@ -43,7 +43,7 @@ global.bracket = function(v)
 {
     return '[[' + v + ']]';
 }
-Contemplate.addPlugin('inlinedBracket', Contemplate.inline('bracket($args)',{'$args':'args'},false));
+Contemplate.addPlugin('inlinedBracket', Contemplate.inline('bracket($0)',{'$0':0},false));
 
 // make sure it exists
 Contemplate.setCacheDir(fs.realpathSync(path.join(__dirname, '/_tplcache')));

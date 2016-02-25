@@ -75,7 +75,7 @@ definition()
 
 Contemplate.addPlugin('plg_test', test_plugin)
 Contemplate.addPlugin('plg_print', print_plugin)
-Contemplate.addPlugin('inlinedBracket', Contemplate.inline('Contemplate.bracket($args)',{'$args':'args'},False))
+Contemplate.addPlugin('inlinedBracket', Contemplate.inline('Contemplate.bracket($0)',{'$0':0},False))
 
 # set the cache directory (make sure to exist)
 Contemplate.setCacheDir('./_tplcache')

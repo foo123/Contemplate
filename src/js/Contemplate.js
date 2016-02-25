@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node, client-side and XPCOM/SDK JavaScript
 *
-*  @version: 1.1.1
+*  @version: 1.1.2
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -31,7 +31,7 @@ else if ( !(name in root) ) /* Browser/WebWorker/.. */
 //////////////////////////////////////////////////////////////////////////////////////
 
 // private vars
-var __version__ = "1.1.1", Contemplate,
+var __version__ = "1.1.2", Contemplate,
 
     PROTO = 'prototype', HAS = 'hasOwnProperty',
     Obj = Object, Arr = Array, toString = Obj[PROTO].toString,
@@ -85,7 +85,7 @@ var __version__ = "1.1.1", Contemplate,
     'if', 'elseif', 'else', 'endif',
     'for', 'elsefor', 'endfor',
     'extends', 'block', 'endblock',
-    'include', 'super', 'getblock'
+    'include', 'super', 'getblock', 'iif', 'empty'
     ],
     $__directive_aliases = {
      'elif'     : 'elseif'
@@ -98,7 +98,7 @@ var __version__ = "1.1.1", Contemplate,
     'date', 'ldate', 'locale', 'plural',
     'inline', 'tpl', 'uuid', 'haskey',
     'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
-    'camelcase', 'snakecase', 'e', 'url', 'empty', 'iif', 'nlocale'
+    'camelcase', 'snakecase', 'e', 'url', 'nlocale'
     ],
     $__aliases = {
      'l'        : 'locale'
@@ -204,19 +204,58 @@ function get_separators( text, separators )
     return text;
 }
 
+function split_arguments( args, delim )
+{
+    args = trim(args);
+    if ( !args.length ) return [''];
+    if ( arguments.length < 2 ) delim = ',';
+    var a = [], paren = [], s = '', i = 0, l = args.length, c;
+    while (i < l)
+    {
+        c = args.charAt(i++);
+        if ( delim === c && !paren.length )
+        {
+            a.push(s);
+            s = '';
+            continue;
+        }
+        s += c;
+        if ( '(' === c )
+        {
+            paren.unshift(')');
+        }
+        else if ( '{' === c )
+        {
+            paren.unshift('}');
+        }
+        else if ( '[' === c )
+        {
+            paren.unshift(']');
+        }
+        else if ( ')' === c || '}' === c || ']' === c )
+        {
+            if ( !paren.length || paren[0] !== c ) break;
+            paren.shift();
+        }
+    }
+    if ( s.length ) a.push(s);
+    if ( i < l ) a.push(args.slice(i));
+    return a;
+}    
+
 //
 // Control structures
 //
 
 function t_isset( varname )
 {
-    return '("undefined" !== typeof(' + varname + '))';
+    return '("undefined" !== typeof(' + varname + ') && null !== ' + varname + ')';
 }
 function t_set( args )
 {
-    args = args.split(',');
-    var varname = trim( args.shift( ) ),
-        expr = trim( args.join( ',' ) )
+    args = split_arguments(args, ',');
+    var varname = trim(args.shift()),
+        expr = trim(args.join( ',' ))
     ;
     return "';" + $__TEOL + pad_lines( varname + ' = ('+ expr +');' ) + $__TEOL;
 }
@@ -509,73 +548,66 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
                 args = args.replace( re_controls, parse_constructs );
                 out = t_set( args );
                 break;
-            
             case 1 /*'unset'*/: 
                 args = args.replace( re_controls, parse_constructs );
                 out = t_unset( args );
                 break;
-            
             case 2 /*'isset'*/: 
                 args = args.replace( re_controls, parse_constructs );
                 out = t_isset( args );
                 break;
-            
             case 3 /*'if'*/: 
                 args = args.replace( re_controls, parse_constructs );
                 out = t_if( args );
                 break;
-            
             case 4 /*'elseif'*/:  
                 args = args.replace( re_controls, parse_constructs );
                 out = t_elseif( args );
                 break;
-            
             case 5 /*'else'*/: 
                 out = t_else();
                 break;
-            
             case 6 /*'endif'*/: 
                 out = t_endif();
                 break;
-            
             case 7 /*'for'*/: 
                 args = args.replace( re_controls, parse_constructs );
                 out = t_for( args );
                 break;
-            
             case 8 /*'elsefor'*/: 
                 out = t_elsefor();
                 break;
-            
             case 9 /*'endfor'*/:  
                 out = t_endfor();
                 break;
-            
             case 10 /*'extends'*/:  
                 out = t_extends( args );
                 rest = rest.replace( re_controls, parse_constructs );
                 return out + rest;
-            
             case 11 /*'block'*/:  
                 out = t_block( args );
                 break;
-            
             case 12 /*'endblock'*/:  
                 out = t_endblock();
                 break;
-            
             case 13 /*'include'*/:  
                 out = t_include( args );
                 break;
-            
             case 14 /*'super'*/:  
                 args = args.replace( re_controls, parse_constructs );
                 out = prefix + 'self.sprblock(' + args + ', data)';
                 break;
-            
             case 15 /*'getblock'*/:  
                 args = args.replace( re_controls, parse_constructs );
                 out = prefix + '__i__.block(' + args + ', data)';
+                break;
+            case 16 /*'iif'*/:
+                args = split_arguments(args.replace( re_controls, parse_constructs ),',');
+                out = prefix + "(("+args[0]+")?("+args[1]+"):("+args[2]+"))";
+                break;
+            case 17 /*'empty'*/:
+                args = args.replace( re_controls, parse_constructs );
+                out = prefix + '(("undefined" === typeof(' + args + ')) || (null === ' + args + ') || Contemplate.empty(' + args + '))';
                 break;
         }
         return out + rest.replace( re_controls, parse_constructs );
@@ -586,7 +618,7 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
         // allow custom plugins as template functions
         var pl = $__context.plugins[ ctrl ] || $__global.plugins[ ctrl ];
         args = args.replace( re_controls, parse_constructs );
-        out = pl instanceof Contemplate.InlineTemplate ? pl.render({'args':args}) : 'Contemplate.plg_("' + ctrl + '"' + (!args.length ? '' : ','+args) + ')';
+        out = pl instanceof Contemplate.InlineTemplate ? pl.render([args].concat(split_arguments(args,','))) : 'Contemplate.plg_("' + ctrl + '"' + (!args.length ? '' : ','+args) + ')';
         return prefix + out + rest.replace( re_controls, parse_constructs );
     }
     
@@ -610,6 +642,7 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
             case 10: out = 'Contemplate.ucfirst(' + args + ')'; break;
             case 11: out = 'Contemplate.lcfirst(' + args + ')'; break;
             case 12: out = 'Contemplate.sprintf(' + args + ')'; break;
+            case 21: out = '[' + args + '].join(\'\')'; break;
             default: out = 'Contemplate.' + ctrl + '(' + args + ')';
         }
         return prefix + out + rest.replace( re_controls, parse_constructs );
@@ -2247,7 +2280,7 @@ Contemplate = {
         return true;
     }
     ,empty: empty
-    ,iif: iif
+    //,iif: iif
     
     ,e: function( s, entities ) {
         // http://jsperf.com/split-join-vs-regex-replace/10
@@ -2677,17 +2710,17 @@ function RE( r, f )
 }
 function empty( o )
 {
-    if ( !o ) return true;
+    if ( !o || !Boolean(o) ) return true;
     var to_string = toString.call(o);
     if ( (o instanceof Array || o instanceof String || '[object Array]' === to_string || '[object String]' === to_string) && !o.length ) return true;
-    if ( (o instanceof Object || '[object Array]' === to_string) && !Keys(o).length ) return true;
+    if ( (o instanceof Object || '[object Object]' === to_string) && !Keys(o).length ) return true;
     return false;
 }
-function iif( cond_, then_, else_ )
+/*function iif( cond_, then_, else_ )
 {
     if ( arguments.length < 3 ) else_ = null;
     return cond_ ? then_ : else_;
-}
+}*/
 // php-like functions, mostly adapted and optimised from phpjs project, https://github.com/kvz/phpjs
 // http://jsperf.com/instanceof-array-vs-array-isarray/6
 function is_array( o )

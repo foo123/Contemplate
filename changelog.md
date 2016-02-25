@@ -1,5 +1,12 @@
 ###ChangeLog
 
+__1.1.2__
+* `iif` is a template `directive` instead of a `function`, so it functions exactly as `inlined ternary-if` statement
+* `empty` is a template `directive` instead of a `function`, so it functions exactly as php's `empty` directive
+* inline, at compile-time, more template functions (e.g `concat`) for faster execution
+* inlined plugins can receive passed arguments (via `$` array parameter) both as (comma-separated) string (`$0`), plus each separate argument (`$1..$n`)
+
+
 __1.1.1__
 * plugins (non-inlined) with empty arguments invalid output code generation, fixed
 * localisation settings accept a callback function as well for custom dynamic localisation (with optional extra arguments)

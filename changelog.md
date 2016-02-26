@@ -5,6 +5,7 @@ __1.1.2__
 * `empty` is a template `directive` instead of a `function`, so it functions exactly as php's `empty` directive
 * inline, at compile-time, more template functions (e.g `concat`) for faster execution
 * inlined plugins can receive passed arguments (via `$` array parameter) both as (comma-separated) string (`$0`), plus each separate argument (`$1..$n`)
+* `cc` function alias of `concat`
 
 
 __1.1.1__

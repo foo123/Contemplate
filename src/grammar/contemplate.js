@@ -72,7 +72,7 @@ var contemplate_grammar = {
                                 ]}
     ,"function"                 : {"autocomplete":true,"tokens":[
                                 "n","s","f","q","qq","dq","addslashes","stripslashes","sprintf",
-                                "concat","ltrim","rtrim","trim","lowercase","uppercase",
+                                "concat","cc","ltrim","rtrim","trim","lowercase","uppercase",
                                 "lcfirst","ucfirst","camelcase","snakecase","count","haskey",
                                 "uuid","time","now","date","ldate","locale","l","nlocale","nl","plural",
                                 "inline","tpl","e","url","empty","iif"
@@ -94,7 +94,7 @@ var contemplate_grammar_compat = {
                                 ]}
     ,"function"                 : {"autocomplete":true,"tokens":[
                                 "%n","%s","%f","%q","%qq","%dq","%addslashes","%stripslashes","%sprintf",
-                                "%concat","%ltrim","%rtrim","%trim","%lowercase","%uppercase",
+                                "%concat","%cc","%ltrim","%rtrim","%trim","%lowercase","%uppercase",
                                 "%lcfirst","%ucfirst","%camelcase","%snakecase","%count","%haskey",
                                 "%uuid","%time","%now","%date","%ldate","%locale","%l","%nlocale","%nl","%plural",
                                 "%inline","%tpl","%e","%url","%empty","%iif"

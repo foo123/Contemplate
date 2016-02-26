@@ -417,6 +417,7 @@ class Contemplate
     private static $__aliases = array(
      'l'         => 'locale'
     ,'nl'        => 'nlocale'
+    ,'cc'        => 'concat'
     ,'dq'        => 'qq'
     ,'now'       => 'time'
     ,'template'  => 'tpl'

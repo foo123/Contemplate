@@ -160,7 +160,7 @@ TEMPLATE operations take place in the `current` context (which defaults to `glob
 * `addslashes( str )`  addslashes (`php`-like) function
 * `stripslashes( str )`  stripslashes (`php`-like) function
 * `sprintf( format, val1, val2, .. )`   return a formatted string using `val1`, `val2`, etc..
-* `concat( val1, val2, val3, .. )`  string concatenate the values
+* `concat( val1, val2, val3, .. )` / `cc( val1, val2, val3, .. )`  string concatenate the values
 * `ltrim( val [, delim] )`   left trim `val` of delim (default to spaces)
 * `rtrim( val [, delim] )`   right trim `val` of delim (default to spaces)
 * `trim( val [, delim] )`   left/right trim `val` of delim (default to spaces)

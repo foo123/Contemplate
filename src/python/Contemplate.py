@@ -164,6 +164,7 @@ class _G:
     aliases = {
      'l'        : 'locale'
     ,'nl'       : 'nlocale'
+    ,'cc'       : 'concat'
     ,'dq'       : 'qq'
     ,'now'      : 'time'
     ,'template' : 'tpl'

@@ -103,6 +103,7 @@ var __version__ = "1.1.2", Contemplate,
     $__aliases = {
      'l'        : 'locale'
     ,'nl'       : 'nlocale'
+    ,'cc'       : 'concat'
     ,'dq'       : 'qq'
     ,'now'      : 'time'
     ,'template' : 'tpl'

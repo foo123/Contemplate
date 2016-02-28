@@ -643,7 +643,7 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
             case 10: out = 'Contemplate.ucfirst(' + args + ')'; break;
             case 11: out = 'Contemplate.lcfirst(' + args + ')'; break;
             case 12: out = 'Contemplate.sprintf(' + args + ')'; break;
-            case 21: out = '[' + args + '].join(\'\')'; break;
+            case 21: out = 'String('+split_arguments(args,',').join(')+String(')+')'; break;
             default: out = 'Contemplate.' + ctrl + '(' + args + ')';
         }
         return prefix + out + rest.replace( re_controls, parse_constructs );
@@ -1439,19 +1439,9 @@ function InlineTemplate( tpl, replacements, compiled )
     if ( !(self instanceof InlineTemplate) ) return new InlineTemplate(tpl, replacements, compiled);
     self.id = null;
     self._renderer = null;
-    self.tpl = replacements instanceof RegExp 
-        ? InlineTemplate.multisplit_re(tpl||'', replacements) 
-        : InlineTemplate.multisplit( tpl||'', replacements||{} );
-    if ( true === compiled )
-    {
-        self._renderer = InlineTemplate.compile( self.tpl );
-        self.render = self._renderer;
-    }
-    else
-    {
-        self._renderer = null; 
-        //self.render = InlineTemplate.prototype.render;
-    }
+    self._parsed = false; // lazy init, only if needed, as and when needed
+    self._args = [tpl, replacements, compiled];
+    self.tpl = null;
 }
 InlineTemplate.multisplit = function multisplit( tpl, reps, as_array ) {
     var r, sr, s, i, j, a, b, c, al, bl/*, as_array = is_array(reps)*/;
@@ -1517,18 +1507,36 @@ InlineTemplate[PROTO] = {
     ,id: null
     ,tpl: null
     ,_renderer: null
+    ,_parsed: false
+    ,_args: null
     
     ,dispose: function( ) {
         var self = this;
         self.id = null;
         self.tpl = null;
         self._renderer = null;
+        self._parsed = null;
+        self._args = null;
         return self;
     }
     ,render: function( args ) {
         var self = this;
         args = args || [ ];
         
+        if ( !self._parsed ) // lazy init, only if needed, as and when needed
+        {
+            var tpl = self._args[0], replacements = self._args[1], compiled = self._args[2];
+            self.tpl = replacements instanceof RegExp 
+                ? InlineTemplate.multisplit_re(tpl||'', replacements) 
+                : InlineTemplate.multisplit(tpl||'', replacements||{});
+            if ( true === compiled )
+            {
+                self._renderer = InlineTemplate.compile( self.tpl );
+                self.render = self._renderer;
+            }
+            self._args = null;
+            self._parsed = true;
+        }
         if ( self._renderer ) return self._renderer( args );
         
         var tpl = self.tpl, l = tpl.length,

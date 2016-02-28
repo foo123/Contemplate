@@ -5,7 +5,9 @@ __1.1.2__
 * `empty` is a template `directive` instead of a `function`, so it functions exactly as php's `empty` directive
 * inline, at compile-time, more template functions (e.g `concat`) for faster execution
 * inlined plugins can receive passed arguments (via `$` array parameter) both as (comma-separated) string (`$0`), plus each separate argument (`$1..$n`)
+* lazy init and rendering for inline templates and plugins for even faster execution
 * `cc` function alias of `concat`
+* fix php-like `date()` function in python implementation (wrong day of week for `Sunday`)
 
 
 __1.1.1__

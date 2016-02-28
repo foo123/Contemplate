@@ -17,6 +17,8 @@ class ContemplateInlineTemplate
     public $id = null;
     public $tpl = '';
     private $_renderer = null;
+    private $_parsed = false;
+    private $_args = null;
     
     public static function multisplit( $tpl, $reps=array(), $as_array=false ) 
     {
@@ -83,13 +85,9 @@ class ContemplateInlineTemplate
         if ( !$replacements ) $replacements = array();
         $this->id = null;
         $this->_renderer = null;
-        $this->tpl = is_string($replacements)
-                ? self::multisplit_re( $tpl, $replacements)
-                : self::multisplit( $tpl, (array)$replacements);
-        if ( true === $compiled )
-        {
-            $this->_renderer = self::compile( $this->tpl );
-        }
+        $this->_parsed = false; // lazy init, only if needed, as and when needed
+        $this->_args = array($tpl, $replacements, $compiled);
+        $this->tpl = null;
     }
     
     public function __destruct()
@@ -102,12 +100,24 @@ class ContemplateInlineTemplate
         $this->id = null;
         $this->tpl = null;
         $this->_renderer = null;
+        $this->_args = null;
+        $this->_parsed = null;
         return $this;
     }
     
     public function render( $args=null ) 
     {
         if ( !$args ) $args = array();
+        if ( !$this->_parsed ) // lazy init, only if needed, as and when needed
+        {
+            $tpl = $this->_args[0]; $replacements = $this->_args[1]; $compiled = $this->_args[2];
+            $this->tpl = is_string($replacements)
+                    ? self::multisplit_re($tpl, $replacements)
+                    : self::multisplit($tpl, (array)$replacements);
+            if ( true === $compiled ) $this->_renderer = self::compile( $this->tpl );
+            $this->_args = null;
+            $this->_parsed = true;
+        }
         if ( $this->_renderer )
         {
             $renderer = $this->_renderer;
@@ -1590,7 +1600,7 @@ class Contemplate
                 case 11: $out = 'lcfirst(' . $args . ')'; break;
                 case 12: $out = 'sprintf(' . $args . ')'; break;
                 case 13: $out = 'date(' . $args . ')'; break;
-                case 21: $out = 'implode(\'\',array(' . $args . '))'; break;
+                case 21: $out = '('.implode(').(',self::split_arguments($args,',')).')'; break;
                 case 22: $out = 'ltrim(' . $args . ')'; break;
                 case 23: $out = 'rtrim(' . $args . ')'; break;
                 case 24: $out = 'trim(' . $args . ')'; break;

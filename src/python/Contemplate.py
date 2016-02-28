@@ -232,12 +232,12 @@ def php_date( format, timestamp=None ):
         
     # Day --
     D['d'] = str( d ).zfill(2)
-    D['D'] = locale['day_short'][ 0 if 7 == w else w+1 ]
+    D['D'] = locale['day_short'][ 0 if 6 == w else w+1 ]
     D['j'] = str( d )
-    D['l'] = locale['day'][ 0 if 7 == w else w+1 ]
-    D['N'] = str( w if 0 < w else 7 )
+    D['l'] = locale['day'][ 0 if 6 == w else w+1 ]
+    D['N'] = str( w+1 if 6 > w else 7 )
     D['S'] = locale['ordinal']['ord'][ d ] if d in locale['ordinal']['ord'] else (locale['ordinal']['ord'][ dmod10 ] if dmod10 in locale['ordinal']['ord'] else locale['ordinal']['nth'])
-    D['w'] = str( 1 if 7 == w else w+2 )
+    D['w'] = str( 1 if 6 == w else w+2 )
     D['z'] = str( dtime.timetuple().tm_yday )
     
     # Week --
@@ -958,7 +958,7 @@ def parse_constructs( match ):
         elif 12==m:
             out = 'Contemplate.sprintf(' + args + ')'
         elif 21==m:
-            out = '\'\'.join([' + args + '])'
+            out = 'str('+')+str('.join(split_arguments(args,','))+')'
         else:
             out = 'Contemplate.' + ctrl + '(' + args + ')'
         return prefix + out + re.sub(re_controls, parse_constructs, rest)
@@ -1629,9 +1629,9 @@ class InlineTemplate:
         if not replacements: replacements = {}
         self.id = None
         self._renderer = None
-        self.tpl = InlineTemplate.multisplit_re( tpl, replacements ) if isinstance(replacements, T_REGEXP) else InlineTemplate.multisplit( tpl, replacements )
-        if compiled is True:
-            self._renderer = InlineTemplate.compile( self.tpl )
+        self._parsed = False # lazy init, only if needed, as and when needed
+        self._args = [tpl, replacements, compiled]
+        self.tpl = None
     
     def __del__( self ):
         self.dispose()
@@ -1640,12 +1640,23 @@ class InlineTemplate:
         self.id = None
         self.tpl = None
         self._renderer = None
+        self._parsed = None
+        self._args = None
         return self
     
     def render( self, args=None ): 
         if not args: args = []
-        if self._renderer is not None: 
-            return self._renderer( args )
+        
+        if not self._parsed: # lazy init, only if needed, as and when needed
+            tpl = self._args[0]
+            replacements = self._args[1]
+            compiled = self._args[2]
+            self.tpl = InlineTemplate.multisplit_re(tpl, replacements) if isinstance(replacements, T_REGEXP) else InlineTemplate.multisplit(tpl, replacements)
+            if compiled is True: self._renderer = InlineTemplate.compile( self.tpl )
+            self._args = None
+            self._parsed = True
+        
+        if self._renderer is not None: return self._renderer( args )
         
         tpl = self.tpl
         out = ''

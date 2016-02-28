@@ -177,8 +177,9 @@ TEMPLATE operations take place in the `current` context (which defaults to `glob
 * `date( format [, timestamp=now] )`  return timestamp formatted according to format
 * `ldate( format [, timestamp=now] )`  return localised timestamp formatted according to format, localised strings are user-defined
 * `locale( val )` / `l( val )`  return localised string for `val`, if exists (localised strings are user-defined)
+* `xlocale( val, ling_ctx )` / `xl( val, ling_ctx )`  return localised string for `val`, for linguistic context `ling_ctx` if exists (localised strings are user-defined)
 * `nlocale( n, singular, plural )` / `nl( n, singular, plural )`  return localised string for `singular` or `plural`, if exists (localised strings are user-defined) based on numeric parameter `n`
-* `plural( singular, count )`  return plural string for `singular`, if exists depending on `count` (pluralised strings are user-defined)
+* `nxlocale( n, singular, plural, ling_ctx )` / `nxl( n, singular, plural, ling_ctx )`  return localised string for `singular` or `plural`, for linguistic context `ling_ctx`, if exists (localised strings are user-defined) based on numeric parameter `n`
 * `inline( tpl, [reps|data] )`  create or render an `inline` template referenced in 'tpl'
 * `tpl( tpl_id_string, {"var1" : val1, "var2" : val2, ..} )` / `template( tpl_id_string, {"var1" : val1, "var2" : val2, ..} )`  CALL a subtemplate referenced by 'tpl_id', passing the necessary data
 * `e( val )`   custom fast html escape
@@ -232,13 +233,6 @@ Contemplate.setLocales({
 } [, ctx="global"]);
 
 Contemplate.clearLocales([ctx="global"]);
-
-// add pluralisation
-Contemplate.setPlurals({
-    'item': 'items'
-} [, ctx="global"]);
-
-Contemplate.clearPlurals([ctx="global"]);
 
 // add plugins
 Contemplate.addPlugin('print', function(v){

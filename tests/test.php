@@ -29,9 +29,10 @@ Contemplate::setLocales(array(
     "locale"=> "γλωσσική περιοχή",
     "locales"=> "γλωσσικές περιοχές"
 ));
-Contemplate::setPlurals(array(
-    'item'=> null // auto plural
-));
+Contemplate::setXLocales(array("custom"=>array(
+    "locale"=> "γλωσσική ζώνη",
+    "locales"=> "γλωσσικές ζώνες"
+)));
 function test_plugin($v=null)
 {
     if ( $v ) return 'Plugin Test value: ' . $v;

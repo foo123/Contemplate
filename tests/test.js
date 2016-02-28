@@ -28,9 +28,10 @@ Contemplate.setLocales({
     "locale": "γλωσσική περιοχή",
     "locales": "γλωσσικές περιοχές"
 });
-Contemplate.setPlurals({
-    'item': null // auto plural
-});
+Contemplate.setXLocales({"custom":{
+    "locale": "γλωσσική ζώνη",
+    "locales": "γλωσσικές ζώνες"
+}});
 
 Contemplate.addPlugin('plg_test', function(v){
     if ( v ) return 'Plugin Test value: ' + v;

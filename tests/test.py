@@ -57,9 +57,10 @@ Contemplate.setLocales({
     "locale": "γλωσσική περιοχή",
     "locales": "γλωσσικές περιοχές"
 })
-Contemplate.setPlurals({
-    'item': None # auto plural
-})
+Contemplate.setXLocales({"custom":{
+    "locale": "γλωσσική ζώνη",
+    "locales": "γλωσσικές ζώνες"
+}})
 
 def test_plugin(v=None):
     if v: return 'Plugin Test value: ' + str(v)

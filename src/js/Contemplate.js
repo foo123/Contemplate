@@ -95,14 +95,16 @@ var __version__ = "1.1.2", Contemplate,
     's', 'n', 'f', 'q', 'qq', 
     'echo', 'time', 'count',
     'lowercase', 'uppercase', 'ucfirst', 'lcfirst', 'sprintf',
-    'date', 'ldate', 'locale', 'plural',
+    'date', 'ldate', 'locale', 'xlocale',
     'inline', 'tpl', 'uuid', 'haskey',
     'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
-    'camelcase', 'snakecase', 'e', 'url', 'nlocale'
+    'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale'
     ],
     $__aliases = {
      'l'        : 'locale'
+    ,'xl'       : 'xlocale'
     ,'nl'       : 'nlocale'
+    ,'nxl'      : 'nxlocale'
     ,'cc'       : 'concat'
     ,'dq'       : 'qq'
     ,'now'      : 'time'
@@ -1678,7 +1680,7 @@ function Ctx( id )
     self.templates        = { };
     self.partials         = { };
     self.locale           = { };
-    self.plurals          = { };
+    self.xlocale          = { };
     self.plugins          = { };
     self.prefix           = '';
     self.encoding         = isXPCOM ? 'UTF-8' : 'utf8';
@@ -1693,7 +1695,7 @@ Ctx[PROTO] = {
     ,templates: null
     ,partials: null
     ,locale: null
-    ,plurals: null
+    ,xlocale: null
     ,plugins: null
     ,prefix: null
     ,encoding: null
@@ -1706,7 +1708,7 @@ Ctx[PROTO] = {
         self.templates = null;
         self.partials = null;
         self.locale = null;
-        self.plurals = null;
+        self.xlocale = null;
         self.plugins = null;
         self.prefix = null;
         self.encoding = null;
@@ -2069,6 +2071,16 @@ Contemplate = {
         }
     }
     
+    ,setXLocales: function( xlocales, ctx ) { 
+        var contx;
+        if ( xlocales && ("function" === typeof xlocales || "object"===typeof xlocales) )
+        {
+            if ( arguments.length < 2 ) ctx = 'global';
+            contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
+            contx.xlocale = "function" === typeof xlocales ? xlocales : merge(contx.xlocale, xlocales);
+        }
+    }
+    
     ,clearLocales: function( ctx ) { 
         var contx;
         if ( arguments.length < 2 ) ctx = 'global';
@@ -2076,36 +2088,11 @@ Contemplate = {
         contx.locale = { }; 
     }
     
-    ,setPlurals: function( plurals, ctx ) { 
-        var contx, singular;
-        if ( plurals && ("function" === typeof plurals || "object"===typeof plurals) )
-        {
-            if ( arguments.length < 2 ) ctx = 'global';
-            contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
-            if ( "function" === typeof plurals )
-            {
-                contx.plurals = plurals; 
-            }
-            else
-            {
-                for (singular in plurals)
-                {
-                    if ( plurals[HAS](singular) && null == plurals[ singular ] )
-                    {
-                        // auto plural
-                        plurals[ singular ] = singular+'s';
-                    }
-                }
-                contx.plurals = merge(contx.plurals, plurals); 
-            }
-        }
-    }
-    
-    ,clearPlurals: function( ctx ) { 
+    ,clearXLocales: function( ctx ) { 
         var contx;
         if ( arguments.length < 2 ) ctx = 'global';
         contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
-        contx.plurals = { }; 
+        contx.xlocale = { }; 
     }
     
     ,setCacheDir: function( dir, ctx ) { 
@@ -2416,6 +2403,16 @@ Contemplate = {
         if ( 'function' === typeof locale ) return locale.apply(null, arguments);
         return locale[s];
     }
+    ,xlocale: function( s, l_ctx ) { 
+        var xlocale = ('function' === typeof $__context.xlocale) || (l_ctx && $__context.xlocale[HAS](l_ctx) && $__context.xlocale[l_ctx][HAS](s))
+            ? $__context.xlocale
+            : (('function' === typeof $__global.xlocale) || (l_ctx && $__global.xlocale[HAS](l_ctx) && $__global.xlocale[l_ctx][HAS](s))
+            ? $__global.xlocale
+            : null); 
+        if ( null === xlocale ) return s;
+        if ( 'function' === typeof xlocale ) return xlocale.apply(null, arguments);
+        return xlocale[l_ctx][s];
+    }
     ,nlocale: function( n, singular, plural ) { 
         var locale = ('function' === typeof $__context.locale) || $__context.locale[HAS](singular)
             ? $__context.locale
@@ -2430,15 +2427,19 @@ Contemplate = {
         }
         return 1 == n ? locale[singular] : (locale[HAS](plural) ? locale[plural] : plural);
     }
-    ,plural: function( singular ) {
-        var plural = ('function' === typeof $__context.plurals) || $__context.plurals[HAS](singular)
-            ? $__context.plurals
-            : (('function' === typeof $__global.plurals) || $__global.plurals[HAS](singular)
-            ? $__global.plurals
+    ,nxlocale: function( n, singular, plural, l_ctx ) { 
+        var xlocale = ('function' === typeof $__context.xlocale) || (l_ctx && $__context.xlocale[HAS](l_ctx) && $__context.xlocale[l_ctx][HAS](singular))
+            ? $__context.xlocale
+            : (('function' === typeof $__global.xlocale) || (l_ctx && $__global.xlocale[HAS](l_ctx) && $__global.xlocale[l_ctx][HAS](singular))
+            ? $__global.xlocale
             : null); 
-        if ( null === plural ) return singular;
-        if ( 'function' === typeof plural ) return plural.apply(null, arguments);
-        return (2 > arguments.length) || (1 === arguments[1]) ? singular : plural[singular];
+        if ( null === xlocale ) return 1 == n ? singular : plural;
+        if ( 'function' === typeof xlocale )
+        {
+            var args = Array.prototype.splice.call(arguments, 0, 3, 1 == n ? singular : plural);
+            return xlocale.apply(null, args);
+        }
+        return 1 == n ? xlocale[l_ctx][singular] : (xlocale[l_ctx][HAS](plural) ? xlocale[l_ctx][plural] : plural);
     }
     
     ,uuid: function( namespace ) {

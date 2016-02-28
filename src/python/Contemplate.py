@@ -156,14 +156,16 @@ class _G:
     's', 'n', 'f', 'q', 'qq', 
     'echo', 'time', 'count',
     'lowercase', 'uppercase', 'ucfirst', 'lcfirst', 'sprintf',
-    'date', 'ldate', 'locale', 'plural',
+    'date', 'ldate', 'locale', 'xlocale',
     'inline', 'tpl', 'uuid', 'haskey',
     'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
-    'camelcase', 'snakecase', 'e', 'url', 'nlocale'
+    'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale'
     ]
     aliases = {
      'l'        : 'locale'
+    ,'xl'       : 'xlocale'
     ,'nl'       : 'nlocale'
+    ,'nxl'      : 'nxlocale'
     ,'cc'       : 'concat'
     ,'dq'       : 'qq'
     ,'now'      : 'time'
@@ -1774,7 +1776,7 @@ class Ctx:
         self.templates        = { }
         self.partials         = { }
         self.locale           = { }
-        self.plurals          = { }
+        self.xlocale          = { }
         self.plugins          = { }
         self.prefix           = ''
         self.encoding         = 'utf-8'
@@ -1789,7 +1791,7 @@ class Ctx:
         self.templates = None
         self.partials = None
         self.locale = None
-        self.plurals = None
+        self.xlocale = None
         self.plugins = None
         self.prefix = None
         self.encoding = None
@@ -2101,28 +2103,21 @@ class Contemplate:
             contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
             contx.locale = locales if callable(locales) else Contemplate.merge(contx.locale, locales)
     
+    def setXLocales( xlocales, ctx='global' ): 
+        global _G
+        if xlocales and (callable(xlocales) or isinstance(xlocales, dict)):
+            contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
+            contx.xlocale = xlocales if callable(xlocales) else Contemplate.merge(contx.xlocale, xlocales)
+    
     def clearLocales( ctx='global' ): 
         global _G
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         contx.locale = {}
     
-    def setPlurals( plurals, ctx='global' ): 
-        global _G
-        if plurals and (callable(plurals) or isinstance(plurals, dict)):
-            contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
-            if callable(plurals):
-                contx.plurals = plurals
-            else:
-                for singular in plurals:
-                    if plurals[ singular ] is None: 
-                        # auto plural
-                        plurals[ singular ] = str(singular) + 's'
-                contx.plurals = Contemplate.merge(contx.plurals, plurals)
-    
-    def clearPlurals( ctx='global' ): 
+    def clearXLocales( ctx='global' ): 
         global _G
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
-        contx.plurals = {}
+        contx.xlocale = {}
     
     def setCacheDir( dir, ctx='global' ): 
         global _G
@@ -2389,6 +2384,15 @@ class Contemplate:
             return locale(*args)
         return locale[s]
     
+    def xlocale( s, l_ctx=None, *args ): 
+        global _G
+        xlocale = _G.context.xlocale if callable(_G.context.xlocale) or (l_ctx and (l_ctx in _G.context.xlocale) and (s in _G.context.xlocale[l_ctx])) else (_G.glob.xlocale if callable(_G.glob.xlocale) or (l_ctx and (l_ctx in _G.glob.xlocale) and (s in _G.glob.xlocale[l_ctx])) else None)
+        if xlocale is None: return s
+        if callable(xlocale):
+            args = [s, l_ctx]+args
+            return xlocale(*args)
+        return xlocale[l_ctx][s]
+    
     def nlocale( n, singular, plural, *args ): 
         global _G
         locale = _G.context.locale if callable(_G.context.locale) or (singular in _G.context.locale) else (_G.glob.locale if callable(_G.glob.locale) or (singular in _G.glob.locale) else None)
@@ -2398,14 +2402,14 @@ class Contemplate:
             return locale(*args)
         return locale[singular] if 1 == n else (locale[plural] if plural in locale else plural)
     
-    def plural( singular, *args ): 
+    def nxlocale( n, singular, plural, l_ctx=None, *args ): 
         global _G
-        plural = _G.context.plurals if callable(_G.context.plurals) or (singular in _G.context.plurals) else (_G.glob.plurals if callable(_G.glob.plurals) or (singular in _G.glob.plurals) else None)
-        if plural is None: return singular
-        if callable(plural):
-            args = [singular]+args
-            return plural(*args)
-        return singular if (not args) or (1 == args[0]) else plural[singular]
+        xlocale = _G.context.xlocale if callable(_G.context.xlocale) or (l_ctx and (l_ctx in _G.context.xlocale) and (singular in _G.context.xlocale[l_ctx])) else (_G.glob.xlocale if callable(_G.glob.xlocale) or (l_ctx and (l_ctx in _G.glob.xlocale) and (singular in _G.glob.xlocale[l_ctx])) else None)
+        if xlocale is None: return singular if 1 == n else plural
+        if callable(xlocale):
+            args = [singular if 1 == n else plural,l_ctx]+args
+            return xlocale(*args)
+        return xlocale[l_ctx][singular] if 1 == n else (xlocale[l_ctx][plural] if plural in xlocale[l_ctx] else plural)
     
     def uuid( namespace='UUID' ):
         global _G

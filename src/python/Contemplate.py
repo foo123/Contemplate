@@ -139,7 +139,7 @@ class _G:
     TT_FUNC = None
     TT_RCODE = None
     
-    re_controls = re.compile(r'(\t|\s?)\s*((#ID_(endblock|elsefor|endfor|endif|else|fi)#(\s*\(\s*\))?)|(#ID_([^#]+)#\s*(\()))(.*)$')
+    re_controls = re.compile(r'(\t|\s?)\s*((#ID_(continue|endblock|elsefor|endfor|endif|break|else|fi)#(\s*\(\s*\))?)|(#ID_([^#]+)#\s*(\()))(.*)$')
     
     directives = [
     'set', 'unset', 'isset',

@@ -78,7 +78,7 @@ var __version__ = "1.1.3", Contemplate,
     
     UNDERLN = /[\W]+/g, NEWLINE = /\n\r|\r\n|\n|\r/g, SQUOTE = /'/g,
     ALPHA = /^[a-zA-Z_]/, NUM = /^[0-9]/, ALPHANUM = /^[a-zA-Z0-9_]/i, SPACE = /^\s/,
-    re_controls = /(\t|\s?)\s*((#ID_(endblock|elsefor|endfor|endif|else|fi)#(\s*\(\s*\))?)|(#ID_([^#]+)#\s*(\()))(.*)$/g,
+    re_controls = /(\t|\s?)\s*((#ID_(continue|endblock|elsefor|endfor|endif|break|else|fi)#(\s*\(\s*\))?)|(#ID_([^#]+)#\s*(\()))(.*)$/g,
     
     $__directives = [
     'set', 'unset', 'isset',

@@ -402,7 +402,7 @@ class Contemplate
     private static $TT_FUNC = null;
     private static $TT_RCODE = null;
     
-    private static $re_controls = '/(\\t|\\s?)\\s*((#ID_(endblock|elsefor|endfor|endif|else|fi)#(\\s*\\(\\s*\\))?)|(#ID_([^#]+)#\\s*(\\()))(.*)$/';
+    private static $re_controls = '/(\\t|\\s?)\\s*((#ID_(continue|endblock|elsefor|endfor|endif|break|else|fi)#(\\s*\\(\\s*\\))?)|(#ID_([^#]+)#\\s*(\\()))(.*)$/';
     
     private static $__directives = array(
     'set', 'unset', 'isset',

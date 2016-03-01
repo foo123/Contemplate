@@ -21,6 +21,31 @@
 
     <strong>Contemplate Constructs</strong><hr /><br />
     
+    <strong>FOR Loop Break and Continue</strong><br />
+    <pre>
+    &lt;% %for(["a", "b", "c"] as $value) %&gt;
+        &lt;% %if("b" == $value ) %&gt;Break from loop&lt;% %break() %&gt;&lt;% %fi() %&gt;
+        &lt;% $value %&gt;
+    &lt;% %endfor() %&gt;
+    </pre><br />
+    <pre>
+    &lt;% %for(["a", "b", "c"] as $value) %&gt;
+        &lt;% %if("b" == $value ) %&gt;Continue loop&lt;% %continue() %&gt;&lt;% %fi() %&gt;
+        &lt;% $value %&gt;
+    &lt;% %endfor() %&gt;
+    </pre><br />
+    <% %for(["a", "b", "c"] as $value) %>
+        <% %if("b" == $value ) %>Break from loop<% %break() %><% %fi() %>
+        <% $value %>
+    <% %endfor() %>
+    <br />
+    <% %for(["a", "b", "c"] as $value) %>
+        <% %if("b" == $value ) %>Continue loop<% %continue() %><% %fi() %>
+        <% $value %>
+    <% %endfor() %>
+    
+    <br /><br />
+    
     <strong>FOR Loop Associative (php-style, literal array data)</strong><br />
     <pre>
     &lt;% %for(["a", "b", "c"] as $index=>$value) %&gt;

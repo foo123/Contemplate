@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 1.1.2
+#  @version 1.1.3
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -146,7 +146,7 @@ class _G:
     'if', 'elseif', 'else', 'endif',
     'for', 'elsefor', 'endfor',
     'extends', 'block', 'endblock',
-    'include', 'super', 'getblock', 'iif', 'empty'
+    'include', 'super', 'getblock', 'iif', 'empty', 'continue', 'break'
     ]
     directive_aliases = {
      'elif'         : 'elseif'
@@ -581,7 +581,7 @@ def split_arguments( args, delim=',' ):
         c = args[i]
         i += 1
         if delim == c and not len(paren):
-            a.append(s)
+            a.append(s.strip())
             s = ''
             continue
         
@@ -596,31 +596,14 @@ def split_arguments( args, delim=',' ):
             if (not len(paren)) or (paren[0] != c): break
             paren.pop(0)
     
-    if len(s): a.append(s)
-    if i < l: a.append(args[i:])
+    if len(s): a.append(s.strip())
+    if i < l: a.append(args[i:].strip())
     return a
 
 #
 # Control structures
 #
 
-def t_isset( varname ):
-    return '(("' + varname + '__RAW__" in data) and (' + varname + ' is not None))'
-        
-def t_set( args ):
-    global _G
-    args = split_arguments(args, ',')
-    varname = args.pop(0).strip()
-    expr = ','.join(args).strip()
-    return "';" + _G.TEOL + pad_lines( varname + ' = ('+ expr +')' ) + _G.TEOL
-
-def t_unset( varname=None ):
-    global _G
-    if varname:
-        varname = str(varname).strip()
-        return "';" + _G.TEOL + pad_lines( 'if ("'+varname+'__RAW__" in data): del ' + varname ) + _G.TEOL
-    return "'; " + _G.TEOL
-    
 def t_if( cond='False' ):
     global _G
     out = "'" + pad_lines(_G.TT_IF({
@@ -858,66 +841,61 @@ def parse_constructs( match ):
     if m > -1:
         if 0==m: # set
             args = re.sub(re_controls, parse_constructs, args)
-            out = t_set(args)
-        
+            args = split_arguments(args, ',')
+            varname = args.pop(0).strip()
+            expr = ','.join(args).strip()
+            out = "'" + _G.TEOL + pad_lines( varname + ' = ('+ expr +')' ) + _G.TEOL
         elif 1==m: # unset
             args = re.sub(re_controls, parse_constructs, args)
-            out = t_unset(args)
-        
+            varname = args
+            if varname:
+                varname = str(varname).strip()
+                out = "'" + _G.TEOL + pad_lines( 'if ("'+varname+'__RAW__" in data): del ' + varname ) + _G.TEOL
+            else:
+                out = "' " + _G.TEOL
         elif 2==m: # isset
             args = re.sub(re_controls, parse_constructs, args)
-            out = t_isset(args)
-        
+            varname = args
+            out = '(("' + varname + '__RAW__" in data) and (' + varname + ' is not None))'
         elif 3==m: # if
             args = re.sub(re_controls, parse_constructs, args)
             out = t_if(args)
-        
         elif 4==m: # elseif
             args = re.sub(re_controls, parse_constructs, args)
             out = t_elseif(args)
-        
         elif 5==m: # else
             out = t_else()
-        
         elif 6==m: # endif
             out = t_endif()
-        
         elif 7==m: # for
             args = re.sub(re_controls, parse_constructs, args)
             out = t_for(args)
-        
         elif 8==m: # elsefor
             out = t_elsefor()
-        
         elif 9==m: # endfor
             out = t_endfor()
-        
         elif 10==m: # extends
             out = t_extends(args)
-        
         elif 11==m: # block
             out = t_block(args)
-        
         elif 12==m: # endblock
             out = t_endblock()
-        
         elif 13==m: # import_tpl
             out = t_include(args)
-        
         elif 14==m: # super
             args = re.sub(re_controls, parse_constructs, args)
             out = prefix + 'self_.sprblock(' + args + ', data)'
-        
         elif 15==m: # getblock
             args = re.sub(re_controls, parse_constructs, args)
             out = prefix + '__i__.block(' + args + ', data)'
-        
         elif 16==m: # iif
             args = split_arguments(re.sub(re_controls, parse_constructs, args),',')
             out = prefix + "(("+args[1]+") if ("+args[0]+") else ("+args[2]+"))"
         elif 17==m: #empty
             args = re.sub(re_controls, parse_constructs, args)
             out = prefix + '(("' + args + '__RAW__" not in data) or ('+args+' is None) or Contemplate.empty('+args+'))'
+        elif 18==m or 19==m: #'continue','break'
+            out = "'" + _G.TEOL + pad_lines( 'continue' if 18==m else 'break' ) + _G.TEOL
         
         return out + re.sub(re_controls, parse_constructs, rest)
     
@@ -1115,7 +1093,7 @@ def parse_variable( s, i, l ):
                 # sub-variable property
                 elif '$' == ch:
                     sub = s[i+1:]
-                    subvariables = parse_variable(sub, 0, len(sub));
+                    subvariables = parse_variable(sub, 0, len(sub))
                     if subvariables:
                         # transform into tpl variable property
                         property = subvariables[-1]
@@ -1809,7 +1787,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "1.1.2"
+    VERSION = "1.1.3"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -2286,7 +2264,7 @@ class Contemplate:
         
     def empty( v ):
         #return bool(v) or (isinstance(v, (tuple,list,str,dict)) and 0 == len(v))
-        return bool(v)
+        return not bool(v)
 
     #def iif( cond_, then_, else_=None ):
     #    return then_ if cond_ else else_

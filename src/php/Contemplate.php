@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 1.1.2
+*  @version: 1.1.3
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -334,7 +334,7 @@ class ContemplateCtx
 
 class Contemplate
 {
-    const VERSION = "1.1.2";
+    const VERSION = "1.1.3";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -409,7 +409,7 @@ class Contemplate
     'if', 'elseif', 'else', 'endif',
     'for', 'elsefor', 'endfor',
     'extends', 'block', 'endblock',
-    'include', 'super', 'getblock', 'iif', 'empty'
+    'include', 'super', 'getblock', 'iif', 'empty', 'continue', 'break'
     );
     private static $__directive_aliases = array(
      'elif'      => 'elseif'
@@ -1219,29 +1219,6 @@ class Contemplate
     // Control structures
     //
     
-    private static function t_isset( $varname ) 
-    {
-        return '(isset(' . $varname . '))';
-    }
-        
-    private static function t_set( $args ) 
-    {
-        $args = self::split_arguments($args, ',');
-        $varname = trim(array_shift($args));
-        $expr = trim(implode(',', $args));
-        return "';" . self::$__TEOL . self::pad_lines( "$varname = ($expr);" ) . self::$__TEOL;
-    }
-    
-    private static function t_unset( $varname=null ) 
-    {
-        if ( $varname && strlen($varname) )
-        {
-            $varname = trim( $varname );
-            return "';" . self::$__TEOL . self::pad_lines( "if (isset($varname)) unset( $varname );" ) . self::$__TEOL;
-        }
-        return "';" . self::$__TEOL; 
-    }
-        
     private static function t_if( $cond='false' ) 
     {  
         $renderer = self::$TT_IF;
@@ -1496,71 +1473,69 @@ class Contemplate
             {
                 case 0 /*'set'*/:
                     $args = preg_replace_callback( $re_controls, $parse_constructs, $args );
-                    $out = self::t_set($args);  
+                    $args = self::split_arguments($args, ',');
+                    $varname = trim(array_shift($args));
+                    $expr = trim(implode(',', $args));
+                    $out = "';" . self::$__TEOL . self::pad_lines( "$varname = ($expr);" ) . self::$__TEOL;
                     break;
-                
                 case 1 /*'unset'*/:
                     $args = preg_replace_callback( $re_controls, $parse_constructs, $args );
-                    $out = self::t_unset($args);  
+                    $varname = $args;
+                    if ( $varname && strlen($varname) )
+                    {
+                        $varname = trim( $varname );
+                        $out = "';" . self::$__TEOL . self::pad_lines( "if (isset($varname)) unset( $varname );" ) . self::$__TEOL;
+                    }
+                    else
+                    {
+                        $out = "';" . self::$__TEOL; 
+                    }
                     break;
-                
                 case 2 /*'isset'*/:
                     $args = preg_replace_callback( $re_controls, $parse_constructs, $args );
-                    $out = self::t_isset($args);
+                    $varname = $args;
+                    $out = '(isset(' . $varname . '))';
                     break;
-                
                 case 3 /*'if'*/:
                     $args = preg_replace_callback( $re_controls, $parse_constructs, $args );
                     $out = self::t_if($args);  
                     break;
-                
                 case 4 /*'elseif'*/:
                     $args = preg_replace_callback( $re_controls, $parse_constructs, $args );
                     $out = self::t_elseif($args); 
                     break;
-                
                 case 5 /*'else'*/:
                     $out = self::t_else();  
                     break;
-                
                 case 6 /*'endif'*/:
                     $out = self::t_endif();  
                     break;
-                
                 case 7 /*'for'*/:
                     $args = preg_replace_callback( $re_controls, $parse_constructs, $args );
                     $out = self::t_for($args);  
                     break;
-                
                 case 8 /*'elsefor'*/:
                     $out = self::t_elsefor(); 
                     break;
-                
                 case 9 /*'endfor'*/:
                     $out = self::t_endfor(); 
                     break;
-                
                 case 10 /*'extends'*/:
                     $out = self::t_extends($args); 
                     break;
-                
                 case 11 /*'block'*/:
                     $out = self::t_block($args); 
                     break;
-                
                 case 12 /*'endblock'*/:
                     $out = self::t_endblock(); 
                     break;
-                
                 case 13 /*'include'*/:
                     $out = self::t_include($args); 
                     break;
-                    
                 case 14 /*'super'*/:
                     $args = preg_replace_callback( $re_controls, $parse_constructs, $args );
                     $out = $prefix . '$self->sprblock(' . $args . ', $data)';
                     break;
-                
                 case 15 /*'getblock'*/:
                     $args = preg_replace_callback( $re_controls, $parse_constructs, $args );
                     $out = $prefix . '$__i__->block(' . $args . ', $data)';
@@ -1572,6 +1547,10 @@ class Contemplate
                 case 17 /*'empty'*/:
                     $args = preg_replace_callback( $re_controls, $parse_constructs, $args );
                     $out = $prefix . "empty($args)";
+                    break;
+                case 18 /*'continue'*/:
+                case 19 /*'break'*/:
+                    $out = "';" . self::$__TEOL . self::pad_lines( 18===$m ? 'continue;' : 'break;' ) . self::$__TEOL;
                     break;
             }
             return $out . preg_replace_callback( $re_controls, $parse_constructs, $rest );
@@ -1635,7 +1614,7 @@ class Contemplate
             $c = $args[$i++];
             if ( $delim === $c && empty($paren) )
             {
-                $a[] = $s;
+                $a[] = trim($s);
                 $s = '';
                 continue;
             }
@@ -1658,8 +1637,8 @@ class Contemplate
                 array_shift($paren);
             }
         }
-        if ( strlen($s) ) $a[] = $s;
-        if ( $i < $l ) $a[] = substr($args, $i);
+        if ( strlen($s) ) $a[] = trim($s);
+        if ( $i < $l ) $a[] = trim(substr($args, $i));
         return $a;
     }
     

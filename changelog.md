@@ -1,5 +1,10 @@
 ###ChangeLog
 
+__1.1.3__
+* add `continue` and `break` loop constructs/directives
+* minor changes
+
+
 __1.1.2__
 * `iif` is a template `directive` instead of a `function`, so it functions exactly as `inlined ternary-if` statement
 * `empty` is a template `directive` instead of a `function`, so it functions exactly as php's `empty` directive

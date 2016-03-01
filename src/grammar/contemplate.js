@@ -68,14 +68,14 @@ var contemplate_grammar = {
                                 "extends", "block", "endblock", "super", "getblock", "include",
                                 "if", "elseif", "elif", "else", "endif", "fi", 
                                 "for", "elsefor", "endfor", "as", "in",
-                                "set", "unset", "isset"
+                                "set", "unset", "isset", "empty", "iif", "continue", "break"
                                 ]}
     ,"function"                 : {"autocomplete":true,"tokens":[
                                 "n","s","f","q","qq","dq","addslashes","stripslashes","sprintf",
                                 "concat","cc","ltrim","rtrim","trim","lowercase","uppercase",
                                 "lcfirst","ucfirst","camelcase","snakecase","count","haskey",
                                 "uuid","time","now","date","ldate","locale","l","nlocale","nl","xlocale","xl","nxlocale","nxl",
-                                "inline","tpl","e","url","empty","iif"
+                                "inline","tpl","e","url"
                                 ]}
     ,"plugin"                   : "RE::/[a-zA-Z_][a-zA-Z0-9_]*/"
 
@@ -90,14 +90,14 @@ var contemplate_grammar_compat = {
                                 "%extends", "%block", "%endblock", "%super", "%getblock", "%include",
                                 "%if", "%elseif", "%elif", "%else", "%endif", "%fi", 
                                 "%for", "%elsefor", "%endfor", "as", "in",
-                                "%set", "%unset", "%isset"
+                                "%set", "%unset", "%isset", "%empty", "%iif", "%continue", "%break"
                                 ]}
     ,"function"                 : {"autocomplete":true,"tokens":[
                                 "%n","%s","%f","%q","%qq","%dq","%addslashes","%stripslashes","%sprintf",
                                 "%concat","%cc","%ltrim","%rtrim","%trim","%lowercase","%uppercase",
                                 "%lcfirst","%ucfirst","%camelcase","%snakecase","%count","%haskey",
                                 "%uuid","%time","%now","%date","%ldate","%locale","%l","%nlocale","%nl","%xlocale","%xl","%nxlocale","%nxl",
-                                "%inline","%tpl","%e","%url","%empty","%iif"
+                                "%inline","%tpl","%e","%url"
                                 ]}
     ,"plugin"                   : "RE::/%[a-zA-Z_][a-zA-Z0-9_]*/"
 

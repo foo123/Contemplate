@@ -1,6 +1,6 @@
 ###Contemplate Manual
 
-**version 1.1.2; platforms: PHP, Python, Node/XPCOM/JS**
+**version 1.1.3; platforms: PHP, Python, Node/XPCOM/JS**
 
 
 ###Contents
@@ -138,6 +138,8 @@ TEMPLATE operations take place in the `current` context (which defaults to `glob
 * `for( $val in expression_or_obj )`  non-associative FOR loop (`python`-style)
 * `elsefor`   ELSEFOR, alternative code block when loop is empty
 * `endfor`  ENDFOR , end the FOR loop construct
+* `continue`  CONTINUE , continue the FOR loop construct
+* `break`  BREAK , break from the FOR loop construct
 * `extends( base_tpl_id_string )`  Current template extends the template referenced by `base_tpl_id_string` , this means that `base_tpl` layout will be used and any blocks will be overriden as defined
 * `block( block_id_string, echoed=true )`  Define / Override `block` of code identified by `block_id`
 * `endblock`  End of `block` definition / override

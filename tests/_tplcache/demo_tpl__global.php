@@ -36,11 +36,53 @@ private function _blockfn_Block2(&$data, $self, $__i__)
     
     $__p__ = '';
     
-    $__p__ .= '' . "\n" . '' . "\n" . '    <strong>Block2 is overriden by the demo template</strong>' . "\n" . '' . "\n" . '    <br /><br />' . "\n" . '' . "\n" . '    <strong>Can reference the super Block2 directly if needed in OO manner</strong>' . "\n" . '    <br /><br />' . "\n" . '' . "\n" . '    <!-- call the super block here in OO manner, if any -->' . "\n" . '    ' . ($self->sprblock("Block2", $data)) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '' . "\n" . '    <strong>Contemplate Constructs</strong><hr /><br />' . "\n" . '    ' . "\n" . '    <strong>FOR Loop Associative (php-style, literal array data)</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% %for(["a", "b", "c"] as $index=>$value) %&gt;' . "\n" . '        [&lt;% $index %&gt;] = &lt;strong&gt;&lt;% $value %&gt;&lt;/strong&gt;&lt;br /&gt; ' . "\n" . '    &lt;% %endfor() %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ';
-    $_loc_10 = array("a", "b", "c");
-    if (!empty($_loc_10))
+    $__p__ .= '' . "\n" . '' . "\n" . '    <strong>Block2 is overriden by the demo template</strong>' . "\n" . '' . "\n" . '    <br /><br />' . "\n" . '' . "\n" . '    <strong>Can reference the super Block2 directly if needed in OO manner</strong>' . "\n" . '    <br /><br />' . "\n" . '' . "\n" . '    <!-- call the super block here in OO manner, if any -->' . "\n" . '    ' . ($self->sprblock("Block2", $data)) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '' . "\n" . '    <strong>Contemplate Constructs</strong><hr /><br />' . "\n" . '    ' . "\n" . '    <strong>FOR Loop Break and Continue</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% %for(["a", "b", "c"] as $value) %&gt;' . "\n" . '        &lt;% %if("b" == $value ) %&gt;Break from loop&lt;% %break() %&gt;&lt;% %fi() %&gt;' . "\n" . '        &lt;% $value %&gt;' . "\n" . '    &lt;% %endfor() %&gt;' . "\n" . '    </pre><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% %for(["a", "b", "c"] as $value) %&gt;' . "\n" . '        &lt;% %if("b" == $value ) %&gt;Continue loop&lt;% %continue() %&gt;&lt;% %fi() %&gt;' . "\n" . '        &lt;% $value %&gt;' . "\n" . '    &lt;% %endfor() %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ';
+    $_loc_9 = array("a", "b", "c");
+    if (!empty($_loc_9))
     {
-        foreach ($_loc_10 as $_loc_index=>$_loc_value)
+        foreach ($_loc_9 as $_loc_value)
+        {
+            
+            $__p__ .= '' . "\n" . '        ';        
+            if ("b" == $_loc_value)
+            {
+                        
+                $__p__ .= 'Break from loop';
+                break;
+                
+                $__p__ .= '';        
+            }
+                    
+            $__p__ .= '' . "\n" . '        ' . ($_loc_value) . '' . "\n" . '    ';
+        }
+    }
+    
+    $__p__ .= '' . "\n" . '    <br />' . "\n" . '    ';
+    $_loc_17 = array("a", "b", "c");
+    if (!empty($_loc_17))
+    {
+        foreach ($_loc_17 as $_loc_value)
+        {
+            
+            $__p__ .= '' . "\n" . '        ';        
+            if ("b" == $_loc_value)
+            {
+                        
+                $__p__ .= 'Continue loop';
+                continue;
+                
+                $__p__ .= '';        
+            }
+                    
+            $__p__ .= '' . "\n" . '        ' . ($_loc_value) . '' . "\n" . '    ';
+        }
+    }
+    
+    $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>FOR Loop Associative (php-style, literal array data)</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% %for(["a", "b", "c"] as $index=>$value) %&gt;' . "\n" . '        [&lt;% $index %&gt;] = &lt;strong&gt;&lt;% $value %&gt;&lt;/strong&gt;&lt;br /&gt; ' . "\n" . '    &lt;% %endfor() %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ';
+    $_loc_26 = array("a", "b", "c");
+    if (!empty($_loc_26))
+    {
+        foreach ($_loc_26 as $_loc_index=>$_loc_value)
         {
             
             $__p__ .= '' . "\n" . '        [' . ($_loc_index) . '] = <strong>' . ($_loc_value) . '</strong><br /> ' . "\n" . '    ';
@@ -48,10 +90,10 @@ private function _blockfn_Block2(&$data, $self, $__i__)
     }
     
     $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>FOR Loop Non-Associative (php-style, literal array data)</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% %for(["a", "b", "c"] as $value2) %&gt;' . "\n" . '        &lt;strong&gt;&lt;% $value2 %&gt;&lt;/strong&gt;&lt;br /&gt; ' . "\n" . '    &lt;% %endfor() %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ';
-    $_loc_17 = array("a", "b", "c");
-    if (!empty($_loc_17))
+    $_loc_33 = array("a", "b", "c");
+    if (!empty($_loc_33))
     {
-        foreach ($_loc_17 as $_loc_value2)
+        foreach ($_loc_33 as $_loc_value2)
         {
             
             $__p__ .= '' . "\n" . '        <strong>' . ($_loc_value2) . '</strong><br /> ' . "\n" . '    ';
@@ -59,10 +101,10 @@ private function _blockfn_Block2(&$data, $self, $__i__)
     }
     
     $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>FOR Loop Associative (php-style, literal object data)</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% %for({"k1":"a", "k2":"b", "k3":"c"} as $index3=>$value3) %&gt;' . "\n" . '        [&lt;% $index3 %&gt;] = &lt;strong&gt;&lt;% $value3 %&gt;&lt;/strong&gt;&lt;br /&gt; ' . "\n" . '    &lt;% %endfor() %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ';
-    $_loc_27 = array("k1"=>"a", "k2"=>"b", "k3"=>"c");
-    if (!empty($_loc_27))
+    $_loc_43 = array("k1"=>"a", "k2"=>"b", "k3"=>"c");
+    if (!empty($_loc_43))
     {
-        foreach ($_loc_27 as $_loc_index3=>$_loc_value3)
+        foreach ($_loc_43 as $_loc_index3=>$_loc_value3)
         {
             
             $__p__ .= '' . "\n" . '        [' . ($_loc_index3) . '] = <strong>' . ($_loc_value3) . '</strong><br /> ' . "\n" . '    ';
@@ -70,10 +112,10 @@ private function _blockfn_Block2(&$data, $self, $__i__)
     }
     
     $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>FOR Loop Non-Associative (php-style, literal object data)</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% %for({"k1":"a", "k2":"b", "k3":"c"} as $value4) %&gt;' . "\n" . '        &lt;strong&gt;&lt;% $value4 %&gt;&lt;/strong&gt;&lt;br /&gt; ' . "\n" . '    &lt;% %endfor() %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ';
-    $_loc_37 = array("k1"=>"a", "k2"=>"b", "k3"=>"c");
-    if (!empty($_loc_37))
+    $_loc_53 = array("k1"=>"a", "k2"=>"b", "k3"=>"c");
+    if (!empty($_loc_53))
     {
-        foreach ($_loc_37 as $_loc_value4)
+        foreach ($_loc_53 as $_loc_value4)
         {
             
             $__p__ .= '' . "\n" . '        <strong>' . ($_loc_value4) . '</strong><br /> ' . "\n" . '    ';
@@ -81,10 +123,10 @@ private function _blockfn_Block2(&$data, $self, $__i__)
     }
     
     $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>FOR Loop Associative (python-style, literal array data)</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% %for($index4,$value4 in ["a", "b", "c"]) %&gt;' . "\n" . '        [&lt;% $index4 %&gt;] = &lt;strong&gt;&lt;% $value4 %&gt;&lt;/strong&gt;&lt;br /&gt; ' . "\n" . '    &lt;% %endfor() %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ';
-    $_loc_44 = array("a", "b", "c");
-    if (!empty($_loc_44))
+    $_loc_60 = array("a", "b", "c");
+    if (!empty($_loc_60))
     {
-        foreach ($_loc_44 as $_loc_index4=>$_loc_value4)
+        foreach ($_loc_60 as $_loc_index4=>$_loc_value4)
         {
             
             $__p__ .= '' . "\n" . '        [' . ($_loc_index4) . '] = <strong>' . ($_loc_value4) . '</strong><br /> ' . "\n" . '    ';
@@ -92,10 +134,10 @@ private function _blockfn_Block2(&$data, $self, $__i__)
     }
     
     $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>FOR Loop Non-Associative (python-style, literal array data)</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% %for($value5 in ["a", "b", "c"]) %&gt;' . "\n" . '        &lt;strong&gt;&lt;% $value5 %&gt;&lt;/strong&gt;&lt;br /&gt; ' . "\n" . '    &lt;% %endfor() %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ';
-    $_loc_51 = array("a", "b", "c");
-    if (!empty($_loc_51))
+    $_loc_67 = array("a", "b", "c");
+    if (!empty($_loc_67))
     {
-        foreach ($_loc_51 as $_loc_value5)
+        foreach ($_loc_67 as $_loc_value5)
         {
             
             $__p__ .= '' . "\n" . '        <strong>' . ($_loc_value5) . '</strong><br /> ' . "\n" . '    ';
@@ -103,10 +145,10 @@ private function _blockfn_Block2(&$data, $self, $__i__)
     }
     
     $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>FOR Loop Associative (python-style, literal object data)</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% %for($index6,$value7 in {"k1":"a", "k2":"b", "k3":"c"}) %&gt;' . "\n" . '        [&lt;% $index6 %&gt;] = &lt;strong&gt;&lt;% $value7 %&gt;&lt;/strong&gt;&lt;br /&gt; ' . "\n" . '    &lt;% %endfor() %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ';
-    $_loc_61 = array("k1"=>"a", "k2"=>"b", "k3"=>"c");
-    if (!empty($_loc_61))
+    $_loc_77 = array("k1"=>"a", "k2"=>"b", "k3"=>"c");
+    if (!empty($_loc_77))
     {
-        foreach ($_loc_61 as $_loc_index6=>$_loc_value7)
+        foreach ($_loc_77 as $_loc_index6=>$_loc_value7)
         {
             
             $__p__ .= '' . "\n" . '        [' . ($_loc_index6) . '] = <strong>' . ($_loc_value7) . '</strong><br /> ' . "\n" . '    ';
@@ -114,10 +156,10 @@ private function _blockfn_Block2(&$data, $self, $__i__)
     }
     
     $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>FOR Loop Non-Associative (python-style, literal object data)</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% %for($value8 in {"k1":"a", "k2":"b", "k3":"c"}) %&gt;' . "\n" . '        &lt;strong&gt;&lt;% $value8 %&gt;&lt;/strong&gt;&lt;br /&gt; ' . "\n" . '    &lt;% %endfor() %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ';
-    $_loc_71 = array("k1"=>"a", "k2"=>"b", "k3"=>"c");
-    if (!empty($_loc_71))
+    $_loc_87 = array("k1"=>"a", "k2"=>"b", "k3"=>"c");
+    if (!empty($_loc_87))
     {
-        foreach ($_loc_71 as $_loc_value8)
+        foreach ($_loc_87 as $_loc_value8)
         {
             
             $__p__ .= '' . "\n" . '        <strong>' . ($_loc_value8) . '</strong><br /> ' . "\n" . '    ';
@@ -141,7 +183,7 @@ private function _blockfn_Block2(&$data, $self, $__i__)
         $__p__ .= '' . "\n" . '        1+1 = 2' . "\n" . '    ';
     }
     
-    $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>Inline (ternary) IF</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% %iif( 1+1 == 2, "1+1 = 2", "1+1 = 1" ) %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ' . (((1+1 == 2)?( "1+1 = 2"):( "1+1 = 1"))) . '' . "\n" . '    ' . "\n" . '    <pre>' . "\n" . '    &lt;% %iif( 1+1 == 1, "1+1 = 1", "1+1 = 2" ) %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ' . (((1+1 == 1)?( "1+1 = 1"):( "1+1 = 2"))) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>Inline (ternary) IF (2)</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% %iif( !%empty($undefined_variable), $undefined_variable, "test with undefined variable passed" ) %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ' . (((!empty($data['undefined_variable']))?( $data['undefined_variable']):( "test with undefined variable passed"))) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>SET a new tpl variable</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% %set($foo, "123") %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ';
+    $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>Inline (ternary) IF</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% %iif( 1+1 == 2, "1+1 = 2", "1+1 = 1" ) %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ' . (((1+1 == 2)?("1+1 = 2"):("1+1 = 1"))) . '' . "\n" . '    ' . "\n" . '    <pre>' . "\n" . '    &lt;% %iif( 1+1 == 1, "1+1 = 1", "1+1 = 2" ) %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ' . (((1+1 == 1)?("1+1 = 1"):("1+1 = 2"))) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>Inline (ternary) IF (2)</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% %iif( !%empty($undefined_variable), $undefined_variable, "test with undefined variable passed" ) %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ' . (((!empty($data['undefined_variable']))?($data['undefined_variable']):("test with undefined variable passed"))) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>SET a new tpl variable</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% %set($foo, "123") %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ';
     $data['foo'] = ("123");
     
     $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>CHECK ISSET for a tpl variable</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% %if( %isset($foo) ) %&gt;' . "\n" . '        $foo is SET' . "\n" . '    &lt;% %else() %&gt;' . "\n" . '        $foo is NOT SET' . "\n" . '    &lt;% %fi() %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ';
@@ -171,10 +213,10 @@ private function _blockfn_Block2(&$data, $self, $__i__)
     $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '' . "\n" . '    <!-- include a (sub-)template file -->' . "\n" . '    <strong>INCLUDE a (sub-)template file</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% %include("date") %&gt;' . "\n" . '    </pre><br />' . "\n" . '     <!-- print a localized date php-style -->' . "\n" . '<strong>A (localized) date, PHP-style</strong><br />' . "\n" . '' . (Contemplate::ldate("M, D, d")) . '' . "\n" . '';
     
     $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '' . "\n" . '    <strong>CALL another (sub-)template</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% %for($users as $i=>$usergroup) %&gt;' . "\n" . '        &lt;!-- call a (sub-)template --&gt;' . "\n" . '        &lt;% %tpl("sub", {"i" : $i, "users" : $users}) %&gt;' . "\n" . '    &lt;% %endfor() %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ';
-    $_loc_89 = $data['users'];
-    if (!empty($_loc_89))
+    $_loc_105 = $data['users'];
+    if (!empty($_loc_105))
     {
-        foreach ($_loc_89 as $_loc_i=>$_loc_usergroup)
+        foreach ($_loc_105 as $_loc_i=>$_loc_usergroup)
         {
             
             $__p__ .= '' . "\n" . '        <!-- call a (sub-)template -->' . "\n" . '        ' . (Contemplate::tpl("sub", array("i" => $_loc_i, "users" => $data['users']))) . '' . "\n" . '    ';

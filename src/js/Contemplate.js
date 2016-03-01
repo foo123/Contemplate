@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node, client-side and XPCOM/SDK JavaScript
 *
-*  @version: 1.1.2
+*  @version: 1.1.3
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -31,7 +31,7 @@ else if ( !(name in root) ) /* Browser/WebWorker/.. */
 //////////////////////////////////////////////////////////////////////////////////////
 
 // private vars
-var __version__ = "1.1.2", Contemplate,
+var __version__ = "1.1.3", Contemplate,
 
     PROTO = 'prototype', HAS = 'hasOwnProperty',
     Obj = Object, Arr = Array, toString = Obj[PROTO].toString,
@@ -85,7 +85,7 @@ var __version__ = "1.1.2", Contemplate,
     'if', 'elseif', 'else', 'endif',
     'for', 'elsefor', 'endfor',
     'extends', 'block', 'endblock',
-    'include', 'super', 'getblock', 'iif', 'empty'
+    'include', 'super', 'getblock', 'iif', 'empty', 'continue', 'break'
     ],
     $__directive_aliases = {
      'elif'     : 'elseif'
@@ -218,7 +218,7 @@ function split_arguments( args, delim )
         c = args.charAt(i++);
         if ( delim === c && !paren.length )
         {
-            a.push(s);
+            a.push(trim(s));
             s = '';
             continue;
         }
@@ -241,8 +241,8 @@ function split_arguments( args, delim )
             paren.shift();
         }
     }
-    if ( s.length ) a.push(s);
-    if ( i < l ) a.push(args.slice(i));
+    if ( s.length ) a.push(trim(s));
+    if ( i < l ) a.push(trim(args.slice(i)));
     return a;
 }    
 
@@ -250,27 +250,6 @@ function split_arguments( args, delim )
 // Control structures
 //
 
-function t_isset( varname )
-{
-    return '("undefined" !== typeof(' + varname + ') && null !== ' + varname + ')';
-}
-function t_set( args )
-{
-    args = split_arguments(args, ',');
-    var varname = trim(args.shift()),
-        expr = trim(args.join( ',' ))
-    ;
-    return "';" + $__TEOL + pad_lines( varname + ' = ('+ expr +');' ) + $__TEOL;
-}
-function t_unset( varname )
-{
-    if ( varname && varname.length )
-    {
-        varname = trim( varname );
-        return "';" + $__TEOL + pad_lines( 'if ("undefined" !== typeof(' + varname + ')) delete ' + varname + ';' ) + $__TEOL;
-    }
-    return "';" + $__TEOL; 
-}
 function t_if( cond )
 { 
     var out = "';" + pad_lines(TT_IF({
@@ -524,7 +503,8 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
         ctrl = match4 || match7 || '',
         rest = match9 || '',
         startParen = match8 || false,
-        args = '',  out = '', paren = 0, l, i, ch, m;
+        args = '',  out = '', paren = 0, l, i, ch, m,
+        varname, expr;
     
     // parse parentheses and arguments, accurately
     if ( startParen && startParen.length )
@@ -549,15 +529,28 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
         {
             case 0 /*'set'*/: 
                 args = args.replace( re_controls, parse_constructs );
-                out = t_set( args );
+                args = split_arguments(args, ',');
+                varname = trim(args.shift());
+                expr = trim(args.join( ',' ));
+                out = "';" + $__TEOL + pad_lines( varname + ' = ('+ expr +');' ) + $__TEOL;
                 break;
             case 1 /*'unset'*/: 
                 args = args.replace( re_controls, parse_constructs );
-                out = t_unset( args );
+                varname = args;
+                if ( varname && varname.length )
+                {
+                    varname = trim( varname );
+                    out = "';" + $__TEOL + pad_lines( 'if ("undefined" !== typeof(' + varname + ')) delete ' + varname + ';' ) + $__TEOL;
+                }
+                else
+                {
+                    out = "';" + $__TEOL; 
+                }
                 break;
             case 2 /*'isset'*/: 
                 args = args.replace( re_controls, parse_constructs );
-                out = t_isset( args );
+                varname = args;
+                out = '("undefined" !== typeof(' + varname + ') && null !== ' + varname + ')';
                 break;
             case 3 /*'if'*/: 
                 args = args.replace( re_controls, parse_constructs );
@@ -611,6 +604,10 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
             case 17 /*'empty'*/:
                 args = args.replace( re_controls, parse_constructs );
                 out = prefix + '(("undefined" === typeof(' + args + ')) || (null === ' + args + ') || Contemplate.empty(' + args + '))';
+                break;
+            case 18 /*'continue'*/:
+            case 19 /*'break'*/:
+                out = "';" + $__TEOL + pad_lines( 18===m ? 'continue;' : 'break;' ) + $__TEOL;
                 break;
         }
         return out + rest.replace( re_controls, parse_constructs );

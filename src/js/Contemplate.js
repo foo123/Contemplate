@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node, client-side and XPCOM/SDK JavaScript
 *
-*  @version: 1.1.3
+*  @version: 1.1.4
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -31,7 +31,7 @@ else if ( !(name in root) ) /* Browser/WebWorker/.. */
 //////////////////////////////////////////////////////////////////////////////////////
 
 // private vars
-var __version__ = "1.1.3", Contemplate,
+var __version__ = "1.1.4", Contemplate,
 
     PROTO = 'prototype', HAS = 'hasOwnProperty',
     Obj = Object, Arr = Array, toString = Obj[PROTO].toString,
@@ -97,7 +97,7 @@ var __version__ = "1.1.3", Contemplate,
     'lowercase', 'uppercase', 'ucfirst', 'lcfirst', 'sprintf',
     'date', 'ldate', 'locale', 'xlocale',
     'inline', 'tpl', 'uuid', 'haskey',
-    'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
+    'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes', 'is_array',
     'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale'
     ],
     $__aliases = {
@@ -115,7 +115,7 @@ var __version__ = "1.1.3", Contemplate,
     // generated cached tpl block method code as a "heredoc" template (for Node cached templates)
     TT_BlockCode, TT_BLOCK,
     TT_IF, TT_ELSEIF, TT_ELSE, TT_ENDIF,
-    TT_FOR1,TT_FOR2, TT_ELSEFOR, TT_ENDFOR1,TT_ENDFOR2,
+    TT_FOR,TT_FOR_ASSOC, TT_ELSEFOR, TT_ENDFOR1,TT_ENDFOR2,
     TT_FUNC, TT_RCODE
 ;
 
@@ -246,13 +246,27 @@ function split_arguments( args, delim )
     return a;
 }    
 
+function local_variable( variable, block )
+{
+    if ( null == variable )
+    {
+        return '_loc_' + (++$__idcnt);
+    }
+    else
+    {
+        if ( null == block ) block = $__currentblock;
+        $__locals[block][$__variables[block][variable]] = 1;
+        return variable;
+    }
+}
+
 //
 // Control structures
 //
 
 function t_if( cond )
 { 
-    var out = "';" + pad_lines(TT_IF({
+    var out = "';" + pad_lines(TT_IF.render({
          'IFCOND'   : cond
         ,'EOL'      : $__TEOL
         }));
@@ -264,7 +278,7 @@ function t_if( cond )
 function t_elseif( cond )
 { 
     $__level--;
-    var out = "';" + pad_lines(TT_ELSEIF({
+    var out = "';" + pad_lines(TT_ELSEIF.render({
          'ELIFCOND' : cond
         ,'EOL'      : $__TEOL
         }));
@@ -275,7 +289,7 @@ function t_elseif( cond )
 function t_else( )
 { 
     $__level--;
-    var out = "';" + pad_lines(TT_ELSE({ 
+    var out = "';" + pad_lines(TT_ELSE.render({ 
          'EOL'      : $__TEOL
         }));
     $__level++;
@@ -286,7 +300,7 @@ function t_endif( )
 { 
     $__ifs--; 
     $__level--;
-    var out = "';" + pad_lines(TT_ENDIF({ 
+    var out = "';" + pad_lines(TT_ENDIF.render({ 
          'EOL'      : $__TEOL
         }));
     
@@ -304,14 +318,14 @@ function t_for( for_expr )
     {
         for_expr = [for_expr.slice(0, is_python_style), for_expr.slice(is_python_style+4)];
         o = trim(for_expr[1]);
-        _o = '_loc_' + (++$__idcnt);
+        _o = local_variable( );
         kv = for_expr[0].split(',');
     }
     else /*if ( -1 < is_php_style )*/
     {
         for_expr = [for_expr.slice(0, is_php_style), for_expr.slice(is_php_style+4)];
         o = trim(for_expr[0]);
-        _o = '_loc_' + (++$__idcnt);
+        _o = local_variable( );
         kv = for_expr[1].split('=>');
     }
     isAssoc = kv.length >= 2
@@ -326,9 +340,8 @@ function t_for( for_expr )
             _k = '_loc_' + (++$__idcnt),
             _l = '_loc_' + (++$__idcnt)
         ;
-        $__locals[$__currentblock][$__variables[$__currentblock][k]] = 1; 
-        $__locals[$__currentblock][$__variables[$__currentblock][v]] = 1;
-        out = "';" + pad_lines(TT_FOR2({
+        local_variable( k ); local_variable( v );
+        out = "';" + pad_lines(TT_FOR_ASSOC.render({
          'O'        : o
         ,'_O'       : _o
         ,'_OK'      : _oK
@@ -351,8 +364,8 @@ function t_for( for_expr )
             _kk = '_loc_' + (++$__idcnt),
             _l = '_loc_' + (++$__idcnt)
         ;
-        $__locals[$__currentblock][$__variables[$__currentblock][v]] = 1;
-        out = "';" + pad_lines(TT_FOR1({
+        local_variable( v );
+        out = "';" + pad_lines(TT_FOR.render({
          'O'        : o
         ,'_O'       : _o
         ,'_OV'      : _oV
@@ -379,7 +392,7 @@ function t_elsefor( )
     {
         $__loopifs--;  
         $__level+=-2;
-        out = "';" + pad_lines(TT_ELSEFOR({
+        out = "';" + pad_lines(TT_ELSEFOR.render({
          'EOL'      : $__TEOL
         }));
         $__level+=1;
@@ -388,7 +401,7 @@ function t_elsefor( )
     {
         $__loopifs--;  
         $__level+=-2;
-        out = "';" + pad_lines(TT_ELSEFOR({
+        out = "';" + pad_lines(TT_ELSEFOR.render({
          'EOL'      : $__TEOL
         }));
         $__level+=1;
@@ -405,7 +418,7 @@ function t_endfor( )
         {
             $__loops--; $__loopifs--;  
             $__level+=-2;
-            out = "';" + pad_lines(TT_ENDFOR2({
+            out = "';" + pad_lines(TT_ENDFOR2.render({
              'EOL'      : $__TEOL
             }));
         }
@@ -413,7 +426,7 @@ function t_endfor( )
         {
             $__loops--; $__loopifs--;  
             $__level+=-2;
-            out = "';" + pad_lines(TT_ENDFOR2({
+            out = "';" + pad_lines(TT_ENDFOR2.render({
              'EOL'      : $__TEOL
             }));
         }
@@ -422,7 +435,7 @@ function t_endfor( )
     {
         $__loops--; 
         $__level+=-1;
-        out = "';" + pad_lines(TT_ENDFOR1({
+        out = "';" + pad_lines(TT_ENDFOR1.render({
          'EOL'      : $__TEOL
         }));
     }
@@ -643,6 +656,13 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
             case 11: out = 'Contemplate.lcfirst(' + args + ')'; break;
             case 12: out = 'Contemplate.sprintf(' + args + ')'; break;
             case 21: out = 'String('+split_arguments(args,',').join(')+String(')+')'; break;
+            case 27: 
+                args = split_arguments(args,',');
+                if ( args.length > 1 )
+                    out = "(("+args[1]+")?'[object Array]'===Object.prototype.toString.call("+args[0]+"):'[object Array]'===Object.prototype.toString.call("+args[0]+")||'[object Object]'===Object.prototype.toString.call("+args[0]+"))";
+                else
+                    out = "('[object Array]'===Object.prototype.toString.call("+args[0]+")||'[object Object]'===Object.prototype.toString.call("+args[0]+"))";
+                break;
             default: out = 'Contemplate.' + ctrl + '(' + args + ')';
         }
         return prefix + out + rest.replace( re_controls, parse_constructs );
@@ -684,7 +704,7 @@ function parse_blocks( s )
         if ( 1 === $__allblockscnt[ block ] )
         {
             // 1st occurance, block definition
-            blocks.push([ block, TT_BLOCK({
+            blocks.push([ block, TT_BLOCK.render({
              'BLOCKCODE'    : s.slice( pos1+tl, pos2-tl-1 ) + "';"
             ,'EOL'          : EOL
             })]);
@@ -1286,7 +1306,7 @@ function create_template_render_function( id, contx, seps )
     bl = blocks.length;
     
    // Convert the template into pure JavaScript
-    func = TT_FUNC({
+    func = TT_FUNC.render({
      'FCODE'         : $__extends ? "__p__ = '';" : "__p__ = '" + renderf + "';"
     ,'EOL'           : EOL
     });
@@ -1314,7 +1334,7 @@ function create_cached_template( id, contx, filename, classname, seps )
     // tpl-defined blocks
     sblocks = [];
     for (b=0; b<bl; b++) 
-        sblocks.push(EOL + TT_BlockCode({
+        sblocks.push(EOL + TT_BlockCode.render({
          'BLOCKNAME'            : blocks[b][0]
         ,'BLOCKMETHODNAME'      : blocks[b][0]
         ,'BLOCKMETHODCODE'      : pad_lines(blocks[b][1], 1)
@@ -1322,7 +1342,7 @@ function create_cached_template( id, contx, filename, classname, seps )
         }));
     sblocks = sblocks.length ? EOL + "self._blocks = {" + EOL + sblocks.join(',' + EOL) + EOL + "};" + EOL : '';
     
-    renderCode = TT_RCODE({
+    renderCode = TT_RCODE.render({
      'RCODE'                : $__extends ? "__p__ = '';" : "__p__ += '" + renderf + "';"
     ,'EOL'                  : EOL
     });
@@ -1330,7 +1350,7 @@ function create_cached_template( id, contx, filename, classname, seps )
     prefixCode = contx.prefix ? contx.prefix : '';
     
   // generate tpl class
-    var classCode = TT_ClassCode({
+    var classCode = TT_ClassCode.render({
      'CLASSNAME'            : classname
     ,'TPLID'                : id
     ,'PREFIXCODE'           : prefixCode
@@ -1749,7 +1769,7 @@ Contemplate = {
         $__tplEnd = $__TEOL + "__p__ += '";
         
         // make compilation templates
-        TT_ClassCode = InlineTemplate.compile(InlineTemplate.multisplit([
+        TT_ClassCode = new InlineTemplate([
             "#PREFIXCODE#"
             ,"!function (root,name,factory){"
             ,"'use strict';"
@@ -1803,9 +1823,9 @@ Contemplate = {
             ,"#EXTENDCODE#"         : "EXTENDCODE"
             ,"#RENDERCODE#"         : "RENDERCODE"
             ,"#EOL#"                : "EOL"
-        }));
+        }, true);
     
-        TT_BlockCode = InlineTemplate.compile(InlineTemplate.multisplit([
+        TT_BlockCode = new InlineTemplate([
             ""
             ,"/* tpl block render method for block '#BLOCKNAME#' */"
             ,"'#BLOCKMETHODNAME#': function( Contemplate, data, self, __i__ ) {"
@@ -1817,9 +1837,9 @@ Contemplate = {
             ,"#BLOCKMETHODNAME#"    : "BLOCKMETHODNAME"
             ,"#BLOCKMETHODCODE#"    : "BLOCKMETHODCODE"
             ,"#EOL#"                : "EOL"
-        }));
+        }, true);
 
-        TT_BLOCK = InlineTemplate.compile(InlineTemplate.multisplit([
+        TT_BLOCK = new InlineTemplate([
             "\"use strict\";"
             ,"var __p__ = '';"
             ,"#BLOCKCODE#"
@@ -1828,9 +1848,9 @@ Contemplate = {
         ].join( '#EOL#' ), {
              "#BLOCKCODE#"          : "BLOCKCODE"
             ,"#EOL#"                : "EOL"
-        }));
+        }, true);
 
-        TT_IF = InlineTemplate.compile(InlineTemplate.multisplit([
+        TT_IF = new InlineTemplate([
             ""
             ,"if (#IFCOND#)"
             ,"{"
@@ -1838,9 +1858,9 @@ Contemplate = {
         ].join( '#EOL#' ), {
              "#IFCOND#"             : "IFCOND"
             ,"#EOL#"                : "EOL"
-        }));
+        }, true);
     
-        TT_ELSEIF = InlineTemplate.compile(InlineTemplate.multisplit([
+        TT_ELSEIF = new InlineTemplate([
             ""
             ,"}"
             ,"else if (#ELIFCOND#)"
@@ -1849,9 +1869,9 @@ Contemplate = {
         ].join( '#EOL#' ), {
              "#ELIFCOND#"           : "ELIFCOND"
             ,"#EOL#"                : "EOL"
-        }));
+        }, true);
     
-        TT_ELSE = InlineTemplate.compile(InlineTemplate.multisplit([
+        TT_ELSE = new InlineTemplate([
             ""
             ,"}"
             ,"else"
@@ -1859,17 +1879,17 @@ Contemplate = {
             ,""
         ].join( '#EOL#' ), {
              "#EOL#"                : "EOL"
-        }));
+        }, true);
     
-        TT_ENDIF = InlineTemplate.compile(InlineTemplate.multisplit([
+        TT_ENDIF = new InlineTemplate([
             ""
             ,"}"
             ,""
         ].join( '#EOL#' ), {
              "#EOL#"                : "EOL"
-        }));
+        }, true);
     
-        TT_FOR2 = InlineTemplate.compile(InlineTemplate.multisplit([
+        TT_FOR_ASSOC = new InlineTemplate([
             ""
             ,"var #_O# = #O#, #_OK# = #_O# ? Object.keys(#_O#) : null,"
             ,"    #_K#, #K#, #V#, #_L# = #_OK# ? #_OK#.length : 0;"
@@ -1890,8 +1910,8 @@ Contemplate = {
             ,"#_L#"                 : "_L"
             ,"#ASSIGN1#"            : "ASSIGN1"
             ,"#EOL#"                : "EOL"
-        }));
-        TT_FOR1 = InlineTemplate.compile(InlineTemplate.multisplit([
+        }, true);
+        TT_FOR = new InlineTemplate([
             ""
             ,"var #_O# = #O#, #_ARR# = !!#_O#.forEach," 
             ,"    #_OV# = #_O# ? (#_ARR# ? #_O# : Object.keys(#_O#)) : null,"
@@ -1915,9 +1935,9 @@ Contemplate = {
             ,"#_L#"                 : "_L"
             ,"#ASSIGN1#"            : "ASSIGN1"
             ,"#EOL#"                : "EOL"
-        }));
+        }, true);
     
-        TT_ELSEFOR = InlineTemplate.compile(InlineTemplate.multisplit([
+        TT_ELSEFOR = new InlineTemplate([
             ""
             ,"    }"
             ,"}"
@@ -1926,25 +1946,25 @@ Contemplate = {
             ,""
         ].join( '#EOL#' ), {
              "#EOL#"                : "EOL"
-        }));
+        }, true);
     
-        TT_ENDFOR2 = InlineTemplate.compile(InlineTemplate.multisplit([
+        TT_ENDFOR2 = new InlineTemplate([
             ""
             ,"    }"
             ,"}"
             ,""
         ].join( '#EOL#' ), {
              "#EOL#"                : "EOL"
-        }));
-        TT_ENDFOR1 = InlineTemplate.compile(InlineTemplate.multisplit([
+        }, true);
+        TT_ENDFOR1 = new InlineTemplate([
             ""
             ,"}"
             ,""
         ].join( '#EOL#' ), {
              "#EOL#"                : "EOL"
-        }));
+        }, true);
     
-        TT_FUNC = InlineTemplate.compile(InlineTemplate.multisplit([
+        TT_FUNC = new InlineTemplate([
             "return function( data, __i__ ){"
             ,"\"use strict\";"
             ,"var self = this, __p__ = '', __ctx = false;"
@@ -1956,16 +1976,16 @@ Contemplate = {
         ].join( '#EOL#' ), {
              "#FCODE#"              : "FCODE"
             ,"#EOL#"                : "EOL"
-        }));
+        }, true);
         
-        TT_RCODE = InlineTemplate.compile(InlineTemplate.multisplit([
+        TT_RCODE = new InlineTemplate([
             ""
             ,"#RCODE#"
             ,""
         ].join( '#EOL#' ), {
              "#RCODE#"              : "RCODE"
             ,"#EOL#"                : "EOL"
-        }));
+        }, true);
         
         clear_state( );
         $__isInited = true;
@@ -2261,6 +2281,11 @@ Contemplate = {
             : Contemplate.InlineTemplate(tpl, reps, compiled);
     }
     
+    ,is_array: function( v, strict ) {
+        var to_string = toString.call( v );
+        return strict ? '[object Array]' === to_string : ('[object Array]' === to_string) || ('[object Object]' === to_string);
+    }
+        
     ,haskey: function( v/*, key1, key2, etc.. */ ) {
         var to_string = toString.call( v ), args, i, tmp;
         if (!v || "[object Array]" !== to_string && "[object Object]" !== to_string) return false;
@@ -2473,6 +2498,7 @@ Contemplate = {
         for (key in o) if (o[HAS](key)) c[key] = o[key]; 
         return c;
     }
+    ,local_variable: local_variable
 };
 
 // Template Engine end here

@@ -6,29 +6,29 @@
 
 <br /><br /><br /><br />
 <strong>This is Block1</strong><br />
-<% %block("Block1") %>
+<% block("Block1") %>
 Base template Block1
 <br /><br />
-<% %block("Block11") %>Base template nested Block11<% %endblock() %>
+<% block("Block11") %>Base template nested Block11<% endblock %>
 <br /><br />
-<% %block("Block12") %>Base template nested Block12<% %endblock() %>
+<% block("Block12") %>Base template nested Block12<% endblock %>
 <br /><br />
-<% %endblock() %>
+<% endblock %>
 
 <br /><br /><br /><br />
 <strong>This is Block2</strong><br />
-<% %block("Block2") %>Base template Block2
+<% block("Block2") %>Base template Block2
 <!-- call the super block here in OO manner, if any -->
-<% %super("Block2") %>
-<% %endblock() %>
+<% super("Block2") %>
+<% endblock %>
 
 <br /><br /><br /><br />
 <strong>This is Block3</strong><br />
-<% %block("Block3") %>Base template Block3<% %endblock() %>
+<% block("Block3") %>Base template Block3<% endblock %>
 
 
 <br /><br /><br /><br />
 <strong>This is Block2 Again</strong><br />
-<% %block("Block2", false) %><% %endblock() %>
+<% block("Block2", false) %><% endblock %>
 <strong>This is Block2 using getblock</strong><br />
-<% %getblock("Block2") %>
+<% getblock("Block2") %>

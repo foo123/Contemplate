@@ -1,18 +1,18 @@
 <% %>
 <div>
     <br />
-    <strong>Number of Items:<% %count($users[$i]) %></strong>
+    <strong>Number of Items:<% count($users[$i]) %></strong>
     <br />
-    <% %for($users[$i] as $j=>$user) %>
-        <div id='<% $user["id"] %>' class="<% %if (0 == ($j % 2)) %>even<% %elif(1 == ($j % 2)) %>odd<% %fi() %>">
-            <a href="/<% $user["name"] %>"><% $user.name %><% $user.text %> <% %n($i) + %n($j) %></a>: <strong><% $user["text"] %></strong>
+    <% for($users[$i] as $j=>$user) %>
+        <div id='<% $user["id"] %>' class="<% if (0 == ($j % 2)) %>even<% elif(1 == ($j % 2)) %>odd<% fi %>">
+            <a href="/<% $user["name"] %>"><% $user.name %><% $user.text %> <% n($i) + n($j) %></a>: <strong><% $user["text"] %></strong>
         </div>
-        <% %if( %haskey($user, "key1") ) %>
+        <% if( haskey($user, "key1") ) %>
             <div> User has key &quot;key1&quot; </div>
-        <% %elif( %haskey($user, "key", "key1") ) %>
+        <% elif( haskey($user, "key", "key1") ) %>
             <div> User has key [&quot;key&quot;][&quot;key1&quot;] </div>
-        <% %fi() %>
-    <% %elsefor() %>
-        <div class="none"><% %l("No Users") %></div>
-    <% %endfor() %>
+        <% fi %>
+    <% elsefor %>
+        <div class="none"><% l("No Users") %></div>
+    <% endfor %>
 </div>

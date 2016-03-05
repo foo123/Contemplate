@@ -51,7 +51,7 @@ PORT = 8001
 import json
 
 
-Contemplate.setCompatibilityMode( True )
+#Contemplate.setCompatibilityMode( True )
 
 Contemplate.setLocales({
     "locale": "γλωσσική περιοχή",
@@ -92,7 +92,7 @@ Contemplate.add({
     'sub' : './_tpls/sub.tpl.html',
     'date' : './_tpls/date.tpl.html',
     # add an inline template
-    'inlinetpl' : ['<% %super("block") %><% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>']
+    'inlinetpl' : ['<% super("block") %><% for($list as $l=>$item) %> <% $l %> <% $item %><br /><% endfor %>']
 })
 
 #print (pprint.pformat(Contemplate.parseTpl( '<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>' ), 4))

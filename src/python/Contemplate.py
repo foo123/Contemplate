@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 1.1.3
+#  @version 1.1.4
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -131,8 +131,8 @@ class _G:
     TT_ELSE = None 
     TT_ENDIF = None
 
-    TT_FOR1 = None
-    TT_FOR2 = None 
+    TT_FOR = None
+    TT_FOR_ASSOC = None 
     TT_ELSEFOR = None
     TT_ENDFOR = None
 
@@ -158,7 +158,7 @@ class _G:
     'lowercase', 'uppercase', 'ucfirst', 'lcfirst', 'sprintf',
     'date', 'ldate', 'locale', 'xlocale',
     'inline', 'tpl', 'uuid', 'haskey',
-    'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
+    'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes', 'is_array',
     'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale'
     ]
     aliases = {
@@ -600,13 +600,23 @@ def split_arguments( args, delim=',' ):
     if i < l: a.append(args[i:].strip())
     return a
 
+def local_variable( variable=None, block=None ):
+    global _G
+    if variable is None:
+        _G.id += 1
+        return '_loc_' + str(_G.id)
+    else:
+        if block is None: block = _G.currentblock
+        _G.locals[block][_G.variables[block][variable]] = 1
+        return variable
+
 #
 # Control structures
 #
 
 def t_if( cond='False' ):
     global _G
-    out = "'" + pad_lines(_G.TT_IF({
+    out = "'" + pad_lines(_G.TT_IF.render({
          'IFCOND'       : cond
         ,'EOL'          : _G.TEOL
         }))
@@ -618,7 +628,7 @@ def t_if( cond='False' ):
 def t_elseif( cond='False' ):
     global _G
     _G.level -= 1
-    out = "'" + pad_lines(_G.TT_ELSEIF({
+    out = "'" + pad_lines(_G.TT_ELSEIF.render({
          'ELIFCOND'     : cond
         ,'EOL'          : _G.TEOL
         }))
@@ -629,7 +639,7 @@ def t_elseif( cond='False' ):
 def t_else( args='' ):
     global _G
     _G.level -= 1
-    out = "'" + pad_lines(_G.TT_ELSE({ 
+    out = "'" + pad_lines(_G.TT_ELSE.render({ 
      'EOL'          : _G.TEOL
     }))
     _G.level += 1
@@ -640,7 +650,7 @@ def t_endif( args='' ):
     global _G
     _G.ifs -= 1
     _G.level -= 1
-    out = "'" + pad_lines(_G.TT_ENDIF({ 
+    out = "'" + pad_lines(_G.TT_ENDIF.render({ 
      'EOL'          : _G.TEOL
     }))
     
@@ -661,42 +671,36 @@ def t_for( for_expr ):
         o = for_expr[0].strip()
         kv = for_expr[1].split('=>')
     
-    _G.id += 1
-    _o = '_loc_' + str(_G.id)
+    _o = local_variable( )
     isAssoc = (len(kv) >= 2)
     
     if isAssoc:
         k = kv[0].strip()
         v = kv[1].strip()
-        _G.id += 1
-        _oI = '_loc_' + str(_G.id)
+        _oI = local_variable( )
+        local_variable( k )
+        local_variable( v )
         
-        _G.locals[_G.currentblock][_G.variables[_G.currentblock][k]] = 1
-        _G.locals[_G.currentblock][_G.variables[_G.currentblock][v]] = 1
-        out = "'" + pad_lines(_G.TT_FOR2({
+        out = "'" + pad_lines(_G.TT_FOR_ASSOC.render({
          'O'            : o
         ,'_O'           : _o
         ,'_OI'          : _oI
         ,'K'            : k
         ,'V'            : v
-        #,'ASSIGN1': '',
-        #'ASSIGN2': ''
         ,'EOL'          : _G.TEOL
         }))
         _G.level += 2
     
     else:
         v = kv[0].strip()
-        _G.id += 1
-        _oV = '_loc_' + str(_G.id)
+        _oV = local_variable( )
+        local_variable( v )
         
-        _G.locals[_G.currentblock][_G.variables[_G.currentblock][v]] = 1
-        out = "'" + pad_lines(_G.TT_FOR1({
+        out = "'" + pad_lines(_G.TT_FOR.render({
          'O'            : o
         ,'_O'           : _o
         ,'_OV'          : _oV 
         ,'V'            : v
-        #,'ASSIGN1': ''
         ,'EOL'          : _G.TEOL
         }))
         _G.level += 2
@@ -710,7 +714,7 @@ def t_elsefor( args='' ):
     global _G
     _G.loopifs -= 1
     _G.level += -2
-    out = "'" + pad_lines(_G.TT_ELSEFOR({ 
+    out = "'" + pad_lines(_G.TT_ELSEFOR.render({ 
      'EOL'          : _G.TEOL
     }))
     _G.level += 1
@@ -723,13 +727,13 @@ def t_endfor( args='' ):
         _G.loops -= 1 
         _G.loopifs -= 1
         _G.level += -2
-        out = "'" + pad_lines(_G.TT_ENDFOR({ 
+        out = "'" + pad_lines(_G.TT_ENDFOR.render({ 
          'EOL'          : _G.TEOL
         }))
     else:
         _G.loops -= 1
         _G.level += -1
-        out = "'" + pad_lines(_G.TT_ENDFOR({ 
+        out = "'" + pad_lines(_G.TT_ENDFOR.render({ 
          'EOL'          : _G.TEOL
         }))
     
@@ -939,6 +943,12 @@ def parse_constructs( match ):
             out = 'Contemplate.sprintf(' + args + ')'
         elif 21==m:
             out = 'str('+')+str('.join(split_arguments(args,','))+')'
+        elif 27==m:
+            args = split_arguments(args,',')
+            if len(args) > 1:
+                out = "(isinstance("+args[0]+",list) if ("+args[1]+") else isinstance("+args[0]+",(list,dict)))"
+            else:
+                out = "isinstance("+args[0]+",(list,dict))"
         else:
             out = 'Contemplate.' + ctrl + '(' + args + ')'
         return prefix + out + re.sub(re_controls, parse_constructs, rest)
@@ -978,7 +988,7 @@ def parse_blocks( s ):
         if 1 == _G.allblockscnt[ block ]:
         
             # 1st occurance, block definition
-            blocks.append([ block, _G.TT_BLOCK({
+            blocks.append([ block, _G.TT_BLOCK.render({
              'BLOCKCODE'     : s[pos1+tl:pos2-tl-1] + "'"
             ,'EOL'           : EOL
             })])
@@ -1415,7 +1425,7 @@ def create_template_render_function( id, contx, seps=None ):
     
     EOL = _G.TEOL
     
-    func = _G.TT_FUNC({
+    func = _G.TT_FUNC.render({
      'FCODE'        : "" if _G.extends else "__p__ += '" + renderf + "'"
     ,'EOL'          : EOL
     })
@@ -1449,14 +1459,14 @@ def create_cached_template( id, contx, filename, classname, seps=None ):
     # tpl-defined blocks
     sblocks = ''
     for b in blocks:
-        sblocks += EOL + _G.TT_BlockCode({
+        sblocks += EOL + _G.TT_BlockCode.render({
          'BLOCKNAME'            : b[0]
         ,'BLOCKMETHODNAME'      : "_blockfn_"+b[0]
         ,'BLOCKMETHODCODE'      : pad_lines(b[1], 1)
         ,'EOL'                  : EOL
         })
     
-    renderCode = _G.TT_RCODE({
+    renderCode = _G.TT_RCODE.render({
      'RCODE'                : "__p__ = ''" if _G.extends else "__p__ += '" + renderf + "'" 
     ,'EOL'                  : EOL
     })
@@ -1464,7 +1474,7 @@ def create_cached_template( id, contx, filename, classname, seps=None ):
     prefixCode = contx.prefix if contx.prefix else ''
         
     # generate tpl class
-    classCode = _G.TT_ClassCode({
+    classCode = _G.TT_ClassCode.render({
      'PREFIXCODE'           : prefixCode
     ,'TPLID'                : id
     ,'CLASSNAME'            : classname
@@ -1787,7 +1797,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "1.1.3"
+    VERSION = "1.1.4"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -1818,7 +1828,7 @@ class Contemplate:
         _G.tplEnd = _G.TEOL + "__p__ += '"
         
         # make compilation templates
-        _G.TT_ClassCode = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
+        _G.TT_ClassCode = InlineTemplate('#EOL#'.join([
             "# -*- coding: UTF-8 -*-"
             ,"#PREFIXCODE#"
             ,"# Contemplate cached template '#TPLID#'"
@@ -1881,9 +1891,9 @@ class Contemplate:
             ,"#EXTENDCODE#"         : "EXTENDCODE"
             ,"#RENDERCODE#"         : "RENDERCODE"
             ,'#EOL#'                : 'EOL'
-        }))
+        }, True)
         
-        _G.TT_BlockCode = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
+        _G.TT_BlockCode = InlineTemplate('#EOL#'.join([
             ""
             ,"# tpl block render method for block '#BLOCKNAME#'"
             ,"def #BLOCKMETHODNAME#(self, data, self_, __i__):"
@@ -1894,9 +1904,9 @@ class Contemplate:
             ,"#BLOCKMETHODNAME#"    : "BLOCKMETHODNAME"
             ,"#BLOCKMETHODCODE#"    : "BLOCKMETHODCODE"
             ,'#EOL#'                : 'EOL'
-        }))
+        }, True)
 
-        _G.TT_BLOCK = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
+        _G.TT_BLOCK = InlineTemplate('#EOL#'.join([
             ""
             ,"__p__ = ''"
             ,"#BLOCKCODE#"
@@ -1905,43 +1915,43 @@ class Contemplate:
         ]), {
              "#BLOCKCODE#"          : "BLOCKCODE"
             ,'#EOL#'                : 'EOL'
-        }))
+        }, True)
 
             
-        _G.TT_IF = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
+        _G.TT_IF = InlineTemplate('#EOL#'.join([
             ""
             ,"if (#IFCOND#):"
             ,""
         ]), {
              "#IFCOND#"             : "IFCOND"
             ,'#EOL#'                : 'EOL'
-        }))
+        }, True)
             
-        _G.TT_ELSEIF = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
+        _G.TT_ELSEIF = InlineTemplate('#EOL#'.join([
             ""
             ,"elif (#ELIFCOND#):"
             ,""
         ]), {
              "#ELIFCOND#"           : "ELIFCOND"
             ,'#EOL#'                : 'EOL'
-        }))
+        }, True)
 
-        _G.TT_ELSE = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
+        _G.TT_ELSE = InlineTemplate('#EOL#'.join([
             ""
             ,"else:"
             ,""
         ]), {
              '#EOL#'                : 'EOL'
-        }))
+        }, True)
             
-        _G.TT_ENDIF = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
+        _G.TT_ENDIF = InlineTemplate('#EOL#'.join([
             "",""
         ]), {
              '#EOL#'                : 'EOL'
-        }))
+        }, True)
             
         # a = [51,27,13,56]   dict(enumerate(a))
-        _G.TT_FOR2 = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
+        _G.TT_FOR_ASSOC = InlineTemplate('#EOL#'.join([
             ""
             ,"#_O# = #O#"
             ,"#_OI# = (enumerate(#_O#) if isinstance(#_O#,(list,tuple)) else #_O#.items()) if #_O# else None"
@@ -1955,8 +1965,8 @@ class Contemplate:
             ,"#K#"                  : "K"
             ,"#V#"                  : "V"
             ,'#EOL#'                : 'EOL'
-        }))
-        _G.TT_FOR1 = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
+        }, True)
+        _G.TT_FOR = InlineTemplate('#EOL#'.join([
             ""
             ,"#_O# = #O#"
             ,"#_OV# = (#_O# if isinstance(#_O#,(list,tuple)) else #_O#.values()) if #_O# else None"
@@ -1969,23 +1979,23 @@ class Contemplate:
             ,"#_OV#"                : "_OV"
             ,"#V#"                  : "V"
             ,'#EOL#'                : 'EOL'
-        }))
+        }, True)
             
-        _G.TT_ELSEFOR = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
+        _G.TT_ELSEFOR = InlineTemplate('#EOL#'.join([
             ""
             ,"else:"
             ,""
         ]), {
              '#EOL#'                : 'EOL'
-        }))
+        }, True)
             
-        _G.TT_ENDFOR = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
+        _G.TT_ENDFOR = InlineTemplate('#EOL#'.join([
             "",""
         ]), {
              '#EOL#'                : 'EOL'
-        }))
+        }, True)
             
-        _G.TT_FUNC = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
+        _G.TT_FUNC = InlineTemplate('#EOL#'.join([
             ""
             ,"__p__ = ''"
             ,"#FCODE#"
@@ -1994,16 +2004,16 @@ class Contemplate:
         ]), {
              "#FCODE#"              : "FCODE"
             ,'#EOL#'                : 'EOL'
-        }))
+        }, True)
 
-        _G.TT_RCODE = InlineTemplate.compile(InlineTemplate.multisplit('#EOL#'.join([
+        _G.TT_RCODE = InlineTemplate('#EOL#'.join([
             ""
             ,"#RCODE#"
             ,""
         ]), {
              "#RCODE#"              : "RCODE"
             ,'#EOL#'                : 'EOL'
-        }))
+        }, True)
         
         clear_state( )
         _G.isInited = True
@@ -2251,6 +2261,8 @@ class Contemplate:
         if isinstance(tpl, Contemplate.InlineTemplate): return str(tpl.render( reps ))
         return Contemplate.InlineTemplate( tpl, reps, compiled )
     
+    def is_array( v, strict=False):
+        return isinstance(v,list) if strict else isinstance(v,(list,dict))
         
     def haskey( v, *args ):
         if not v or not (isinstance(v, list) or isinstance(v, dict)): return False
@@ -2430,6 +2442,8 @@ class Contemplate:
             cdata = ODict()
             for key in data.keys(): cdata[key] = data[key]
             return cdata
+    
+    local_variable = local_variable
         
 
 # init the engine on load

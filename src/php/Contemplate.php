@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 1.1.3
+*  @version: 1.1.4
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -334,7 +334,7 @@ class ContemplateCtx
 
 class Contemplate
 {
-    const VERSION = "1.1.3";
+    const VERSION = "1.1.4";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -393,8 +393,8 @@ class Contemplate
     private static $TT_ELSE = null;
     private static $TT_ENDIF = null;
     
-    private static $TT_FOR1 = null;
-    private static $TT_FOR2 = null;
+    private static $TT_FOR = null;
+    private static $TT_FOR_ASSOC = null;
     private static $TT_ELSEFOR = null;
     private static $TT_ENDFOR1 = null;
     private static $TT_ENDFOR2 = null;
@@ -421,7 +421,7 @@ class Contemplate
     'lowercase', 'uppercase', 'ucfirst', 'lcfirst', 'sprintf',
     'date', 'ldate', 'locale', 'xlocale',
     'inline', 'tpl', 'uuid', 'haskey',
-    'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
+    'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes', 'is_array',
     'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale'
     );
     private static $__aliases = array(
@@ -467,7 +467,7 @@ class Contemplate
         self::$__tplEnd = self::$__TEOL . "\$__p__ .= '";
 
         // make compilation templates
-        self::$TT_ClassCode = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
+        self::$TT_ClassCode = new ContemplateInlineTemplate(implode('#EOL#', array(
             "#PREFIXCODE#"
             ,"if (!class_exists('#CLASSNAME#'))"
             ,"{"
@@ -536,9 +536,9 @@ class Contemplate
             ,"#EXTENDCODE#"         => "EXTENDCODE"
             ,"#RENDERCODE#"         => "RENDERCODE"
             ,"#EOL#"                => "EOL"
-        )));
+        ), true);
         
-        self::$TT_BlockCode = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
+        self::$TT_BlockCode = new ContemplateInlineTemplate(implode('#EOL#', array(
             ""
             ,"/* tpl block render method for block '#BLOCKNAME#' */"
             ,"private function #BLOCKMETHODNAME#(&\$data, \$self, \$__i__) "
@@ -551,9 +551,9 @@ class Contemplate
             ,"#BLOCKMETHODNAME#"    => "BLOCKMETHODNAME"
             ,"#BLOCKMETHODCODE#"    => "BLOCKMETHODCODE"
             ,"#EOL#"                => "EOL"
-        )));
+        ), true);
         
-        self::$TT_BLOCK = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
+        self::$TT_BLOCK = new ContemplateInlineTemplate(implode('#EOL#', array(
             ""
             ,"\$__p__ = '';"
             ,"#BLOCKCODE#"
@@ -562,9 +562,9 @@ class Contemplate
         )), array(
              "#BLOCKCODE#"          => "BLOCKCODE"
             ,"#EOL#"                => "EOL"
-        )));
+        ), true);
         
-        self::$TT_IF = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
+        self::$TT_IF = new ContemplateInlineTemplate(implode('#EOL#', array(
             ""
             ,"if (#IFCOND#)"
             ,"{"
@@ -572,9 +572,9 @@ class Contemplate
         )), array(
              "#IFCOND#"             => "IFCOND"
             ,"#EOL#"                => "EOL"
-        )));
+        ), true);
         
-        self::$TT_ELSEIF = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
+        self::$TT_ELSEIF = new ContemplateInlineTemplate(implode('#EOL#', array(
             ""
             ,"}"
             ,"elseif (#ELIFCOND#)"
@@ -583,9 +583,9 @@ class Contemplate
         )), array(
              "#ELIFCOND#"           => "ELIFCOND"
             ,"#EOL#"                => "EOL"
-        )));
+        ), true);
 
-        self::$TT_ELSE = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
+        self::$TT_ELSE = new ContemplateInlineTemplate(implode('#EOL#', array(
             ""
             ,"}"
             ,"else"
@@ -593,17 +593,17 @@ class Contemplate
             ,""
         )), array(
              "#EOL#"                => "EOL"
-        )));
+        ), true);
         
-        self::$TT_ENDIF = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
+        self::$TT_ENDIF = new ContemplateInlineTemplate(implode('#EOL#', array(
             ""
             ,"}"
             ,""
         )), array(
              "#EOL#"                => "EOL"
-        )));
+        ), true);
         
-        self::$TT_FOR2 = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
+        self::$TT_FOR_ASSOC = new ContemplateInlineTemplate(implode('#EOL#', array(
             ""
             ,"#_O# = #O#;"
             ,"if (!empty(#_O#))"
@@ -617,8 +617,8 @@ class Contemplate
             ,"#K#"                  => "K"
             ,"#V#"                  => "V"
             ,"#EOL#"                => "EOL"
-        )));
-        self::$TT_FOR1 = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
+        ), true);
+        self::$TT_FOR = new ContemplateInlineTemplate(implode('#EOL#', array(
             ""
             ,"#_O# = #O#;"
             ,"if (!empty(#_O#))"
@@ -631,9 +631,9 @@ class Contemplate
             ,"#_O#"                 => "_O"
             ,"#V#"                  => "V"
             ,"#EOL#"                => "EOL"
-        )));
+        ), true);
         
-        self::$TT_ELSEFOR = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
+        self::$TT_ELSEFOR = new ContemplateInlineTemplate(implode('#EOL#', array(
             ""
             ,"    }"
             ,"}"
@@ -642,25 +642,25 @@ class Contemplate
             ,""
         )), array(
              "#EOL#"                => "EOL"
-        )));
+        ), true);
         
-        self::$TT_ENDFOR2 = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
+        self::$TT_ENDFOR2 = new ContemplateInlineTemplate(implode('#EOL#', array(
             ""
             ,"}"
             ,""
         )), array(
              "#EOL#"                => "EOL"
-        )));
-        self::$TT_ENDFOR1 = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
+        ), true);
+        self::$TT_ENDFOR1 = new ContemplateInlineTemplate(implode('#EOL#', array(
             ""
             ,"    }"
             ,"}"
             ,""
         )), array(
              "#EOL#"                => "EOL"
-        )));
+        ), true);
         
-        self::$TT_FUNC = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
+        self::$TT_FUNC = new ContemplateInlineTemplate(implode('#EOL#', array(
             ""
             ,"\$__p__ = '';"  
             ,"#FCODE#"
@@ -669,16 +669,16 @@ class Contemplate
         )), array(
              "#FCODE#"              => "FCODE"
             ,"#EOL#"                => "EOL"
-        )));
+        ), true);
 
-        self::$TT_RCODE = ContemplateInlineTemplate::compile(ContemplateInlineTemplate::multisplit(implode('#EOL#', array(
+        self::$TT_RCODE = new ContemplateInlineTemplate(implode('#EOL#', array(
             ""
             ,"#RCODE#"
             ,""
         )), array(
              "#RCODE#"              => "RCODE"
             ,"#EOL#"                => "EOL"
-        )));
+        ), true);
         
         self::clear_state( );
         self::$__isInited = true;
@@ -964,6 +964,11 @@ class Contemplate
         return new ContemplateInlineTemplate( $tpl, $reps, $compiled );
     }
     
+    public static function is_array( $v, $strict=false ) 
+    {
+        return $strict ? is_array($v) && $v === array_values($v) : is_array($v);
+    }
+        
     public static function haskey( $v/*, key1, key2, etc.. */ ) 
     {
         if (!$v || !is_array($v)) return false;
@@ -1215,6 +1220,20 @@ class Contemplate
         return $d;
     }
     
+    public static function local_variable( $variable=null, $block=null )
+    {
+        if ( null === $variable )
+        {
+            return '$_loc_' . (++self::$__idcnt);
+        }
+        else
+        {
+            if ( null === $block ) $block = self::$__currentblock;
+            self::$__locals[$block][self::$__variables[$block][$variable]] = 1; 
+            return $variable;
+        }
+    }
+    
     //
     // Control structures
     //
@@ -1222,7 +1241,7 @@ class Contemplate
     private static function t_if( $cond='false' ) 
     {  
         $renderer = self::$TT_IF;
-        $out = "';" . self::pad_lines($renderer(array(
+        $out = "';" . self::pad_lines(self::$TT_IF->render(array(
              'IFCOND'       => $cond
             ,'EOL'          => self::$__TEOL
             )));
@@ -1234,9 +1253,8 @@ class Contemplate
     
     private static function t_elseif( $cond='false' ) 
     { 
-        $renderer = self::$TT_ELSEIF;
         self::$__level--;
-        $out = "';" . self::pad_lines($renderer(array(
+        $out = "';" . self::pad_lines(self::$TT_ELSEIF->render(array(
              'ELIFCOND'     => $cond
             ,'EOL'          => self::$__TEOL
             )));
@@ -1247,9 +1265,8 @@ class Contemplate
     
     private static function t_else( ) 
     { 
-        $renderer = self::$TT_ELSE;
         self::$__level--;
-        $out = "';" . self::pad_lines($renderer(array( 
+        $out = "';" . self::pad_lines(self::$TT_ELSE->render(array( 
          'EOL'          => self::$__TEOL
         )));
         self::$__level++;
@@ -1259,10 +1276,9 @@ class Contemplate
     
     private static function t_endif( ) 
     { 
-        $renderer = self::$TT_ENDIF;
         self::$__ifs--;  
         self::$__level--;
-        $out = "';" . self::pad_lines($renderer(array( 
+        $out = "';" . self::pad_lines(self::$TT_ENDIF->render(array( 
          'EOL'          => self::$__TEOL
         )));
         
@@ -1278,32 +1294,28 @@ class Contemplate
         {
             $for_expr = array(substr($for_expr, 0, $is_python_style), substr($for_expr, $is_python_style+4));
             $o = trim($for_expr[1]); 
-            $_o = '$_loc_' . (++self::$__idcnt);
+            $_o = self::local_variable( );
             $kv = explode(',', $for_expr[0]); 
         }
         else /*if ( false !== $is_php_style )*/
         {
             $for_expr = array(substr($for_expr, 0, $is_php_style), substr($for_expr, $is_php_style+4));
             $o = trim($for_expr[0]); 
-            $_o = '$_loc_' . (++self::$__idcnt);
+            $_o = self::local_variable( );
             $kv = explode('=>', $for_expr[1]); 
         }
         $isAssoc = (count($kv) >= 2);
         
         if ( $isAssoc )
         {
-            $k = trim($kv[0]); 
-            $v = trim($kv[1]); 
-
-            self::$__locals[self::$__currentblock][self::$__variables[self::$__currentblock][$k]] = 1; 
-            self::$__locals[self::$__currentblock][self::$__variables[self::$__currentblock][$v]] = 1;
-            $renderer = self::$TT_FOR2;
-            $out = "';" . self::pad_lines($renderer(array(
+            $k = trim($kv[0]); $v = trim($kv[1]); 
+            self::local_variable( $k ); self::local_variable( $v );
+            
+            $out = "';" . self::pad_lines(self::$TT_FOR_ASSOC->render(array(
                  'O'            => $o
                 ,'_O'           => $_o 
                 ,'K'            => $k
                 ,'V'            => $v
-                //,'ASSIGN1'=> ""
                 ,'EOL'          => self::$__TEOL
                 )));
             self::$__level+=2;
@@ -1311,14 +1323,12 @@ class Contemplate
         else
         {
             $v = trim($kv[0]); 
-
-            self::$__locals[self::$__currentblock][self::$__variables[self::$__currentblock][$v]] = 1;
-            $renderer = self::$TT_FOR1;
-            $out = "';" . self::pad_lines($renderer(array(
+            self::local_variable( $v );
+            
+            $out = "';" . self::pad_lines(self::$TT_FOR->render(array(
                  'O'            => $o
                 ,'_O'           => $_o
                 ,'V'            => $v
-                //,'ASSIGN1'=> ""
                 ,'EOL'          => self::$__TEOL
                 )));
             self::$__level+=2;
@@ -1331,10 +1341,9 @@ class Contemplate
     private static function t_elsefor( ) 
     { 
         /* else attached to  for loop */ 
-        $renderer = self::$TT_ELSEFOR;
         self::$__loopifs--;  
         self::$__level+=-2;
-        $out = "';" . self::pad_lines($renderer(array( 
+        $out = "';" . self::pad_lines(self::$TT_ELSEFOR->render(array( 
          'EOL'          => self::$__TEOL
         )));
         self::$__level+=1;
@@ -1348,8 +1357,7 @@ class Contemplate
         { 
             self::$__loops--; self::$__loopifs--;  
             self::$__level+=-2;
-            $renderer = self::$TT_ENDFOR1;
-            $out = "';" . self::pad_lines($renderer(array(
+            $out = "';" . self::pad_lines(self::$TT_ENDFOR1->render(array(
              'EOL'          => self::$__TEOL
             )));
         }
@@ -1357,8 +1365,7 @@ class Contemplate
         {
             self::$__loops--;  
             self::$__level+=-1;
-            $renderer = self::$TT_ENDFOR2;
-            $out = "';" . self::pad_lines($renderer(array(
+            $out = "';" . self::pad_lines(self::$TT_ENDFOR2->render(array(
              'EOL'          => self::$__TEOL
             )));
         }
@@ -1592,6 +1599,13 @@ class Contemplate
                 case 24: $out = 'trim(' . $args . ')'; break;
                 case 25: $out = 'addslashes(' . $args . ')'; break;
                 case 26: $out = 'stripslashes(' . $args . ')'; break;
+                case 27: 
+                    $args = self::split_arguments($args,',');
+                    if ( isset($args[1]) )
+                        $out = "(({$args[1]})?is_array({$args[0]})&&({$args[0]})===array_values({$args[0]}):is_array({$args[0]}))";
+                    else
+                        $out = "is_array({$args[0]})";
+                    break;
                 default: $out = 'Contemplate::' . $ctrl . '(' . $args . ')';
             }
             return $prefix . $out . preg_replace_callback( $re_controls, $parse_constructs, $rest );
@@ -1646,7 +1660,6 @@ class Contemplate
     {
         $blocks = array(); 
         $bl = count(self::$__allblocks);
-        $renderer = self::$TT_BLOCK;
         $EOL = self::$__TEOL;
         while ($bl--)
         {
@@ -1675,7 +1688,7 @@ class Contemplate
             if ( 1 === self::$__allblockscnt[ $block ] )
             {
                 // 1st occurance, block definition
-                array_push($blocks, array($block, $renderer(array(
+                array_push($blocks, array($block, self::$TT_BLOCK->render(array(
                  'BLOCKCODE'        => substr($s, $pos1+$tl, $pos2-$tl-1-$pos1-$tl) ."';"
                 ,'EOL'              => $EOL
                 ))));
@@ -2255,8 +2268,7 @@ class Contemplate
         
         $EOL = self::$__TEOL;
         
-        $renderer = self::$TT_FUNC;
-        $func = $renderer(array(
+        $func = self::$TT_FUNC->render(array(
          'FCODE'        => self::$__extends ? "" : "\$__p__ .= '" . $renderf . "';"
         ,'EOL'          => $EOL
         ));
@@ -2286,18 +2298,16 @@ class Contemplate
         $EOL = self::$__TEOL;
         
         // tpl-defined blocks
-        $renderer = self::$TT_BlockCode;
         $sblocks = '';
         for($b=0; $b<$bl; $b++) 
-            $sblocks .= $EOL . $renderer(array(
+            $sblocks .= $EOL . self::$TT_BlockCode->render(array(
              'BLOCKNAME'            => $blocks[$b][0]
             ,'BLOCKMETHODNAME'      => "_blockfn_" . $blocks[$b][0]
             ,'BLOCKMETHODCODE'      => self::pad_lines($blocks[$b][1], 1)
             ,'EOL'                  => $EOL
             ));
         
-        $renderer = self::$TT_RCODE;
-        $renderCode = $renderer(array(
+        $renderCode = self::$TT_RCODE->render(array(
          'RCODE'                => self::$__extends ? "\$__p__ = '';" : "\$__p__ .= '" . $renderf . "';"
         ,'EOL'                  => $EOL
         ));
@@ -2305,8 +2315,7 @@ class Contemplate
         $prefixCode = $contx->prefix ? $contx->prefix : '';
             
         // generate tpl class
-        $renderer = self::$TT_ClassCode;
-        $class = '<?php ' . $EOL . $renderer(array(
+        $class = '<?php ' . $EOL . self::$TT_ClassCode->render(array(
          'PREFIXCODE'           => $prefixCode
         ,'TPLID'                => $id
         ,'CLASSNAME'            => $classname

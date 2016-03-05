@@ -23,7 +23,7 @@ define('ABSPATH', dirname(__FILE__));
 // include the Contemplate Class
 include dirname(ABSPATH).'/src/php/Contemplate.php';
 
-Contemplate::setCompatibilityMode( true );
+//Contemplate::setCompatibilityMode( true );
 
 Contemplate::setLocales(array(
     "locale"=> "γλωσσική περιοχή",
@@ -73,7 +73,7 @@ Contemplate::add(array(
     'sub' => ABSPATH.'/_tpls/sub.tpl.html',
     'date' => ABSPATH.'/_tpls/date.tpl.html',
     // add an inline template
-    'inlinetpl' => array('<% %super("block") %><% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>')
+    'inlinetpl' => array('<% super("block") %><% for($list as $l=>$item) %> <% $l %> <% $item %><br /><% endfor %>')
 ));
 
 /*print_r(Contemplate::parseTpl( '<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>' ));*/

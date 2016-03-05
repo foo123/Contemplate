@@ -22,7 +22,7 @@ var http = require('http'), httpPort = 1337,
     Contemplate = require(path.join(__dirname, '../src/js/Contemplate.js'))
 ;
 
-Contemplate.setCompatibilityMode( true );
+//Contemplate.setCompatibilityMode( true );
 
 Contemplate.setLocales({
     "locale": "γλωσσική περιοχή",
@@ -60,7 +60,7 @@ Contemplate.add({
     'sub' : path.join(__dirname, '/_tpls/sub.tpl.html'),
     'date' : path.join(__dirname, '/_tpls/date.tpl.html'),
     // add an inline template
-    'inlinetpl' : ['<% %super("block") %><% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>']
+    'inlinetpl' : ['<% super("block") %><% for($list as $l=>$item) %> <% $l %> <% $item %><br /><% endfor %>']
 });
 
 /*console.log(Contemplate.parseTpl( '<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>' ));*/

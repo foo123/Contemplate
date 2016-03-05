@@ -1,6 +1,6 @@
 ###Contemplate Manual
 
-**version 1.1.3; platforms: PHP, Python, Node/XPCOM/JS**
+**version 1.1.4; platforms: PHP, Python, Node/XPCOM/JS**
 
 
 ###Contents
@@ -159,6 +159,7 @@ TEMPLATE operations take place in the `current` context (which defaults to `glob
 * `f( val )`   convert `val` to float
 * `q( val )`   wrap `val` in single-quotes
 * `qq( val )` / `dq( val )`  wrap `val` in double-quotes
+* `is_array( val [, strict=false] )`  (`php`-like) function test whether `val` is `array` (`strict`) or `object`
 * `addslashes( str )`  addslashes (`php`-like) function
 * `stripslashes( str )`  stripslashes (`php`-like) function
 * `sprintf( format, val1, val2, .. )`   return a formatted string using `val1`, `val2`, etc..

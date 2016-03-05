@@ -1,5 +1,10 @@
 ###ChangeLog
 
+__1.1.4__
+* lazier init for faster performance
+* new function `is_array` to test both if is `array` (`strict`) or is `object`
+
+
 __1.1.3__
 * add `continue` and `break` loop constructs/directives
 * minor changes

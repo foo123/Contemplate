@@ -186,16 +186,34 @@ private function _blockfn_Block2(&$data, $self, $__i__)
     $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>Inline (ternary) IF</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% iif( 1+1 == 2, "1+1 = 2", "1+1 = 1" ) %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ' . (((1+1 == 2)?("1+1 = 2"):("1+1 = 1"))) . '' . "\n" . '    ' . "\n" . '    <pre>' . "\n" . '    &lt;% iif( 1+1 == 1, "1+1 = 1", "1+1 = 2" ) %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ' . (((1+1 == 1)?("1+1 = 1"):("1+1 = 2"))) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>Inline (ternary) IF (2)</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% iif( !empty($undefined_variable), $undefined_variable, "test with undefined variable passed" ) %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ' . (((!empty($data['undefined_variable']))?($data['undefined_variable']):("test with undefined variable passed"))) . '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>SET a new tpl variable</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% set($foo, "123") %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ';
     $data['foo'] = ("123");
     
+    $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>SET a new (local) tpl variable</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% local_set($foo_loc, 456) %&gt;' . "\n" . '    &lt;% set($foo_loc, $foo_loc+1) %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ';
+    $_loc_foo_loc = (456);
+    
+    $__p__ .= '' . "\n" . '    ';
+    $_loc_foo_loc = ($_loc_foo_loc+1);
+    
     $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '    ' . "\n" . '    <strong>CHECK ISSET for a tpl variable</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% if( isset($foo) ) %&gt;' . "\n" . '        $foo is SET' . "\n" . '    &lt;% else %&gt;' . "\n" . '        $foo is NOT SET' . "\n" . '    &lt;% fi %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ';
     if ((isset($data['foo'])))
     {
         
-        $__p__ .= '' . "\n" . '        $foo is SET' . "\n" . '    ';
+        $__p__ .= '' . "\n" . '        $foo = ' . ($data['foo']) . ', is SET' . "\n" . '    ';
     }
     else
     {
         
         $__p__ .= '' . "\n" . '        $foo is NOT SET' . "\n" . '    ';
+    }
+    
+    $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '' . "\n" . '    <strong>CHECK ISSET for a (local) tpl variable</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% if( isset($foo_loc) ) %&gt;' . "\n" . '        $foo_loc is SET' . "\n" . '    &lt;% else %&gt;' . "\n" . '        $foo_loc is NOT SET' . "\n" . '    &lt;% fi %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ';
+    if ((isset($_loc_foo_loc)))
+    {
+        
+        $__p__ .= '' . "\n" . '        $foo_loc = ' . ($_loc_foo_loc) . ', is SET' . "\n" . '    ';
+    }
+    else
+    {
+        
+        $__p__ .= '' . "\n" . '        $foo_loc is NOT SET' . "\n" . '    ';
     }
     
     $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '' . "\n" . '    <strong>CHECK EMPTY for a tpl variable</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% if( empty($foo) ) %&gt;' . "\n" . '        $foo is EMPTY' . "\n" . '    &lt;% else %&gt;' . "\n" . '        $foo is NOT EMPTY' . "\n" . '    &lt;% fi %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ';
@@ -207,16 +225,28 @@ private function _blockfn_Block2(&$data, $self, $__i__)
     else
     {
         
-        $__p__ .= '' . "\n" . '        $foo is NOT EMPTY' . "\n" . '    ';
+        $__p__ .= '' . "\n" . '        $foo = ' . ($data['foo']) . ', is NOT EMPTY' . "\n" . '    ';
+    }
+    
+    $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '' . "\n" . '    <strong>CHECK EMPTY for a (local) tpl variable</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% if( empty($foo_loc) ) %&gt;' . "\n" . '        $foo_loc is EMPTY' . "\n" . '    &lt;% else %&gt;' . "\n" . '        $foo_loc is NOT EMPTY' . "\n" . '    &lt;% fi %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ';
+    if (empty($_loc_foo_loc))
+    {
+        
+        $__p__ .= '' . "\n" . '        $foo_loc is EMPTY' . "\n" . '    ';
+    }
+    else
+    {
+        
+        $__p__ .= '' . "\n" . '        $foo_loc = ' . ($_loc_foo_loc) . ', is NOT EMPTY' . "\n" . '    ';
     }
     
     $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '' . "\n" . '    <!-- include a (sub-)template file -->' . "\n" . '    <strong>INCLUDE a (sub-)template file</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% include("date") %&gt;' . "\n" . '    </pre><br />' . "\n" . '     <!-- print a localized date php-style -->' . "\n" . '<strong>A (localized) date, PHP-style</strong><br />' . "\n" . '' . (Contemplate::ldate("M, D, d")) . '' . "\n" . '';
     
     $__p__ .= '' . "\n" . '    ' . "\n" . '    <br /><br />' . "\n" . '' . "\n" . '    <strong>CALL another (sub-)template</strong><br />' . "\n" . '    <pre>' . "\n" . '    &lt;% for($users as $i=>$usergroup) %&gt;' . "\n" . '        &lt;!-- call a (sub-)template --&gt;' . "\n" . '        &lt;% tpl("sub", {"i" : $i, "users" : $users}) %&gt;' . "\n" . '    &lt;% endfor %&gt;' . "\n" . '    </pre><br />' . "\n" . '    ';
-    $_loc_105 = $data['users'];
-    if (!empty($_loc_105))
+    $_loc_114 = $data['users'];
+    if (!empty($_loc_114))
     {
-        foreach ($_loc_105 as $_loc_i=>$_loc_usergroup)
+        foreach ($_loc_114 as $_loc_i=>$_loc_usergroup)
         {
             
             $__p__ .= '' . "\n" . '        <!-- call a (sub-)template -->' . "\n" . '        ' . (Contemplate::tpl("sub", array("i" => $_loc_i, "users" => $data['users']))) . '' . "\n" . '    ';

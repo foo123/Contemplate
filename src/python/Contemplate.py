@@ -146,7 +146,7 @@ class _G:
     'if', 'elseif', 'else', 'endif',
     'for', 'elsefor', 'endfor',
     'extends', 'block', 'endblock',
-    'include', 'super', 'getblock', 'iif', 'empty', 'continue', 'break'
+    'include', 'super', 'getblock', 'iif', 'empty', 'continue', 'break', 'local_set'
     ]
     directive_aliases = {
      'elif'         : 'elseif'
@@ -610,6 +610,11 @@ def local_variable( variable=None, block=None ):
         _G.locals[block][_G.variables[block][variable]] = 1
         return variable
 
+
+def is_local_variable( variable, block=None ):
+    if block is None: block = _G.currentblock
+    return variable.startswith('_loc_') or ((_G.variables[block][variable] in _G.locals[block]) and (1 == _G.locals[block][_G.variables[block][variable]]))
+    
 #
 # Control structures
 #
@@ -843,11 +848,12 @@ def parse_constructs( match ):
     except:
         m = -1
     if m > -1:
-        if 0==m: # set
+        if 0==m or 20==m: # set, local_set
             args = re.sub(re_controls, parse_constructs, args)
             args = split_arguments(args, ',')
             varname = args.pop(0).strip()
             expr = ','.join(args).strip()
+            if 20 == m and not is_local_variable(varname): local_variable( varname ) # make it a local variable
             out = "'" + _G.TEOL + pad_lines( varname + ' = ('+ expr +')' ) + _G.TEOL
         elif 1==m: # unset
             args = re.sub(re_controls, parse_constructs, args)
@@ -860,7 +866,7 @@ def parse_constructs( match ):
         elif 2==m: # isset
             args = re.sub(re_controls, parse_constructs, args)
             varname = args
-            out = '(("' + varname + '__RAW__" in data) and (' + varname + ' is not None))'
+            out = '(("_loc_' + varname + '__RAW__" in locals()) and (' + varname + ' is not None))' if is_local_variable(varname) else '(("' + varname + '__RAW__" in data) and (' + varname + ' is not None))'
         elif 3==m: # if
             args = re.sub(re_controls, parse_constructs, args)
             out = t_if(args)
@@ -897,7 +903,8 @@ def parse_constructs( match ):
             out = prefix + "(("+args[1]+") if ("+args[0]+") else ("+args[2]+"))"
         elif 17==m: #empty
             args = re.sub(re_controls, parse_constructs, args)
-            out = prefix + '(("' + args + '__RAW__" not in data) or ('+args+' is None) or Contemplate.empty('+args+'))'
+            varname = args
+            out = prefix + ('(("_loc_' + varname + '__RAW__" not in locals()) or ('+varname+' is None) or Contemplate.empty('+varname+'))' if is_local_variable(varname) else '(("' + varname + '__RAW__" not in data) or ('+varname+' is None) or Contemplate.empty('+varname+'))')
         elif 18==m or 19==m: #'continue','break'
             out = "'" + _G.TEOL + pad_lines( 'continue' if 18==m else 'break' ) + _G.TEOL
         
@@ -2444,6 +2451,7 @@ class Contemplate:
             return cdata
     
     local_variable = local_variable
+    is_local_variable = is_local_variable
         
 
 # init the engine on load

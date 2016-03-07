@@ -85,7 +85,7 @@ var __version__ = "1.1.4", Contemplate,
     'if', 'elseif', 'else', 'endif',
     'for', 'elsefor', 'endfor',
     'extends', 'block', 'endblock',
-    'include', 'super', 'getblock', 'iif', 'empty', 'continue', 'break'
+    'include', 'super', 'getblock', 'iif', 'empty', 'continue', 'break', 'local_set'
     ],
     $__directive_aliases = {
      'elif'     : 'elseif'
@@ -260,6 +260,12 @@ function local_variable( variable, block )
     }
 }
 
+function is_local_variable( variable, block )
+{
+    if ( null == block ) block = $__currentblock;
+    return '_loc_' === variable.slice(0, 5) || !!$__locals[block][$__variables[block][variable]];
+}
+    
 //
 // Control structures
 //
@@ -541,10 +547,16 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
         switch ( m )
         {
             case 0 /*'set'*/: 
+            case 20 /*'local_set'*/: 
                 args = args.replace( re_controls, parse_constructs );
                 args = split_arguments(args, ',');
                 varname = trim(args.shift());
                 expr = trim(args.join( ',' ));
+                if ( 20 === m && !is_local_variable(varname) )
+                {
+                    local_variable( varname ); // make it a local variable
+                    varname = 'var '+varname;
+                }
                 out = "';" + $__TEOL + pad_lines( varname + ' = ('+ expr +');' ) + $__TEOL;
                 break;
             case 1 /*'unset'*/: 
@@ -2499,6 +2511,7 @@ Contemplate = {
         return c;
     }
     ,local_variable: local_variable
+    ,is_local_variable: is_local_variable
 };
 
 // Template Engine end here

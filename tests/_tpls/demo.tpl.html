@@ -191,6 +191,16 @@
     
     <br /><br />
     
+    <strong>SET a new (local) tpl variable</strong><br />
+    <pre>
+    &lt;% local_set($foo_loc, 456) %&gt;
+    &lt;% set($foo_loc, $foo_loc+1) %&gt;
+    </pre><br />
+    <% local_set($foo_loc, 456) %>
+    <% set($foo_loc, $foo_loc+1) %>
+    
+    <br /><br />
+    
     <strong>CHECK ISSET for a tpl variable</strong><br />
     <pre>
     &lt;% if( isset($foo) ) %&gt;
@@ -200,9 +210,25 @@
     &lt;% fi %&gt;
     </pre><br />
     <% if( isset($foo) ) %>
-        $foo is SET
+        $foo = <% $foo %>, is SET
     <% else %>
         $foo is NOT SET
+    <% fi %>
+    
+    <br /><br />
+
+    <strong>CHECK ISSET for a (local) tpl variable</strong><br />
+    <pre>
+    &lt;% if( isset($foo_loc) ) %&gt;
+        $foo_loc is SET
+    &lt;% else %&gt;
+        $foo_loc is NOT SET
+    &lt;% fi %&gt;
+    </pre><br />
+    <% if( isset($foo_loc) ) %>
+        $foo_loc = <% $foo_loc %>, is SET
+    <% else %>
+        $foo_loc is NOT SET
     <% fi %>
     
     <br /><br />
@@ -218,7 +244,23 @@
     <% if( empty($foo) ) %>
         $foo is EMPTY
     <% else %>
-        $foo is NOT EMPTY
+        $foo = <% $foo %>, is NOT EMPTY
+    <% fi %>
+    
+    <br /><br />
+
+    <strong>CHECK EMPTY for a (local) tpl variable</strong><br />
+    <pre>
+    &lt;% if( empty($foo_loc) ) %&gt;
+        $foo_loc is EMPTY
+    &lt;% else %&gt;
+        $foo_loc is NOT EMPTY
+    &lt;% fi %&gt;
+    </pre><br />
+    <% if( empty($foo_loc) ) %>
+        $foo_loc is EMPTY
+    <% else %>
+        $foo_loc = <% $foo_loc %>, is NOT EMPTY
     <% fi %>
     
     <br /><br />

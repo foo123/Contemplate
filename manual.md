@@ -124,6 +124,7 @@ TEMPLATE operations take place in the `current` context (which defaults to `glob
 
 
 * `set( $var, expression_or_value )`  SET / UPDATE a tpl variable `$var` to given value or expression
+* `local_set( $var, expression_or_value )`  SET / UPDATE a **local** tpl variable `$var` to given value or expression
 * `unset( $var )`  UNSET / DELETE tpl variable `$var`
 * `isset( $var )`  CHECK whether a tpl variable `$var` is set
 * `iif( cond, then_value, else_value )`   inline (ternary) `IF` construct

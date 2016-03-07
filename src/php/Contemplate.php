@@ -409,7 +409,7 @@ class Contemplate
     'if', 'elseif', 'else', 'endif',
     'for', 'elsefor', 'endfor',
     'extends', 'block', 'endblock',
-    'include', 'super', 'getblock', 'iif', 'empty', 'continue', 'break'
+    'include', 'super', 'getblock', 'iif', 'empty', 'continue', 'break', 'local_set'
     );
     private static $__directive_aliases = array(
      'elif'      => 'elseif'
@@ -1234,6 +1234,12 @@ class Contemplate
         }
     }
     
+    public static function is_local_variable( $variable, $block=null )
+    {
+        if ( null === $block ) $block = self::$__currentblock;
+        return '$_loc_' === substr($variable, 0, 6) || !empty(self::$__locals[$block][self::$__variables[$block][$variable]]);
+    }
+    
     //
     // Control structures
     //
@@ -1479,10 +1485,12 @@ class Contemplate
             switch( $m )
             {
                 case 0 /*'set'*/:
+                case 20 /*'local_set'*/:
                     $args = preg_replace_callback( $re_controls, $parse_constructs, $args );
                     $args = self::split_arguments($args, ',');
                     $varname = trim(array_shift($args));
                     $expr = trim(implode(',', $args));
+                    if ( 20 === $m && !self::is_local_variable($varname) ) self::local_variable( $varname ); // make it a local variable
                     $out = "';" . self::$__TEOL . self::pad_lines( "$varname = ($expr);" ) . self::$__TEOL;
                     break;
                 case 1 /*'unset'*/:

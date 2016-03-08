@@ -384,21 +384,8 @@ class Contemplate
     private static $__context = null;
     
     private static $TT_ClassCode = null;
-
     private static $TT_BlockCode = null;
     private static $TT_BLOCK = null;
-    
-    private static $TT_IF = null;
-    private static $TT_ELSEIF = null;
-    private static $TT_ELSE = null;
-    private static $TT_ENDIF = null;
-    
-    private static $TT_FOR = null;
-    private static $TT_FOR_ASSOC = null;
-    private static $TT_ELSEFOR = null;
-    private static $TT_ENDFOR1 = null;
-    private static $TT_ENDFOR2 = null;
-    
     private static $TT_FUNC = null;
     private static $TT_RCODE = null;
     
@@ -562,102 +549,6 @@ class Contemplate
         )), array(
              "#BLOCKCODE#"          => "BLOCKCODE"
             ,"#EOL#"                => "EOL"
-        ), true);
-        
-        self::$TT_IF = new ContemplateInlineTemplate(implode('#EOL#', array(
-            ""
-            ,"if (#IFCOND#)"
-            ,"{"
-            ,""
-        )), array(
-             "#IFCOND#"             => "IFCOND"
-            ,"#EOL#"                => "EOL"
-        ), true);
-        
-        self::$TT_ELSEIF = new ContemplateInlineTemplate(implode('#EOL#', array(
-            ""
-            ,"}"
-            ,"elseif (#ELIFCOND#)"
-            ,"{"
-            ,""
-        )), array(
-             "#ELIFCOND#"           => "ELIFCOND"
-            ,"#EOL#"                => "EOL"
-        ), true);
-
-        self::$TT_ELSE = new ContemplateInlineTemplate(implode('#EOL#', array(
-            ""
-            ,"}"
-            ,"else"
-            ,"{"
-            ,""
-        )), array(
-             "#EOL#"                => "EOL"
-        ), true);
-        
-        self::$TT_ENDIF = new ContemplateInlineTemplate(implode('#EOL#', array(
-            ""
-            ,"}"
-            ,""
-        )), array(
-             "#EOL#"                => "EOL"
-        ), true);
-        
-        self::$TT_FOR_ASSOC = new ContemplateInlineTemplate(implode('#EOL#', array(
-            ""
-            ,"#_O# = #O#;"
-            ,"if (!empty(#_O#))"
-            ,"{"
-            ,"    foreach (#_O# as #K#=>#V#)"
-            ,"    {"
-            ,""
-        )), array(
-             "#O#"                  => "O"
-            ,"#_O#"                 => "_O"
-            ,"#K#"                  => "K"
-            ,"#V#"                  => "V"
-            ,"#EOL#"                => "EOL"
-        ), true);
-        self::$TT_FOR = new ContemplateInlineTemplate(implode('#EOL#', array(
-            ""
-            ,"#_O# = #O#;"
-            ,"if (!empty(#_O#))"
-            ,"{"
-            ,"    foreach (#_O# as #V#)"
-            ,"    {"
-            ,""
-        )), array(
-             "#O#"                  => "O"
-            ,"#_O#"                 => "_O"
-            ,"#V#"                  => "V"
-            ,"#EOL#"                => "EOL"
-        ), true);
-        
-        self::$TT_ELSEFOR = new ContemplateInlineTemplate(implode('#EOL#', array(
-            ""
-            ,"    }"
-            ,"}"
-            ,"else"
-            ,"{"
-            ,""
-        )), array(
-             "#EOL#"                => "EOL"
-        ), true);
-        
-        self::$TT_ENDFOR2 = new ContemplateInlineTemplate(implode('#EOL#', array(
-            ""
-            ,"}"
-            ,""
-        )), array(
-             "#EOL#"                => "EOL"
-        ), true);
-        self::$TT_ENDFOR1 = new ContemplateInlineTemplate(implode('#EOL#', array(
-            ""
-            ,"    }"
-            ,"}"
-            ,""
-        )), array(
-             "#EOL#"                => "EOL"
         ), true);
         
         self::$TT_FUNC = new ContemplateInlineTemplate(implode('#EOL#', array(
@@ -1244,140 +1135,6 @@ class Contemplate
     // Control structures
     //
     
-    private static function t_if( $cond='false' ) 
-    {  
-        $renderer = self::$TT_IF;
-        $out = "';" . self::pad_lines(self::$TT_IF->render(array(
-             'IFCOND'       => $cond
-            ,'EOL'          => self::$__TEOL
-            )));
-        self::$__ifs++;  
-        self::$__level++;
-        
-        return $out;
-    }
-    
-    private static function t_elseif( $cond='false' ) 
-    { 
-        self::$__level--;
-        $out = "';" . self::pad_lines(self::$TT_ELSEIF->render(array(
-             'ELIFCOND'     => $cond
-            ,'EOL'          => self::$__TEOL
-            )));
-        self::$__level++;
-        
-        return $out;
-    }
-    
-    private static function t_else( ) 
-    { 
-        self::$__level--;
-        $out = "';" . self::pad_lines(self::$TT_ELSE->render(array( 
-         'EOL'          => self::$__TEOL
-        )));
-        self::$__level++;
-        
-        return $out;
-    }
-    
-    private static function t_endif( ) 
-    { 
-        self::$__ifs--;  
-        self::$__level--;
-        $out = "';" . self::pad_lines(self::$TT_ENDIF->render(array( 
-         'EOL'          => self::$__TEOL
-        )));
-        
-        return $out;
-    }
-    
-    private static function t_for( $for_expr ) 
-    {
-        $is_php_style = strpos($for_expr, ' as ');
-        $is_python_style = strpos($for_expr, ' in ');
-        
-        if ( false !== $is_python_style )
-        {
-            $for_expr = array(substr($for_expr, 0, $is_python_style), substr($for_expr, $is_python_style+4));
-            $o = trim($for_expr[1]); 
-            $_o = self::local_variable( );
-            $kv = explode(',', $for_expr[0]); 
-        }
-        else /*if ( false !== $is_php_style )*/
-        {
-            $for_expr = array(substr($for_expr, 0, $is_php_style), substr($for_expr, $is_php_style+4));
-            $o = trim($for_expr[0]); 
-            $_o = self::local_variable( );
-            $kv = explode('=>', $for_expr[1]); 
-        }
-        $isAssoc = (count($kv) >= 2);
-        
-        if ( $isAssoc )
-        {
-            $k = trim($kv[0]); $v = trim($kv[1]); 
-            self::local_variable( $k ); self::local_variable( $v );
-            
-            $out = "';" . self::pad_lines(self::$TT_FOR_ASSOC->render(array(
-                 'O'            => $o
-                ,'_O'           => $_o 
-                ,'K'            => $k
-                ,'V'            => $v
-                ,'EOL'          => self::$__TEOL
-                )));
-            self::$__level+=2;
-        }
-        else
-        {
-            $v = trim($kv[0]); 
-            self::local_variable( $v );
-            
-            $out = "';" . self::pad_lines(self::$TT_FOR->render(array(
-                 'O'            => $o
-                ,'_O'           => $_o
-                ,'V'            => $v
-                ,'EOL'          => self::$__TEOL
-                )));
-            self::$__level+=2;
-        }
-        self::$__loops++;  self::$__loopifs++;
-        
-        return $out;
-    }
-    
-    private static function t_elsefor( ) 
-    { 
-        /* else attached to  for loop */ 
-        self::$__loopifs--;  
-        self::$__level+=-2;
-        $out = "';" . self::pad_lines(self::$TT_ELSEFOR->render(array( 
-         'EOL'          => self::$__TEOL
-        )));
-        self::$__level+=1;
-        
-        return $out;
-    }
-    
-    private static function t_endfor( ) 
-    {
-        if ( self::$__loopifs == self::$__loops ) 
-        { 
-            self::$__loops--; self::$__loopifs--;  
-            self::$__level+=-2;
-            $out = "';" . self::pad_lines(self::$TT_ENDFOR1->render(array(
-             'EOL'          => self::$__TEOL
-            )));
-        }
-        else
-        {
-            self::$__loops--;  
-            self::$__level+=-1;
-            $out = "';" . self::pad_lines(self::$TT_ENDFOR2->render(array(
-             'EOL'          => self::$__TEOL
-            )));
-        }
-        return $out;
-    }
-    
     private static function t_include( $id ) 
     { 
         $id = trim( $id );
@@ -1397,16 +1154,6 @@ class Contemplate
             self::pop_state( $state );
         }
         return self::pad_lines( /*isset($contx->partials[$id]) ?*/ $contx->partials[$id] /*: self::$__global->partials[$id]*/ );
-    }
-    
-    private static function t_extends( $id ) 
-    { 
-        $id = trim( $id );
-        if ( self::$__strings && isset(self::$__strings[$id]) ) $id = self::$__strings[$id];
-        $ch = $id[0];
-        if ( '"' === $ch || "'" === $ch ) $id = substr($id,1,-1); // quoted id
-        self::$__extends = $id;
-        return "';" . self::$__TEOL; 
     }
     
     private static function t_block( $block ) 
@@ -1513,30 +1260,147 @@ class Contemplate
                     break;
                 case 3 /*'if'*/:
                     $args = preg_replace_callback( $re_controls, $parse_constructs, $args );
-                    $out = self::t_if($args);  
+                    $out = "';" . self::pad_lines(implode(self::$__TEOL, array(
+                                    ""
+                                    ,"if ({$args})"
+                                    ,"{"
+                                    ,""
+                                )));
+                    self::$__ifs++;  
+                    self::$__level++;
                     break;
                 case 4 /*'elseif'*/:
                     $args = preg_replace_callback( $re_controls, $parse_constructs, $args );
-                    $out = self::t_elseif($args); 
+                    self::$__level--;
+                    $out = "';" . self::pad_lines(implode(self::$__TEOL, array(
+                                    ""
+                                    ,"}"
+                                    ,"elseif ({$args})"
+                                    ,"{"
+                                    ,""
+                                )));
+                    self::$__level++;
                     break;
                 case 5 /*'else'*/:
-                    $out = self::t_else();  
+                    self::$__level--;
+                    $out = "';" . self::pad_lines(implode(self::$__TEOL, array(
+                                    ""
+                                    ,"}"
+                                    ,"else"
+                                    ,"{"
+                                    ,""
+                                )));
+                    self::$__level++;
                     break;
                 case 6 /*'endif'*/:
-                    $out = self::t_endif();  
+                    self::$__ifs--;  
+                    self::$__level--;
+                    $out = "';" . self::pad_lines(implode(self::$__TEOL, array(
+                                    ""
+                                    ,"}"
+                                    ,""
+                                )));
                     break;
                 case 7 /*'for'*/:
                     $args = preg_replace_callback( $re_controls, $parse_constructs, $args );
-                    $out = self::t_for($args);  
+                    $for_expr = $args;
+                    $is_php_style = strpos($for_expr, ' as ');
+                    $is_python_style = strpos($for_expr, ' in ');
+                    
+                    if ( false !== $is_python_style )
+                    {
+                        $for_expr = array(substr($for_expr, 0, $is_python_style), substr($for_expr, $is_python_style+4));
+                        $o = trim($for_expr[1]); 
+                        $_o = self::local_variable( );
+                        $kv = explode(',', $for_expr[0]); 
+                    }
+                    else /*if ( false !== $is_php_style )*/
+                    {
+                        $for_expr = array(substr($for_expr, 0, $is_php_style), substr($for_expr, $is_php_style+4));
+                        $o = trim($for_expr[0]); 
+                        $_o = self::local_variable( );
+                        $kv = explode('=>', $for_expr[1]); 
+                    }
+                    $isAssoc = (count($kv) >= 2);
+                    
+                    if ( $isAssoc )
+                    {
+                        $k = trim($kv[0]); $v = trim($kv[1]); 
+                        self::local_variable( $k ); self::local_variable( $v );
+                        
+                        $out = "';" . self::pad_lines(implode(self::$__TEOL, array(
+                                        ""
+                                        ,"{$_o} = {$o};"
+                                        ,"if (!empty({$_o}))"
+                                        ,"{"
+                                        ,"    foreach ({$_o} as {$k}=>{$v})"
+                                        ,"    {"
+                                        ,""
+                                    )));
+                        self::$__level+=2;
+                    }
+                    else
+                    {
+                        $v = trim($kv[0]); 
+                        self::local_variable( $v );
+                        
+                        $out = "';" . self::pad_lines(implode(self::$__TEOL, array(
+                                        ""
+                                        ,"{$_o} = {$o};"
+                                        ,"if (!empty({$_o}))"
+                                        ,"{"
+                                        ,"    foreach ({$_o} as {$v})"
+                                        ,"    {"
+                                        ,""
+                                    )));
+                        self::$__level+=2;
+                    }
+                    self::$__loops++;  self::$__loopifs++;
                     break;
                 case 8 /*'elsefor'*/:
-                    $out = self::t_elsefor(); 
+                    /* else attached to  for loop */ 
+                    self::$__loopifs--;  
+                    self::$__level+=-2;
+                    $out = "';" . self::pad_lines(implode(self::$__TEOL, array(
+                                    ""
+                                    ,"    }"
+                                    ,"}"
+                                    ,"else"
+                                    ,"{"
+                                    ,""
+                                )));
+                    self::$__level+=1;
                     break;
                 case 9 /*'endfor'*/:
-                    $out = self::t_endfor(); 
+                    if ( self::$__loopifs === self::$__loops ) 
+                    { 
+                        self::$__loops--; self::$__loopifs--;  
+                        self::$__level+=-2;
+                        $out = "';" . self::pad_lines(implode(self::$__TEOL, array(
+                                        ""
+                                        ,"    }"
+                                        ,"}"
+                                        ,""
+                                    )));
+                    }
+                    else
+                    {
+                        self::$__loops--;  
+                        self::$__level+=-1;
+                        $out = "';" . self::pad_lines(implode(self::$__TEOL, array(
+                                        ""
+                                        ,"}"
+                                        ,""
+                                    )));
+                    }
                     break;
                 case 10 /*'extends'*/:
-                    $out = self::t_extends($args); 
+                    $id = trim( $args );
+                    if ( self::$__strings && isset(self::$__strings[$id]) ) $id = self::$__strings[$id];
+                    $ch = $id[0];
+                    if ( '"' === $ch || "'" === $ch ) $id = substr($id,1,-1); // quoted id
+                    self::$__extends = $id;
+                    $out = "';" . self::$__TEOL; 
                     break;
                 case 11 /*'block'*/:
                     $out = self::t_block($args); 

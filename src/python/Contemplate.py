@@ -126,16 +126,6 @@ class _G:
     TT_BlockCode = None 
     TT_BLOCK = None
 
-    TT_IF = None 
-    TT_ELSEIF = None 
-    TT_ELSE = None 
-    TT_ENDIF = None
-
-    TT_FOR = None
-    TT_FOR_ASSOC = None 
-    TT_ELSEFOR = None
-    TT_ENDFOR = None
-
     TT_FUNC = None
     TT_RCODE = None
     
@@ -619,131 +609,6 @@ def is_local_variable( variable, block=None ):
 # Control structures
 #
 
-def t_if( cond='False' ):
-    global _G
-    out = "'" + pad_lines(_G.TT_IF.render({
-         'IFCOND'       : cond
-        ,'EOL'          : _G.TEOL
-        }))
-    _G.ifs += 1
-    _G.level += 1
-    
-    return out
-    
-def t_elseif( cond='False' ):
-    global _G
-    _G.level -= 1
-    out = "'" + pad_lines(_G.TT_ELSEIF.render({
-         'ELIFCOND'     : cond
-        ,'EOL'          : _G.TEOL
-        }))
-    _G.level += 1
-    
-    return out
-    
-def t_else( args='' ):
-    global _G
-    _G.level -= 1
-    out = "'" + pad_lines(_G.TT_ELSE.render({ 
-     'EOL'          : _G.TEOL
-    }))
-    _G.level += 1
-    
-    return out
-
-def t_endif( args='' ):
-    global _G
-    _G.ifs -= 1
-    _G.level -= 1
-    out = "'" + pad_lines(_G.TT_ENDIF.render({ 
-     'EOL'          : _G.TEOL
-    }))
-    
-    return out
-    
-def t_for( for_expr ):
-    global _G
-    
-    is_php_style = for_expr.find(' as ')
-    is_python_style = for_expr.find(' in ')
-    
-    if -1 < is_python_style:
-        for_expr = [for_expr[0:is_python_style], for_expr[is_python_style+4:]]
-        o = for_expr[1].strip()
-        kv = for_expr[0].split(',')
-    else: #if -1 < is_php_style
-        for_expr = [for_expr[0:is_php_style], for_expr[is_php_style+4:]]
-        o = for_expr[0].strip()
-        kv = for_expr[1].split('=>')
-    
-    _o = local_variable( )
-    isAssoc = (len(kv) >= 2)
-    
-    if isAssoc:
-        k = kv[0].strip()
-        v = kv[1].strip()
-        _oI = local_variable( )
-        local_variable( k )
-        local_variable( v )
-        
-        out = "'" + pad_lines(_G.TT_FOR_ASSOC.render({
-         'O'            : o
-        ,'_O'           : _o
-        ,'_OI'          : _oI
-        ,'K'            : k
-        ,'V'            : v
-        ,'EOL'          : _G.TEOL
-        }))
-        _G.level += 2
-    
-    else:
-        v = kv[0].strip()
-        _oV = local_variable( )
-        local_variable( v )
-        
-        out = "'" + pad_lines(_G.TT_FOR.render({
-         'O'            : o
-        ,'_O'           : _o
-        ,'_OV'          : _oV 
-        ,'V'            : v
-        ,'EOL'          : _G.TEOL
-        }))
-        _G.level += 2
-    
-    _G.loops += 1  
-    _G.loopifs += 1
-    
-    return out
-
-def t_elsefor( args='' ):
-    global _G
-    _G.loopifs -= 1
-    _G.level += -2
-    out = "'" + pad_lines(_G.TT_ELSEFOR.render({ 
-     'EOL'          : _G.TEOL
-    }))
-    _G.level += 1
-    
-    return out
-    
-def t_endfor( args='' ):
-    global _G
-    if _G.loopifs == _G.loops:
-        _G.loops -= 1 
-        _G.loopifs -= 1
-        _G.level += -2
-        out = "'" + pad_lines(_G.TT_ENDFOR.render({ 
-         'EOL'          : _G.TEOL
-        }))
-    else:
-        _G.loops -= 1
-        _G.level += -1
-        out = "'" + pad_lines(_G.TT_ENDFOR.render({ 
-         'EOL'          : _G.TEOL
-        }))
-    
-    return out
-
 def t_include( id ):
     global _G
     contx = _G.context
@@ -762,15 +627,6 @@ def t_include( id ):
         pop_state( state )
     return pad_lines( contx.partials[id] ) # if id in contx.partials else _G.glob.partials[id]
 
-def t_extends( id ):
-    global _G
-    id = id.strip()
-    if _G.strings and (id in _G.strings): id = _G.strings[id]
-    ch = id[0]
-    if '"' == ch or "'" == ch: id = id[1:-1] # quoted id
-    _G.extends = id
-    return "'" + _G.TEOL
-    
 def t_block( block ):
     global _G
     block = block.split(',')
@@ -869,23 +725,119 @@ def parse_constructs( match ):
             out = '(("_loc_' + varname + '__RAW__" in locals()) and (' + varname + ' is not None))' if is_local_variable(varname) else '(("' + varname + '__RAW__" in data) and (' + varname + ' is not None))'
         elif 3==m: # if
             args = re.sub(re_controls, parse_constructs, args)
-            out = t_if(args)
+            out = "'" + pad_lines(_G.TEOL.join([
+                            ""
+                            ,"if ("+args+"):"
+                            ,""
+                        ]))
+            _G.ifs += 1
+            _G.level += 1
         elif 4==m: # elseif
             args = re.sub(re_controls, parse_constructs, args)
-            out = t_elseif(args)
+            _G.level -= 1
+            out = "'" + pad_lines(_G.TEOL.join([
+                            ""
+                            ,"elif ("+args+"):"
+                            ,""
+                        ]))
+            _G.level += 1
         elif 5==m: # else
-            out = t_else()
+            _G.level -= 1
+            out = "'" + pad_lines(_G.TEOL.join([
+                            ""
+                            ,"else:"
+                            ,""
+                        ]))
+            _G.level += 1
         elif 6==m: # endif
-            out = t_endif()
+            _G.ifs -= 1
+            _G.level -= 1
+            out = "'" + pad_lines(_G.TEOL.join([
+                            "",""
+                        ]))
         elif 7==m: # for
             args = re.sub(re_controls, parse_constructs, args)
-            out = t_for(args)
+            for_expr = args
+            is_php_style = for_expr.find(' as ')
+            is_python_style = for_expr.find(' in ')
+            
+            if -1 < is_python_style:
+                for_expr = [for_expr[0:is_python_style], for_expr[is_python_style+4:]]
+                o = for_expr[1].strip()
+                kv = for_expr[0].split(',')
+            else: #if -1 < is_php_style
+                for_expr = [for_expr[0:is_php_style], for_expr[is_php_style+4:]]
+                o = for_expr[0].strip()
+                kv = for_expr[1].split('=>')
+            
+            _o = local_variable( )
+            isAssoc = (len(kv) >= 2)
+            
+            if isAssoc:
+                k = kv[0].strip()
+                v = kv[1].strip()
+                _oI = local_variable( )
+                local_variable( k )
+                local_variable( v )
+                
+                # a = [51,27,13,56]   dict(enumerate(a))
+                out = "'" + pad_lines(_G.TEOL.join([
+                                ""
+                                ,""+_o+" = "+o+""
+                                ,""+_oI+" = (enumerate("+_o+") if isinstance("+_o+",(list,tuple)) else "+_o+".items()) if "+_o+" else None"
+                                ,"if ("+_oI+"):"
+                                ,"    for "+k+","+v+" in "+_oI+":"
+                                ,""
+                            ]))
+                _G.level += 2
+            
+            else:
+                v = kv[0].strip()
+                _oV = local_variable( )
+                local_variable( v )
+                
+                out = "'" + pad_lines(_G.TEOL.join([
+                                ""
+                                ,""+_o+" = "+o+""
+                                ,""+_oV+" = ("+_o+" if isinstance("+_o+",(list,tuple)) else "+_o+".values()) if "+_o+" else None"
+                                ,"if ("+_oV+"):"
+                                ,"    for "+v+" in "+_oV+":"
+                                ,""
+                            ]))
+                _G.level += 2
+            
+            _G.loops += 1  
+            _G.loopifs += 1
         elif 8==m: # elsefor
-            out = t_elsefor()
+            _G.loopifs -= 1
+            _G.level += -2
+            out = "'" + pad_lines(_G.TEOL.join([
+                                ""
+                                ,"else:"
+                                ,""
+                            ]))
+            _G.level += 1
         elif 9==m: # endfor
-            out = t_endfor()
+            if _G.loopifs == _G.loops:
+                _G.loops -= 1 
+                _G.loopifs -= 1
+                _G.level += -2
+                out = "'" + pad_lines(_G.TEOL.join([
+                                "",""
+                            ]))
+            else:
+                _G.loops -= 1
+                _G.level += -1
+                out = "'" + pad_lines(_G.TEOL.join([
+                                "",""
+                            ]))
         elif 10==m: # extends
-            out = t_extends(args)
+            id = args.strip()
+            if _G.strings and (id in _G.strings): id = _G.strings[id]
+            ch = id[0]
+            if '"' == ch or "'" == ch: id = id[1:-1] # quoted id
+            _G.extends = id
+            out = "'" + _G.TEOL
         elif 11==m: # block
             out = t_block(args)
         elif 12==m: # endblock
@@ -1924,84 +1876,6 @@ class Contemplate:
             ,'#EOL#'                : 'EOL'
         }, True)
 
-            
-        _G.TT_IF = InlineTemplate('#EOL#'.join([
-            ""
-            ,"if (#IFCOND#):"
-            ,""
-        ]), {
-             "#IFCOND#"             : "IFCOND"
-            ,'#EOL#'                : 'EOL'
-        }, True)
-            
-        _G.TT_ELSEIF = InlineTemplate('#EOL#'.join([
-            ""
-            ,"elif (#ELIFCOND#):"
-            ,""
-        ]), {
-             "#ELIFCOND#"           : "ELIFCOND"
-            ,'#EOL#'                : 'EOL'
-        }, True)
-
-        _G.TT_ELSE = InlineTemplate('#EOL#'.join([
-            ""
-            ,"else:"
-            ,""
-        ]), {
-             '#EOL#'                : 'EOL'
-        }, True)
-            
-        _G.TT_ENDIF = InlineTemplate('#EOL#'.join([
-            "",""
-        ]), {
-             '#EOL#'                : 'EOL'
-        }, True)
-            
-        # a = [51,27,13,56]   dict(enumerate(a))
-        _G.TT_FOR_ASSOC = InlineTemplate('#EOL#'.join([
-            ""
-            ,"#_O# = #O#"
-            ,"#_OI# = (enumerate(#_O#) if isinstance(#_O#,(list,tuple)) else #_O#.items()) if #_O# else None"
-            ,"if (#_OI#):"
-            ,"    for #K#,#V# in #_OI#:"
-            ,""
-        ]), {
-             "#O#"                  : "O"
-            ,"#_O#"                 : "_O"
-            ,"#_OI#"                : "_OI"
-            ,"#K#"                  : "K"
-            ,"#V#"                  : "V"
-            ,'#EOL#'                : 'EOL'
-        }, True)
-        _G.TT_FOR = InlineTemplate('#EOL#'.join([
-            ""
-            ,"#_O# = #O#"
-            ,"#_OV# = (#_O# if isinstance(#_O#,(list,tuple)) else #_O#.values()) if #_O# else None"
-            ,"if (#_OV#):"
-            ,"    for #V# in #_OV#:"
-            ,""
-        ]), {
-             "#O#"                  : "O"
-            ,"#_O#"                 : "_O"
-            ,"#_OV#"                : "_OV"
-            ,"#V#"                  : "V"
-            ,'#EOL#'                : 'EOL'
-        }, True)
-            
-        _G.TT_ELSEFOR = InlineTemplate('#EOL#'.join([
-            ""
-            ,"else:"
-            ,""
-        ]), {
-             '#EOL#'                : 'EOL'
-        }, True)
-            
-        _G.TT_ENDFOR = InlineTemplate('#EOL#'.join([
-            "",""
-        ]), {
-             '#EOL#'                : 'EOL'
-        }, True)
-            
         _G.TT_FUNC = InlineTemplate('#EOL#'.join([
             ""
             ,"__p__ = ''"

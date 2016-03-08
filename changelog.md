@@ -4,6 +4,7 @@ __1.1.4__
 * lazier init for faster performance
 * new function `is_array` to test both if is `array` (`strict`) or is `object`
 * new directive `local_set` to set/update a **local** variable
+* some further optimisation changes
 
 
 __1.1.3__

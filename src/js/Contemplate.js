@@ -114,8 +114,6 @@ var __version__ = "1.1.4", Contemplate,
     TT_ClassCode,   
     // generated cached tpl block method code as a "heredoc" template (for Node cached templates)
     TT_BlockCode, TT_BLOCK,
-    TT_IF, TT_ELSEIF, TT_ELSE, TT_ENDIF,
-    TT_FOR,TT_FOR_ASSOC, TT_ELSEFOR, TT_ENDFOR1,TT_ENDFOR2,
     TT_FUNC, TT_RCODE
 ;
 
@@ -270,183 +268,6 @@ function is_local_variable( variable, block )
 // Control structures
 //
 
-function t_if( cond )
-{ 
-    var out = "';" + pad_lines(TT_IF.render({
-         'IFCOND'   : cond
-        ,'EOL'      : $__TEOL
-        }));
-    $__ifs++; 
-    $__level++;
-    
-    return out;
-}
-function t_elseif( cond )
-{ 
-    $__level--;
-    var out = "';" + pad_lines(TT_ELSEIF.render({
-         'ELIFCOND' : cond
-        ,'EOL'      : $__TEOL
-        }));
-    $__level++;
-    
-    return out;
-}
-function t_else( )
-{ 
-    $__level--;
-    var out = "';" + pad_lines(TT_ELSE.render({ 
-         'EOL'      : $__TEOL
-        }));
-    $__level++;
-    
-    return out;
-}
-function t_endif( )
-{ 
-    $__ifs--; 
-    $__level--;
-    var out = "';" + pad_lines(TT_ENDIF.render({ 
-         'EOL'      : $__TEOL
-        }));
-    
-    return out;
-}
-function t_for( for_expr )
-{
-    var out,
-        is_php_style = for_expr.indexOf(' as '),
-        is_python_style = for_expr.indexOf(' in '),
-        o, _o, kv, isAssoc
-    ;
-    
-    if ( -1 < is_python_style )
-    {
-        for_expr = [for_expr.slice(0, is_python_style), for_expr.slice(is_python_style+4)];
-        o = trim(for_expr[1]);
-        _o = local_variable( );
-        kv = for_expr[0].split(',');
-    }
-    else /*if ( -1 < is_php_style )*/
-    {
-        for_expr = [for_expr.slice(0, is_php_style), for_expr.slice(is_php_style+4)];
-        o = trim(for_expr[0]);
-        _o = local_variable( );
-        kv = for_expr[1].split('=>');
-    }
-    isAssoc = kv.length >= 2
-    
-    // http://jsperf.com/values-extraction/5
-    // raw 'in' loop with .hasOwnProperty is faster than looping over Object.keys
-    if ( isAssoc )
-    {
-        var k = trim(kv[0]),
-            v = trim(kv[1]),
-            _oK = '_loc_' + (++$__idcnt),
-            _k = '_loc_' + (++$__idcnt),
-            _l = '_loc_' + (++$__idcnt)
-        ;
-        local_variable( k ); local_variable( v );
-        out = "';" + pad_lines(TT_FOR_ASSOC.render({
-         'O'        : o
-        ,'_O'       : _o
-        ,'_OK'      : _oK
-        ,'K'        : k
-        ,'_K'       : _k
-        ,'_L'       : _l
-        ,'V'        : v
-        ,'ASSIGN1'  : ""+k+" = "+_oK+"["+_k+"]; "+v+" = "+_o+"["+k+"];"
-        ,'EOL'      : $__TEOL
-        }));
-        $__forType = 2;
-        $__level+=2;
-    }
-    else
-    {
-        var v = trim(kv[0]),
-            _oV = '_loc_' + (++$__idcnt),
-            _arr = '_loc_' + (++$__idcnt),
-            _k = '_loc_' + (++$__idcnt),
-            _kk = '_loc_' + (++$__idcnt),
-            _l = '_loc_' + (++$__idcnt)
-        ;
-        local_variable( v );
-        out = "';" + pad_lines(TT_FOR.render({
-         'O'        : o
-        ,'_O'       : _o
-        ,'_OV'      : _oV
-        ,'_ARR'     : _arr
-        ,'_KK'      : _kk
-        ,'_K'       : _k
-        ,'_L'       : _l
-        ,'V'        : v
-        ,'ASSIGN1'  : ""+v+" = "+_arr+" ? "+_kk+" : "+_o+"["+_kk+"];"
-        ,'EOL'      : $__TEOL
-        }));
-        $__forType = 1;
-        $__level+=2;
-    }
-    $__loops++;  $__loopifs++;
-    
-    return out;
-}
-function t_elsefor( )
-{ 
-    /* else attached to  for loop */ 
-    var out;
-    if ( 2 === $__forType )
-    {
-        $__loopifs--;  
-        $__level+=-2;
-        out = "';" + pad_lines(TT_ELSEFOR.render({
-         'EOL'      : $__TEOL
-        }));
-        $__level+=1;
-    }
-    else
-    {
-        $__loopifs--;  
-        $__level+=-2;
-        out = "';" + pad_lines(TT_ELSEFOR.render({
-         'EOL'      : $__TEOL
-        }));
-        $__level+=1;
-    }
-    
-    return out;
-}
-function t_endfor( )
-{
-    var out;
-    if ( $__loopifs === $__loops ) 
-    { 
-        if ( 2 === $__forType )
-        {
-            $__loops--; $__loopifs--;  
-            $__level+=-2;
-            out = "';" + pad_lines(TT_ENDFOR2.render({
-             'EOL'      : $__TEOL
-            }));
-        }
-        else
-        {
-            $__loops--; $__loopifs--;  
-            $__level+=-2;
-            out = "';" + pad_lines(TT_ENDFOR2.render({
-             'EOL'      : $__TEOL
-            }));
-        }
-    }
-    else
-    {
-        $__loops--; 
-        $__level+=-1;
-        out = "';" + pad_lines(TT_ENDFOR1.render({
-         'EOL'      : $__TEOL
-        }));
-    }
-    return out;
-}
 function t_include( id/*, asyncCB*/ )
 {
     var tpl, state, ch, contx = $__context;
@@ -466,15 +287,6 @@ function t_include( id/*, asyncCB*/ )
         pop_state( state );
     }
     return pad_lines( contx.partials[id] /*|| $__global.partials[id]*/ );
-}
-function t_extends( id )
-{ 
-    id = trim( id );
-    if ( $__strings && $__strings[HAS](id) ) id = $__strings[id];
-    var ch = id.charAt(0);
-    if ( '"' === ch || "'" === ch ) id = id.slice(1,-1); // quoted id
-    $__extends = id;
-    return "';" + $__TEOL; 
 }
 function t_block( block )
 { 
@@ -579,32 +391,201 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
                 break;
             case 3 /*'if'*/: 
                 args = args.replace( re_controls, parse_constructs );
-                out = t_if( args );
+                out = "';" + pad_lines([
+                                ""
+                                ,"if ("+args+")"
+                                ,"{"
+                                ,""
+                            ].join( $__TEOL ));
+                $__ifs++; 
+                $__level++;
                 break;
             case 4 /*'elseif'*/:  
                 args = args.replace( re_controls, parse_constructs );
-                out = t_elseif( args );
+                $__level--;
+                out = "';" + pad_lines([
+                                ""
+                                ,"}"
+                                ,"else if ("+args+")"
+                                ,"{"
+                                ,""
+                            ].join( $__TEOL ));
+                $__level++;
                 break;
             case 5 /*'else'*/: 
-                out = t_else();
+                $__level--;
+                out = "';" + pad_lines([
+                                ""
+                                ,"}"
+                                ,"else"
+                                ,"{"
+                                ,""
+                            ].join( $__TEOL ));
+                $__level++;
                 break;
             case 6 /*'endif'*/: 
-                out = t_endif();
+                $__ifs--; 
+                $__level--;
+                out = "';" + pad_lines([
+                                ""
+                                ,"}"
+                                ,""
+                            ].join( $__TEOL ));
                 break;
             case 7 /*'for'*/: 
                 args = args.replace( re_controls, parse_constructs );
-                out = t_for( args );
+                var for_expr = args, is_php_style = for_expr.indexOf(' as '),
+                    is_python_style = for_expr.indexOf(' in '),
+                    o, _o, kv, isAssoc
+                ;
+                
+                if ( -1 < is_python_style )
+                {
+                    for_expr = [for_expr.slice(0, is_python_style), for_expr.slice(is_python_style+4)];
+                    o = trim(for_expr[1]);
+                    _o = local_variable( );
+                    kv = for_expr[0].split(',');
+                }
+                else /*if ( -1 < is_php_style )*/
+                {
+                    for_expr = [for_expr.slice(0, is_php_style), for_expr.slice(is_php_style+4)];
+                    o = trim(for_expr[0]);
+                    _o = local_variable( );
+                    kv = for_expr[1].split('=>');
+                }
+                isAssoc = kv.length >= 2
+                
+                // http://jsperf.com/values-extraction/5
+                // raw 'in' loop with .hasOwnProperty is faster than looping over Object.keys
+                if ( isAssoc )
+                {
+                    var k = trim(kv[0]),
+                        v = trim(kv[1]),
+                        _oK = '_loc_' + (++$__idcnt),
+                        _k = '_loc_' + (++$__idcnt),
+                        _l = '_loc_' + (++$__idcnt)
+                    ;
+                    local_variable( k ); local_variable( v );
+                    out = "';" + pad_lines([
+                                    ""
+                                    ,"var "+_o+" = "+o+", "+_oK+" = "+_o+" ? Object.keys("+_o+") : null,"
+                                    ,"    "+_k+", "+k+", "+v+", "+_l+" = "+_o+" ? "+_oK+".length : 0;"
+                                    ,"if ("+_l+")"
+                                    ,"{"
+                                    ,"    for ("+_k+"=0; "+_k+"<"+_l+"; "+_k+"++)"
+                                    ,"    {"
+                                    ,"        "+k+" = "+_oK+"["+_k+"]; "+v+" = "+_o+"["+k+"];"
+                                    ,"        "
+                                    ,""
+                                ].join( $__TEOL ));
+                    $__forType = 2;
+                    $__level+=2;
+                }
+                else
+                {
+                    var v = trim(kv[0]),
+                        _oV = '_loc_' + (++$__idcnt),
+                        _arr = '_loc_' + (++$__idcnt),
+                        _k = '_loc_' + (++$__idcnt),
+                        _kk = '_loc_' + (++$__idcnt),
+                        _l = '_loc_' + (++$__idcnt)
+                    ;
+                    local_variable( v );
+                    out = "';" + pad_lines([
+                                    ""
+                                    ,"var "+_o+" = "+o+", "+_arr+" = !!"+_o+".forEach," 
+                                    ,"    "+_oV+" = "+_o+" ? ("+_arr+" ? "+_o+" : Object.keys("+_o+")) : null,"
+                                    ,"    "+_k+", "+_kk+", "+v+", "+_l+" = "+_oV+" ? "+_oV+".length : 0;"
+                                    ,"if ("+_l+")"
+                                    ,"{"
+                                    ,"    for ("+_k+"=0; "+_k+"<"+_l+"; "+_k+"++)"
+                                    ,"    {"
+                                    ,"        "+_kk+" = "+_oV+"["+_k+"];"
+                                    ,"        "+v+" = "+_arr+" ? "+_kk+" : "+_o+"["+_kk+"];"
+                                    ,"        "
+                                    ,""
+                                ].join( $__TEOL ));
+                    $__forType = 1;
+                    $__level+=2;
+                }
+                $__loops++;  $__loopifs++;
                 break;
             case 8 /*'elsefor'*/: 
-                out = t_elsefor();
+                /* else attached to  for loop */ 
+                if ( 2 === $__forType )
+                {
+                    $__loopifs--;  
+                    $__level+=-2;
+                    out = "';" + pad_lines([
+                                    ""
+                                    ,"    }"
+                                    ,"}"
+                                    ,"else"
+                                    ,"{  "
+                                    ,""
+                                ].join( $__TEOL ));
+                    $__level+=1;
+                }
+                else
+                {
+                    $__loopifs--;  
+                    $__level+=-2;
+                    out = "';" + pad_lines([
+                                    ""
+                                    ,"    }"
+                                    ,"}"
+                                    ,"else"
+                                    ,"{  "
+                                    ,""
+                                ].join( $__TEOL ));
+                    $__level+=1;
+                }
                 break;
             case 9 /*'endfor'*/:  
-                out = t_endfor();
+                if ( $__loopifs === $__loops ) 
+                { 
+                    if ( 2 === $__forType )
+                    {
+                        $__loops--; $__loopifs--;  
+                        $__level+=-2;
+                        out = "';" + pad_lines([
+                                        ""
+                                        ,"    }"
+                                        ,"}"
+                                        ,""
+                                    ].join( $__TEOL ));
+                    }
+                    else
+                    {
+                        $__loops--; $__loopifs--;  
+                        $__level+=-2;
+                        out = "';" + pad_lines([
+                                        ""
+                                        ,"    }"
+                                        ,"}"
+                                        ,""
+                                    ].join( $__TEOL ));
+                    }
+                }
+                else
+                {
+                    $__loops--; 
+                    $__level+=-1;
+                    out = "';" + pad_lines([
+                                    ""
+                                    ,"}"
+                                    ,""
+                                ].join( $__TEOL ));
+                }
                 break;
             case 10 /*'extends'*/:  
-                out = t_extends( args );
-                rest = rest.replace( re_controls, parse_constructs );
-                return out + rest;
+                var id = trim( args );
+                if ( $__strings && $__strings[HAS](id) ) id = $__strings[id];
+                var ch = id.charAt(0);
+                if ( '"' === ch || "'" === ch ) id = id.slice(1,-1); // quoted id
+                $__extends = id;
+                out = "';" + $__TEOL;
+                break;
             case 11 /*'block'*/:  
                 out = t_block( args );
                 break;
@@ -1862,119 +1843,6 @@ Contemplate = {
             ,"#EOL#"                : "EOL"
         }, true);
 
-        TT_IF = new InlineTemplate([
-            ""
-            ,"if (#IFCOND#)"
-            ,"{"
-            ,""
-        ].join( '#EOL#' ), {
-             "#IFCOND#"             : "IFCOND"
-            ,"#EOL#"                : "EOL"
-        }, true);
-    
-        TT_ELSEIF = new InlineTemplate([
-            ""
-            ,"}"
-            ,"else if (#ELIFCOND#)"
-            ,"{"
-            ,""
-        ].join( '#EOL#' ), {
-             "#ELIFCOND#"           : "ELIFCOND"
-            ,"#EOL#"                : "EOL"
-        }, true);
-    
-        TT_ELSE = new InlineTemplate([
-            ""
-            ,"}"
-            ,"else"
-            ,"{"
-            ,""
-        ].join( '#EOL#' ), {
-             "#EOL#"                : "EOL"
-        }, true);
-    
-        TT_ENDIF = new InlineTemplate([
-            ""
-            ,"}"
-            ,""
-        ].join( '#EOL#' ), {
-             "#EOL#"                : "EOL"
-        }, true);
-    
-        TT_FOR_ASSOC = new InlineTemplate([
-            ""
-            ,"var #_O# = #O#, #_OK# = #_O# ? Object.keys(#_O#) : null,"
-            ,"    #_K#, #K#, #V#, #_L# = #_OK# ? #_OK#.length : 0;"
-            ,"if (#_L#)"
-            ,"{"
-            ,"    for (#_K#=0; #_K#<#_L#; #_K#++)"
-            ,"    {"
-            ,"        #ASSIGN1#"
-            ,"        "
-            ,""
-        ].join( '#EOL#' ), {
-             "#O#"                  : "O"
-            ,"#_O#"                 : "_O"
-            ,"#_OK#"                : "_OK"
-            ,"#_K#"                 : "_K"
-            ,"#K#"                  : "K"
-            ,"#V#"                  : "V"
-            ,"#_L#"                 : "_L"
-            ,"#ASSIGN1#"            : "ASSIGN1"
-            ,"#EOL#"                : "EOL"
-        }, true);
-        TT_FOR = new InlineTemplate([
-            ""
-            ,"var #_O# = #O#, #_ARR# = !!#_O#.forEach," 
-            ,"    #_OV# = #_O# ? (#_ARR# ? #_O# : Object.keys(#_O#)) : null,"
-            ,"    #_K#, #_KK#, #V#, #_L# = #_OV# ? #_OV#.length : 0;"
-            ,"if (#_L#)"
-            ,"{"
-            ,"    for (#_K#=0; #_K#<#_L#; #_K#++)"
-            ,"    {"
-            ,"        #_KK# = #_OV#[#_K#];"
-            ,"        #ASSIGN1#"
-            ,"        "
-            ,""
-        ].join( '#EOL#' ), {
-             "#O#"                  : "O"
-            ,"#_O#"                 : "_O"
-            ,"#_OV#"                : "_OV"
-            ,"#_K#"                 : "_K"
-            ,"#_KK#"                : "_KK"
-            ,"#_ARR#"               : "_ARR"
-            ,"#V#"                  : "V"
-            ,"#_L#"                 : "_L"
-            ,"#ASSIGN1#"            : "ASSIGN1"
-            ,"#EOL#"                : "EOL"
-        }, true);
-    
-        TT_ELSEFOR = new InlineTemplate([
-            ""
-            ,"    }"
-            ,"}"
-            ,"else"
-            ,"{  "
-            ,""
-        ].join( '#EOL#' ), {
-             "#EOL#"                : "EOL"
-        }, true);
-    
-        TT_ENDFOR2 = new InlineTemplate([
-            ""
-            ,"    }"
-            ,"}"
-            ,""
-        ].join( '#EOL#' ), {
-             "#EOL#"                : "EOL"
-        }, true);
-        TT_ENDFOR1 = new InlineTemplate([
-            ""
-            ,"}"
-            ,""
-        ].join( '#EOL#' ), {
-             "#EOL#"                : "EOL"
-        }, true);
     
         TT_FUNC = new InlineTemplate([
             "return function( data, __i__ ){"

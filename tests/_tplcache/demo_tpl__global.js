@@ -94,7 +94,7 @@ function Contemplate_demo__global( id )
         
         __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>FOR Loop Associative (php-style, literal array data)</strong><br />' + "\n" + '    <pre>' + "\n" + '    &lt;% for(["a", "b", "c"] as $index=>$value) %&gt;' + "\n" + '        [&lt;% $index %&gt;] = &lt;strong&gt;&lt;% $value %&gt;&lt;/strong&gt;&lt;br /&gt; ' + "\n" + '    &lt;% endfor %&gt;' + "\n" + '    </pre><br />' + "\n" + '    ';
         var _loc_36 = ["a", "b", "c"], _loc_37 = _loc_36 ? Object.keys(_loc_36) : null,
-            _loc_38, _loc_index, _loc_value, _loc_39 = _loc_37 ? _loc_37.length : 0;
+            _loc_38, _loc_index, _loc_value, _loc_39 = _loc_36 ? _loc_37.length : 0;
         if (_loc_39)
         {
             for (_loc_38=0; _loc_38<_loc_39; _loc_38++)
@@ -124,7 +124,7 @@ function Contemplate_demo__global( id )
         
         __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>FOR Loop Associative (php-style, literal object data)</strong><br />' + "\n" + '    <pre>' + "\n" + '    &lt;% for({"k1":"a", "k2":"b", "k3":"c"} as $index3=>$value3) %&gt;' + "\n" + '        [&lt;% $index3 %&gt;] = &lt;strong&gt;&lt;% $value3 %&gt;&lt;/strong&gt;&lt;br /&gt; ' + "\n" + '    &lt;% endfor %&gt;' + "\n" + '    </pre><br />' + "\n" + '    ';
         var _loc_61 = {"k1":"a", "k2":"b", "k3":"c"}, _loc_62 = _loc_61 ? Object.keys(_loc_61) : null,
-            _loc_63, _loc_index3, _loc_value3, _loc_64 = _loc_62 ? _loc_62.length : 0;
+            _loc_63, _loc_index3, _loc_value3, _loc_64 = _loc_61 ? _loc_62.length : 0;
         if (_loc_64)
         {
             for (_loc_63=0; _loc_63<_loc_64; _loc_63++)
@@ -154,7 +154,7 @@ function Contemplate_demo__global( id )
         
         __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>FOR Loop Associative (python-style, literal array data)</strong><br />' + "\n" + '    <pre>' + "\n" + '    &lt;% for($index4,$value4 in ["a", "b", "c"]) %&gt;' + "\n" + '        [&lt;% $index4 %&gt;] = &lt;strong&gt;&lt;% $value4 %&gt;&lt;/strong&gt;&lt;br /&gt; ' + "\n" + '    &lt;% endfor %&gt;' + "\n" + '    </pre><br />' + "\n" + '    ';
         var _loc_86 = ["a", "b", "c"], _loc_87 = _loc_86 ? Object.keys(_loc_86) : null,
-            _loc_88, _loc_index4, _loc_value4, _loc_89 = _loc_87 ? _loc_87.length : 0;
+            _loc_88, _loc_index4, _loc_value4, _loc_89 = _loc_86 ? _loc_87.length : 0;
         if (_loc_89)
         {
             for (_loc_88=0; _loc_88<_loc_89; _loc_88++)
@@ -184,7 +184,7 @@ function Contemplate_demo__global( id )
         
         __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>FOR Loop Associative (python-style, literal object data)</strong><br />' + "\n" + '    <pre>' + "\n" + '    &lt;% for($index6,$value7 in {"k1":"a", "k2":"b", "k3":"c"}) %&gt;' + "\n" + '        [&lt;% $index6 %&gt;] = &lt;strong&gt;&lt;% $value7 %&gt;&lt;/strong&gt;&lt;br /&gt; ' + "\n" + '    &lt;% endfor %&gt;' + "\n" + '    </pre><br />' + "\n" + '    ';
         var _loc_111 = {"k1":"a", "k2":"b", "k3":"c"}, _loc_112 = _loc_111 ? Object.keys(_loc_111) : null,
-            _loc_113, _loc_index6, _loc_value7, _loc_114 = _loc_112 ? _loc_112.length : 0;
+            _loc_113, _loc_index6, _loc_value7, _loc_114 = _loc_111 ? _loc_112.length : 0;
         if (_loc_114)
         {
             for (_loc_113=0; _loc_113<_loc_114; _loc_113++)
@@ -290,7 +290,7 @@ function Contemplate_demo__global( id )
         
         __p__ += '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '' + "\n" + '    <strong>CALL another (sub-)template</strong><br />' + "\n" + '    <pre>' + "\n" + '    &lt;% for($users as $i=>$usergroup) %&gt;' + "\n" + '        &lt;!-- call a (sub-)template --&gt;' + "\n" + '        &lt;% tpl("sub", {"i" : $i, "users" : $users}) %&gt;' + "\n" + '    &lt;% endfor %&gt;' + "\n" + '    </pre><br />' + "\n" + '    ';
         var _loc_156 = data.users, _loc_157 = _loc_156 ? Object.keys(_loc_156) : null,
-            _loc_158, _loc_i, _loc_usergroup, _loc_159 = _loc_157 ? _loc_157.length : 0;
+            _loc_158, _loc_i, _loc_usergroup, _loc_159 = _loc_156 ? _loc_157.length : 0;
         if (_loc_159)
         {
             for (_loc_158=0; _loc_158<_loc_159; _loc_158++)

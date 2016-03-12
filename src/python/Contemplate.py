@@ -913,7 +913,7 @@ def parse_constructs( match ):
         return prefix + out + re.sub(re_controls, parse_constructs, rest)
     
     #return match.group(0)
-    return ctrl+'('+args+')'+rest if startParen else ctrl+rest
+    return prefix + ctrl + ('('+re.sub(re_controls, parse_constructs, args)+')' if startParen else '') + re.sub(re_controls, parse_constructs, rest)
 
 
 def parse_blocks( s ):

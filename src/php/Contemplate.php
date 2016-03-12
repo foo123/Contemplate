@@ -1483,7 +1483,7 @@ class Contemplate
             return $prefix . $out . preg_replace_callback( $re_controls, $parse_constructs, $rest );
         }
         
-        return /*$match[0]*/ $startParen ? $ctrl.'('.$args.')'.$rest : $ctrl.$rest;
+        return /*$match[0]*/ $prefix . $ctrl . ($startParen ? '('.preg_replace_callback( $re_controls, $parse_constructs, $args ).')' : '') . preg_replace_callback( $re_controls, $parse_constructs, $rest );
     }
     
     private static function split_arguments( $args, $delim=',' )

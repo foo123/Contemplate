@@ -661,7 +661,7 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
         return prefix + out + rest.replace( re_controls, parse_constructs );
     }
     
-    return /*match0*/ startParen ? ctrl+'('+args+')'+rest : ctrl+rest;
+    return /*match0*/ prefix + ctrl + (startParen ? '('+args.replace( re_controls, parse_constructs )+')' : '') + rest.replace( re_controls, parse_constructs );
 }
 function parse_blocks( s )
 {

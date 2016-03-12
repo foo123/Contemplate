@@ -912,7 +912,8 @@ def parse_constructs( match ):
             out = 'Contemplate.' + ctrl + '(' + args + ')'
         return prefix + out + re.sub(re_controls, parse_constructs, rest)
     
-    return match.group(0)
+    #return match.group(0)
+    return ctrl+'('+args+')'+rest if startParen else ctrl+rest
 
 
 def parse_blocks( s ):

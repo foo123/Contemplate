@@ -1,5 +1,10 @@
 ###ChangeLog
 
+__1.1.5__
+* new function `in_array` to test if array contains a value (similar to php)
+* new functions `json_encode`, `json_decode` (similar to php)
+
+
 __1.1.4__
 * lazier init for faster performance
 * new function `is_array` to test both if is `array` (`strict`) or is `object`

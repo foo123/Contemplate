@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 1.1.4
+*  @version: 1.1.5
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -334,7 +334,7 @@ class ContemplateCtx
 
 class Contemplate
 {
-    const VERSION = "1.1.4";
+    const VERSION = "1.1.5";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -408,7 +408,8 @@ class Contemplate
     'lowercase', 'uppercase', 'ucfirst', 'lcfirst', 'sprintf',
     'date', 'ldate', 'locale', 'xlocale',
     'inline', 'tpl', 'uuid', 'haskey',
-    'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes', 'is_array',
+    'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
+    'is_array', 'in_array', 'json_encode', 'json_decode',
     'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale'
     );
     private static $__aliases = array(
@@ -858,6 +859,21 @@ class Contemplate
     public static function is_array( $v, $strict=false ) 
     {
         return $strict ? is_array($v) && $v === array_values($v) : is_array($v);
+    }
+        
+    public static function in_array( $v, $a ) 
+    {
+        return in_array( $v, $a );
+    }
+        
+    public static function json_encode( $v ) 
+    {
+        return json_encode( $v );
+    }
+        
+    public static function json_decode( $v ) 
+    {
+        return json_decode( $v, true );
     }
         
     public static function haskey( $v/*, key1, key2, etc.. */ ) 
@@ -1478,6 +1494,12 @@ class Contemplate
                     else
                         $out = "is_array({$args[0]})";
                     break;
+                case 28: 
+                    $args = self::split_arguments($args,',');
+                    $out = "in_array(({$args[0]}),({$args[1]}))";
+                    break;
+                case 29: $out = 'json_encode('.$args.')'; break;
+                case 30: $out = 'json_decode('.$args.',true)'; break;
                 default: $out = 'Contemplate::' . $ctrl . '(' . $args . ')';
             }
             return $prefix . $out . preg_replace_callback( $re_controls, $parse_constructs, $rest );

@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node, client-side and XPCOM/SDK JavaScript
 *
-*  @version: 1.1.4
+*  @version: 1.1.5
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -31,7 +31,7 @@ else if ( !(name in root) ) /* Browser/WebWorker/.. */
 //////////////////////////////////////////////////////////////////////////////////////
 
 // private vars
-var __version__ = "1.1.4", Contemplate,
+var __version__ = "1.1.5", Contemplate,
 
     PROTO = 'prototype', HAS = 'hasOwnProperty',
     Obj = Object, Arr = Array, toString = Obj[PROTO].toString,
@@ -97,7 +97,8 @@ var __version__ = "1.1.4", Contemplate,
     'lowercase', 'uppercase', 'ucfirst', 'lcfirst', 'sprintf',
     'date', 'ldate', 'locale', 'xlocale',
     'inline', 'tpl', 'uuid', 'haskey',
-    'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes', 'is_array',
+    'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
+    'is_array', 'in_array', 'json_encode', 'json_decode',
     'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale'
     ],
     $__aliases = {
@@ -656,6 +657,12 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
                 else
                     out = "('[object Array]'===Object.prototype.toString.call("+args[0]+")||'[object Object]'===Object.prototype.toString.call("+args[0]+"))";
                 break;
+            case 28:
+                args = split_arguments(args,',');
+                out = '(-1<('+args[1]+').indexOf('+args[0]+'))';
+                break;
+            case 29: out = 'JSON.stringify('+args+')'; break;
+            case 30: out = 'JSON.parse('+args+')'; break;
             default: out = 'Contemplate.' + ctrl + '(' + args + ')';
         }
         return prefix + out + rest.replace( re_controls, parse_constructs );
@@ -2164,6 +2171,18 @@ Contemplate = {
     ,is_array: function( v, strict ) {
         var to_string = toString.call( v );
         return strict ? '[object Array]' === to_string : ('[object Array]' === to_string) || ('[object Object]' === to_string);
+    }
+        
+    ,in_array: function( v, a ) {
+        return -1 < a.indexOf( v );
+    }
+        
+    ,json_encode: function( v ) {
+        return JSON.stringify( v );
+    }
+        
+    ,json_decode: function( v ) {
+        return JSON.parse( v );
     }
         
     ,haskey: function( v/*, key1, key2, etc.. */ ) {

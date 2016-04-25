@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 1.1.4
+#  @version 1.1.5
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -12,7 +12,7 @@
 ##
 
 # needed imports
-import os, sys, re, time, datetime, calendar, math, codecs
+import os, sys, re, time, datetime, calendar, math, codecs, json
 
 # http://docs.python.org/2/library/collections.html#collections.OrderedDict
 # http://code.activestate.com/recipes/576693/
@@ -148,7 +148,8 @@ class _G:
     'lowercase', 'uppercase', 'ucfirst', 'lcfirst', 'sprintf',
     'date', 'ldate', 'locale', 'xlocale',
     'inline', 'tpl', 'uuid', 'haskey',
-    'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes', 'is_array',
+    'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
+    'is_array', 'in_array', 'json_encode', 'json_decode',
     'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale'
     ]
     aliases = {
@@ -908,6 +909,9 @@ def parse_constructs( match ):
                 out = "(isinstance("+args[0]+",list) if ("+args[1]+") else isinstance("+args[0]+",(list,dict)))"
             else:
                 out = "isinstance("+args[0]+",(list,dict))"
+        elif 28==m:
+            args = split_arguments(args,',')
+            out = "(("+args[0]+") in ("+args[1]+"))"
         else:
             out = 'Contemplate.' + ctrl + '(' + args + ')'
         return prefix + out + re.sub(re_controls, parse_constructs, rest)
@@ -1757,7 +1761,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "1.1.4"
+    VERSION = "1.1.5"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -2143,8 +2147,17 @@ class Contemplate:
         if isinstance(tpl, Contemplate.InlineTemplate): return str(tpl.render( reps ))
         return Contemplate.InlineTemplate( tpl, reps, compiled )
     
-    def is_array( v, strict=False):
+    def is_array( v, strict=False ):
         return isinstance(v,list) if strict else isinstance(v,(list,dict))
+        
+    def in_array( v, a ):
+        return (v in a)
+        
+    def json_encode( v ):
+        return json.dumps( v )
+        
+    def json_decode( v ):
+        return json.loads( v )
         
     def haskey( v, *args ):
         if not v or not (isinstance(v, list) or isinstance(v, dict)): return False

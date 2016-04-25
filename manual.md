@@ -1,6 +1,6 @@
 ###Contemplate Manual
 
-**version 1.1.4; platforms: PHP, Python, Node/XPCOM/JS**
+**version 1.1.5; platforms: PHP, Python, Node/XPCOM/JS**
 
 
 ###Contents
@@ -46,6 +46,8 @@ $obj.0.key  // this will also work
 $obj["key"].key2
 
 $obj.key["key2"]  // this will also work
+
+$obj.key.key2  // this will also work
 
 // etc..
 
@@ -161,6 +163,9 @@ TEMPLATE operations take place in the `current` context (which defaults to `glob
 * `q( val )`   wrap `val` in single-quotes
 * `qq( val )` / `dq( val )`  wrap `val` in double-quotes
 * `is_array( val [, strict=false] )`  (`php`-like) function test whether `val` is `array` (`strict`) or `object`
+* `in_array( val, array )`  (`php`-like) function test whether `val` is contained in `array`
+* `json_encode( val )`  (`php`-like) function to json-encode `val`
+* `json_decode( val )`  (`php`-like) function to json-decode `val`
 * `addslashes( str )`  addslashes (`php`-like) function
 * `stripslashes( str )`  stripslashes (`php`-like) function
 * `sprintf( format, val1, val2, .. )`   return a formatted string using `val1`, `val2`, etc..

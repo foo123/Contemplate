@@ -305,6 +305,10 @@
     <li>is_array([1,2,3],true) = <% is_array([1,2,3],true) %></li>
     <li>is_array({"1":1,"2":2,"3":3}) = <% is_array({"1":1,"2":2,"3":3}) %></li>
     <li>is_array({"1":1,"2":2,"3":3},true) = <% is_array({"1":1,"2":2,"3":3},true) %></li>
+    <li>in_array(2,[1,2,3]) = <% in_array(2,[1,2,3]) %></li>
+    <li>in_array(4,[1,2,3]) = <% in_array(4,[1,2,3]) %></li>
+    <li>json_encode({"array":[1,2,3]}) = <% plg_print(json_encode({"array":[1,2,3]})) %></li>
+    <li>json_decode('{"array":[1,2,3]}') = <% plg_print(json_decode('{"array":[1,2,3]}')) %></li>
     <li>q(123) = <% q(123) %></li>
     <li>dq(123) = <% dq(123) %></li>
     <li>trim(&quot;__FOO__&quot;, &quot;_&quot;) = <% trim("__FOO__", "_") %></li>

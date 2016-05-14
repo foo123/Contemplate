@@ -10,6 +10,10 @@ __Light-weight, fast and flexible "object-oriented" template engine for PHP, Pyt
 [Contemplate.js](https://raw.githubusercontent.com/foo123/Contemplate/master/src/js/Contemplate.js),  [Contemplate.min.js](https://raw.githubusercontent.com/foo123/Contemplate/master/src/js/Contemplate.min.js)
 
 
+[Meaning of Yoga in Indian Philosophy (wikipedia)](https://en.wikipedia.org/wiki/Yoga)
+(*"unifying through yoga, contemplate and attain mastery"*)
+
+
 **see also:**  
 
 * [HtmlWidget](https://github.com/foo123/HtmlWidget) html widgets used as (template) plugins and/or standalone for PHP, Node/XPCOM/JS, Python both client and server-side (can be used as [plugins for Contemplate](/src/js/plugins/plugins.txt))

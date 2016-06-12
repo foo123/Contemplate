@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node, client-side and XPCOM/SDK JavaScript
 *
-*  @version: 1.1.5
+*  @version: 1.1.6
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -31,7 +31,7 @@ else if ( !(name in root) ) /* Browser/WebWorker/.. */
 //////////////////////////////////////////////////////////////////////////////////////
 
 // private vars
-var __version__ = "1.1.5", Contemplate,
+var __version__ = "1.1.6", Contemplate,
 
     PROTO = 'prototype', HAS = 'hasOwnProperty',
     Obj = Object, Arr = Array, toString = Obj[PROTO].toString,
@@ -99,7 +99,7 @@ var __version__ = "1.1.5", Contemplate,
     'inline', 'tpl', 'uuid', 'haskey',
     'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
     'is_array', 'in_array', 'json_encode', 'json_decode',
-    'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale'
+    'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale', 'join'
     ],
     $__aliases = {
      'l'        : 'locale'
@@ -107,6 +107,7 @@ var __version__ = "1.1.5", Contemplate,
     ,'nl'       : 'nlocale'
     ,'nxl'      : 'nxlocale'
     ,'cc'       : 'concat'
+    ,'j'        : 'join'
     ,'dq'       : 'qq'
     ,'now'      : 'time'
     ,'template' : 'tpl'
@@ -706,7 +707,6 @@ function parse_blocks( s )
             // 1st occurance, block definition
             blocks.push([ block, TT_BLOCK.render({
              'BLOCKCODE'    : s.slice( pos1+tl, pos2-tl-1 ) + "';"
-            ,'EOL'          : EOL
             })]);
         }
         s = s.slice(0, pos1) + rep + s.slice(pos2+1);
@@ -1308,7 +1308,6 @@ function create_template_render_function( id, contx, seps )
    // Convert the template into pure JavaScript
     func = TT_FUNC.render({
      'FCODE'         : $__extends ? "__p__ = '';" : "__p__ = '" + renderf + "';"
-    ,'EOL'           : EOL
     });
     
     // defined blocks
@@ -1338,13 +1337,11 @@ function create_cached_template( id, contx, filename, classname, seps )
          'BLOCKNAME'            : blocks[b][0]
         ,'BLOCKMETHODNAME'      : blocks[b][0]
         ,'BLOCKMETHODCODE'      : pad_lines(blocks[b][1], 1)
-        ,'EOL'                  : EOL
         }));
     sblocks = sblocks.length ? EOL + "self._blocks = {" + EOL + sblocks.join(',' + EOL) + EOL + "};" + EOL : '';
     
     renderCode = TT_RCODE.render({
      'RCODE'                : $__extends ? "__p__ = '';" : "__p__ += '" + renderf + "';"
-    ,'EOL'                  : EOL
     });
     extendCode = $__extends ? "self.extend('" + $__extends + "');" : '';
     prefixCode = contx.prefix ? contx.prefix : '';
@@ -1357,7 +1354,6 @@ function create_cached_template( id, contx, filename, classname, seps )
     ,'EXTENDCODE'           : pad_lines(extendCode, 1)
     ,'BLOCKS'               : pad_lines(sblocks, 1)
     ,'RENDERCODE'           : pad_lines(renderCode, 1)
-    ,'EOL'                  : EOL
     });
     return fwrite( filename, classCode, contx.encoding );
 }
@@ -1815,14 +1811,13 @@ Contemplate = {
             ,"};"
             ,"});"
             ,""
-        ].join( '#EOL#' ), {
+        ].join( $__TEOL ), {
              "#PREFIXCODE#"         : "PREFIXCODE"
             ,"#CLASSNAME#"          : "CLASSNAME"
             ,"#TPLID#"              : "TPLID"
             ,"#BLOCKS#"             : "BLOCKS"
             ,"#EXTENDCODE#"         : "EXTENDCODE"
             ,"#RENDERCODE#"         : "RENDERCODE"
-            ,"#EOL#"                : "EOL"
         }, true);
     
         TT_BlockCode = new InlineTemplate([
@@ -1832,11 +1827,10 @@ Contemplate = {
             ,"#BLOCKMETHODCODE#"
             ,"}"
             ,""
-        ].join( '#EOL#' ), {
+        ].join( $__TEOL ), {
              "#BLOCKNAME#"          : "BLOCKNAME"
             ,"#BLOCKMETHODNAME#"    : "BLOCKMETHODNAME"
             ,"#BLOCKMETHODCODE#"    : "BLOCKMETHODCODE"
-            ,"#EOL#"                : "EOL"
         }, true);
 
         TT_BLOCK = new InlineTemplate([
@@ -1845,9 +1839,8 @@ Contemplate = {
             ,"#BLOCKCODE#"
             ,"return __p__;"
             ,""
-        ].join( '#EOL#' ), {
+        ].join( $__TEOL ), {
              "#BLOCKCODE#"          : "BLOCKCODE"
-            ,"#EOL#"                : "EOL"
         }, true);
 
     
@@ -1860,18 +1853,16 @@ Contemplate = {
             ,"__ctx&&Contemplate._set_ctx( __ctx );"
             ,"return __p__;"
             ,"};"
-        ].join( '#EOL#' ), {
+        ].join( $__TEOL ), {
              "#FCODE#"              : "FCODE"
-            ,"#EOL#"                : "EOL"
         }, true);
         
         TT_RCODE = new InlineTemplate([
             ""
             ,"#RCODE#"
             ,""
-        ].join( '#EOL#' ), {
+        ].join( $__TEOL ), {
              "#RCODE#"              : "RCODE"
-            ,"#EOL#"                : "EOL"
         }, true);
         
         clear_state( );
@@ -2184,7 +2175,18 @@ Contemplate = {
     ,json_decode: function( v ) {
         return JSON.parse( v );
     }
-        
+    
+    ,join: function( sep, args ) {
+        if ( null == args ) return '';
+        if ( 'object' !== typeof args ) return String(args);
+        if ( null == sep ) sep = '';
+        var i, l = args.length,
+            out = l > 0 ? ('object'===typeof args[0] ? Contemplate.join(sep, args[0]) : String(args[0])) : '';
+        for (i=1; i<l; i++)
+            out += sep + ('object' === typeof args[i] ? Contemplate.join(sep, args[i]) : String(args[i]));
+        return out;
+    }
+    
     ,haskey: function( v/*, key1, key2, etc.. */ ) {
         var to_string = toString.call( v ), args, i, tmp;
         if (!v || "[object Array]" !== to_string && "[object Object]" !== to_string) return false;

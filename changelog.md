@@ -1,5 +1,9 @@
 ###ChangeLog
 
+__1.1.6__
+* minor changes for faster basic templates
+* new function `join / j` to (flatly) string-concatenate arbitrary array (of arrays) with given separator
+
 __1.1.5__
 * new function `in_array` to test if array contains a value (similar to php)
 * new functions `json_encode`, `json_decode` (similar to php)

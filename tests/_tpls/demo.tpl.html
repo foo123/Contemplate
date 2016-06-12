@@ -301,6 +301,7 @@
     <li>uuid(&quot;namespace&quot;) = <% uuid("namespace") %></li>
     <li>echo(&quot;123&quot;) = <% echo("123") %></li>
     <li>cc(123,&quot;456&quot;,&quot;789&quot;) = concat(&quot;123&quot;,&quot;456&quot;,&quot;789&quot;) = <% cc(123,"456","789") %> = <% concat("123","456","789") %></li>
+    <li>j(&quot;,&quot;,[1,2,3,[4,5,6,[7,8,9]]]) = join(&quot;,&quot;,[1,2,3,[4,5,6,[7,8,9]]]) = <% j(",",[1,2,3,[4,5,6,[7,8,9]]]) %> = <% join(",",[1,2,3,[4,5,6,[7,8,9]]]) %></li>
     <li>is_array([1,2,3]) = <% is_array([1,2,3]) %></li>
     <li>is_array([1,2,3],true) = <% is_array([1,2,3],true) %></li>
     <li>is_array({"1":1,"2":2,"3":3}) = <% is_array({"1":1,"2":2,"3":3}) %></li>

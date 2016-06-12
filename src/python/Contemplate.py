@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 1.1.5
+#  @version 1.1.6
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -107,7 +107,7 @@ class _G:
     glob = None
     context = None
     
-    NEWLINE = re.compile(r'\n\r|\r\n|\n|\r')
+    NEWLINE = re.compile(r'\n\r|\r\n|\r|\n')
     SQUOTE = re.compile(r"'")
     NL = re.compile(r'\n')
 
@@ -150,7 +150,7 @@ class _G:
     'inline', 'tpl', 'uuid', 'haskey',
     'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
     'is_array', 'in_array', 'json_encode', 'json_decode',
-    'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale'
+    'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale', 'join'
     ]
     aliases = {
      'l'        : 'locale'
@@ -158,6 +158,7 @@ class _G:
     ,'nl'       : 'nlocale'
     ,'nxl'      : 'nxlocale'
     ,'cc'       : 'concat'
+    ,'j'        : 'join'
     ,'dq'       : 'qq'
     ,'now'      : 'time'
     ,'template' : 'tpl'
@@ -954,7 +955,6 @@ def parse_blocks( s ):
             # 1st occurance, block definition
             blocks.append([ block, _G.TT_BLOCK.render({
              'BLOCKCODE'     : s[pos1+tl:pos2-tl-1] + "'"
-            ,'EOL'           : EOL
             })])
         
         s = s[0:pos1] + rep + s[pos2+1:]
@@ -1391,7 +1391,6 @@ def create_template_render_function( id, contx, seps=None ):
     
     func = _G.TT_FUNC.render({
      'FCODE'        : "" if _G.extends else "__p__ += '" + renderf + "'"
-    ,'EOL'          : EOL
     })
     
     _G.funcId += 1
@@ -1427,12 +1426,10 @@ def create_cached_template( id, contx, filename, classname, seps=None ):
          'BLOCKNAME'            : b[0]
         ,'BLOCKMETHODNAME'      : "_blockfn_"+b[0]
         ,'BLOCKMETHODCODE'      : pad_lines(b[1], 1)
-        ,'EOL'                  : EOL
         })
     
     renderCode = _G.TT_RCODE.render({
      'RCODE'                : "__p__ = ''" if _G.extends else "__p__ += '" + renderf + "'" 
-    ,'EOL'                  : EOL
     })
     extendCode = "self_.extend('"+_G.extends+"')" if _G.extends else ''
     prefixCode = contx.prefix if contx.prefix else ''
@@ -1445,7 +1442,6 @@ def create_cached_template( id, contx, filename, classname, seps=None ):
     ,'EXTENDCODE'           : pad_lines(extendCode, 3)
     ,'BLOCKS'               : pad_lines(sblocks, 2)
     ,'RENDERCODE'           : pad_lines(renderCode, 4)
-    ,'EOL'                  : EOL
     })
     return write_file( filename, classCode, contx.encoding )
 
@@ -1571,7 +1567,7 @@ class InlineTemplate:
         
             notIsSub = s[ 0 ] 
             s = s[ 1 ]
-            if notIsSub: out += "'" + re.sub(_G.NEWLINE, "' + \"\\n\" + '", re.sub(_G.SQUOTE, "\\'", s)) + "'"
+            if notIsSub: out += "'" + re.sub(_G.NEWLINE, "' + \"\\\\n\" + '", re.sub(_G.SQUOTE, "\\'", s)) + "'"
             else: out += " + str(args['" + s + "']) + "
         
         out += ')'
@@ -1761,7 +1757,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "1.1.5"
+    VERSION = "1.1.6"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -1792,7 +1788,7 @@ class Contemplate:
         _G.tplEnd = _G.TEOL + "__p__ += '"
         
         # make compilation templates
-        _G.TT_ClassCode = InlineTemplate('#EOL#'.join([
+        _G.TT_ClassCode = InlineTemplate(_G.TEOL.join([
             "# -*- coding: UTF-8 -*-"
             ,"#PREFIXCODE#"
             ,"# Contemplate cached template '#TPLID#'"
@@ -1854,10 +1850,9 @@ class Contemplate:
             ,"#BLOCKS#"             : "BLOCKS"
             ,"#EXTENDCODE#"         : "EXTENDCODE"
             ,"#RENDERCODE#"         : "RENDERCODE"
-            ,'#EOL#'                : 'EOL'
         }, True)
         
-        _G.TT_BlockCode = InlineTemplate('#EOL#'.join([
+        _G.TT_BlockCode = InlineTemplate(_G.TEOL.join([
             ""
             ,"# tpl block render method for block '#BLOCKNAME#'"
             ,"def #BLOCKMETHODNAME#(self, data, self_, __i__):"
@@ -1867,10 +1862,9 @@ class Contemplate:
              "#BLOCKNAME#"          : "BLOCKNAME"
             ,"#BLOCKMETHODNAME#"    : "BLOCKMETHODNAME"
             ,"#BLOCKMETHODCODE#"    : "BLOCKMETHODCODE"
-            ,'#EOL#'                : 'EOL'
         }, True)
 
-        _G.TT_BLOCK = InlineTemplate('#EOL#'.join([
+        _G.TT_BLOCK = InlineTemplate(_G.TEOL.join([
             ""
             ,"__p__ = ''"
             ,"#BLOCKCODE#"
@@ -1878,10 +1872,9 @@ class Contemplate:
             ,""
         ]), {
              "#BLOCKCODE#"          : "BLOCKCODE"
-            ,'#EOL#'                : 'EOL'
         }, True)
 
-        _G.TT_FUNC = InlineTemplate('#EOL#'.join([
+        _G.TT_FUNC = InlineTemplate(_G.TEOL.join([
             ""
             ,"__p__ = ''"
             ,"#FCODE#"
@@ -1889,16 +1882,14 @@ class Contemplate:
             ,""
         ]), {
              "#FCODE#"              : "FCODE"
-            ,'#EOL#'                : 'EOL'
         }, True)
 
-        _G.TT_RCODE = InlineTemplate('#EOL#'.join([
+        _G.TT_RCODE = InlineTemplate(_G.TEOL.join([
             ""
             ,"#RCODE#"
             ,""
         ]), {
              "#RCODE#"              : "RCODE"
-            ,'#EOL#'                : 'EOL'
         }, True)
         
         clear_state( )
@@ -2158,6 +2149,17 @@ class Contemplate:
         
     def json_decode( v ):
         return json.loads( v )
+        
+    def join( sep, args ):
+        if args is None: return ''
+        if not isinstance(args,(list,tuple)): return str(args)
+        if sep is None: sep = ''
+        if not isinstance(sep,str): sep = str(sep)
+        l = len(args)
+        out = (Contemplate.join(sep, args[0]) if isinstance(args[0],(list,tuple)) else str(args[0])) if l > 0 else ''
+        for i in range(1,l):
+            out += sep + (Contemplate.join(sep, args[i]) if isinstance(args[i],(list,tuple)) else str(args[i]))
+        return out
         
     def haskey( v, *args ):
         if not v or not (isinstance(v, list) or isinstance(v, dict)): return False

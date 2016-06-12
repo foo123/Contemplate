@@ -1,18 +1,18 @@
-# -*- coding: UTF-8 -*-
-
-# Contemplate cached template 'demo'
-def __getTplClass__(Contemplate):
-    # extends the main Contemplate.Template class
-    class Contemplate_demo__global(Contemplate.Template):
-        'Contemplate cached template demo'
-        # constructor
-        def __init__(self, id=None):
-            self_ = self
-            super(Contemplate_demo__global, self_).__init__( id )
-            # extend tpl assign code starts here
-            self_.extend('base')
-            # extend tpl assign code ends here
-        # tpl-defined blocks render code starts here
+# -*- coding: UTF-8 -*-
+
+# Contemplate cached template 'demo'
+def __getTplClass__(Contemplate):
+    # extends the main Contemplate.Template class
+    class Contemplate_demo__global(Contemplate.Template):
+        'Contemplate cached template demo'
+        # constructor
+        def __init__(self, id=None):
+            self_ = self
+            super(Contemplate_demo__global, self_).__init__( id )
+            # extend tpl assign code starts here
+            self_.extend('base')
+            # extend tpl assign code ends here
+        # tpl-defined blocks render code starts here
         
         
         # tpl block render method for block 'Block3'
@@ -20,7 +20,7 @@ def __getTplClass__(Contemplate):
             
             __p__ = ''
              
-            __p__ += '' + "\n" + '' + "\n" + '    <strong>Block3 is overriden by the demo template</strong>' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>Contemplate Functions/Plugins</strong><hr /><br />' + "\n" + '    ' + "\n" + '    <strong>Functions</strong><br />' + "\n" + '    <ul>' + "\n" + '    <li>uuid(&quot;namespace&quot;) = ' + str(Contemplate.uuid("namespace")) + '</li>' + "\n" + '    <li>echo(&quot;123&quot;) = ' + str(str("123")) + '</li>' + "\n" + '    <li>cc(123,&quot;456&quot;,&quot;789&quot;) = concat(&quot;123&quot;,&quot;456&quot;,&quot;789&quot;) = ' + str(str(123)+str("456")+str("789")) + ' = ' + str(str("123")+str("456")+str("789")) + '</li>' + "\n" + '    <li>is_array([1,2,3]) = ' + str(isinstance([1,2,3],(list,dict))) + '</li>' + "\n" + '    <li>is_array([1,2,3],true) = ' + str((isinstance([1,2,3],list) if (True) else isinstance([1,2,3],(list,dict)))) + '</li>' + "\n" + '    <li>is_array({"1":1,"2":2,"3":3}) = ' + str(isinstance({"1":1,"2":2,"3":3},(list,dict))) + '</li>' + "\n" + '    <li>is_array({"1":1,"2":2,"3":3},true) = ' + str((isinstance({"1":1,"2":2,"3":3},list) if (True) else isinstance({"1":1,"2":2,"3":3},(list,dict)))) + '</li>' + "\n" + '    <li>in_array(2,[1,2,3]) = ' + str(((2) in ([1,2,3]))) + '</li>' + "\n" + '    <li>in_array(4,[1,2,3]) = ' + str(((4) in ([1,2,3]))) + '</li>' + "\n" + '    <li>json_encode({"array":[1,2,3]}) = ' + str(Contemplate.plg_("plg_print",Contemplate.json_encode({"array":[1,2,3]}))) + '</li>' + "\n" + '    <li>json_decode(\'{"array":[1,2,3]}\') = ' + str(Contemplate.plg_("plg_print",Contemplate.json_decode('{"array":[1,2,3]}'))) + '</li>' + "\n" + '    <li>q(123) = ' + str("'"+str(123)+"'") + '</li>' + "\n" + '    <li>dq(123) = ' + str('"'+str(123)+'"') + '</li>' + "\n" + '    <li>trim(&quot;__FOO__&quot;, &quot;_&quot;) = ' + str(Contemplate.trim("__FOO__", "_")) + '</li>' + "\n" + '    <li>trim(&quot;  FOO  &quot;) = ' + str(Contemplate.trim("  FOO  ")) + '</li>' + "\n" + '    <li>lowercase(&quot;FOO&quot;) = ' + str(str("FOO").lower()) + '</li>' + "\n" + '    <li>lowercase(&quot;fOo&quot;) = ' + str(str("fOo").lower()) + '</li>' + "\n" + '    <li>uppercase(&quot;foo&quot;) = ' + str(str("foo").upper()) + '</li>' + "\n" + '    <li>uppercase(&quot;FoO&quot;) = ' + str(str("FoO").upper()) + '</li>' + "\n" + '    <li>camelcase(&quot;camel_case&quot;, &quot;_&quot;) = ' + str(Contemplate.camelcase("camel_case", "_")) + '</li>' + "\n" + '    <li>camelcase(&quot;camelCase&quot;) = ' + str(Contemplate.camelcase("camelCase")) + '</li>' + "\n" + '    <li>snakecase(&quot;snakeCase&quot;, &quot;_&quot;) = ' + str(Contemplate.snakecase("snakeCase", "_")) + '</li>' + "\n" + '    <li>snakecase(&quot;snake_case&quot;) = ' + str(Contemplate.snakecase("snake_case")) + '</li>' + "\n" + '    <li>sprintf(&quot;%02d : %02d : %02d&quot;, 2, 0, 12) = ' + str(Contemplate.sprintf("%02d : %02d : %02d", 2, 0, 12)) + '</li>' + "\n" + '    <li>addslashes(&quot;this string\'s s\&apos;s s\\&apos;s s\\\&apos;s&quot;) = ' + str(Contemplate.addslashes("this string's s\'s s\\'s s\\\'s")) + '</li>' + "\n" + '    <li>stripslashes(&quot;this string\'s s\&apos;s s\\&apos;s s\\\&apos;s&quot;) = ' + str(Contemplate.stripslashes("this string's s\'s s\\'s s\\\'s")) + '</li>' + "\n" + '    <li>l(&quot;locale&quot;) = locale(&quot;locale&quot;) = ' + str(Contemplate.locale("locale")) + ' = ' + str(Contemplate.locale("locale")) + '</li>' + "\n" + '    <li>nl(2,&quot;locale&quot;,&quot;locales&quot;) = nlocale(2,&quot;locale&quot;,&quot;locales&quot;) = ' + str(Contemplate.nlocale(2,"locale","locales")) + ' = ' + str(Contemplate.nlocale(2,"locale","locales")) + '</li>' + "\n" + '    <li>xl(&quot;locale&quot;,&quot;custom&quot;) = xlocale(&quot;locale&quot;,&quot;custom&quot;) = ' + str(Contemplate.xlocale("locale","custom")) + ' = ' + str(Contemplate.xlocale("locale","custom")) + '</li>' + "\n" + '    <li>nxl(2,&quot;locale&quot;,&quot;locales&quot;,&quot;custom&quot;) = nxlocale(2,&quot;locale&quot;,&quot;locales&quot;,&quot;custom&quot;) = ' + str(Contemplate.nxlocale(2,"locale","locales","custom")) + ' = ' + str(Contemplate.nxlocale(2,"locale","locales","custom")) + '</li>' + "\n" + '    <li>e(&#39;&lt;ok k=&quot;v&quot;&gt;&#39;) = ' + str(Contemplate.e("<ok k=\"v\">")) + '</li>' + "\n" + '    </ul>' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>Test plugin with variable $foo</strong><br />' + "\n" + '    ' + str(Contemplate.plg_("plg_test",data['foo'])) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>Test inlined plugin</strong><br />' + "\n" + '    ' + str(Contemplate.bracket("inlined")) + '' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <!-- use contemplate literal data with template function, in this case a print test plugin -->' + "\n" + '    <strong>use literal data with template function, in this case a print plugin</strong><br />' + "\n" + '    ' + str(Contemplate.plg_("plg_print",{          "stringVar"     : "stringValue",          "numericVar"    : 123,          "arrayVar"      : [             0, 1, "astring", 3,              { "prop": 1 }          ]      })) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + ''
+            __p__ += '' + "\n" + '' + "\n" + '    <strong>Block3 is overriden by the demo template</strong>' + "\n" + '' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>Contemplate Functions/Plugins</strong><hr /><br />' + "\n" + '    ' + "\n" + '    <strong>Functions</strong><br />' + "\n" + '    <ul>' + "\n" + '    <li>uuid(&quot;namespace&quot;) = ' + str(Contemplate.uuid("namespace")) + '</li>' + "\n" + '    <li>echo(&quot;123&quot;) = ' + str(str("123")) + '</li>' + "\n" + '    <li>cc(123,&quot;456&quot;,&quot;789&quot;) = concat(&quot;123&quot;,&quot;456&quot;,&quot;789&quot;) = ' + str(str(123)+str("456")+str("789")) + ' = ' + str(str("123")+str("456")+str("789")) + '</li>' + "\n" + '    <li>j(&quot;,&quot;,[1,2,3,[4,5,6,[7,8,9]]]) = join(&quot;,&quot;,[1,2,3,[4,5,6,[7,8,9]]]) = ' + str(Contemplate.join(",",[1,2,3,[4,5,6,[7,8,9]]])) + ' = ' + str(Contemplate.join(",",[1,2,3,[4,5,6,[7,8,9]]])) + '</li>' + "\n" + '    <li>is_array([1,2,3]) = ' + str(isinstance([1,2,3],(list,dict))) + '</li>' + "\n" + '    <li>is_array([1,2,3],true) = ' + str((isinstance([1,2,3],list) if (True) else isinstance([1,2,3],(list,dict)))) + '</li>' + "\n" + '    <li>is_array({"1":1,"2":2,"3":3}) = ' + str(isinstance({"1":1,"2":2,"3":3},(list,dict))) + '</li>' + "\n" + '    <li>is_array({"1":1,"2":2,"3":3},true) = ' + str((isinstance({"1":1,"2":2,"3":3},list) if (True) else isinstance({"1":1,"2":2,"3":3},(list,dict)))) + '</li>' + "\n" + '    <li>in_array(2,[1,2,3]) = ' + str(((2) in ([1,2,3]))) + '</li>' + "\n" + '    <li>in_array(4,[1,2,3]) = ' + str(((4) in ([1,2,3]))) + '</li>' + "\n" + '    <li>json_encode({"array":[1,2,3]}) = ' + str(Contemplate.plg_("plg_print",Contemplate.json_encode({"array":[1,2,3]}))) + '</li>' + "\n" + '    <li>json_decode(\'{"array":[1,2,3]}\') = ' + str(Contemplate.plg_("plg_print",Contemplate.json_decode('{"array":[1,2,3]}'))) + '</li>' + "\n" + '    <li>q(123) = ' + str("'"+str(123)+"'") + '</li>' + "\n" + '    <li>dq(123) = ' + str('"'+str(123)+'"') + '</li>' + "\n" + '    <li>trim(&quot;__FOO__&quot;, &quot;_&quot;) = ' + str(Contemplate.trim("__FOO__", "_")) + '</li>' + "\n" + '    <li>trim(&quot;  FOO  &quot;) = ' + str(Contemplate.trim("  FOO  ")) + '</li>' + "\n" + '    <li>lowercase(&quot;FOO&quot;) = ' + str(str("FOO").lower()) + '</li>' + "\n" + '    <li>lowercase(&quot;fOo&quot;) = ' + str(str("fOo").lower()) + '</li>' + "\n" + '    <li>uppercase(&quot;foo&quot;) = ' + str(str("foo").upper()) + '</li>' + "\n" + '    <li>uppercase(&quot;FoO&quot;) = ' + str(str("FoO").upper()) + '</li>' + "\n" + '    <li>camelcase(&quot;camel_case&quot;, &quot;_&quot;) = ' + str(Contemplate.camelcase("camel_case", "_")) + '</li>' + "\n" + '    <li>camelcase(&quot;camelCase&quot;) = ' + str(Contemplate.camelcase("camelCase")) + '</li>' + "\n" + '    <li>snakecase(&quot;snakeCase&quot;, &quot;_&quot;) = ' + str(Contemplate.snakecase("snakeCase", "_")) + '</li>' + "\n" + '    <li>snakecase(&quot;snake_case&quot;) = ' + str(Contemplate.snakecase("snake_case")) + '</li>' + "\n" + '    <li>sprintf(&quot;%02d : %02d : %02d&quot;, 2, 0, 12) = ' + str(Contemplate.sprintf("%02d : %02d : %02d", 2, 0, 12)) + '</li>' + "\n" + '    <li>addslashes(&quot;this string\'s s\&apos;s s\\&apos;s s\\\&apos;s&quot;) = ' + str(Contemplate.addslashes("this string's s\'s s\\'s s\\\'s")) + '</li>' + "\n" + '    <li>stripslashes(&quot;this string\'s s\&apos;s s\\&apos;s s\\\&apos;s&quot;) = ' + str(Contemplate.stripslashes("this string's s\'s s\\'s s\\\'s")) + '</li>' + "\n" + '    <li>l(&quot;locale&quot;) = locale(&quot;locale&quot;) = ' + str(Contemplate.locale("locale")) + ' = ' + str(Contemplate.locale("locale")) + '</li>' + "\n" + '    <li>nl(2,&quot;locale&quot;,&quot;locales&quot;) = nlocale(2,&quot;locale&quot;,&quot;locales&quot;) = ' + str(Contemplate.nlocale(2,"locale","locales")) + ' = ' + str(Contemplate.nlocale(2,"locale","locales")) + '</li>' + "\n" + '    <li>xl(&quot;locale&quot;,&quot;custom&quot;) = xlocale(&quot;locale&quot;,&quot;custom&quot;) = ' + str(Contemplate.xlocale("locale","custom")) + ' = ' + str(Contemplate.xlocale("locale","custom")) + '</li>' + "\n" + '    <li>nxl(2,&quot;locale&quot;,&quot;locales&quot;,&quot;custom&quot;) = nxlocale(2,&quot;locale&quot;,&quot;locales&quot;,&quot;custom&quot;) = ' + str(Contemplate.nxlocale(2,"locale","locales","custom")) + ' = ' + str(Contemplate.nxlocale(2,"locale","locales","custom")) + '</li>' + "\n" + '    <li>e(&#39;&lt;ok k=&quot;v&quot;&gt;&#39;) = ' + str(Contemplate.e("<ok k=\"v\">")) + '</li>' + "\n" + '    </ul>' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>Test plugin with variable $foo</strong><br />' + "\n" + '    ' + str(Contemplate.plg_("plg_test",data['foo'])) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <strong>Test inlined plugin</strong><br />' + "\n" + '    ' + str(Contemplate.bracket("inlined")) + '' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + '    <!-- use contemplate literal data with template function, in this case a print test plugin -->' + "\n" + '    <strong>use literal data with template function, in this case a print plugin</strong><br />' + "\n" + '    ' + str(Contemplate.plg_("plg_print",{          "stringVar"     : "stringValue",          "numericVar"    : 123,          "arrayVar"      : [             0, 1, "astring", 3,              { "prop": 1 }          ]      })) + '' + "\n" + '    ' + "\n" + '    <br /><br />' + "\n" + '    ' + "\n" + ''
             return __p__
             
         
@@ -201,43 +201,43 @@ def __getTplClass__(Contemplate):
             __p__ += 'Demo template nested Block12'
             return __p__
             
-        
-        # tpl-defined blocks render code ends here
-        # render a tpl block method
-        def block(self, block, data, __i__=None):
-            self_ = self
-            __ctx = False
-            r = ''
-            if not __i__:
-                __i__ = self_
-                if not self._autonomus: __ctx = Contemplate._set_ctx( self._ctx )
-            method = '_blockfn_' + block
-            if (hasattr(self_, method) and callable(getattr(self_, method))):
-                r = getattr(self_, method)(data, self_, __i__)
-            elif self_._extends:
-                r = self_._extends.block(block, data, __i__)
-            if __ctx:  Contemplate._set_ctx( __ctx )
-            return r
-        # render method
-        def render(self, data, __i__=None):
-            self_ = self
-            __ctx = False
-            __p__ = ''
-            if not __i__:
-                __i__ = self_
-                if not self._autonomus: __ctx = Contemplate._set_ctx( self._ctx )
-            if self_._extends:
-                __p__ = self_._extends.render(data, __i__)
-
-            else:
-                # tpl main render code starts here
+        
+        # tpl-defined blocks render code ends here
+        # render a tpl block method
+        def block(self, block, data, __i__=None):
+            self_ = self
+            __ctx = False
+            r = ''
+            if not __i__:
+                __i__ = self_
+                if not self._autonomus: __ctx = Contemplate._set_ctx( self._ctx )
+            method = '_blockfn_' + block
+            if (hasattr(self_, method) and callable(getattr(self_, method))):
+                r = getattr(self_, method)(data, self_, __i__)
+            elif self_._extends:
+                r = self_._extends.block(block, data, __i__)
+            if __ctx:  Contemplate._set_ctx( __ctx )
+            return r
+        # render method
+        def render(self, data, __i__=None):
+            self_ = self
+            __ctx = False
+            __p__ = ''
+            if not __i__:
+                __i__ = self_
+                if not self._autonomus: __ctx = Contemplate._set_ctx( self._ctx )
+            if self_._extends:
+                __p__ = self_._extends.render(data, __i__)
+
+            else:
+                # tpl main render code starts here
                 
                 __p__ = ''
-                
-                # tpl main render code ends here
-
-            if __ctx:  Contemplate._set_ctx( __ctx )
-            return __p__
-    return Contemplate_demo__global
-# allow to 'import *'  from this file as a module
-__all__ = ['__getTplClass__']
+                
+                # tpl main render code ends here
+
+            if __ctx:  Contemplate._set_ctx( __ctx )
+            return __p__
+    return Contemplate_demo__global
+# allow to 'import *'  from this file as a module
+__all__ = ['__getTplClass__']

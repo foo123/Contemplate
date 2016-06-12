@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 1.1.5
+*  @version: 1.1.6
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -334,7 +334,7 @@ class ContemplateCtx
 
 class Contemplate
 {
-    const VERSION = "1.1.5";
+    const VERSION = "1.1.6";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -410,7 +410,7 @@ class Contemplate
     'inline', 'tpl', 'uuid', 'haskey',
     'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
     'is_array', 'in_array', 'json_encode', 'json_decode',
-    'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale'
+    'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale', 'join'
     );
     private static $__aliases = array(
      'l'        => 'locale'
@@ -418,6 +418,7 @@ class Contemplate
     ,'nl'       => 'nlocale'
     ,'nxl'      => 'nxlocale'
     ,'cc'       => 'concat'
+    ,'j'        => 'join'
     ,'dq'       => 'qq'
     ,'now'      => 'time'
     ,'template' => 'tpl'
@@ -455,7 +456,7 @@ class Contemplate
         self::$__tplEnd = self::$__TEOL . "\$__p__ .= '";
 
         // make compilation templates
-        self::$TT_ClassCode = new ContemplateInlineTemplate(implode('#EOL#', array(
+        self::$TT_ClassCode = new ContemplateInlineTemplate(implode(self::$__TEOL, array(
             "#PREFIXCODE#"
             ,"if (!class_exists('#CLASSNAME#'))"
             ,"{"
@@ -523,10 +524,9 @@ class Contemplate
             ,"#BLOCKS#"             => "BLOCKS"
             ,"#EXTENDCODE#"         => "EXTENDCODE"
             ,"#RENDERCODE#"         => "RENDERCODE"
-            ,"#EOL#"                => "EOL"
         ), true);
         
-        self::$TT_BlockCode = new ContemplateInlineTemplate(implode('#EOL#', array(
+        self::$TT_BlockCode = new ContemplateInlineTemplate(implode(self::$__TEOL, array(
             ""
             ,"/* tpl block render method for block '#BLOCKNAME#' */"
             ,"private function #BLOCKMETHODNAME#(&\$data, \$self, \$__i__) "
@@ -538,10 +538,9 @@ class Contemplate
              "#BLOCKNAME#"          => "BLOCKNAME"
             ,"#BLOCKMETHODNAME#"    => "BLOCKMETHODNAME"
             ,"#BLOCKMETHODCODE#"    => "BLOCKMETHODCODE"
-            ,"#EOL#"                => "EOL"
         ), true);
         
-        self::$TT_BLOCK = new ContemplateInlineTemplate(implode('#EOL#', array(
+        self::$TT_BLOCK = new ContemplateInlineTemplate(implode(self::$__TEOL, array(
             ""
             ,"\$__p__ = '';"
             ,"#BLOCKCODE#"
@@ -549,10 +548,9 @@ class Contemplate
             ,""
         )), array(
              "#BLOCKCODE#"          => "BLOCKCODE"
-            ,"#EOL#"                => "EOL"
         ), true);
         
-        self::$TT_FUNC = new ContemplateInlineTemplate(implode('#EOL#', array(
+        self::$TT_FUNC = new ContemplateInlineTemplate(implode(self::$__TEOL, array(
             ""
             ,"\$__p__ = '';"  
             ,"#FCODE#"
@@ -560,16 +558,14 @@ class Contemplate
             ,""
         )), array(
              "#FCODE#"              => "FCODE"
-            ,"#EOL#"                => "EOL"
         ), true);
 
-        self::$TT_RCODE = new ContemplateInlineTemplate(implode('#EOL#', array(
+        self::$TT_RCODE = new ContemplateInlineTemplate(implode(self::$__TEOL, array(
             ""
             ,"#RCODE#"
             ,""
         )), array(
              "#RCODE#"              => "RCODE"
-            ,"#EOL#"                => "EOL"
         ), true);
         
         self::clear_state( );
@@ -874,6 +870,18 @@ class Contemplate
     public static function json_decode( $v ) 
     {
         return json_decode( $v, true );
+    }
+        
+    public static function join( $sep, $args ) 
+    {
+        if ( null == $args ) return '';
+        if ( !is_array($args) ) return strval($args);
+        if ( null == $sep ) $sep = '';
+        $l = count($args);
+        $out = $l > 0 ? (is_array($args[0]) ? self::join($sep, $args[0]) : strval($args[0])) : '';
+        for($i=1; $i<$l; $i++)
+            $out .= $sep . (is_array($args[$i]) ? self::join($sep, $args[$i]) : strval($args[$i]));
+        return $out;
     }
         
     public static function haskey( $v/*, key1, key2, etc.. */ ) 
@@ -1496,7 +1504,7 @@ class Contemplate
                     break;
                 case 28: 
                     $args = self::split_arguments($args,',');
-                    $out = "in_array(({$args[0]}),({$args[1]}))";
+                    $out = "in_array({$args[0]},{$args[1]})";
                     break;
                 case 29: $out = 'json_encode('.$args.')'; break;
                 case 30: $out = 'json_decode('.$args.',true)'; break;
@@ -1584,7 +1592,6 @@ class Contemplate
                 // 1st occurance, block definition
                 array_push($blocks, array($block, self::$TT_BLOCK->render(array(
                  'BLOCKCODE'        => substr($s, $pos1+$tl, $pos2-$tl-1-$pos1-$tl) ."';"
-                ,'EOL'              => $EOL
                 ))));
             }
             /*
@@ -2164,7 +2171,6 @@ class Contemplate
         
         $func = self::$TT_FUNC->render(array(
          'FCODE'        => self::$__extends ? "" : "\$__p__ .= '" . $renderf . "';"
-        ,'EOL'          => $EOL
         ));
         
         $fn = create_function('&$data,$self,$__i__', $func);
@@ -2198,12 +2204,10 @@ class Contemplate
              'BLOCKNAME'            => $blocks[$b][0]
             ,'BLOCKMETHODNAME'      => "_blockfn_" . $blocks[$b][0]
             ,'BLOCKMETHODCODE'      => self::pad_lines($blocks[$b][1], 1)
-            ,'EOL'                  => $EOL
             ));
         
         $renderCode = self::$TT_RCODE->render(array(
          'RCODE'                => self::$__extends ? "\$__p__ = '';" : "\$__p__ .= '" . $renderf . "';"
-        ,'EOL'                  => $EOL
         ));
         $extendCode = self::$__extends ? "\$self->extend('".self::$__extends."');" : '';
         $prefixCode = $contx->prefix ? $contx->prefix : '';
@@ -2216,7 +2220,6 @@ class Contemplate
         ,'EXTENDCODE'           => self::pad_lines($extendCode, 1)
         ,'BLOCKS'               => $sblocks
         ,'RENDERCODE'           => self::pad_lines($renderCode, 2)
-        ,'EOL'                  => $EOL
         ));
         
         return file_put_contents( $filename, $class );

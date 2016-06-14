@@ -872,15 +872,19 @@ class Contemplate
         return json_decode( $v, true );
     }
         
-    public static function join( $sep, $args ) 
+    public static function join( $sep, $args, $skip_empty=false ) 
     {
         if ( null == $args ) return '';
-        if ( !is_array($args) ) return strval($args);
+        $skip_empty = true === $skip_empty;
+        if ( !is_array($args) ) return $skip_empty&&!strlen($args) ? '' : strval($args);
         if ( null == $sep ) $sep = '';
         $l = count($args);
-        $out = $l > 0 ? (is_array($args[0]) ? self::join($sep, $args[0]) : strval($args[0])) : '';
+        $out = $l > 0 ? (is_array($args[0]) ? self::join($sep, $args[0], $skip_empty) : ($skip_empty&&(null==$args[0]||!strlen($args[0])) ? '' : strval($args[0]))) : '';
         for($i=1; $i<$l; $i++)
-            $out .= $sep . (is_array($args[$i]) ? self::join($sep, $args[$i]) : strval($args[$i]));
+        {
+            $s = is_array($args[$i]) ? self::join($sep, $args[$i], $skip_empty) : ($skip_empty&&(null==$args[$i]||!strlen($args[$i])) ? '' : strval($args[$i]));
+            if ( !$skip_empty || strlen($s) > 0 ) $out .= $sep . $s;
+        }
         return $out;
     }
         

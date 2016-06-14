@@ -2176,14 +2176,18 @@ Contemplate = {
         return JSON.parse( v );
     }
     
-    ,join: function( sep, args ) {
+    ,join: function( sep, args, skip_empty ) {
         if ( null == args ) return '';
-        if ( 'object' !== typeof args ) return String(args);
+        skip_empty = true === skip_empty;
+        if ( 'object' !== typeof args ) return skip_empty&&!String(args).length ? '' : String(args);
         if ( null == sep ) sep = '';
-        var i, l = args.length,
-            out = l > 0 ? ('object'===typeof args[0] ? Contemplate.join(sep, args[0]) : String(args[0])) : '';
+        var i, l = args.length, s,
+            out = l > 0 ? ('object'===typeof args[0] ? Contemplate.join(sep, args[0], skip_empty) : (skip_empty&&(null==args[0]||!String(args[0]).length) ? '' : String(args[0]))) : '';
         for (i=1; i<l; i++)
-            out += sep + ('object' === typeof args[i] ? Contemplate.join(sep, args[i]) : String(args[i]));
+        {
+            s = 'object' === typeof args[i] ? Contemplate.join(sep, args[i], skip_empty) : (skip_empty&&(null==args[i]||!String(args[i]).length) ? '' : String(args[i]));
+            if ( !skip_empty || s.length > 0 ) out += sep + s;
+        }
         return out;
     }
     

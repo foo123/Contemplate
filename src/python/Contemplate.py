@@ -2150,15 +2150,17 @@ class Contemplate:
     def json_decode( v ):
         return json.loads( v )
         
-    def join( sep, args ):
+    def join( sep, args, skip_empty=False ):
         if args is None: return ''
-        if not isinstance(args,(list,tuple)): return str(args)
+        skip_empty = skip_empty is True
+        if not isinstance(args,(list,tuple)): return '' if skip_empty and not len(str(args)) else str(args)
         if sep is None: sep = ''
         if not isinstance(sep,str): sep = str(sep)
         l = len(args)
-        out = (Contemplate.join(sep, args[0]) if isinstance(args[0],(list,tuple)) else str(args[0])) if l > 0 else ''
+        out = (Contemplate.join(sep, args[0], skip_empty) if isinstance(args[0],(list,tuple)) else ('' if skip_empty and (args[0] is None or not len(str(args[0]))) else str(args[0]))) if l > 0 else ''
         for i in range(1,l):
-            out += sep + (Contemplate.join(sep, args[i]) if isinstance(args[i],(list,tuple)) else str(args[i]))
+            s = Contemplate.join(sep, args[i], skip_empty) if isinstance(args[i],(list,tuple)) else ('' if skip_empty and (args[i] is None or not len(str(args[i]))) else str(args[i]))
+            if (not skip_empty) or len(s) > 0: out += sep + s
         return out
         
     def haskey( v, *args ):

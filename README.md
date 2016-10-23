@@ -56,7 +56,7 @@ There are a couple of other frameworks named also `contemplate`
 
 ###Contents
 
-* [Online Example](http://foo123.github.com/examples/contemplate/)
+* [Online Playground Example](http://foo123.github.com/examples/contemplate/)
 * [Rationale](#rationale)
 * [Features](#features)
 * [API Reference](/manual.md)

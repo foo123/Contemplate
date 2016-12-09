@@ -1,17 +1,18 @@
 
-!function (root,name,factory){
-'use strict';
-var m;
+!function( root, name, factory ){
+"use strict";
 if ( ('undefined'!==typeof Components)&&('object'===typeof Components.classes)&&('object'===typeof Components.classesByID)&&Components.utils&&('function'===typeof Components.utils['import']) ) /* XPCOM */
-    (root.EXPORTED_SYMBOLS = [ name ]) && (root[ name ] = factory( ));
+    (root.$deps = root.$deps||{}) && (root.EXPORTED_SYMBOLS = [name]) && (root[name] = root.$deps[name] = factory.call(root));
 else if ( ('object'===typeof module)&&module.exports ) /* CommonJS */
-    module.exports = factory( );
-else if ( ('function'===typeof(define))&&define.amd&&('function'===typeof(require))&&('function'===typeof(require.specified))&&require.specified(name) ) /* AMD */
-    define(name,['require','exports','module'],factory);
-else if ( !(name in root) ) /* Browser/Worker/.. */
-    (root[ name ] = (m=factory( )))&&('function'===typeof(define))&&define.amd&&define(function( ){return m;} );
+    (module.$deps = module.$deps||{}) && (module.exports = module.$deps[name] = factory.call(root));
+else if ( ('undefined'!==typeof System)&&('function'===typeof System.register)&&('function'===typeof System['import']) ) /* ES6 module */
+    System.register(name,[],function($__export){$__export(name, factory.call(root));});
+else if ( ('function'===typeof define)&&define.amd&&('function'===typeof require)&&('function'===typeof require.specified)&&require.specified(name) /*&& !require.defined(name)*/ ) /* AMD */
+    define(name,['module'],function(module){factory.moduleUri = module.uri; return factory.call(root);});
+else if ( !(name in root) ) /* Browser/WebWorker/.. */
+    (root[name] = factory.call(root)||1)&&('function'===typeof(define))&&define.amd&&define(function(){return root[name];} );
 }(this,'Contemplate_main__global',function( ){
-'use strict';
+"use strict";
 return function( Contemplate ) {
 /* Contemplate cached template 'main', constructor */
 function Contemplate_main__global( id )
@@ -19,10 +20,10 @@ function Contemplate_main__global( id )
     var self = this;
     Contemplate.Template.call( self, id );
     /* tpl-defined blocks render code starts here */
-    
+
     /* tpl-defined blocks render code ends here */
     /* extend tpl assign code starts here */
-    
+
     /* extend tpl assign code ends here */
 }
 /* extends main Contemplate.Template class */

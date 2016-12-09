@@ -1,5 +1,9 @@
 ###ChangeLog
 
+__1.1.7__
+* minor changes for better code alignment/indentation
+* minor changes in rendering
+
 __1.1.6__
 * minor changes for faster basic templates
 * new function `join / j` to (flatly) string-concatenate arbitrary array (of arrays) with given separator

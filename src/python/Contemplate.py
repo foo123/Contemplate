@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 1.1.6
+#  @version 1.1.7
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -78,7 +78,7 @@ class _G:
     preserveLines = ''
     compatibility = False
     EOL = "\n"
-    TEOL = os.linesep
+    TEOL = "\n" #os.linesep
     pad = "    "
     escape = True
 
@@ -476,8 +476,8 @@ def reset_state( ):
     _G.locals = {} 
     _G.variables = {} 
     _G.currentblock = '_'
-    if not _G.currentblock in _G.locals: _G.locals[_G.currentblock] = {}
-    if not _G.currentblock in _G.variables: _G.variables[_G.currentblock] = {}
+    if _G.currentblock not in _G.locals: _G.locals[_G.currentblock] = {}
+    if _G.currentblock not in _G.variables: _G.variables[_G.currentblock] = {}
     #_G.funcId = 0
 
 
@@ -527,14 +527,21 @@ def pop_state( state ):
     _G.currentblock = state[10]
 
 
-def pad_lines( lines, level=None ):
+def align( s, level=None ):
     global _G
     if level is None: level = _G.level
-    if level >= 0:
-        pad = _G.pad * level
-        lines = pad + (_G.TEOL + pad).join( re.split(_G.NEWLINE, lines) )
-        #lines = pad + (_G.TEOL + pad).join( lines.split("\n") )
-    return lines
+    l = len(s)
+    if l and (0 < level):
+        alignment = _G.pad * level
+        aligned = alignment
+        for c in s:
+            #if "\r" == c: continue
+            #elif "\n" == c: aligned += _G.TEOL + alignment
+            if "\n" == c: aligned += "\n" + alignment
+            else: aligned += c
+    else:
+        aligned = s
+    return aligned
 
 
 def get_separators( text, separators=None ):
@@ -617,7 +624,7 @@ def t_include( id ):
     id = id.strip()
     if _G.strings and (id in _G.strings): id = _G.strings[id]
     ch = id[0]
-    if '"' == ch or "'" == ch: id = id[1:-1] # quoted id
+    if ('"' == ch or "'" == ch) and (ch == id[-1]): id = id[1:-1] # quoted id
     
     # cache it
     if id not in contx.partials: #and (id not in _G.glob.partials):
@@ -625,9 +632,9 @@ def t_include( id ):
         reset_state( )
         tpl = get_template_contents( id, contx )
         tpl = get_separators( tpl )
-        contx.partials[id] = " " + parse( tpl, _G.leftTplSep, _G.rightTplSep, False ) + "'" + _G.TEOL
+        contx.partials[id] = "" + parse( tpl, _G.leftTplSep, _G.rightTplSep, False ) + "'" + _G.TEOL
         pop_state( state )
-    return pad_lines( contx.partials[id] ) # if id in contx.partials else _G.glob.partials[id]
+    return align( contx.partials[id] ) # if id in contx.partials else _G.glob.partials[id]
 
 def t_block( block ):
     global _G
@@ -636,7 +643,7 @@ def t_block( block ):
     block = block[0].strip()
     if _G.strings and (block in _G.strings): block = _G.strings[block]
     ch = block[0]
-    if '"' == ch or "'" == ch: block = block[1:-1] # quoted block
+    if ('"' == ch or "'" == ch) and (ch == block[-1]): block = block[1:-1] # quoted block
     
     _G.allblocks.append( [block, -1, -1, 0, _G.openblocks[ 0 ][ 1 ], echoed] )
     if block in _G.allblockscnt: _G.allblockscnt[ block ] += 1
@@ -712,22 +719,22 @@ def parse_constructs( match ):
             varname = args.pop(0).strip()
             expr = ','.join(args).strip()
             if 20 == m and not is_local_variable(varname): local_variable( varname ) # make it a local variable
-            out = "'" + _G.TEOL + pad_lines( varname + ' = ('+ expr +')' ) + _G.TEOL
+            out = "'" + _G.TEOL + align( varname + ' = ('+ expr +')' ) + _G.TEOL
         elif 1==m: # unset
             args = re.sub(re_controls, parse_constructs, args)
             varname = args
             if varname:
                 varname = str(varname).strip()
-                out = "'" + _G.TEOL + pad_lines( 'if ("'+varname+'__RAW__" in data): del ' + varname ) + _G.TEOL
+                out = "'" + _G.TEOL + align( 'if ("'+varname+'__RAW__" in data): del ' + varname ) + _G.TEOL
             else:
-                out = "' " + _G.TEOL
+                out = "'" + _G.TEOL
         elif 2==m: # isset
             args = re.sub(re_controls, parse_constructs, args)
             varname = args
             out = '(("_loc_' + varname + '__RAW__" in locals()) and (' + varname + ' is not None))' if is_local_variable(varname) else '(("' + varname + '__RAW__" in data) and (' + varname + ' is not None))'
         elif 3==m: # if
             args = re.sub(re_controls, parse_constructs, args)
-            out = "'" + pad_lines(_G.TEOL.join([
+            out = "'" + align(_G.TEOL.join([
                             ""
                             ,"if ("+args+"):"
                             ,""
@@ -737,7 +744,7 @@ def parse_constructs( match ):
         elif 4==m: # elseif
             args = re.sub(re_controls, parse_constructs, args)
             _G.level -= 1
-            out = "'" + pad_lines(_G.TEOL.join([
+            out = "'" + align(_G.TEOL.join([
                             ""
                             ,"elif ("+args+"):"
                             ,""
@@ -745,7 +752,7 @@ def parse_constructs( match ):
             _G.level += 1
         elif 5==m: # else
             _G.level -= 1
-            out = "'" + pad_lines(_G.TEOL.join([
+            out = "'" + align(_G.TEOL.join([
                             ""
                             ,"else:"
                             ,""
@@ -754,7 +761,7 @@ def parse_constructs( match ):
         elif 6==m: # endif
             _G.ifs -= 1
             _G.level -= 1
-            out = "'" + pad_lines(_G.TEOL.join([
+            out = "'" + align(_G.TEOL.join([
                             "",""
                         ]))
         elif 7==m: # for
@@ -783,7 +790,7 @@ def parse_constructs( match ):
                 local_variable( v )
                 
                 # a = [51,27,13,56]   dict(enumerate(a))
-                out = "'" + pad_lines(_G.TEOL.join([
+                out = "'" + align(_G.TEOL.join([
                                 ""
                                 ,""+_o+" = "+o+""
                                 ,""+_oI+" = (enumerate("+_o+") if isinstance("+_o+",(list,tuple)) else "+_o+".items()) if "+_o+" else None"
@@ -798,7 +805,7 @@ def parse_constructs( match ):
                 _oV = local_variable( )
                 local_variable( v )
                 
-                out = "'" + pad_lines(_G.TEOL.join([
+                out = "'" + align(_G.TEOL.join([
                                 ""
                                 ,""+_o+" = "+o+""
                                 ,""+_oV+" = ("+_o+" if isinstance("+_o+",(list,tuple)) else "+_o+".values()) if "+_o+" else None"
@@ -813,7 +820,7 @@ def parse_constructs( match ):
         elif 8==m: # elsefor
             _G.loopifs -= 1
             _G.level += -2
-            out = "'" + pad_lines(_G.TEOL.join([
+            out = "'" + align(_G.TEOL.join([
                                 ""
                                 ,"else:"
                                 ,""
@@ -824,20 +831,20 @@ def parse_constructs( match ):
                 _G.loops -= 1 
                 _G.loopifs -= 1
                 _G.level += -2
-                out = "'" + pad_lines(_G.TEOL.join([
+                out = "'" + align(_G.TEOL.join([
                                 "",""
                             ]))
             else:
                 _G.loops -= 1
                 _G.level += -1
-                out = "'" + pad_lines(_G.TEOL.join([
+                out = "'" + align(_G.TEOL.join([
                                 "",""
                             ]))
         elif 10==m: # extends
             id = args.strip()
             if _G.strings and (id in _G.strings): id = _G.strings[id]
             ch = id[0]
-            if '"' == ch or "'" == ch: id = id[1:-1] # quoted id
+            if ('"' == ch or "'" == ch) and (ch == id[-1]): id = id[1:-1] # quoted id
             _G.extends = id
             out = "'" + _G.TEOL
         elif 11==m: # block
@@ -860,7 +867,7 @@ def parse_constructs( match ):
             varname = args
             out = prefix + ('(("_loc_' + varname + '__RAW__" not in locals()) or ('+varname+' is None) or Contemplate.empty('+varname+'))' if is_local_variable(varname) else '(("' + varname + '__RAW__" not in data) or ('+varname+' is None) or Contemplate.empty('+varname+'))')
         elif 18==m or 19==m: #'continue','break'
-            out = "'" + _G.TEOL + pad_lines( 'continue' if 18==m else 'break' ) + _G.TEOL
+            out = "'" + _G.TEOL + align( 'continue' if 18==m else 'break' ) + _G.TEOL
         
         return out + re.sub(re_controls, parse_constructs, rest)
     
@@ -937,7 +944,7 @@ def parse_blocks( s ):
         containerblock = delims[ 4 ]
         echoed = delims[ 5 ]
         tag = "#BLOCK_" + block + "#"
-        rep = "__i__.block('" + block + "', data) " if echoed else "'' "
+        rep = "__i__.block('" + block + "', data)" if echoed else "''"
         tl = len(tag) 
         rl = len(rep)
         
@@ -1342,7 +1349,7 @@ def parse( tpl, leftTplSep, rightTplSep, withblocks=True ):
         
         # replace tpl separators
         if "\v" == tag[-1]: 
-            tag = tag[0:-1] + pad_lines(_G.tplEnd)
+            tag = tag[0:-1] + align(_G.tplEnd)
         if "\t" == tag[0]: 
             tag = _G.tplStart + tag[1:]
             if hasBlock:
@@ -1396,12 +1403,12 @@ def create_template_render_function( id, contx, seps=None ):
     _G.funcId += 1
     
     funcName = '_contemplateFn' + str(_G.funcId)
-    fn = create_function(funcName, 'data,self_,__i__', pad_lines(func, 1), {'Contemplate': Contemplate})
+    fn = create_function(funcName, 'data,self_,__i__', align(func, 1), {'Contemplate': Contemplate})
     
     blockfns = {}
     for b in blocks:
         funcName = '_contemplateBlockFn_' + b[0] + '_' + str(_G.funcId)
-        blockfns[b] = create_function(funcName, 'data,self_,__i__', pad_lines(b[1], 1), {'Contemplate': Contemplate})
+        blockfns[b] = create_function(funcName, 'data,self_,__i__', align(b[1], 1), {'Contemplate': Contemplate})
     
     return [fn, blockfns]
 
@@ -1425,7 +1432,7 @@ def create_cached_template( id, contx, filename, classname, seps=None ):
         sblocks += EOL + _G.TT_BlockCode.render({
          'BLOCKNAME'            : b[0]
         ,'BLOCKMETHODNAME'      : "_blockfn_"+b[0]
-        ,'BLOCKMETHODCODE'      : pad_lines(b[1], 1)
+        ,'BLOCKMETHODCODE'      : align(b[1], 1)
         })
     
     renderCode = _G.TT_RCODE.render({
@@ -1439,9 +1446,9 @@ def create_cached_template( id, contx, filename, classname, seps=None ):
      'PREFIXCODE'           : prefixCode
     ,'TPLID'                : id
     ,'CLASSNAME'            : classname
-    ,'EXTENDCODE'           : pad_lines(extendCode, 3)
-    ,'BLOCKS'               : pad_lines(sblocks, 2)
-    ,'RENDERCODE'           : pad_lines(renderCode, 4)
+    ,'EXTENDCODE'           : align(extendCode, 3)
+    ,'BLOCKS'               : align(sblocks, 2)
+    ,'RENDERCODE'           : align(renderCode, 4)
     })
     return write_file( filename, classCode, contx.encoding )
 
@@ -1459,7 +1466,7 @@ def get_cached_template( id, contx, options=dict() ):
             tpl.setId( id ).ctx( contx )
             if 'parsed' in options:
                 _G.funcId += 1
-                tpl.setRenderFunction( create_function('_contemplateFn' + str(_G.funcId), 'data,self_,__i__', pad_lines(options['parsed'], 1), {'Contemplate': Contemplate}) )
+                tpl.setRenderFunction( create_function('_contemplateFn' + str(_G.funcId), 'data,self_,__i__', align(options['parsed'], 1), {'Contemplate': Contemplate}) )
             else:
                 fns = create_template_render_function( id, contx, options['separators'] )
                 tpl.setRenderFunction( fns[0] ).setBlocks( fns[1] )
@@ -1757,7 +1764,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "1.1.6"
+    VERSION = "1.1.7"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2

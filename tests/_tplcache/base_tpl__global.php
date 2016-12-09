@@ -12,7 +12,7 @@ public function __construct($id=null)
     parent::__construct( $id );
     
     /* extend tpl assign code starts here */
-    
+
     /* extend tpl assign code ends here */
 }    
 /* tpl-defined blocks render code starts here */
@@ -72,9 +72,7 @@ private function _blockfn_Block1(&$data, $self, $__i__)
     
     $__p__ = '';
     
-    $__p__ .= '' . "\n" . 'Base template Block1' . "\n" . '<br /><br />' . "\n" . '' .  $__i__->block('Block11', $data);
-    $__p__ .= '' . "\n" . '<br /><br />' . "\n" . '' .  $__i__->block('Block12', $data);
-    $__p__ .= '' . "\n" . '<br /><br />' . "\n" . '';
+    $__p__ .= '' . "\n" . 'Base template Block1' . "\n" . '<br /><br />' . "\n" . '' .  $__i__->block('Block11', $data);$__p__ .= '' . "\n" . '<br /><br />' . "\n" . '' .  $__i__->block('Block12', $data);$__p__ .= '' . "\n" . '<br /><br />' . "\n" . '';
     return $__p__;
     
 }
@@ -113,11 +111,7 @@ public function render(&$data, $__i__=null)
     {
         /* tpl main render code starts here */
         
-        $__p__ .= '<!-- this is the base template -->' . "\n" . '' . "\n" . '<strong>This is the base template</strong>' . "\n" . '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block1</strong><br />' . "\n" . '' .  $__i__->block('Block1', $data);
-        $__p__ .= '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block2</strong><br />' . "\n" . '' .  $__i__->block('Block2', $data);
-        $__p__ .= '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block3</strong><br />' . "\n" . '' .  $__i__->block('Block3', $data);
-        $__p__ .= '' . "\n" . '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block2 Again</strong><br />' . "\n" . '' .  '';
-        $__p__ .= '' . "\n" . '<strong>This is Block2 using getblock</strong><br />' . "\n" . '' . ($__i__->block("Block2", $data)) . '' . "\n" . '';
+        $__p__ .= '<!-- this is the base template -->' . "\n" . '' . "\n" . '<strong>This is the base template</strong>' . "\n" . '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block1</strong><br />' . "\n" . '' .  $__i__->block('Block1', $data);$__p__ .= '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block2</strong><br />' . "\n" . '' .  $__i__->block('Block2', $data);$__p__ .= '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block3</strong><br />' . "\n" . '' .  $__i__->block('Block3', $data);$__p__ .= '' . "\n" . '' . "\n" . '' . "\n" . '<br /><br /><br /><br />' . "\n" . '<strong>This is Block2 Again</strong><br />' . "\n" . '' .  '';$__p__ .= '' . "\n" . '<strong>This is Block2 using getblock</strong><br />' . "\n" . '' . ($__i__->block("Block2", $data)) . '' . "\n" . '';
         
         /* tpl main render code ends here */
     }

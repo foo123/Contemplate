@@ -1,17 +1,18 @@
 
-!function (root,name,factory){
-'use strict';
-var m;
+!function( root, name, factory ){
+"use strict";
 if ( ('undefined'!==typeof Components)&&('object'===typeof Components.classes)&&('object'===typeof Components.classesByID)&&Components.utils&&('function'===typeof Components.utils['import']) ) /* XPCOM */
-    (root.EXPORTED_SYMBOLS = [ name ]) && (root[ name ] = factory( ));
+    (root.$deps = root.$deps||{}) && (root.EXPORTED_SYMBOLS = [name]) && (root[name] = root.$deps[name] = factory.call(root));
 else if ( ('object'===typeof module)&&module.exports ) /* CommonJS */
-    module.exports = factory( );
-else if ( ('function'===typeof(define))&&define.amd&&('function'===typeof(require))&&('function'===typeof(require.specified))&&require.specified(name) ) /* AMD */
-    define(name,['require','exports','module'],factory);
-else if ( !(name in root) ) /* Browser/Worker/.. */
-    (root[ name ] = (m=factory( )))&&('function'===typeof(define))&&define.amd&&define(function( ){return m;} );
+    (module.$deps = module.$deps||{}) && (module.exports = module.$deps[name] = factory.call(root));
+else if ( ('undefined'!==typeof System)&&('function'===typeof System.register)&&('function'===typeof System['import']) ) /* ES6 module */
+    System.register(name,[],function($__export){$__export(name, factory.call(root));});
+else if ( ('function'===typeof define)&&define.amd&&('function'===typeof require)&&('function'===typeof require.specified)&&require.specified(name) /*&& !require.defined(name)*/ ) /* AMD */
+    define(name,['module'],function(module){factory.moduleUri = module.uri; return factory.call(root);});
+else if ( !(name in root) ) /* Browser/WebWorker/.. */
+    (root[name] = factory.call(root)||1)&&('function'===typeof(define))&&define.amd&&define(function(){return root[name];} );
 }(this,'Contemplate_base__global',function( ){
-'use strict';
+"use strict";
 return function( Contemplate ) {
 /* Contemplate cached template 'base', constructor */
 function Contemplate_base__global( id )
@@ -76,9 +77,7 @@ function Contemplate_base__global( id )
         "use strict";
         var __p__ = '';
         
-        __p__ += '' + "\n" + 'Base template Block1' + "\n" + '<br /><br />' + "\n" + '' +  __i__.block('Block11', data);
-        __p__ += '' + "\n" + '<br /><br />' + "\n" + '' +  __i__.block('Block12', data);
-        __p__ += '' + "\n" + '<br /><br />' + "\n" + '';
+        __p__ += '' + "\n" + 'Base template Block1' + "\n" + '<br /><br />' + "\n" + '' +  __i__.block('Block11', data);__p__ += '' + "\n" + '<br /><br />' + "\n" + '' +  __i__.block('Block12', data);__p__ += '' + "\n" + '<br /><br />' + "\n" + '';
         return __p__;
         
     }
@@ -87,7 +86,7 @@ function Contemplate_base__global( id )
     
     /* tpl-defined blocks render code ends here */
     /* extend tpl assign code starts here */
-    
+
     /* extend tpl assign code ends here */
 }
 /* extends main Contemplate.Template class */
@@ -99,11 +98,7 @@ Contemplate_base__global.prototype.render = function( data, __i__ ) {
     !__i__&&(__i__=self)&&(self._autonomus||(__ctx=Contemplate._set_ctx( self._ctx )));
     /* tpl main render code starts here */
     
-    __p__ += '<!-- this is the base template -->' + "\n" + '' + "\n" + '<strong>This is the base template</strong>' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block1</strong><br />' + "\n" + '' +  __i__.block('Block1', data);
-    __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2</strong><br />' + "\n" + '' +  __i__.block('Block2', data);
-    __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block3</strong><br />' + "\n" + '' +  __i__.block('Block3', data);
-    __p__ += '' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2 Again</strong><br />' + "\n" + '' +  '';
-    __p__ += '' + "\n" + '<strong>This is Block2 using getblock</strong><br />' + "\n" + '' + (__i__.block("Block2", data)) + '' + "\n" + '';
+    __p__ += '<!-- this is the base template -->' + "\n" + '' + "\n" + '<strong>This is the base template</strong>' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block1</strong><br />' + "\n" + '' +  __i__.block('Block1', data);__p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2</strong><br />' + "\n" + '' +  __i__.block('Block2', data);__p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block3</strong><br />' + "\n" + '' +  __i__.block('Block3', data);__p__ += '' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2 Again</strong><br />' + "\n" + '' +  '';__p__ += '' + "\n" + '<strong>This is Block2 using getblock</strong><br />' + "\n" + '' + (__i__.block("Block2", data)) + '' + "\n" + '';
     
     /* tpl main render code ends here */
     __ctx&&Contemplate._set_ctx( __ctx );

@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node, client-side and XPCOM/SDK JavaScript
 *
-*  @version: 1.1.6
+*  @version: 1.1.7
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -32,10 +32,10 @@ else if ( !(name in root) ) /* Browser/WebWorker/.. */
 //////////////////////////////////////////////////////////////////////////////////////
 
 // private vars
-var __version__ = "1.1.6", Contemplate,
+var __version__ = "1.1.7", Contemplate,
 
-    PROTO = 'prototype', HAS = 'hasOwnProperty',
-    Obj = Object, Arr = Array, toString = Obj[PROTO].toString,
+    PROTO = 'prototype', Obj = Object, Arr = Array,
+    HAS = Obj[PROTO].hasOwnProperty, toString = Obj[PROTO].toString,
     NOP = function( ){ },
     
     isXPCOM = ("undefined" !== typeof Components) && ("object" === typeof Components.classes) && ("object" === typeof Components.classesByID) && Components.utils && ("function" === typeof Components.utils['import']),
@@ -67,7 +67,7 @@ var __version__ = "1.1.6", Contemplate,
     $__leftTplSep = "<%", $__rightTplSep = "%>", $__tplStart = "", $__tplEnd = "",
     // https://nodejs.org/api/os.html#os_os_eol
     // 
-    $__EOL = "\n", $__TEOL = isNode ? import_('os').EOL : "\n", $__escape = true,
+    $__EOL = "\n", $__TEOL = /*isNode ? import_('os').EOL :*/ "\n", $__escape = true,
     $__preserveLinesDefault = "' + \"\\n\" + '", $__preserveLines = '',  $__compatibility = false,
     
     $__level = 0, $__pad = "    ", $__idcnt = 0,
@@ -127,6 +127,10 @@ if ( isXPCOM )
     import_("resource://gre/modules/FileUtils.jsm");
 }
 
+/*function HAS( o, x )
+{
+    return !!(o && Object.prototype.hasOwnProperty.call(o, x));
+}*/
 function reset_state( )
 {
     $__loops = 0; $__ifs = 0; $__loopifs = 0; $__forType = 2; $__level = 0;
@@ -154,17 +158,28 @@ function pop_state( state )
     $__allblocks = state[5]; $__allblockscnt = state[6]; $__openblocks = state[7];
     $__extends = state[8]; $__locals = state[9]; $__variables = state[10]; $__currentblock = state[11];
 }
-function pad_lines( lines, level )
+function align( s, level )
 {
     // pad lines to generate formatted code
     if ( 2 > arguments.length ) level = $__level;
-    if ( level >= 0 )
+    var aligned = '', alignment, c, i, l = s.length;
+    if ( l && (0 < level) )
     {
-        // needs one more additional level due to array.length
-        var pad = 0===level ? "" : new Arr(level+1).join($__pad);
-        lines = pad + lines.split( NEWLINE ).join( $__TEOL + pad );
+        alignment = new Arr(level+1).join($__pad);
+        aligned = alignment;
+        for(i=0; i<l; i++)
+        {
+            c = s.charAt(i);
+            /*if ( "\r" === c ) continue;
+            else*/if ( "\n" === c ) aligned += /*$__TEOL*/"\n" + alignment;
+            else  aligned += c;
+        }
     }
-    return lines;
+    else
+    {
+        aligned = s;
+    }
+    return aligned;
 }
 function merge( )
 {
@@ -174,7 +189,7 @@ function merge( )
     for (i=1; i<l; i++)
     { 
         o = args[ i ]; 
-        if ( o ) for (k in o) if ( o[HAS](k) ) merged[ k ] = o[ k ]; 
+        if ( o ) for (k in o) if ( HAS.call(o,k) ) merged[ k ] = o[ k ]; 
     }
     return merged;
 }
@@ -275,9 +290,9 @@ function t_include( id/*, asyncCB*/ )
 {
     var tpl, state, ch, contx = $__context;
     id = trim( id );
-    if ( $__strings && $__strings[HAS](id) ) id = $__strings[id];
+    if ( $__strings && HAS.call($__strings,id) ) id = $__strings[id];
     ch = id.charAt(0);
-    if ( '"' === ch || "'" === ch ) id = id.slice(1,-1); // quoted id
+    if ( ('"' === ch || "'" === ch) && (ch === id.charAt(id.length-1)) ) id = id.slice(1,-1); // quoted id
     
     // cache it
     if ( !contx.partials[id] /*&& !$__global.partials[id]*/ )
@@ -289,16 +304,16 @@ function t_include( id/*, asyncCB*/ )
         contx.partials[id] = " " + parse( tpl, $__leftTplSep, $__rightTplSep, false ) + "';" + $__TEOL;
         pop_state( state );
     }
-    return pad_lines( contx.partials[id] /*|| $__global.partials[id]*/ );
+    return align( contx.partials[id] /*|| $__global.partials[id]*/ );
 }
 function t_block( block )
 { 
     block = block.split(',');
     var echoed = !(block.length>1 ? "false"===trim(block[1]) : false);
     block = trim(block[0]);
-    if ( $__strings && $__strings[HAS](block) ) block = $__strings[block];
+    if ( $__strings && HAS.call($__strings,block) ) block = $__strings[block];
     var ch = block.charAt(0);
-    if ( '"' === ch || "'" === ch ) block = block.slice(1,-1); // quoted block
+    if ( ('"' === ch || "'" === ch) && (ch === block.charAt(block.length-1)) ) block = block.slice(1,-1); // quoted block
     
     $__allblocks.push( [block, -1, -1, 0, $__openblocks[ 0 ][ 1 ], echoed] );
     $__allblockscnt[ block ] = $__allblockscnt[ block ] ? ($__allblockscnt[ block ]+1) : 1;
@@ -355,7 +370,7 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
     }
     args = trim(args);
     
-    if ( $__directive_aliases[HAS](ctrl) ) ctrl = $__directive_aliases[ctrl];
+    if ( HAS.call($__directive_aliases,ctrl) ) ctrl = $__directive_aliases[ctrl];
     m = $__directives.indexOf( ctrl );
     if ( -1 < m )
     {
@@ -372,7 +387,7 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
                     local_variable( varname ); // make it a local variable
                     varname = 'var '+varname;
                 }
-                out = "';" + $__TEOL + pad_lines( varname + ' = ('+ expr +');' ) + $__TEOL;
+                out = "';" + $__TEOL + align( varname + ' = ('+ expr +');' ) + $__TEOL;
                 break;
             case 1 /*'unset'*/: 
                 args = args.replace( re_controls, parse_constructs );
@@ -380,7 +395,7 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
                 if ( varname && varname.length )
                 {
                     varname = trim( varname );
-                    out = "';" + $__TEOL + pad_lines( 'if ("undefined" !== typeof(' + varname + ')) delete ' + varname + ';' ) + $__TEOL;
+                    out = "';" + $__TEOL + align( 'if ("undefined" !== typeof(' + varname + ')) delete ' + varname + ';' ) + $__TEOL;
                 }
                 else
                 {
@@ -394,7 +409,7 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
                 break;
             case 3 /*'if'*/: 
                 args = args.replace( re_controls, parse_constructs );
-                out = "';" + pad_lines([
+                out = "';" + align([
                                 ""
                                 ,"if ("+args+")"
                                 ,"{"
@@ -406,7 +421,7 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
             case 4 /*'elseif'*/:  
                 args = args.replace( re_controls, parse_constructs );
                 $__level--;
-                out = "';" + pad_lines([
+                out = "';" + align([
                                 ""
                                 ,"}"
                                 ,"else if ("+args+")"
@@ -417,7 +432,7 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
                 break;
             case 5 /*'else'*/: 
                 $__level--;
-                out = "';" + pad_lines([
+                out = "';" + align([
                                 ""
                                 ,"}"
                                 ,"else"
@@ -429,7 +444,7 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
             case 6 /*'endif'*/: 
                 $__ifs--; 
                 $__level--;
-                out = "';" + pad_lines([
+                out = "';" + align([
                                 ""
                                 ,"}"
                                 ,""
@@ -469,7 +484,7 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
                         _l = '_loc_' + (++$__idcnt)
                     ;
                     local_variable( k ); local_variable( v );
-                    out = "';" + pad_lines([
+                    out = "';" + align([
                                     ""
                                     ,"var "+_o+" = "+o+", "+_oK+" = "+_o+" ? Object.keys("+_o+") : null,"
                                     ,"    "+_k+", "+k+", "+v+", "+_l+" = "+_o+" ? "+_oK+".length : 0;"
@@ -494,7 +509,7 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
                         _l = '_loc_' + (++$__idcnt)
                     ;
                     local_variable( v );
-                    out = "';" + pad_lines([
+                    out = "';" + align([
                                     ""
                                     ,"var "+_o+" = "+o+", "+_arr+" = !!"+_o+".forEach," 
                                     ,"    "+_oV+" = "+_o+" ? ("+_arr+" ? "+_o+" : Object.keys("+_o+")) : null,"
@@ -519,7 +534,7 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
                 {
                     $__loopifs--;  
                     $__level+=-2;
-                    out = "';" + pad_lines([
+                    out = "';" + align([
                                     ""
                                     ,"    }"
                                     ,"}"
@@ -533,7 +548,7 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
                 {
                     $__loopifs--;  
                     $__level+=-2;
-                    out = "';" + pad_lines([
+                    out = "';" + align([
                                     ""
                                     ,"    }"
                                     ,"}"
@@ -551,7 +566,7 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
                     {
                         $__loops--; $__loopifs--;  
                         $__level+=-2;
-                        out = "';" + pad_lines([
+                        out = "';" + align([
                                         ""
                                         ,"    }"
                                         ,"}"
@@ -562,7 +577,7 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
                     {
                         $__loops--; $__loopifs--;  
                         $__level+=-2;
-                        out = "';" + pad_lines([
+                        out = "';" + align([
                                         ""
                                         ,"    }"
                                         ,"}"
@@ -574,7 +589,7 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
                 {
                     $__loops--; 
                     $__level+=-1;
-                    out = "';" + pad_lines([
+                    out = "';" + align([
                                     ""
                                     ,"}"
                                     ,""
@@ -583,9 +598,9 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
                 break;
             case 10 /*'extends'*/:  
                 var id = trim( args );
-                if ( $__strings && $__strings[HAS](id) ) id = $__strings[id];
+                if ( $__strings && HAS.call($__strings,id) ) id = $__strings[id];
                 var ch = id.charAt(0);
-                if ( '"' === ch || "'" === ch ) id = id.slice(1,-1); // quoted id
+                if ( ('"' === ch || "'" === ch) && (ch === id.charAt(id.length-1)) ) id = id.slice(1,-1); // quoted id
                 $__extends = id;
                 out = "';" + $__TEOL;
                 break;
@@ -616,13 +631,13 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
                 break;
             case 18 /*'continue'*/:
             case 19 /*'break'*/:
-                out = "';" + $__TEOL + pad_lines( 18===m ? 'continue;' : 'break;' ) + $__TEOL;
+                out = "';" + $__TEOL + align( 18===m ? 'continue;' : 'break;' ) + $__TEOL;
                 break;
         }
         return out + rest.replace( re_controls, parse_constructs );
     }
     
-    if ( $__context.plugins[HAS](ctrl) || $__global.plugins[HAS](ctrl) )
+    if ( HAS.call($__context.plugins,ctrl) || HAS.call($__global.plugins,ctrl) )
     {
         // allow custom plugins as template functions
         var pl = $__context.plugins[ ctrl ] || $__global.plugins[ ctrl ];
@@ -631,7 +646,7 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
         return prefix + out + rest.replace( re_controls, parse_constructs );
     }
     
-    if ( $__aliases[HAS](ctrl) ) ctrl = $__aliases[ctrl];
+    if ( HAS.call($__aliases,ctrl) ) ctrl = $__aliases[ctrl];
     m = $__funcs.indexOf( ctrl );
     if ( -1 < m )
     {
@@ -1129,7 +1144,7 @@ function parse( tpl, leftTplSep, rightTplSep, withblocks )
                 tag = tag
                     .split( id+'__RAW__' ).join( varname )
                     .split( id ).join(( 
-                        $__locals[$__currentblock][HAS](varname) 
+                        HAS.call($__locals[$__currentblock],varname) 
                         ? ('_loc_' + varname) /* local (loop) variable */
                         : (variables[ v ][ 2 ]) /* default (data) variable */
                         ) + variables[ v ][ 3 ])
@@ -1188,7 +1203,7 @@ function parse( tpl, leftTplSep, rightTplSep, withblocks )
         // replace tpl separators
         if ( /*"\v"*/11 === tag.charCodeAt(tag.length-1) ) 
         {
-            tag = tag.slice(0,-1) + pad_lines($__tplEnd);
+            tag = tag.slice(0,-1) + align($__tplEnd);
         }
         if ( /*"\t"*/9 === tag.charCodeAt(0) ) 
         {
@@ -1337,7 +1352,7 @@ function create_cached_template( id, contx, filename, classname, seps )
         sblocks.push(EOL + TT_BlockCode.render({
          'BLOCKNAME'            : blocks[b][0]
         ,'BLOCKMETHODNAME'      : blocks[b][0]
-        ,'BLOCKMETHODCODE'      : pad_lines(blocks[b][1], 1)
+        ,'BLOCKMETHODCODE'      : align(blocks[b][1], 1)
         }));
     sblocks = sblocks.length ? EOL + "self._blocks = {" + EOL + sblocks.join(',' + EOL) + EOL + "};" + EOL : '';
     
@@ -1352,9 +1367,9 @@ function create_cached_template( id, contx, filename, classname, seps )
      'CLASSNAME'            : classname
     ,'TPLID'                : id
     ,'PREFIXCODE'           : prefixCode
-    ,'EXTENDCODE'           : pad_lines(extendCode, 1)
-    ,'BLOCKS'               : pad_lines(sblocks, 1)
-    ,'RENDERCODE'           : pad_lines(renderCode, 1)
+    ,'EXTENDCODE'           : align(extendCode, 1)
+    ,'BLOCKS'               : align(sblocks, 1)
+    ,'RENDERCODE'           : align(renderCode, 1)
     });
     return fwrite( filename, classCode, contx.encoding );
 }
@@ -1670,7 +1685,7 @@ Template[PROTO] = {
     ,block: function( block, data, __i__ ) {
         var self = this, r = '', __ctx = false, blocks = self._blocks;
         !__i__&&(__i__=self)&&(self._autonomus||(__ctx=Contemplate._set_ctx( self._ctx )));
-        if ( blocks && blocks[HAS](block) ) r = blocks[block](Contemplate, data, self, __i__);
+        if ( blocks && HAS.call(blocks,block) ) r = blocks[block](Contemplate, data, self, __i__);
         else if ( self._extends ) r = self._extends.block(block, data, __i__);
         __ctx&&Contemplate._set_ctx( __ctx );
         return r;
@@ -1729,7 +1744,7 @@ Ctx[PROTO] = {
         if ( self.cache )
         {
             for(var tpl in self.cache)
-                if ( self.cache[HAS](tpl) )
+                if ( HAS.call(self.cache,tpl) )
                     self.cache[tpl].dispose( );
         }
         self.cache = null;
@@ -1768,19 +1783,20 @@ Contemplate = {
         // make compilation templates
         TT_ClassCode = new InlineTemplate([
             "#PREFIXCODE#"
-            ,"!function (root,name,factory){"
-            ,"'use strict';"
-            ,"var m;"
+            ,"!function( root, name, factory ){"
+            ,"\"use strict\";"
             ,"if ( ('undefined'!==typeof Components)&&('object'===typeof Components.classes)&&('object'===typeof Components.classesByID)&&Components.utils&&('function'===typeof Components.utils['import']) ) /* XPCOM */"
-            ,"    (root.EXPORTED_SYMBOLS = [ name ]) && (root[ name ] = factory( ));"
+            ,"    (root.$deps = root.$deps||{}) && (root.EXPORTED_SYMBOLS = [name]) && (root[name] = root.$deps[name] = factory.call(root));"
             ,"else if ( ('object'===typeof module)&&module.exports ) /* CommonJS */"
-            ,"    module.exports = factory( );"
-            ,"else if ( ('function'===typeof(define))&&define.amd&&('function'===typeof(require))&&('function'===typeof(require.specified))&&require.specified(name) ) /* AMD */"
-            ,"    define(name,['require','exports','module'],factory);"
-            ,"else if ( !(name in root) ) /* Browser/Worker/.. */"
-            ,"    (root[ name ] = (m=factory( )))&&('function'===typeof(define))&&define.amd&&define(function( ){return m;} );"
+            ,"    (module.$deps = module.$deps||{}) && (module.exports = module.$deps[name] = factory.call(root));"
+            ,"else if ( ('undefined'!==typeof System)&&('function'===typeof System.register)&&('function'===typeof System['import']) ) /* ES6 module */"
+            ,"    System.register(name,[],function($__export){$__export(name, factory.call(root));});"
+            ,"else if ( ('function'===typeof define)&&define.amd&&('function'===typeof require)&&('function'===typeof require.specified)&&require.specified(name) /*&& !require.defined(name)*/ ) /* AMD */"
+            ,"    define(name,['module'],function(module){factory.moduleUri = module.uri; return factory.call(root);});"
+            ,"else if ( !(name in root) ) /* Browser/WebWorker/.. */"
+            ,"    (root[name] = factory.call(root)||1)&&('function'===typeof(define))&&define.amd&&define(function(){return root[name];} );"
             ,"}(this,'#CLASSNAME#',function( ){"
-            ,"'use strict';"
+            ,"\"use strict\";"
             ,"return function( Contemplate ) {"
             ,"/* Contemplate cached template '#TPLID#', constructor */"
             ,"function #CLASSNAME#( id )"
@@ -1873,7 +1889,7 @@ Contemplate = {
     ,_set_ctx: function( ctx ) {
         var contx = $__context;
         /*if ( ctx instanceof Ctx ) $__context = ctx;
-        else if ( ctx && $__ctx[HAS](ctx) ) $__context = $__ctx[ctx];
+        else if ( ctx && HAS.call($__ctx,ctx) ) $__context = $__ctx[ctx];
         else $__context = $__global;*/
         $__context = ctx ? ctx : $__global;
         return contx;
@@ -1884,11 +1900,11 @@ Contemplate = {
     //
     
     ,createCtx: function( ctx ) {
-        if ( ctx && 'global' !== ctx && !$__ctx[HAS](ctx) ) $__ctx[ctx] = new Ctx( ctx );
+        if ( ctx && 'global' !== ctx && !HAS.call($__ctx,ctx) ) $__ctx[ctx] = new Ctx( ctx );
     }
     
     ,disposeCtx: function( ctx ) {
-        if ( ctx && 'global' !== ctx && $__ctx[HAS](ctx) )
+        if ( ctx && 'global' !== ctx && HAS.call($__ctx,ctx) )
         {
             $__ctx[ctx].dispose( );
             delete $__ctx[ctx];
@@ -1916,8 +1932,8 @@ Contemplate = {
     ,hasPlugin: function( name, ctx ) {
         var contx;
         if ( arguments.length < 2 ) ctx = 'global';
-        contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
-        return !!name && (contx.plugins[HAS](name) || $__global.plugins[HAS](name));
+        contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
+        return !!name && (HAS.call(contx.plugins,name) || HAS.call($__global.plugins,name));
     }
     
     ,addPlugin: function( name, pluginCode, ctx ) {
@@ -1925,18 +1941,18 @@ Contemplate = {
         if ( name && pluginCode )
         {
             if ( arguments.length < 2 ) ctx = 'global';
-            contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
+            contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
             contx.plugins[ name ] = pluginCode;
         }
     }
 
     ,plg_: function( plg ) {
         var args = arguments;
-        if ( $__context.plugins[HAS]( plg ) && "function" === typeof $__context.plugins[ plg ] ) 
+        if ( HAS.call($__context.plugins, plg ) && "function" === typeof $__context.plugins[ plg ] ) 
         {
             return $__context.plugins[ plg ].apply( null, slice.call(args, 1) );
         } 
-        else if ( $__global.plugins[HAS]( plg ) && "function" === typeof $__global.plugins[ plg ] ) 
+        else if ( HAS.call($__global.plugins, plg ) && "function" === typeof $__global.plugins[ plg ] ) 
         {
             return $__global.plugins[ plg ].apply( null, slice.call(args, 1) );
         }
@@ -1946,14 +1962,14 @@ Contemplate = {
     ,setPrefixCode: function( preCode, ctx ) {
         var contx;
         if ( arguments.length < 2 ) ctx = 'global';
-        contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
+        contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
         if ( preCode ) contx.prefix = '' + preCode;
     }
 
     ,setEncoding: function( encoding, ctx ) {
         var contx;
         if ( arguments.length < 2 ) ctx = 'global';
-        contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
+        contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
         contx.encoding = encoding;
     }
     
@@ -1962,7 +1978,7 @@ Contemplate = {
         if ( locales && ("function" === typeof locales || "object"===typeof locales) )
         {
             if ( arguments.length < 2 ) ctx = 'global';
-            contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
+            contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
             contx.locale = "function" === typeof locales ? locales : merge(contx.locale, locales);
         }
     }
@@ -1972,7 +1988,7 @@ Contemplate = {
         if ( xlocales && ("function" === typeof xlocales || "object"===typeof xlocales) )
         {
             if ( arguments.length < 2 ) ctx = 'global';
-            contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
+            contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
             contx.xlocale = "function" === typeof xlocales ? xlocales : merge(contx.xlocale, xlocales);
         }
     }
@@ -1980,35 +1996,35 @@ Contemplate = {
     ,clearLocales: function( ctx ) { 
         var contx;
         if ( arguments.length < 2 ) ctx = 'global';
-        contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
+        contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
         contx.locale = { }; 
     }
     
     ,clearXLocales: function( ctx ) { 
         var contx;
         if ( arguments.length < 2 ) ctx = 'global';
-        contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
+        contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
         contx.xlocale = { }; 
     }
     
     ,setCacheDir: function( dir, ctx ) { 
         var contx;
         if ( arguments.length < 2 ) ctx = 'global';
-        contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
+        contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
         contx.cacheDir = rtrim(dir, '/') + '/';  
     }
     
     ,setCacheMode: function( mode, ctx ) { 
         var contx;
         if ( arguments.length < 2 ) ctx = 'global';
-        contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
+        contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
         contx.cacheMode = isNode || isXPCOM ? mode : Contemplate.CACHE_TO_DISK_NONE; 
     }
     
     ,clearCache: function( all, ctx ) { 
         var contx;
         if ( arguments.length < 2 ) ctx = 'global';
-        contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
+        contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
         contx.cache = { }; 
         if ( all ) contx.partials = { }; 
     }
@@ -2018,10 +2034,10 @@ Contemplate = {
         if ( tpls && "object"===typeof tpls )
         {
             if ( arguments.length < 2 ) ctx = 'global';
-            contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
+            contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
             for (tplID in tpls)
             {
-                if ( !tpls[HAS](tplID) ) continue;
+                if ( !HAS.call(tpls,tplID) ) continue;
                 if ( is_array( tpls[ tplID ] ) )
                 {
                     // unified way to add tpls both as reference and inline
@@ -2040,14 +2056,14 @@ Contemplate = {
     ,hasTpl: function( tpl, ctx ) { 
         var contx;
         if ( arguments.length < 2 ) ctx = 'global';
-        contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
-        return !!tpl && (contx.templates[HAS](tpl) || $__global.templates[HAS](tpl));
+        contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
+        return !!tpl && (HAS.call(contx.templates,tpl) || HAS.call($__global.templates,tpl));
     }
 
     ,getTemplateContents: function( id, ctx ) {
         var contx;
         if ( arguments.length < 2 ) ctx = 'global';
-        contx = ctx && $__ctx[HAS](ctx) ? $__ctx[ctx] : $__context;
+        contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
         return get_template_contents( id, contx );
     }
     
@@ -2057,7 +2073,7 @@ Contemplate = {
         // see what context this template may use
         if ( options && options.substr )
         {
-            if ( $__ctx[HAS](options) )
+            if ( HAS.call($__ctx,options) )
                 contx = $__ctx[options]; // preset context
             else
                 contx = $__global; // global context
@@ -2070,7 +2086,7 @@ Contemplate = {
         
         if ( options.context )
         {
-            if ( $__ctx[HAS](options.context) )
+            if ( HAS.call($__ctx,options.context) )
                 contx = $__ctx[options.context]; // preset context
             else if ( !contx )
                 contx = $__global; // global context
@@ -2108,7 +2124,7 @@ Contemplate = {
             contx = null;
             if ( options && options.substr )
             {
-                if ( $__ctx[HAS](options) )
+                if ( HAS.call($__ctx,options) )
                     contx = $__ctx[options]; // preset context
                 else
                     contx = $__context; // current context
@@ -2125,7 +2141,7 @@ Contemplate = {
             
             if ( options.context )
             {
-                if ( $__ctx[HAS](options.context) )
+                if ( HAS.call($__ctx,options.context) )
                     contx = $__ctx[options.context]; // preset context
                 else if ( !contx )
                     contx = $__context; // current context
@@ -2198,7 +2214,7 @@ Contemplate = {
         args = arguments; tmp = v;
         for (i=1; i<args.length; i++)
         {
-            if ( !tmp || !tmp[HAS](args[i]) ) return false;
+            if ( null==tmp || !HAS.call(tmp,args[i]) ) return false;
             tmp = tmp[ args[i] ];
         }
         return true;
@@ -2322,9 +2338,9 @@ Contemplate = {
     }
     
     ,locale: function( s ) { 
-        var locale = ('function' === typeof $__context.locale) || $__context.locale[HAS](s)
+        var locale = ('function' === typeof $__context.locale) || HAS.call($__context.locale,s)
             ? $__context.locale
-            : (('function' === typeof $__global.locale) || $__global.locale[HAS](s)
+            : (('function' === typeof $__global.locale) || HAS.call($__global.locale,s)
             ? $__global.locale
             : null); 
         if ( null === locale ) return s;
@@ -2332,9 +2348,9 @@ Contemplate = {
         return locale[s];
     }
     ,xlocale: function( s, l_ctx ) { 
-        var xlocale = ('function' === typeof $__context.xlocale) || (l_ctx && $__context.xlocale[HAS](l_ctx) && $__context.xlocale[l_ctx][HAS](s))
+        var xlocale = ('function' === typeof $__context.xlocale) || (l_ctx && HAS.call($__context.xlocale,l_ctx) && HAS.call($__context.xlocale[l_ctx],s))
             ? $__context.xlocale
-            : (('function' === typeof $__global.xlocale) || (l_ctx && $__global.xlocale[HAS](l_ctx) && $__global.xlocale[l_ctx][HAS](s))
+            : (('function' === typeof $__global.xlocale) || (l_ctx && HAS.call($__global.xlocale,l_ctx) && HAS.call($__global.xlocale[l_ctx],s))
             ? $__global.xlocale
             : null); 
         if ( null === xlocale ) return s;
@@ -2342,9 +2358,9 @@ Contemplate = {
         return xlocale[l_ctx][s];
     }
     ,nlocale: function( n, singular, plural ) { 
-        var locale = ('function' === typeof $__context.locale) || $__context.locale[HAS](singular)
+        var locale = ('function' === typeof $__context.locale) || HAS.call($__context.locale,singular)
             ? $__context.locale
-            : (('function' === typeof $__global.locale) || $__global.locale[HAS](singular)
+            : (('function' === typeof $__global.locale) || HAS.call($__global.locale,singular)
             ? $__global.locale
             : null); 
         if ( null === locale ) return 1 == n ? singular : plural;
@@ -2353,12 +2369,12 @@ Contemplate = {
             var args = Array.prototype.splice.call(arguments, 0, 3, 1 == n ? singular : plural);
             return locale.apply(null, args);
         }
-        return 1 == n ? locale[singular] : (locale[HAS](plural) ? locale[plural] : plural);
+        return 1 == n ? locale[singular] : (HAS.call(locale,plural) ? locale[plural] : plural);
     }
     ,nxlocale: function( n, singular, plural, l_ctx ) { 
-        var xlocale = ('function' === typeof $__context.xlocale) || (l_ctx && $__context.xlocale[HAS](l_ctx) && $__context.xlocale[l_ctx][HAS](singular))
+        var xlocale = ('function' === typeof $__context.xlocale) || (l_ctx && HAS.call($__context.xlocale,l_ctx) && HAS.call($__context.xlocale[l_ctx],singular))
             ? $__context.xlocale
-            : (('function' === typeof $__global.xlocale) || (l_ctx && $__global.xlocale[HAS](l_ctx) && $__global.xlocale[l_ctx][HAS](singular))
+            : (('function' === typeof $__global.xlocale) || (l_ctx && HAS.call($__global.xlocale,l_ctx) && HAS.call($__global.xlocale[l_ctx],singular))
             ? $__global.xlocale
             : null); 
         if ( null === xlocale ) return 1 == n ? singular : plural;
@@ -2367,7 +2383,7 @@ Contemplate = {
             var args = Array.prototype.splice.call(arguments, 0, 3, 1 == n ? singular : plural);
             return xlocale.apply(null, args);
         }
-        return 1 == n ? xlocale[l_ctx][singular] : (xlocale[l_ctx][HAS](plural) ? xlocale[l_ctx][plural] : plural);
+        return 1 == n ? xlocale[l_ctx][singular] : (HAS.call(xlocale[l_ctx],plural) ? xlocale[l_ctx][plural] : plural);
     }
     
     ,uuid: function( namespace ) {
@@ -2387,7 +2403,7 @@ Contemplate = {
             else
             {
                 var a = [], k;
-                for (k in o) if ( o[HAS](k) ) a.push( o[k] );
+                for (k in o) if ( HAS.call(o,k) ) a.push( o[k] );
                 return a;
             }
         }
@@ -2401,7 +2417,7 @@ Contemplate = {
         if ( is_array(o) ) return o.slice();
         var c = {}, key, newkey;
         // shallow clone the data
-        for (key in o) if (o[HAS](key)) c[key] = o[key]; 
+        for (key in o) if (HAS.call(o,key)) c[key] = o[key]; 
         return c;
     }
     ,local_variable: local_variable
@@ -2819,7 +2835,7 @@ function php_date( format, timestamp )
     for (i=0,l=format.length; i<l; i++)
     {
         f = format.charAt( i );
-        formatted_datetime += D[HAS](f) ? D[ f ] : f;
+        formatted_datetime += HAS.call(D,f) ? D[ f ] : f;
     }
     return formatted_datetime;
 }
@@ -2849,7 +2865,7 @@ function localized_date( format, timestamp )
     for (i=0,l=format.length; i<l; i++)
     {
         f = format.charAt( i );
-        localised_datetime += D[HAS](f) ? D[ f ] : f;
+        localised_datetime += HAS.call(D,f) ? D[ f ] : f;
     }
     return localised_datetime
 }

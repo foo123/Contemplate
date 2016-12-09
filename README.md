@@ -110,7 +110,7 @@ syntax, yet work the same in all the engine's implementations.
 
 * __Uniform functionality__, Engine Implementations for __PHP__ , __Python__ , __Node__ , __XPCOM__ and __client-side JavaScript__
 
-* Simple and __light-weight__ ( only one relatively small class for each implementation, no other dependencies ) `~35kB` minified, `~12kB` zipped
+* Simple and __light-weight__ ( only one relatively small class for each implementation, no other dependencies ) `~37kB` minified, `~13kB` zipped
 
 * __Fast__ , can cache templates dynamically (filesystem caching has 3 modes, `NONE` which uses only in-memory caching, `NOUPDATE` which caches the templates only once and `AUTOUPDATE` which re-creates the cached template if original template has changed, useful for debugging)
 

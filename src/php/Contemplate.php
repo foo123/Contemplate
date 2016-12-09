@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 1.1.6
+*  @version: 1.1.7
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -334,7 +334,7 @@ class ContemplateCtx
 
 class Contemplate
 {
-    const VERSION = "1.1.6";
+    const VERSION = "1.1.7";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -357,7 +357,7 @@ class Contemplate
     private static $__preserveLines = '';
     private static $__compatibility = false;
     private static $__EOL = "\n";
-    private static $__TEOL = PHP_EOL;
+    private static $__TEOL = "\n"/*PHP_EOL*/;
     private static $__pad = "    ";
     private static $__escape = true;
     
@@ -1168,7 +1168,7 @@ class Contemplate
         $id = trim( $id );
         if ( self::$__strings && isset(self::$__strings[$id]) ) $id = self::$__strings[$id];
         $ch = $id[0];
-        if ( '"' === $ch || "'" === $ch ) $id = substr($id,1,-1); // quoted id
+        if ( ('"' === $ch || "'" === $ch) && ($ch === $id[strlen($id)-1]) ) $id = substr($id,1,-1); // quoted id
         
         $contx = self::$__context;
         /* cache it */ 
@@ -1181,7 +1181,7 @@ class Contemplate
             $contx->partials[$id]=" " . self::parse( $tpl, self::$__leftTplSep, self::$__rightTplSep, false ) . "';" . self::$__TEOL;
             self::pop_state( $state );
         }
-        return self::pad_lines( /*isset($contx->partials[$id]) ?*/ $contx->partials[$id] /*: self::$__global->partials[$id]*/ );
+        return self::align( /*isset($contx->partials[$id]) ?*/ $contx->partials[$id] /*: self::$__global->partials[$id]*/ );
     }
     
     private static function t_block( $block ) 
@@ -1191,7 +1191,7 @@ class Contemplate
         $block = trim($block[0]);
         if ( self::$__strings && isset(self::$__strings[$block]) ) $block = self::$__strings[$block];
         $ch = $block[0];
-        if ( '"' === $ch || "'" === $ch ) $block = substr($block,1,-1); // quoted block
+        if ( ('"' === $ch || "'" === $ch) && ($ch === $block[strlen($block)-1]) ) $block = substr($block,1,-1); // quoted block
         
         array_push(self::$__allblocks, array($block, -1, -1, 0, self::$__openblocks[ 0 ][ 1 ], $echoed));
         self::$__allblockscnt[ $block ] = isset(self::$__allblockscnt[ $block ]) ? (self::$__allblockscnt[ $block ]+1) : 1;
@@ -1266,7 +1266,7 @@ class Contemplate
                     $varname = trim(array_shift($args));
                     $expr = trim(implode(',', $args));
                     if ( 20 === $m && !self::is_local_variable($varname) ) self::local_variable( $varname ); // make it a local variable
-                    $out = "';" . self::$__TEOL . self::pad_lines( "$varname = ($expr);" ) . self::$__TEOL;
+                    $out = "';" . self::$__TEOL . self::align( "$varname = ($expr);" ) . self::$__TEOL;
                     break;
                 case 1 /*'unset'*/:
                     $args = preg_replace_callback( $re_controls, $parse_constructs, $args );
@@ -1274,7 +1274,7 @@ class Contemplate
                     if ( $varname && strlen($varname) )
                     {
                         $varname = trim( $varname );
-                        $out = "';" . self::$__TEOL . self::pad_lines( "if (isset($varname)) unset( $varname );" ) . self::$__TEOL;
+                        $out = "';" . self::$__TEOL . self::align( "if (isset($varname)) unset( $varname );" ) . self::$__TEOL;
                     }
                     else
                     {
@@ -1288,7 +1288,7 @@ class Contemplate
                     break;
                 case 3 /*'if'*/:
                     $args = preg_replace_callback( $re_controls, $parse_constructs, $args );
-                    $out = "';" . self::pad_lines(implode(self::$__TEOL, array(
+                    $out = "';" . self::align(implode(self::$__TEOL, array(
                                     ""
                                     ,"if ({$args})"
                                     ,"{"
@@ -1300,7 +1300,7 @@ class Contemplate
                 case 4 /*'elseif'*/:
                     $args = preg_replace_callback( $re_controls, $parse_constructs, $args );
                     self::$__level--;
-                    $out = "';" . self::pad_lines(implode(self::$__TEOL, array(
+                    $out = "';" . self::align(implode(self::$__TEOL, array(
                                     ""
                                     ,"}"
                                     ,"elseif ({$args})"
@@ -1311,7 +1311,7 @@ class Contemplate
                     break;
                 case 5 /*'else'*/:
                     self::$__level--;
-                    $out = "';" . self::pad_lines(implode(self::$__TEOL, array(
+                    $out = "';" . self::align(implode(self::$__TEOL, array(
                                     ""
                                     ,"}"
                                     ,"else"
@@ -1323,7 +1323,7 @@ class Contemplate
                 case 6 /*'endif'*/:
                     self::$__ifs--;  
                     self::$__level--;
-                    $out = "';" . self::pad_lines(implode(self::$__TEOL, array(
+                    $out = "';" . self::align(implode(self::$__TEOL, array(
                                     ""
                                     ,"}"
                                     ,""
@@ -1356,7 +1356,7 @@ class Contemplate
                         $k = trim($kv[0]); $v = trim($kv[1]); 
                         self::local_variable( $k ); self::local_variable( $v );
                         
-                        $out = "';" . self::pad_lines(implode(self::$__TEOL, array(
+                        $out = "';" . self::align(implode(self::$__TEOL, array(
                                         ""
                                         ,"{$_o} = {$o};"
                                         ,"if (!empty({$_o}))"
@@ -1372,7 +1372,7 @@ class Contemplate
                         $v = trim($kv[0]); 
                         self::local_variable( $v );
                         
-                        $out = "';" . self::pad_lines(implode(self::$__TEOL, array(
+                        $out = "';" . self::align(implode(self::$__TEOL, array(
                                         ""
                                         ,"{$_o} = {$o};"
                                         ,"if (!empty({$_o}))"
@@ -1389,7 +1389,7 @@ class Contemplate
                     /* else attached to  for loop */ 
                     self::$__loopifs--;  
                     self::$__level+=-2;
-                    $out = "';" . self::pad_lines(implode(self::$__TEOL, array(
+                    $out = "';" . self::align(implode(self::$__TEOL, array(
                                     ""
                                     ,"    }"
                                     ,"}"
@@ -1404,7 +1404,7 @@ class Contemplate
                     { 
                         self::$__loops--; self::$__loopifs--;  
                         self::$__level+=-2;
-                        $out = "';" . self::pad_lines(implode(self::$__TEOL, array(
+                        $out = "';" . self::align(implode(self::$__TEOL, array(
                                         ""
                                         ,"    }"
                                         ,"}"
@@ -1415,7 +1415,7 @@ class Contemplate
                     {
                         self::$__loops--;  
                         self::$__level+=-1;
-                        $out = "';" . self::pad_lines(implode(self::$__TEOL, array(
+                        $out = "';" . self::align(implode(self::$__TEOL, array(
                                         ""
                                         ,"}"
                                         ,""
@@ -1426,7 +1426,7 @@ class Contemplate
                     $id = trim( $args );
                     if ( self::$__strings && isset(self::$__strings[$id]) ) $id = self::$__strings[$id];
                     $ch = $id[0];
-                    if ( '"' === $ch || "'" === $ch ) $id = substr($id,1,-1); // quoted id
+                    if ( ('"' === $ch || "'" === $ch) && ($ch === $id[strlen($id)-1]) ) $id = substr($id,1,-1); // quoted id
                     self::$__extends = $id;
                     $out = "';" . self::$__TEOL; 
                     break;
@@ -1457,7 +1457,7 @@ class Contemplate
                     break;
                 case 18 /*'continue'*/:
                 case 19 /*'break'*/:
-                    $out = "';" . self::$__TEOL . self::pad_lines( 18===$m ? 'continue;' : 'break;' ) . self::$__TEOL;
+                    $out = "';" . self::$__TEOL . self::align( 18===$m ? 'continue;' : 'break;' ) . self::$__TEOL;
                     break;
             }
             return $out . preg_replace_callback( $re_controls, $parse_constructs, $rest );
@@ -2088,7 +2088,7 @@ class Contemplate
             // replace tpl separators
             if ( "\v" === $tag[strlen($tag)-1] ) 
             {
-                $tag = substr($tag,0,-1) . self::pad_lines( self::$__tplEnd );
+                $tag = substr($tag,0,-1) . self::align( self::$__tplEnd );
             }
             if ( "\t" === $tag[0] ) 
             {
@@ -2207,7 +2207,7 @@ class Contemplate
             $sblocks .= $EOL . self::$TT_BlockCode->render(array(
              'BLOCKNAME'            => $blocks[$b][0]
             ,'BLOCKMETHODNAME'      => "_blockfn_" . $blocks[$b][0]
-            ,'BLOCKMETHODCODE'      => self::pad_lines($blocks[$b][1], 1)
+            ,'BLOCKMETHODCODE'      => self::align($blocks[$b][1], 1)
             ));
         
         $renderCode = self::$TT_RCODE->render(array(
@@ -2221,9 +2221,9 @@ class Contemplate
          'PREFIXCODE'           => $prefixCode
         ,'TPLID'                => $id
         ,'CLASSNAME'            => $classname
-        ,'EXTENDCODE'           => self::pad_lines($extendCode, 1)
+        ,'EXTENDCODE'           => self::align($extendCode, 1)
         ,'BLOCKS'               => $sblocks
-        ,'RENDERCODE'           => self::pad_lines($renderCode, 2)
+        ,'RENDERCODE'           => self::align($renderCode, 2)
         ));
         
         return file_put_contents( $filename, $class );
@@ -2373,17 +2373,28 @@ class Contemplate
         return $localised_datetime;
     }
     
-    private static function pad_lines( $lines, $level=null )
+    private static function align( $s, $level=null )
     {
-        if ( null === $level )  $level = self::$__level;
+        if ( null === $level ) $level = self::$__level;
         
-        if ($level>=0)
+        $l = strlen($s);
+        if ( $l && (0 < $level) )
         {
-            $pad = str_repeat(self::$__pad, $level);
-            $lines = $pad . (implode( self::$__TEOL . $pad, preg_split(self::$NEWLINE, $lines) ));
+            $alignment = str_repeat(self::$__pad, $level);
+            $aligned = $alignment;
+            for($i=0; $i<$l; $i++)
+            {
+                $c = $s[$i];
+                /*if ( "\r" === $c ) continue;
+                else*/if ( "\n" === $c ) $aligned .= /*self::$__TEOL*/"\n" . $alignment;
+                else $aligned .= $c;
+            }
         }
-        
-        return $lines;
+        else
+        {
+            $aligned = $s;
+        }
+        return $aligned;
     }
 }
 

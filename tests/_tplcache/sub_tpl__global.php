@@ -12,7 +12,7 @@ public function __construct($id=null)
     parent::__construct( $id );
     
     /* extend tpl assign code starts here */
-    
+
     /* extend tpl assign code ends here */
 }    
 /* tpl-defined blocks render code starts here */

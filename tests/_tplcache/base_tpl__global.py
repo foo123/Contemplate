@@ -10,61 +10,61 @@ def __getTplClass__(Contemplate):
             self_ = self
             super(Contemplate_base__global, self_).__init__( id )
             # extend tpl assign code starts here
-            
+
             # extend tpl assign code ends here
         # tpl-defined blocks render code starts here
-        
-        
-        # tpl block render method for block 'Block3'
-        def _blockfn_Block3(self, data, self_, __i__):
-            
-            __p__ = ''
-             
-            __p__ += 'Base template Block3'
-            return __p__
-            
-        
-        
-        # tpl block render method for block 'Block2'
-        def _blockfn_Block2(self, data, self_, __i__):
-            
-            __p__ = ''
-             
-            __p__ += 'Base template Block2' + "\n" + '<!-- call the super block here in OO manner, if any -->' + "\n" + '' + str(self_.sprblock("Block2", data)) + '' + "\n" + ''
-            return __p__
-            
-        
-        
-        # tpl block render method for block 'Block12'
-        def _blockfn_Block12(self, data, self_, __i__):
-            
-            __p__ = ''
-             
-            __p__ += 'Base template nested Block12'
-            return __p__
-            
-        
-        
-        # tpl block render method for block 'Block11'
-        def _blockfn_Block11(self, data, self_, __i__):
-            
-            __p__ = ''
-             
-            __p__ += 'Base template nested Block11'
-            return __p__
-            
-        
-        
-        # tpl block render method for block 'Block1'
-        def _blockfn_Block1(self, data, self_, __i__):
-            
-            __p__ = ''
-             
-            __p__ += '' + "\n" + 'Base template Block1' + "\n" + '<br /><br />' + "\n" + '' +  __i__.block('Block11', data) 
-            __p__ += '' + "\n" + '<br /><br />' + "\n" + '' +  __i__.block('Block12', data) 
-            __p__ += '' + "\n" + '<br /><br />' + "\n" + ''
-            return __p__
-            
+        
+        
+        # tpl block render method for block 'Block3'
+        def _blockfn_Block3(self, data, self_, __i__):
+            
+            __p__ = ''
+             
+            __p__ += 'Base template Block3'
+            return __p__
+            
+        
+        
+        # tpl block render method for block 'Block2'
+        def _blockfn_Block2(self, data, self_, __i__):
+            
+            __p__ = ''
+             
+            __p__ += 'Base template Block2' + "\n" + '<!-- call the super block here in OO manner, if any -->' + "\n" + '' + str(self_.sprblock("Block2", data)) + '' + "\n" + ''
+            return __p__
+            
+        
+        
+        # tpl block render method for block 'Block12'
+        def _blockfn_Block12(self, data, self_, __i__):
+            
+            __p__ = ''
+             
+            __p__ += 'Base template nested Block12'
+            return __p__
+            
+        
+        
+        # tpl block render method for block 'Block11'
+        def _blockfn_Block11(self, data, self_, __i__):
+            
+            __p__ = ''
+             
+            __p__ += 'Base template nested Block11'
+            return __p__
+            
+        
+        
+        # tpl block render method for block 'Block1'
+        def _blockfn_Block1(self, data, self_, __i__):
+            
+            __p__ = ''
+             
+            __p__ += '' + "\n" + 'Base template Block1' + "\n" + '<br /><br />' + "\n" + '' +  __i__.block('Block11', data)
+            __p__ += '' + "\n" + '<br /><br />' + "\n" + '' +  __i__.block('Block12', data)
+            __p__ += '' + "\n" + '<br /><br />' + "\n" + ''
+            return __p__
+            
         
         # tpl-defined blocks render code ends here
         # render a tpl block method
@@ -95,12 +95,12 @@ def __getTplClass__(Contemplate):
 
             else:
                 # tpl main render code starts here
-                
-                __p__ += '<!-- this is the base template -->' + "\n" + '' + "\n" + '<strong>This is the base template</strong>' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block1</strong><br />' + "\n" + '' +  __i__.block('Block1', data) 
-                __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2</strong><br />' + "\n" + '' +  __i__.block('Block2', data) 
-                __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block3</strong><br />' + "\n" + '' +  __i__.block('Block3', data) 
-                __p__ += '' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2 Again</strong><br />' + "\n" + '' +  '' 
-                __p__ += '' + "\n" + '<strong>This is Block2 using getblock</strong><br />' + "\n" + '' + str(__i__.block("Block2", data)) + '' + "\n" + ''
+                
+                __p__ += '<!-- this is the base template -->' + "\n" + '' + "\n" + '<strong>This is the base template</strong>' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block1</strong><br />' + "\n" + '' +  __i__.block('Block1', data)
+                __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2</strong><br />' + "\n" + '' +  __i__.block('Block2', data)
+                __p__ += '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block3</strong><br />' + "\n" + '' +  __i__.block('Block3', data)
+                __p__ += '' + "\n" + '' + "\n" + '' + "\n" + '<br /><br /><br /><br />' + "\n" + '<strong>This is Block2 Again</strong><br />' + "\n" + '' +  ''
+                __p__ += '' + "\n" + '<strong>This is Block2 using getblock</strong><br />' + "\n" + '' + str(__i__.block("Block2", data)) + '' + "\n" + ''
                 
                 # tpl main render code ends here
 

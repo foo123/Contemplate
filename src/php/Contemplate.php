@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 1.1.7
+*  @version: 1.1.8
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -77,7 +77,8 @@ class ContemplateInlineTemplate
             else $out .= " . \$args['" . $s . "'] . ";
         }
         $out .= ');';
-        return create_function('$args', $out);
+        // create_function is deprecated in PHP 7.2+
+        return @create_function('$args', $out);
     }
     
     public function __construct( $tpl='', $replacements=null, $compiled=false ) 
@@ -334,7 +335,7 @@ class ContemplateCtx
 
 class Contemplate
 {
-    const VERSION = "1.1.7";
+    const VERSION = "1.1.8";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -524,7 +525,7 @@ class Contemplate
             ,"#BLOCKS#"             => "BLOCKS"
             ,"#EXTENDCODE#"         => "EXTENDCODE"
             ,"#RENDERCODE#"         => "RENDERCODE"
-        ), true);
+        ), false);
         
         self::$TT_BlockCode = new ContemplateInlineTemplate(implode(self::$__TEOL, array(
             ""
@@ -538,7 +539,7 @@ class Contemplate
              "#BLOCKNAME#"          => "BLOCKNAME"
             ,"#BLOCKMETHODNAME#"    => "BLOCKMETHODNAME"
             ,"#BLOCKMETHODCODE#"    => "BLOCKMETHODCODE"
-        ), true);
+        ), false);
         
         self::$TT_BLOCK = new ContemplateInlineTemplate(implode(self::$__TEOL, array(
             ""
@@ -548,7 +549,7 @@ class Contemplate
             ,""
         )), array(
              "#BLOCKCODE#"          => "BLOCKCODE"
-        ), true);
+        ), false);
         
         self::$TT_FUNC = new ContemplateInlineTemplate(implode(self::$__TEOL, array(
             ""
@@ -558,7 +559,7 @@ class Contemplate
             ,""
         )), array(
              "#FCODE#"              => "FCODE"
-        ), true);
+        ), false);
 
         self::$TT_RCODE = new ContemplateInlineTemplate(implode(self::$__TEOL, array(
             ""
@@ -566,7 +567,7 @@ class Contemplate
             ,""
         )), array(
              "#RCODE#"              => "RCODE"
-        ), true);
+        ), false);
         
         self::clear_state( );
         self::$__isInited = true;
@@ -2177,12 +2178,14 @@ class Contemplate
          'FCODE'        => self::$__extends ? "" : "\$__p__ .= '" . $renderf . "';"
         ));
         
-        $fn = create_function('&$data,$self,$__i__', $func);
+        // create_function is deprecated in PHP 7.2+
+        $fn = @create_function('&$data,$self,$__i__', $func);
         
         $blockfns = array();  
         for($b=0; $b<$bl; $b++) 
         {
-            $blockfns[$blocks[$b][0]] = create_function('&$data,$self,$__i__', $blocks[$b][1]);
+            // create_function is deprecated in PHP 7.2+
+            $blockfns[$blocks[$b][0]] = @create_function('&$data,$self,$__i__', $blocks[$b][1]);
         }
         return array($fn, $blockfns);
     }
@@ -2245,7 +2248,8 @@ class Contemplate
                 if ( isset($options['parsed']) && is_string($options['parsed']) )
                 {
                     // already parsed code was given
-                    $tpl->setRenderFunction( create_function('&$data,$self,$__i__', $options['parsed']) ); 
+                    // create_function is deprecated in PHP 7.2+
+                    $tpl->setRenderFunction( @create_function('&$data,$self,$__i__', $options['parsed']) ); 
                 }
                 else
                 {

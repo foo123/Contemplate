@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 1.1.7
+#  @version 1.1.8
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -1764,7 +1764,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "1.1.7"
+    VERSION = "1.1.8"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -1857,7 +1857,7 @@ class Contemplate:
             ,"#BLOCKS#"             : "BLOCKS"
             ,"#EXTENDCODE#"         : "EXTENDCODE"
             ,"#RENDERCODE#"         : "RENDERCODE"
-        }, True)
+        }, False)
         
         _G.TT_BlockCode = InlineTemplate(_G.TEOL.join([
             ""
@@ -1869,7 +1869,7 @@ class Contemplate:
              "#BLOCKNAME#"          : "BLOCKNAME"
             ,"#BLOCKMETHODNAME#"    : "BLOCKMETHODNAME"
             ,"#BLOCKMETHODCODE#"    : "BLOCKMETHODCODE"
-        }, True)
+        }, False)
 
         _G.TT_BLOCK = InlineTemplate(_G.TEOL.join([
             ""
@@ -1879,7 +1879,7 @@ class Contemplate:
             ,""
         ]), {
              "#BLOCKCODE#"          : "BLOCKCODE"
-        }, True)
+        }, False)
 
         _G.TT_FUNC = InlineTemplate(_G.TEOL.join([
             ""
@@ -1889,7 +1889,7 @@ class Contemplate:
             ,""
         ]), {
              "#FCODE#"              : "FCODE"
-        }, True)
+        }, False)
 
         _G.TT_RCODE = InlineTemplate(_G.TEOL.join([
             ""
@@ -1897,7 +1897,7 @@ class Contemplate:
             ,""
         ]), {
              "#RCODE#"              : "RCODE"
-        }, True)
+        }, False)
         
         clear_state( )
         _G.isInited = True

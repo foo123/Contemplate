@@ -1,6 +1,6 @@
 ###Contemplate Manual
 
-**version 1.1.6; platforms: PHP, Python, Node/XPCOM/JS**
+**version 1.1.8; platforms: PHP, Python, Node/XPCOM/JS**
 
 
 ###Contents
@@ -80,13 +80,13 @@ example:
 
 ####Dynamic Template Inheritance
 
-Templates can extend another template. This is accomplished using `%extends` directive, **inside** the template.
+Templates can extend another template. This is accomplished using `extends` directive, **inside** the template.
 This means that the super-template (id) is hardcoded inside the cached template (once compiled).
 
 Right now there are 2 ways to have dynamic template extension according to a condition based on input data.
 
 
-**1st** is to assign the super-template **id** (i.e as used in `%extends(id)` ) to another template. 
+**1st** is to assign the super-template **id** (i.e as used in `extends(id)` ) to another template. 
 In this way the template id used in *extends directive* will refer to a different template.
 This will change the referenced super-template for all other templates that extend the same super-template as well.
 
@@ -98,7 +98,7 @@ This will change the referenced super-template for all other templates that exte
 tpl = Contemplate.tpl( tplID );
 
 // tpl may already have a super-template assigned, but one can change this
-if ( 'json' == data.view)  tpl.extend( newSuperTemplateID );
+if ( 'json' == data.view )  tpl.extend( newSuperTemplateID );
 
 tpl.render( data );
 

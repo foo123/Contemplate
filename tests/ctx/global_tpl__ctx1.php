@@ -12,7 +12,7 @@ public function __construct($id=null)
     parent::__construct( $id );
     
     /* extend tpl assign code starts here */
-    
+
     /* extend tpl assign code ends here */
 }    
 /* tpl-defined blocks render code starts here */
@@ -51,7 +51,7 @@ public function render(&$data, $__i__=null)
     {
         /* tpl main render code starts here */
         
-        $__p__ .= '' . "\n" . '' . (Contemplate::locale("global")) . '' . "\n" . '' . "\n" . '' . (Contemplate::plg_("my_plugin", Contemplate::locale("ctx") )) . '' . "\n" . '';
+        $__p__ .= '' . "\n" . '' . (Contemplate::locale("global")) . '' . "\n" . '' . "\n" . '' . (Contemplate::plg_("my_plugin",Contemplate::locale("ctx"))) . '' . "\n" . '';
         
         /* tpl main render code ends here */
     }

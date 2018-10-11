@@ -36,8 +36,7 @@ private function _blockfn_2(&$data, $self, $__i__)
     
     $__p__ = '';
     
-    $__p__ .= '(3 2)' . "\n" . '        ' .  $__i__->block('3', $data);
-    $__p__ .= '' . "\n" . '    ' . ($self->sprblock("2", $data)) . '' . "\n" . '    ';
+    $__p__ .= '(3 2)' . "\n" . '        ' .  $__i__->block('3', $data);$__p__ .= '' . "\n" . '    ' . ($self->sprblock("2", $data)) . '' . "\n" . '    ';
     return $__p__;
     
 }
@@ -49,8 +48,7 @@ private function _blockfn_1(&$data, $self, $__i__)
     
     $__p__ = '';
     
-    $__p__ .= '(3 1)' . "\n" . '    ' .  $__i__->block('2', $data);
-    $__p__ .= '' . "\n" . '' . ($self->sprblock("1", $data)) . '' . "\n" . '';
+    $__p__ .= '(3 1)' . "\n" . '    ' .  $__i__->block('2', $data);$__p__ .= '' . "\n" . '' . ($self->sprblock("1", $data)) . '' . "\n" . '';
     return $__p__;
     
 }

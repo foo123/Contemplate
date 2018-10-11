@@ -1,5 +1,8 @@
 ###ChangeLog
 
+__1.1.8__
+* `create_function` is deprecated in PHP 7.2+, so eliminate use of `create_function` and use with `@` operator to avoid php notices. It is not used but left there for compatibility. maybe remopved completely in another update
+
 __1.1.7__
 * minor changes for better code alignment/indentation
 * minor changes in rendering

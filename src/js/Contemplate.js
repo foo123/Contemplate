@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node, client-side and XPCOM/SDK JavaScript
 *
-*  @version: 1.1.7
+*  @version: 1.1.8
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -32,7 +32,7 @@ else if ( !(name in root) ) /* Browser/WebWorker/.. */
 //////////////////////////////////////////////////////////////////////////////////////
 
 // private vars
-var __version__ = "1.1.7", Contemplate,
+var __version__ = "1.1.8", Contemplate,
 
     PROTO = 'prototype', Obj = Object, Arr = Array,
     HAS = Obj[PROTO].hasOwnProperty, toString = Obj[PROTO].toString,
@@ -1835,7 +1835,7 @@ Contemplate = {
             ,"#BLOCKS#"             : "BLOCKS"
             ,"#EXTENDCODE#"         : "EXTENDCODE"
             ,"#RENDERCODE#"         : "RENDERCODE"
-        }, true);
+        }, false);
     
         TT_BlockCode = new InlineTemplate([
             ""
@@ -1848,7 +1848,7 @@ Contemplate = {
              "#BLOCKNAME#"          : "BLOCKNAME"
             ,"#BLOCKMETHODNAME#"    : "BLOCKMETHODNAME"
             ,"#BLOCKMETHODCODE#"    : "BLOCKMETHODCODE"
-        }, true);
+        }, false);
 
         TT_BLOCK = new InlineTemplate([
             "\"use strict\";"
@@ -1858,7 +1858,7 @@ Contemplate = {
             ,""
         ].join( $__TEOL ), {
              "#BLOCKCODE#"          : "BLOCKCODE"
-        }, true);
+        }, false);
 
     
         TT_FUNC = new InlineTemplate([
@@ -1872,7 +1872,7 @@ Contemplate = {
             ,"};"
         ].join( $__TEOL ), {
              "#FCODE#"              : "FCODE"
-        }, true);
+        }, false);
         
         TT_RCODE = new InlineTemplate([
             ""
@@ -1880,7 +1880,7 @@ Contemplate = {
             ,""
         ].join( $__TEOL ), {
              "#RCODE#"              : "RCODE"
-        }, true);
+        }, false);
         
         clear_state( );
         $__isInited = true;

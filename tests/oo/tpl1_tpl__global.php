@@ -12,7 +12,7 @@ public function __construct($id=null)
     parent::__construct( $id );
     
     /* extend tpl assign code starts here */
-    
+
     /* extend tpl assign code ends here */
 }    
 /* tpl-defined blocks render code starts here */
@@ -36,8 +36,7 @@ private function _blockfn_2(&$data, $self, $__i__)
     
     $__p__ = '';
     
-    $__p__ .= '(1 2)' . "\n" . '        ' .  $__i__->block('3', $data);
-    $__p__ .= '' . "\n" . '    ';
+    $__p__ .= '(1 2)' . "\n" . '        ' .  $__i__->block('3', $data);$__p__ .= '' . "\n" . '    ';
     return $__p__;
     
 }
@@ -49,8 +48,7 @@ private function _blockfn_1(&$data, $self, $__i__)
     
     $__p__ = '';
     
-    $__p__ .= '(1 1)' . "\n" . '    ' .  $__i__->block('2', $data);
-    $__p__ .= '' . "\n" . '';
+    $__p__ .= '(1 1)' . "\n" . '    ' .  $__i__->block('2', $data);$__p__ .= '' . "\n" . '';
     return $__p__;
     
 }
@@ -89,8 +87,7 @@ public function render(&$data, $__i__=null)
     {
         /* tpl main render code starts here */
         
-        $__p__ .= '' .  $__i__->block('1', $data);
-        $__p__ .= '';
+        $__p__ .= '' .  $__i__->block('1', $data);$__p__ .= '';
         
         /* tpl main render code ends here */
     }

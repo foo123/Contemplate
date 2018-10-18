@@ -3,14 +3,14 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 1.1.8
+*  @version: 1.1.9
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
 *  http://ejohn.org/blog/javascript-micro-templating/
 *
 **/
-if (!class_exists('Contemplate'))
+if (!class_exists('Contemplate', false))
 {
 class ContemplateInlineTemplate
 { 
@@ -335,7 +335,7 @@ class ContemplateCtx
 
 class Contemplate
 {
-    const VERSION = "1.1.8";
+    const VERSION = "1.1.9";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -459,7 +459,7 @@ class Contemplate
         // make compilation templates
         self::$TT_ClassCode = new ContemplateInlineTemplate(implode(self::$__TEOL, array(
             "#PREFIXCODE#"
-            ,"if (!class_exists('#CLASSNAME#'))"
+            ,"if (!class_exists('#CLASSNAME#', false))"
             ,"{"
             ,"/* Contemplate cached template '#TPLID#' */"
             ,"final class #CLASSNAME# extends ContemplateTemplate"

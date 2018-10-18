@@ -1,6 +1,6 @@
 ###Contemplate Manual
 
-**version 1.1.8; platforms: PHP, Python, Node/XPCOM/JS**
+**version 1.1.9; platforms: PHP, Python, Node/XPCOM/JS**
 
 
 ###Contents

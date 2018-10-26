@@ -1,9 +1,9 @@
-###Contemplate Manual
+### Contemplate Manual
 
 **version 1.1.9; platforms: PHP, Python, Node/XPCOM/JS**
 
 
-###Contents
+### Contents
 
 1. [Template Separators](#template-separators)
 2. [Template Variables](#template-variables)
@@ -17,14 +17,14 @@
 
 
 
-####Template Separators
+#### Template Separators
 
 **IMPORTANT** As of version `0.6+`, template separators for `Contemplate` templates are defined **inside** the template itself
 in the first non-empty line, separated by a space (see examples and tests). Optionally (for a single template) they can also be passed as **part of parse options** when calling the `Contemplate.tpl( tplID [, data, {separators: seps}] )` method
 
 
 
-####Template Variables
+#### Template Variables
 
 
 Variables in a template are referenced using `PHP`-style Notation with `$` sign. 
@@ -55,7 +55,7 @@ $obj.key.key2  // this will also work
 
 
 
-####Literal Template Data
+#### Literal Template Data
 
 
 Literal `object`/`array` data are constructed in a template using `JavaScript` Literal Object-style Notation (similar to `JSON`)
@@ -64,7 +64,7 @@ example:
 
 ```javascript
 
-// eg. a literal object having various string values, numeric, values and arrays:
+// eg. a literal object having various string values, numeric values and arrays:
 { 
     "stringVar"     : "stringValue", 
     "numericVar"    : 123, 
@@ -78,7 +78,7 @@ example:
 ```
 
 
-####Dynamic Template Inheritance
+#### Dynamic Template Inheritance
 
 Templates can extend another template. This is accomplished using `extends` directive, **inside** the template.
 This means that the super-template (id) is hardcoded inside the cached template (once compiled).
@@ -104,7 +104,7 @@ tpl.render( data );
 
 ```
 
-####Dynamic Contexts
+#### Dynamic Contexts
 
 The engine can use **multiple dynanic contexts** to have contextual settings, like `templates`, `locales`, `caching`, `plugins` so that different modules of an application can **use the engine independantly**.
 
@@ -120,7 +120,7 @@ TEMPLATE operations take place in the `current` context (which defaults to `glob
 
 
 
-####Template Directives
+#### Template Directives
 
 **IMPORTANT** As of version `1.0.0+`, template `directives`, `functions` and `plugins` **no longer use** the `%` prefix i.e `%for`, `%if`, .. but `for`, `if`, .. If compatibility to older format is needed use `Contemplate.setCompatibilityMode( true )`
 
@@ -152,7 +152,7 @@ TEMPLATE operations take place in the `current` context (which defaults to `glob
 
 
 
-####Template Functions and Plugins
+#### Template Functions and Plugins
 
 **IMPORTANT** As of version `1.0.0+`, template `directives`, `functions` and `plugins` **no longer use** the `%` prefix i.e `%for`, `%if`, .. but `for`, `if`, .. If compatibility to older format is needed use `Contemplate.setCompatibilityMode( true )`
 
@@ -199,7 +199,7 @@ TEMPLATE operations take place in the `current` context (which defaults to `glob
 
 
 
-####Differences between `include` and `template`
+#### Differences between `include` and `template`
 
 The main difference is that `include` will actually copy the subtemplate contents inside the calling template (thus only one final template is generated). This is similar to PHP's `include` directive.
 
@@ -215,7 +215,7 @@ where the `{"var1":$value1, "var2":$value2, ..}` are the data to be passed to th
 this is exactly how the `Contemplate.tpl(id, data)` method is called.
 
 
-####Contemplate API
+#### Contemplate API
 
 **(javascript)**
 ```javascript

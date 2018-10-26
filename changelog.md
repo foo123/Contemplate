@@ -1,12 +1,12 @@
-###ChangeLog
+### ChangeLog
 
-__NOTE__ TOFIX: Python (3.6) fails sometimes to load/import template module if template created just before loading, in subsequent calls it works
+__NOTE__ TOFIX: Python (3.6) fails sometimes to load/import template module if template created just before loading. In subsequent calls it works.
 
 __1.1.9__
 * PHP: use `class_exists($class, false)`, JS/PY: update version numbers
 
 __1.1.8__
-* `create_function` is deprecated in PHP 7.2+, so eliminate use of `create_function` and use with `@` operator to avoid php notices. It is not used but left there for compatibility. maybe removed completely in another update
+* `create_function` is deprecated in PHP 7.2+, so eliminate use of `create_function` and use with `@` operator to avoid php notices. It is not used but left there for compatibility. Maybe removed completely in another update
 
 __1.1.7__
 * minor changes for better code alignment/indentation
@@ -39,7 +39,7 @@ __1.1.2__
 * inline, at compile-time, more template functions (e.g `concat`) for faster execution
 * inlined plugins can receive passed arguments (via `$` array parameter) both as (comma-separated) string (`$0`), plus each separate argument (`$1..$n`)
 * lazy init and rendering for inline templates and plugins for even faster execution
-* remove `plural` functions and add liguisticaly contexual localisation `xlocale`, `nxlocale` functions
+* remove `plural` functions and add linguisticaly contexual localisation `xlocale`, `nxlocale` functions
 * `cc` function alias of `concat`
 * fix php-like `date()` function in python implementation (wrong day of week for `Sunday`)
 

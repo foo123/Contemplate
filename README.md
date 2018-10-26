@@ -54,7 +54,7 @@ There are a couple of other frameworks named also `contemplate`
 [![Contemplate](/screenshots/contemplate-interactive.png)](http://foo123.github.com/examples/contemplate/)
 
 
-###Contents
+### Contents
 
 * [Online Playground Example](http://foo123.github.com/examples/contemplate/)
 * [Rationale](#rationale)
@@ -71,7 +71,7 @@ There are a couple of other frameworks named also `contemplate`
 **If you use `Contemplate` in your application and you want to share it, feel free to submit an example link**
 
 
-###Rationale
+### Rationale
 
 There are many templating engines out there, which are elegant, fast, multipurpose  and so on..
 Most of the sophisticated engines use a custom parser (and usually a full-fledged framework) to build the engine. 
@@ -100,7 +100,7 @@ The solution is inspired by _John Resig's post_ ([see above](http://ejohn.org/bl
 
 
 
-###Features:
+### Features:
 
 * `Contemplate` does a __minimum parsing__ (and caching) in order to create dynamic templates
 and trying to contain the needed functionality inside the common language subset(s).
@@ -149,7 +149,7 @@ syntax, yet work the same in all the engine's implementations.
 * **custom plugins can be also inlined**, i.e their code can be **expanded at compile-time** using `Contemplate::inline` templates in their definition, e.g saving unnecessary look-ups at render-time (see examples)
 
 
-###Dependencies
+### Dependencies
 
 * Only 3 classes are used (`Contemplate.php`, `Contemplate.js`, `Contemplate.py`), no other dependencies
 * `PHP` `5.2+` supported
@@ -159,7 +159,7 @@ syntax, yet work the same in all the engine's implementations.
 * `Contemplate` is also a `XPCOM JavaScript Component` (Firefox) (e.g to be used in firefox browser addons/plugins for templating)
 
 
-###Todo
+### Todo
 
 * add support for multiple `contexts` (which include separate `templates`, `cache` directories and related parameters) so that the engine can be **used in same application by different modules independantly** [DONE]
 * simplify template `directives`, `functions` and `plugins` notation by eliminating the `%` prefix (compatibility mode to older versions also supported) [DONE]
@@ -169,7 +169,7 @@ syntax, yet work the same in all the engine's implementations.
 * keep-up with `php`, `node`, `python`, browsers updates
 
 
-###Performance
+### Performance
 
 *(for `php` see `/tests/perf/perf.php`)*
 
@@ -208,13 +208,13 @@ Previous tests are here [jsperf/0.6.7](http://jsperf.com/js-template-engines-com
 
 
 
-###Tests
+### Tests
 
 Use `test.php` (for `php`), `test.js` (for `node`), `test.py` (for `python`)
 under `/tests` folder, to test the basic functionality
 
 
-###Screenshots
+### Screenshots
 
 Sample Template markup
 [![Template markup](/screenshots/template_markup.png)](https://github.com/foo123/Contemplate/raw/master/screenshots/template_markup.png)

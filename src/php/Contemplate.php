@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 1.1.9
+*  @version: 1.1.10
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -335,7 +335,7 @@ class ContemplateCtx
 
 class Contemplate
 {
-    const VERSION = "1.1.9";
+    const VERSION = "1.1.10";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -2229,7 +2229,7 @@ class Contemplate
         ,'RENDERCODE'           => self::align($renderCode, 2)
         ));
         
-        return file_put_contents( $filename, $class );
+        return file_put_contents( $filename, $class, LOCK_EX /* PHP 5.1.0+ */ );
     }
     
     private static function get_cached_template( $id, $contx, $options=array() )

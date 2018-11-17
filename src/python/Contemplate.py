@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 1.1.9
+#  @version 1.1.10
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -64,6 +64,10 @@ except ImportError:
         return s.decode('string_escape')
 
     
+try:
+    from importlib import reload
+except ImportError:
+    pass
 
 # (protected) global properties
 class _G:
@@ -1485,7 +1489,7 @@ def get_cached_template( id, contx, options=dict() ):
                 # if not exist, create it
                 create_cached_template( id, contx, cachedTplPath, cachedTplClass, options['separators'] )
             if os.path.isfile( cachedTplPath ):
-                tpl = import_tpl( cachedTplFile, cachedTplClass, contx.cacheDir )( )
+                tpl = import_tpl( cachedTplFile, cachedTplClass, contx.cacheDir, True )( )
                 tpl.setId( id ).ctx( contx )
                 return tpl
             return None
@@ -1500,7 +1504,7 @@ def get_cached_template( id, contx, options=dict() ):
                 # if tpl not exist or is out-of-sync (re-)create it
                 create_cached_template( id, contx, cachedTplPath, cachedTplClass, options['separators'] )
             if os.path.isfile( cachedTplPath ):
-                tpl = import_tpl( cachedTplFile, cachedTplClass, contx.cacheDir )( )
+                tpl = import_tpl( cachedTplFile, cachedTplClass, contx.cacheDir, True )( )
                 tpl.setId( id ).ctx( contx )
                 return tpl
             return None
@@ -1764,7 +1768,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "1.1.9"
+    VERSION = "1.1.10"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2

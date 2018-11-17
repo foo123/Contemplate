@@ -1,6 +1,9 @@
 ### ChangeLog
 
-__NOTE__ TOFIX: Python (3.6) fails sometimes to load/import template module if template created just before loading. In subsequent calls it works.
+__1.1.10__
+* PHP: require exclusive lock when writing a compiled and cached template to disk
+* PY: make sure module is reloaded in case it is out of date when loading a template (as module) from disk. Seems to fix the failure to load/import template module if created just before loading
+* JS: update version
 
 __1.1.9__
 * PHP: use `class_exists($class, false)`, JS/PY: update version numbers

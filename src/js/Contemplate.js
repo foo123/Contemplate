@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node, client-side and XPCOM/SDK JavaScript
 *
-*  @version: 1.1.9
+*  @version: 1.1.10
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -32,7 +32,7 @@ else if ( !(name in root) ) /* Browser/WebWorker/.. */
 //////////////////////////////////////////////////////////////////////////////////////
 
 // private vars
-var __version__ = "1.1.9", Contemplate,
+var __version__ = "1.1.10", Contemplate,
 
     PROTO = 'prototype', Obj = Object, Arr = Array,
     HAS = Obj[PROTO].hasOwnProperty, toString = Obj[PROTO].toString,

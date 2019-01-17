@@ -1,5 +1,9 @@
 ### ChangeLog
 
+__1.2.0__
+* PHP/JS/PY: enable templates subfolders and paths. Meaning a template id can have relative path in its name and same relative path will be created in cacheDir and served as such. This accomodates templates used for different purposes having same basename but differing in relative path. This resolves the issue and also allows more flexibility in handling many different templates and template folder structures. If path does not exist in cache folder it will be created automaticaly.
+
+
 __1.1.10__
 * PHP: require exclusive lock when writing a compiled and cached template to disk
 * PY: make sure module is reloaded in case it is out of date when loading a template (as module) from disk. Seems to fix the failure to load/import template module if created just before loading

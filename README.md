@@ -1,7 +1,7 @@
 Contemplate
 ===========
 
-__Light-weight, fast and flexible "object-oriented" template engine for PHP, Python, Node, XPCOM and client-side JavaScript, ActionScript(TODO)__
+__Light-weight, fast and flexible "object-oriented" template engine for PHP, Python, Node, XPCOM and client-side JavaScript__
 
 
 ![Contemplate](/screenshots/contemplate.jpg)
@@ -34,8 +34,8 @@ __Light-weight, fast and flexible "object-oriented" template engine for PHP, Pyt
 * [Asynchronous](https://github.com/foo123/asynchronous.js) a simple manager for async, linearised, parallelised, interleaved and sequential tasks for JavaScript
 
 
-This started as a a __proof-of-concept__ . 
-The inspiration came from an old post by [John Resig](https://github.com/jeresig)  (http://ejohn.org/blog/javascript-micro-templating/)
+This started as a a __proof-of-concept__ but developed into a full-blown and versatile template engine. 
+The original inspiration came from an old post by [John Resig](https://github.com/jeresig)  (http://ejohn.org/blog/javascript-micro-templating/)
 
 ----------------------------------------------------------------------------------------------------------------------
 

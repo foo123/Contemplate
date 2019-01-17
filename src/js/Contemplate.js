@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node, client-side and XPCOM/SDK JavaScript
 *
-*  @version: 1.1.10
+*  @version: 1.2.0
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -32,7 +32,7 @@ else if ( !(name in root) ) /* Browser/WebWorker/.. */
 //////////////////////////////////////////////////////////////////////////////////////
 
 // private vars
-var __version__ = "1.1.10", Contemplate,
+var __version__ = "1.2.0", Contemplate,
 
     PROTO = 'prototype', Obj = Object, Arr = Array,
     HAS = Obj[PROTO].hasOwnProperty, toString = Obj[PROTO].toString,
@@ -77,7 +77,7 @@ var __version__ = "1.1.10", Contemplate,
     $__extends = null, $__strings = null,
     $__ctx, $__global, $__context, $__uuid = 0,
     
-    UNDERLN = /[\W]+/g, NEWLINE = /\n\r|\r\n|\n|\r/g, SQUOTE = /'/g,
+    UNDERLN = /[\W]+/g, NEWLINE = /\n\r|\r\n|\n|\r/g, SQUOTE = /'/g, DS_RE = /[\/\\]/, BASENAME_RE = /[\/\\]?[^\/\\]+$/,
     ALPHA = /^[a-zA-Z_]/, NUM = /^[0-9]/, ALPHANUM = /^[a-zA-Z0-9_]/i, SPACE = /^\s/,
     re_controls = /(\t|\s?)\s*((#ID_(continue|endblock|elsefor|endfor|endif|break|else|fi)#(\s*\(\s*\))?)|(#ID_([^#]+)#\s*(\()))(.*)$/g,
     
@@ -1225,11 +1225,32 @@ function parse( tpl, leftTplSep, rightTplSep, withblocks )
 }
 function get_cached_template_name( id, ctx, cacheDir )
 { 
-    return cacheDir + id.replace(UNDERLN, '_') + '_tpl__' + ctx.replace(UNDERLN, '_') + '.js'; 
+    var filename, path;
+    if ( (isNode || isXPCOM) && (-1 !== id.indexOf('/') || -1 !== id.indexOf('\\')) )
+    {
+        filename = basename(id);
+        path = trim(dirname(id), '/\\');
+        if ( path.length ) path += '/';
+    }
+    else
+    {
+        filename = id;
+        path = '';
+    }
+    return cacheDir + path + filename.replace(UNDERLN, '_') + '_tpl__' + ctx.replace(UNDERLN, '_') + '.js'; 
 }
 function get_cached_template_class( id, ctx )
 { 
-    return 'Contemplate_' + id.replace(UNDERLN, '_') + '__' + ctx.replace(UNDERLN, '_'); 
+    var filename;
+    if ( (isNode || isXPCOM) && (-1 !== id.indexOf('/') || -1 !== id.indexOf('\\')) )
+    {
+        filename = basename(id);
+    }
+    else
+    {
+        filename = id;
+    }
+    return 'Contemplate_' + filename.replace(UNDERLN, '_') + '__' + ctx.replace(UNDERLN, '_'); 
 }
 function get_template_contents( id, contx, asyncCB )
 {
@@ -1375,7 +1396,8 @@ function create_cached_template( id, contx, filename, classname, seps )
 }
 function get_cached_template( id, contx, options )
 {
-    var template, tplclass, tpl, sprTpl, funcs, cachedTplFile, cachedTplClass, stat, stat2;
+    var template, tplclass, tpl, sprTpl, funcs, cachedTplFile, cachedTplClass, stat, stat2,
+        exists, fname, fpath;
     template = contx.templates[id] || $__global.templates[id] || null;
     if ( template )
     {
@@ -1408,8 +1430,20 @@ function get_cached_template( id, contx, options )
             {
                 cachedTplFile = get_cached_template_name( id, contx.id, contx.cacheDir );
                 cachedTplClass = get_cached_template_class( id, contx.id );
-                if ( !fexists( cachedTplFile ) )
+                exists = fexists( cachedTplFile );
+                if ( !exists )
                 {
+                    if ( -1 !== id.indexOf('/') || -1 !== id.indexOf('\\') )
+                    {
+                        fname = basename(id);
+                        fpath = trim(dirname(id), '/\\');
+                    }
+                    else
+                    {
+                        fname = id;
+                        fpath = '';
+                    }
+                    if ( fpath.length ) create_path(fpath, contx.cacheDir);
                     create_cached_template( id, contx, cachedTplFile, cachedTplClass, options.separators );
                 }
                 if ( fexists( cachedTplFile ) )
@@ -1425,9 +1459,21 @@ function get_cached_template( id, contx, options )
             {    
                 cachedTplFile = get_cached_template_name( id, contx.id, contx.cacheDir );
                 cachedTplClass = get_cached_template_class( id, contx.id );
-                if ( !fexists( cachedTplFile ) )
+                exists = fexists( cachedTplFile );
+                if ( !exists )
                 {
                     // if tpl not exist create it
+                    if ( -1 !== id.indexOf('/') || -1 !== id.indexOf('\\') )
+                    {
+                        fname = basename(id);
+                        fpath = trim(dirname(id), '/\\');
+                    }
+                    else
+                    {
+                        fname = id;
+                        fpath = '';
+                    }
+                    if ( fpath.length ) create_path(fpath, contx.cacheDir);
                     create_cached_template( id, contx, cachedTplFile, cachedTplClass, options.separators );
                 }
                 else
@@ -1461,7 +1507,26 @@ function get_cached_template( id, contx, options )
     }
     return null;
 }
-
+function split_and_filter(r, s, regex)
+{
+    return s.split(r).map(function(x){return trim(x);}).filter(function(x){return 0<x.length;});
+}
+function create_path(path, root, mode)
+{
+    path = trim(path);
+    if ( !path.length ) return;
+    mode = mode || parseInt('0755',8);
+    root = root || '';
+    var i, l,
+        parts = split_and_filter(DS_RE, path),
+        current = rtrim(root, '/\\');
+    for(i=0,l=parts.length; i<l; i++)
+    {
+        current += '/' + parts[i];
+        if ( !fexists(current) /*&& !fis_dir(current)*/ )
+            fmkdir(current, mode);
+    }
+}
 
 // can use inline templates for plugins etc.. to enable non-linear plugin compile-time replacement
 function InlineTemplate( tpl, replacements, compiled )
@@ -1706,6 +1771,7 @@ function Ctx( id )
     self.cacheDir         = './';
     self.cacheMode        = 0;
     self.cache            = { };
+    self.templateDirs     = [ ];
     self.templates        = { };
     self.partials         = { };
     self.locale           = { };
@@ -1721,6 +1787,7 @@ Ctx[PROTO] = {
     ,cacheDir: null
     ,cacheMode: null
     ,cache: null
+    ,templateDirs: null
     ,templates: null
     ,partials: null
     ,locale: null
@@ -1734,6 +1801,7 @@ Ctx[PROTO] = {
         self.id = null;
         self.cacheDir = null;
         self.cacheMode = null;
+        self.templateDirs = null;
         self.templates = null;
         self.partials = null;
         self.locale = null;
@@ -2011,7 +2079,7 @@ Contemplate = {
         var contx;
         if ( arguments.length < 2 ) ctx = 'global';
         contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
-        contx.cacheDir = rtrim(dir, '/') + '/';  
+        contx.cacheDir = rtrim(dir, '/\\') + '/';  
     }
     
     ,setCacheMode: function( mode, ctx ) { 
@@ -2442,7 +2510,7 @@ var default_date_locale = {
     re_1 = /([\s\S]*?)(&(?:#\d+|#x[\da-f]+|[a-zA-Z][\da-z]*);|$)/g,
     re_2 = /!/g, re_3 = /'/g, re_4 = /\(/g, re_5 = /\)/g, re_6 = /\*/g, re_7 = /%20/g,
     re_8 = /%%|%(\d+\$)?([-+\'#0 ]*)(\*\d+\$|\*|\d+)?(\.(\*\d+\$|\*|\d+))?([scboxXuideEfFgG])/g,
-    re_9 = /([\[\]\(\)\.\?\/\*\{\}\+\$\^\:])/g,
+    re_9 = /([\[\]\(\)\.\?\/\*\{\}\+\$\^\:\\])/g,
     rtrim_re = /[ \s\u00A0]+$/g,
     ltrim_re = /^[ \s\u00A0]+/g,
     trim_re = /^[ \n\r\t\f\x0b\xa0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u2028\u2029\u3000]+|[ \n\r\t\f\x0b\xa0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u2028\u2029\u3000]+$/g,
@@ -2480,6 +2548,61 @@ var default_date_locale = {
     }
     : function fexists_async( file, cb ) {
         if ( cb ) cb ( true );
+    }),
+    
+    fis_dir = isXPCOM
+    ? function fis_dir( file ) {
+        return fileurl_2_nsfile( file ).isDirectory();
+    }
+    : (isNode
+    ? function fis_dir( file ) {
+        return fs.lstatSync( file ).isDirectory();
+    }
+    : function fis_dir( file ) {
+        return false;
+    }),
+    fis_dir_async = isXPCOM
+    ? function fis_dir_async( file, cb ) {
+        if ( cb ) cb(fileurl_2_nsfile( file ).isDirectory());
+    }
+    : (isNode
+    ? function fis_dir_async( file, cb ) {
+        fs.lstat(file, function(err, stats){
+            if ( cb ) cb(err ? null : stats.isDirectory());
+        });
+    }
+    : function fis_dir_async( file, cb ) {
+        if ( cb ) cb(false);
+    }),
+    
+    fmkdir = isXPCOM
+    ? function( file, mode ) {
+        // TODO!!!
+        return false;
+    }
+    : (isNode
+    ? function( file, mode ) {
+        return fs.mkdirSync(file, mode);
+    }
+    : function( file, mode ){
+        // do nothing
+        return false;
+    }),
+    
+    fmkdir_async = isXPCOM
+    ? function( file, mode, cb ) {
+        // TODO!!!
+        if ( cb ) cb(false);
+    }
+    : (isNode
+    ? function( file, mode, cb ) {
+        fs.mkdir(file, mode, function(err){
+            if ( cb ) cb(err ? false : true);
+        });
+    }
+    : function( file, mode, cb ){
+        // do nothing
+        if ( cb ) cb(false);
     }),
     
     fstat = isXPCOM
@@ -2714,6 +2837,24 @@ function trim( str, charlist )
     return (str+'').replace(
         !charlist ? trim_re : RE('^[' + (charlist=(charlist+'').replace(re_9, '\\$1')) + ']+|[' + charlist + ']+$', 'g'),
     '');
+}
+function basename( s )
+{
+    var lastChar = s.charAt(s.length-1);
+    if ( '/' === lastChar || '\\' === lastChar )
+    {
+        s = s.slice(0, -1);
+    }
+    return s.split(DS_RE).pop();
+}
+function dirname( s )
+{
+    var lastChar = s.charAt(s.length-1);
+    if ( '/' === lastChar || '\\' === lastChar )
+    {
+        s = s.slice(0, -1);
+    }
+    return s.replace(BASENAME_RE, '');
 }
 function pad( s, len, ch )
 {

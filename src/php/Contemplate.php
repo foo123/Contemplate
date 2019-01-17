@@ -3,7 +3,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
 *
-*  @version: 1.1.10
+*  @version: 1.2.0
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -285,6 +285,7 @@ class ContemplateCtx
     public $cacheDir = null;
     public $cacheMode = null;
     public $cache = null;
+    public $templateDirs = null;
     public $templates = null;
     public $partials = null;
     public $locale = null;
@@ -299,6 +300,7 @@ class ContemplateCtx
         $this->cacheDir         = './';
         $this->cacheMode        = 0;
         $this->cache            = array( );
+        $this->templateDirs     = array( );
         $this->templates        = array( );
         $this->partials         = array( );
         $this->locale           = array( );
@@ -318,6 +320,7 @@ class ContemplateCtx
         $this->id = null;
         $this->cacheDir = null;
         $this->cacheMode = null;
+        $this->templateDirs = null;
         $this->templates = null;
         $this->partials = null;
         $this->locale = null;
@@ -335,7 +338,7 @@ class ContemplateCtx
 
 class Contemplate
 {
-    const VERSION = "1.1.10";
+    const VERSION = "1.2.0";
     
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -694,7 +697,7 @@ class Contemplate
     public static function setCacheDir( $dir, $ctx='global' ) 
     {  
         $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
-        $contx->cacheDir = rtrim($dir,'/').'/'; 
+        $contx->cacheDir = rtrim($dir, '/\\').'/'; 
     }
     
     public static function setCacheMode( $mode, $ctx='global' ) 
@@ -2141,12 +2144,31 @@ class Contemplate
     
     private static function get_cached_template_name( $id, $ctx, $cacheDir ) 
     { 
-        return $cacheDir . preg_replace('/[\\W]+/', '_', $id) . '_tpl__' . preg_replace('/[\\W]+/', '_', $ctx) .'.php'; 
+        if ( false !== strpos($id, '/') || false !== strpos($id, '\\') )
+        {
+            $filename = basename($id);
+            $path = trim(dirname($id), '/\\');
+            if ( strlen($path) ) $path .= DIRECTORY_SEPARATOR;
+        }
+        else
+        {
+            $filename = $id;
+            $path = '';
+        }
+        return $cacheDir . $path . preg_replace('/[\\W]+/', '_', $filename) . '_tpl__' . preg_replace('/[\\W]+/', '_', $ctx) .'.php'; 
     }
     
     private static function get_cached_template_class( $id, $ctx ) 
     { 
-        return 'Contemplate_' .  preg_replace('/[\\W]+/', '_', $id) . '__' . preg_replace('/[\\W]+/', '_', $ctx);  
+        if ( false !== strpos($id, '/') || false !== strpos($id, '\\') )
+        {
+            $filename = basename($id);
+        }
+        else
+        {
+            $filename = $id;
+        }
+        return 'Contemplate_' .  preg_replace('/[\\W]+/', '_', $filename) . '__' . preg_replace('/[\\W]+/', '_', $ctx);  
     }
     
     private static function get_template_contents( $id, $contx )
@@ -2270,6 +2292,17 @@ class Contemplate
                     if ( !is_file( $cachedTplFile ) )
                     {
                         // if not exist, create it
+                        if ( false !== strpos($id, '/') || false !== strpos($id, '\\') )
+                        {
+                            $fname = basename($id);
+                            $fpath = trim(dirname($id), '/\\');
+                        }
+                        else
+                        {
+                            $fname = $id;
+                            $fpath = '';
+                        }
+                        if ( strlen($fpath) ) self::create_path($fpath, $contx->cacheDir);
                         self::create_cached_template( $id, $contx, $cachedTplFile, $cachedTplClass, $options['separators'] );
                     }
                     if ( is_file( $cachedTplFile ) )
@@ -2286,9 +2319,24 @@ class Contemplate
                 {
                     $cachedTplFile = self::get_cached_template_name( $id, $contx->id, $contx->cacheDir );
                     $cachedTplClass = self::get_cached_template_class( $id, $contx->id );
-                    if ( !is_file( $cachedTplFile ) || (filemtime( $cachedTplFile ) <= filemtime( $template[0] )) )
+                    $exists = is_file( $cachedTplFile );
+                    if ( !$exists || (filemtime( $cachedTplFile ) <= filemtime( $template[0] )) )
                     {
                         // if tpl not exist or is out-of-sync (re-)create it
+                        if ( !$exists )
+                        {
+                            if ( false !== strpos($id, '/') || false !== strpos($id, '\\') )
+                            {
+                                $fname = basename($id);
+                                $fpath = trim(dirname($id), '/\\');
+                            }
+                            else
+                            {
+                                $fname = $id;
+                                $fpath = '';
+                            }
+                            if ( strlen($fpath) ) self::create_path($fpath, $contx->cacheDir);
+                        }
                         self::create_cached_template( $id, $contx, $cachedTplFile, $cachedTplClass, $options['separators'] );
                     }
                     if ( is_file( $cachedTplFile ) )
@@ -2314,6 +2362,32 @@ class Contemplate
             }
         }
         return null;
+    }
+    
+    private static function split_and_filter( $r, $s, $regex=true )
+    {
+        return array_values(
+            array_filter(
+                array_map(
+                    'trim',
+                    true===$regex ? preg_split($r, $s) : explode($r, $s)
+                ), 
+            'strlen')
+        );
+    }
+    
+    private static function create_path( $path, $root='', $mode=0755 )
+    {
+        $path = trim($path);
+        if ( empty($path) ) return;
+        $parts = self::split_and_filter('#[/\\\\]#', $path);
+        $current = rtrim($root, '/\\');
+        foreach($parts as $part)
+        {
+            $current .= DIRECTORY_SEPARATOR . $part;
+            if ( /*!is_dir($current) &&*/ !file_exists($current) )
+                @mkdir($current, $mode);
+        }
     }
     
     private static function reset_state( ) 

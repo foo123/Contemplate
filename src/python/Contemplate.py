@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 1.1.10
+#  @version 1.2.0
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -115,6 +115,7 @@ class _G:
     SQUOTE = re.compile(r"'")
     NL = re.compile(r'\n')
 
+    DS_RE = re.compile(r'[/\\]')
     UNDERL = re.compile(r'[\W]+')
     ALPHA = re.compile(r'^[a-zA-Z_]')
     NUM = re.compile(r'^[0-9]')
@@ -317,7 +318,7 @@ def localized_date( format, timestamp ):
 # (mostly methods to simulate php-like functionality needed by the engine)
 #
 # static
-def import_tpl( filename, classname, directory, doReload=False ):
+def import_tpl( filename, classname, cacheDir, doReload=False ):
     # http://www.php2python.com/wiki/function.import_tpl/
     # http://docs.python.org/dev/3.0/whatsnew/3.0.html
     # http://stackoverflow.com/questions/4821104/python-dynamic-instantiation-from-string-name-of-a-class-in-dynamically-imported
@@ -343,15 +344,17 @@ def import_tpl( filename, classname, directory, doReload=False ):
     
     global _G
     getTplClass = None
-    #directory = _G.cacheDir
     # add the dynamic import path to sys
+    basename = os.path.basename(filename)
+    directory = os.path.dirname(filename)
+    os.sys.path.append(cacheDir)
     os.sys.path.append(directory)
     currentcwd = os.getcwd()
     os.chdir(directory)   # change working directory so we know import will work
     
     if os.path.exists(filename):
         
-        modname = filename[:-3]  # remove .py extension
+        modname = basename[:-3]  # remove .py extension
         mod = __import__(modname)
         if doReload: reload(mod) # Might be out of date
         # a trick in-order to pass the Contemplate super-class in a cross-module way
@@ -360,6 +363,7 @@ def import_tpl( filename, classname, directory, doReload=False ):
     # restore current dir
     os.chdir(currentcwd)
     # remove the dynamic import path from sys
+    del os.sys.path[-1]
     del os.sys.path[-1]
     
     # return the tplClass if found
@@ -1368,13 +1372,24 @@ def parse( tpl, leftTplSep, rightTplSep, withblocks=True ):
     
     return (parse_blocks(parsed) if len(_G.allblocks)>0 else [parsed, []]) if False != withblocks else parsed
 
-def get_cached_template_name( id, ctx ):
+def get_cached_template_name( id, ctx, cacheDir ):
     global _G
-    return re.sub(_G.UNDERL, '_', id) + '_tpl__' + re.sub(_G.UNDERL, '_', ctx) + '.py'
+    if -1 != id.find('/') or -1 != id.find('\\'):
+        filename = os.path.basename(id)
+        path = os.path.dirname(id.rstrip(os.pathsep).rstrip('/\\')).strip('/\\')
+        if len(path): path += '/'
+    else:
+        filename = id
+        path = ''
+    return os.path.join( cacheDir, path + re.sub(_G.UNDERL, '_', filename) + '_tpl__' + re.sub(_G.UNDERL, '_', ctx) + '.py')
 
 def get_cached_template_class( id, ctx ):
     global _G
-    return 'Contemplate_' + re.sub(_G.UNDERL, '_', id) + '__' + re.sub(_G.UNDERL, '_', ctx)
+    if -1 != id.find('/') or -1 != id.find('\\'):
+        filename = os.path.basename(id)
+    else:
+        filename = id
+    return 'Contemplate_' + re.sub(_G.UNDERL, '_', filename) + '__' + re.sub(_G.UNDERL, '_', ctx)
 
 def get_template_contents( id, contx ):
     global _G
@@ -1482,13 +1497,20 @@ def get_cached_template( id, contx, options=dict() ):
         
         if True != options['autoUpdate'] and CM == Contemplate.CACHE_TO_DISK_NOUPDATE:
         
-            cachedTplFile = get_cached_template_name( id, contx.id )
-            cachedTplPath = os.path.join( contx.cacheDir, cachedTplFile )
+            cachedTplFile = get_cached_template_name( id, contx.id, contx.cacheDir )
             cachedTplClass = get_cached_template_class( id, contx.id )
-            if not os.path.isfile(cachedTplPath):
+            exists = os.path.isfile(cachedTplFile)
+            if not exists:
                 # if not exist, create it
-                create_cached_template( id, contx, cachedTplPath, cachedTplClass, options['separators'] )
-            if os.path.isfile( cachedTplPath ):
+                if -1 != id.find('/') or -1 != id.find('\\'):
+                    fname = os.path.basename(id)
+                    fpath = os.path.dirname(id.rstrip(os.pathsep).rstrip('/\\')).strip('/\\')
+                else:
+                    fname = id
+                    fpath = ''
+                if len(fpath): create_path(fpath, contx.cacheDir)
+                create_cached_template( id, contx, cachedTplFile, cachedTplClass, options['separators'] )
+            if os.path.isfile( cachedTplFile ):
                 tpl = import_tpl( cachedTplFile, cachedTplClass, contx.cacheDir, True )( )
                 tpl.setId( id ).ctx( contx )
                 return tpl
@@ -1497,13 +1519,21 @@ def get_cached_template( id, contx, options=dict() ):
         
         elif True == options['autoUpdate'] or CM == Contemplate.CACHE_TO_DISK_AUTOUPDATE:
         
-            cachedTplFile = get_cached_template_name( id, contx.id )
-            cachedTplPath = os.path.join( contx.cacheDir, cachedTplFile )
+            cachedTplFile = get_cached_template_name( id, contx.id, contx.cacheDir )
             cachedTplClass = get_cached_template_class( id, contx.id )
-            if not os.path.isfile( cachedTplPath ) or (os.path.getmtime( cachedTplPath ) <= os.path.getmtime( template[0] )):
+            exists = os.path.isfile(cachedTplFile)
+            if not exists or (os.path.getmtime( cachedTplFile ) <= os.path.getmtime( template[0] )):
                 # if tpl not exist or is out-of-sync (re-)create it
-                create_cached_template( id, contx, cachedTplPath, cachedTplClass, options['separators'] )
-            if os.path.isfile( cachedTplPath ):
+                if not exists:
+                    if -1 != id.find('/') or -1 != id.find('\\'):
+                        fname = os.path.basename(id)
+                        fpath = os.path.dirname(id.rstrip(os.pathsep).rstrip('/\\')).strip('/\\')
+                    else:
+                        fname = id
+                        fpath = ''
+                    if len(fpath): create_path(fpath, contx.cacheDir)
+                create_cached_template( id, contx, cachedTplFile, cachedTplClass, options['separators'] )
+            if os.path.isfile( cachedTplFile ):
                 tpl = import_tpl( cachedTplFile, cachedTplClass, contx.cacheDir, True )( )
                 tpl.setId( id ).ctx( contx )
                 return tpl
@@ -1520,6 +1550,22 @@ def get_cached_template( id, contx, options=dict() ):
             return tpl
         
     return None
+
+
+def split_and_filter(r, s, regex=True):
+    return list(filter(lambda x: 0<len(x), map(lambda x: x.strip(), re.split(r, s) if regex else s.split(r))))
+    
+
+def create_path(path, root='', mode=0o755):
+    global _G
+    path = path.strip()
+    if not len(path): return
+    parts = split_and_filter(_G.DS_RE, path)
+    current = root.rstrip('/\\')
+    for part in parts:
+        current += '/' + part
+        if not os.path.exists(current):
+            os.mkdir(current, mode)
 
 
 class InlineTemplate:
@@ -1732,6 +1778,7 @@ class Ctx:
         self.cacheDir         = './'
         self.cacheMode        = 0
         self.cache            = { }
+        self.templateDirs     = [ ]
         self.templates        = { }
         self.partials         = { }
         self.locale           = { }
@@ -1747,6 +1794,7 @@ class Ctx:
         self.id = None
         self.cacheDir = None
         self.cacheMode = None
+        self.templateDirs = None
         self.templates = None
         self.partials = None
         self.locale = None
@@ -1768,7 +1816,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "1.1.10"
+    VERSION = "1.2.0"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2

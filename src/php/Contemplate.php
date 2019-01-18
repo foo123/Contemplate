@@ -414,7 +414,7 @@ class Contemplate
     'inline', 'tpl', 'uuid', 'haskey',
     'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
     'is_array', 'in_array', 'json_encode', 'json_decode',
-    'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale', 'join'
+    'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale', 'join', 'queryvar', 'striptags'
     );
     private static $__aliases = array(
      'l'        => 'locale'
@@ -891,7 +891,54 @@ class Contemplate
         }
         return $out;
     }
-        
+
+    public static function queryvar( $add_keys, $remove_keys=null, $url='' )
+    {
+        if ( !empty($remove_keys) )
+        {
+            // https://davidwalsh.name/php-remove-variable
+            $keys = (array)$remove_keys;
+            foreach($keys as $key)
+            {
+                $url = preg_replace('/(\\?|&)' . preg_quote( urlencode( $key ), '/' ) . '(\\[[^\\[\\]]*\\])*(=[^&]+)?/', '$1', $url);
+            }
+            $last = substr($url,-1);
+            while ( '?' == $last || '&' == $last )
+            {
+                $url = substr($url,0,-1);
+                $last = substr($url,-1);
+            }
+        }
+        if ( !empty($add_keys) )
+        {
+            $keys = (array)$add_keys;
+            $q = false === strpos($url,'?') ? '?' : '&';
+            foreach($keys as $key=>$value)
+            {
+                $key = urlencode( $key );
+                if ( is_array($value) )
+                {
+                    foreach($value as $v)
+                    {
+                        $url .= $q . $key . '[]=' . urlencode( $v );
+                        $q = '&';
+                    }
+                }
+                else
+                {
+                    $url .= $q . $key . '=' . urlencode( $value ); 
+                }
+                $q = '&';
+            }
+        }
+        return $url;
+    }
+
+    public static function striptags( $s )
+    { 
+        return preg_replace('/<[^<>]+>/sumi', '', $s); 
+    }
+
     public static function haskey( $v/*, key1, key2, etc.. */ ) 
     {
         if (!$v || !is_array($v)) return false;
@@ -1821,7 +1868,7 @@ class Contemplate
         $t1 = $leftTplSep; $l1 = strlen($t1);
         $t2 = $rightTplSep; $l2 = strlen($t2);
         $parsed = '';
-        while ( !empty($tpl) )
+        while ( $tpl && strlen($tpl) )
         {
             $p1 = strpos( $tpl, $t1 );
             if ( false === $p1 )

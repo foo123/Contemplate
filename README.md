@@ -34,7 +34,8 @@ __Light-weight, fast and flexible "object-oriented" template engine for PHP, Pyt
 * [Asynchronous](https://github.com/foo123/asynchronous.js) a simple manager for async, linearised, parallelised, interleaved and sequential tasks for JavaScript
 
 
-This started as a a __proof-of-concept__ but developed into a full-blown and versatile template engine. 
+This started as a a __proof-of-concept__ but developed into a __full-blown and versatile__ template engine.
+
 The original inspiration came from an old post by [John Resig](https://github.com/jeresig)  (http://ejohn.org/blog/javascript-micro-templating/)
 
 ----------------------------------------------------------------------------------------------------------------------
@@ -43,11 +44,10 @@ The original inspiration came from an old post by [John Resig](https://github.co
 There are a couple of other frameworks named also `contemplate`
 
 * http://www.arlomedia.com/software/contemplate/assembled/introduction.html
-* There is an older and quite different template engine for node named also `"contemplate"` [here](https://npmjs.org/package/contemplate) and [here](https://github.com/enricomarino/contemplate)
+* There is an older and quite different template engine for `node` named also `"contemplate"` [here](https://npmjs.org/package/contemplate) and [here](https://github.com/enricomarino/contemplate)
 
-*This repository and project is completely unrelated to these frameworks.*
 
-(it seems the word *contemplate* is nice for a template engine :) )
+**This repository and project is completely unrelated to these frameworks.**
 
 ----------------------------------------------------------------------------------------------------------------------
 

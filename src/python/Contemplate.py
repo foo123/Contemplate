@@ -116,6 +116,7 @@ class _G:
     NL = re.compile(r'\n')
 
     DS_RE = re.compile(r'[/\\]')
+    TAG_RE = re.compile(r'<[^<>]+>',re.S|re.M|re.I)
     UNDERL = re.compile(r'[\W]+')
     ALPHA = re.compile(r'^[a-zA-Z_]')
     NUM = re.compile(r'^[0-9]')
@@ -155,7 +156,7 @@ class _G:
     'inline', 'tpl', 'uuid', 'haskey',
     'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
     'is_array', 'in_array', 'json_encode', 'json_decode',
-    'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale', 'join'
+    'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale', 'join', 'queryvar', 'striptags'
     ]
     aliases = {
      'l'        : 'locale'
@@ -1149,7 +1150,7 @@ def parse( tpl, leftTplSep, rightTplSep, withblocks=True ):
     t2 = rightTplSep
     l2 = len(t2)
     parsed = ''
-    while len(tpl):
+    while tpl and len(tpl):
         p1 = tpl.find( t1 )
         if -1 == p1:
             s = tpl
@@ -2222,6 +2223,41 @@ class Contemplate:
             if (not skip_empty) or len(s) > 0: out += sep + s
         return out
         
+    def queryvar( add_keys, remove_keys=None, url='' ):
+        if remove_keys is not None and not Contemplate.is_array(remove_keys, True):
+            remove_keys = [remove_keys]
+        
+        if remove_keys and len(remove_keys):
+            # https://davidwalsh.name/php-remove-variable
+            keys = remove_keys
+            for key in keys:
+                url = re.sub(r'(\?|&)' + re.escape( urlencode( str(key) ) ) + r'(\[[^\[\]]*\])*(=[^&]+)?', '\\1', url)
+            
+            last = url[-1]
+            while '?' == last or '&' == last:
+                url = url[0:-1]
+                last = url[-1]
+        
+        if add_keys and len(add_keys):
+            keys = add_keys
+            q = '?' if -1 == url.find('?') else '&'
+            for key in keys:
+                value = keys[key]
+                key = urlencode( str(key) )
+                if Contemplate.is_array(value, True):
+                    for v in value:
+                        url += q + key + '[]=' + urlencode( str(v) )
+                        q = '&'
+                else:
+                    url += q + key + '=' + urlencode( str(value) )
+                q = '&'
+        
+        return url
+
+    def striptags( s ):
+        global _G
+        return re.sub(_G.TAG_RE, '', s) 
+
     def haskey( v, *args ):
         if not v or not (isinstance(v, list) or isinstance(v, dict)): return False
         argslen = len(args)

@@ -331,6 +331,10 @@
     <li>xl(&quot;locale&quot;,&quot;custom&quot;) = xlocale(&quot;locale&quot;,&quot;custom&quot;) = <% xl("locale","custom") %> = <% xlocale("locale","custom") %></li>
     <li>nxl(2,&quot;locale&quot;,&quot;locales&quot;,&quot;custom&quot;) = nxlocale(2,&quot;locale&quot;,&quot;locales&quot;,&quot;custom&quot;) = <% nxl(2,"locale","locales","custom") %> = <% nxlocale(2,"locale","locales","custom") %></li>
     <li>e(&#39;&lt;ok k=&quot;v&quot;&gt;&#39;) = <% e("<ok k=\"v\">") %></li>
+    <li>queryvar(null,["key2"],"https://example.com?key1=1&key2[]=21&key2[]=22") = <% queryvar(null,["key2"],"https://example.com?key1=1&key2[]=21&key2[]=22") %></li>
+    <li>queryvar({"key3":3,"key4":[41,42]},null,"https://example.com?key1=1&key2[]=21&key2[]=22") = <% queryvar({"key3":3,"key4":[41,42]},null,"https://example.com?key1=1&key2[]=21&key2[]=22") %></li>
+    <li>queryvar({"key3":3,"key4":[41,42]},["key2"],"https://example.com?key1=1&key2[]=21&key2[]=22") = <% queryvar({"key3":3,"key4":[41,42]},["key2"],"https://example.com?key1=1&key2[]=21&key2[]=22") %></li>
+    <li>striptags("&lt;p&gt;text in &lt;b&gt;tags&lt;/b&gt;&lt;/p&gt;") = <% striptags("<p>text in <b>tags</b></p>") %></li>
     </ul>
     
     <br /><br />

@@ -2,6 +2,8 @@
 
 __1.2.0__
 * PHP/JS/PY: enable templates subfolders and paths. Meaning a template id can have relative path in its name and same relative path will be created in cacheDir and served as such. This accomodates templates used for different purposes having same basename but differing in relative path. This resolves the issue and also allows more flexibility in handling many different templates and template folder structures. If path does not exist in cache folder it will be created automaticaly.
+* add new template function `queryvar` to add/remove `url query` variables from given `url` (needed sometimes in templates)
+* add new template function `striptags` to strip `html tags` from string
 
 
 __1.1.10__

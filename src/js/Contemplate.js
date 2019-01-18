@@ -77,7 +77,8 @@ var __version__ = "1.2.0", Contemplate,
     $__extends = null, $__strings = null,
     $__ctx, $__global, $__context, $__uuid = 0,
     
-    UNDERLN = /[\W]+/g, NEWLINE = /\n\r|\r\n|\n|\r/g, SQUOTE = /'/g, DS_RE = /[\/\\]/, BASENAME_RE = /[\/\\]?[^\/\\]+$/,
+    UNDERLN = /[\W]+/g, NEWLINE = /\n\r|\r\n|\n|\r/g, SQUOTE = /'/g,
+    DS_RE = /[\/\\]/, BASENAME_RE = /[\/\\]?[^\/\\]+$/, TAG_RE = /<[^<>]+>/gm,
     ALPHA = /^[a-zA-Z_]/, NUM = /^[0-9]/, ALPHANUM = /^[a-zA-Z0-9_]/i, SPACE = /^\s/,
     re_controls = /(\t|\s?)\s*((#ID_(continue|endblock|elsefor|endfor|endif|break|else|fi)#(\s*\(\s*\))?)|(#ID_([^#]+)#\s*(\()))(.*)$/g,
     
@@ -100,7 +101,7 @@ var __version__ = "1.2.0", Contemplate,
     'inline', 'tpl', 'uuid', 'haskey',
     'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
     'is_array', 'in_array', 'json_encode', 'json_decode',
-    'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale', 'join'
+    'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale', 'join', 'queryvar', 'striptags'
     ],
     $__aliases = {
      'l'        : 'locale'
@@ -945,7 +946,7 @@ function parse( tpl, leftTplSep, rightTplSep, withblocks )
     t1 = leftTplSep; l1 = t1.length;
     t2 = rightTplSep; l2 = t2.length;
     parsed = '';
-    while ( tpl.length )
+    while ( tpl && tpl.length )
     {
         p1 = tpl.indexOf( t1 );
         if ( -1 === p1 )
@@ -2276,6 +2277,57 @@ Contemplate = {
         return out;
     }
     
+    ,queryvar: function( add_keys, remove_keys, url )  {
+        url = url || '';
+        remove_keys = remove_keys || null;
+        var keys, key, value, k, l, last, q;
+        if ( !!remove_keys )
+        {
+            // https://davidwalsh.name/php-remove-variable
+            keys = [].concat(remove_keys);
+            l = keys.length;
+            for(k=0; k<l; k++)
+            {
+                url = url.replace(RE('(\\?|&)' + encodeURIComponent( keys[k] ).replace(re_9, '\\$1') + '(\\[[^\\[\\]]*\\])*(=[^&]+)?','g'), '$1'); 
+            }
+            last = url.slice(-1);
+            while ( '?' == last || '&' == last )
+            {
+                url = url.slice(0,-1);
+                last = url.slice(-1);
+            }
+        }
+        if ( !!add_keys )
+        {
+            keys = Keys(add_keys);
+            l = keys.length;
+            q = -1 === url.indexOf('?') ? '?' : '&';
+            for(k=0; k<l; k++)
+            {
+                key = keys[k]; value = add_keys[key];
+                key = encodeURIComponent( key );
+                if ( '[object Array]' === toString.call(value) )
+                {
+                    for(var v=0,vl=value.length; v<vl; v++)
+                    {
+                        url += q + key + '[]=' + encodeURIComponent( value[v] );
+                        q = '&';
+                    }
+                }
+                else
+                {
+                    url += q + key + '=' + encodeURIComponent( value );
+                }
+                q = '&';
+            }
+        }
+        return url;
+    }
+
+    ,striptags: function( s ) { 
+        return s.replace(TAG_RE, ''); 
+    }
+
     ,haskey: function( v/*, key1, key2, etc.. */ ) {
         var to_string = toString.call( v ), args, i, tmp;
         if (!v || "[object Array]" !== to_string && "[object Object]" !== to_string) return false;

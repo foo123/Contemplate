@@ -356,11 +356,26 @@ def import_tpl( filename, classname, cacheDir, doReload=False ):
     if os.path.exists(filename):
         
         modname = basename[:-3]  # remove .py extension
-        mod = __import__(modname)
+        max_tries = 7
+        tries = 0
+        found = False
+        # try to recover from module not found if created just before importing
+        # retry a specified amount of times untill succeeded
+        while tries < max_tries and not found:
+            tries += 1
+            try:
+                mod = __import__(modname)
+                found = True
+            except ModuleNotFoundError:
+                found = False
+            
+            #if not found: time.sleep(1) # delay 1 sec
+
+    if found:
         if doReload: reload(mod) # Might be out of date
         # a trick in-order to pass the Contemplate super-class in a cross-module way
         getTplClass = getattr( mod, '__getTplClass__' )
-    
+
     # restore current dir
     os.chdir(currentcwd)
     # remove the dynamic import path from sys
@@ -1512,7 +1527,7 @@ def get_cached_template( id, contx, options=dict() ):
                 if len(fpath): create_path(fpath, contx.cacheDir)
                 create_cached_template( id, contx, cachedTplFile, cachedTplClass, options['separators'] )
             if os.path.isfile( cachedTplFile ):
-                tpl = import_tpl( cachedTplFile, cachedTplClass, contx.cacheDir, True )( )
+                tpl = import_tpl( cachedTplFile, cachedTplClass, contx.cacheDir )( )
                 tpl.setId( id ).ctx( contx )
                 return tpl
             return None
@@ -1535,7 +1550,7 @@ def get_cached_template( id, contx, options=dict() ):
                     if len(fpath): create_path(fpath, contx.cacheDir)
                 create_cached_template( id, contx, cachedTplFile, cachedTplClass, options['separators'] )
             if os.path.isfile( cachedTplFile ):
-                tpl = import_tpl( cachedTplFile, cachedTplClass, contx.cacheDir, True )( )
+                tpl = import_tpl( cachedTplFile, cachedTplClass, contx.cacheDir )( )
                 tpl.setId( id ).ctx( contx )
                 return tpl
             return None

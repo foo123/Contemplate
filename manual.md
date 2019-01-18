@@ -194,7 +194,7 @@ TEMPLATE operations take place in the `current` context (which defaults to `glob
 * `tpl( tpl_id_string, {"var1" : val1, "var2" : val2, ..} )` / `template( tpl_id_string, {"var1" : val1, "var2" : val2, ..} )`  CALL a subtemplate referenced by 'tpl_id', passing the necessary data
 * `e( val )`   custom fast html escape
 * `url( val )`  url-encode val (`urlencode`)
-* `queryvar( add_keys, remove_keys=null, url='' )`  add/remove `url query` keys, given in `add_keys` and `remove_keys` respectively, from given `url`
+* `queryvar( url, add_keys, remove_keys=null )`  add/remove `url query` keys, given in `add_keys` and `remove_keys` respectively, from given `url`
 * `striptags( string )`  strip `html tags` from string
 * `pluginName( [val1, val2, ..] )`  call a custom (user-defined) `plugin` as a template function (see examples)
 

@@ -892,7 +892,7 @@ class Contemplate
         return $out;
     }
 
-    public static function queryvar( $add_keys, $remove_keys=null, $url='' )
+    public static function queryvar( $url, $add_keys, $remove_keys=null )
     {
         if ( !empty($remove_keys) )
         {
@@ -902,11 +902,11 @@ class Contemplate
             {
                 $url = preg_replace('/(\\?|&)' . preg_quote( urlencode( $key ), '/' ) . '(\\[[^\\[\\]]*\\])*(=[^&]+)?/', '$1', $url);
             }
+            $url = str_replace('?&', '?', preg_replace('/&+/', '&', $url));
             $last = substr($url,-1);
-            while ( '?' == $last || '&' == $last )
+            if ( '?' == $last || '&' == $last )
             {
                 $url = substr($url,0,-1);
-                $last = substr($url,-1);
             }
         }
         if ( !empty($add_keys) )

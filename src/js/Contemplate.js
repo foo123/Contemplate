@@ -78,7 +78,7 @@ var __version__ = "1.2.0", Contemplate,
     $__ctx, $__global, $__context, $__uuid = 0,
     
     UNDERLN = /[\W]+/g, NEWLINE = /\n\r|\r\n|\n|\r/g, SQUOTE = /'/g,
-    DS_RE = /[\/\\]/, BASENAME_RE = /[\/\\]?[^\/\\]+$/, TAG_RE = /<[^<>]+>/gm,
+    DS_RE = /[\/\\]/, BASENAME_RE = /[\/\\]?[^\/\\]+$/, TAG_RE = /<[^<>]+>/gm, AMP_RE = /&+/g,
     ALPHA = /^[a-zA-Z_]/, NUM = /^[0-9]/, ALPHANUM = /^[a-zA-Z0-9_]/i, SPACE = /^\s/,
     re_controls = /(\t|\s?)\s*((#ID_(continue|endblock|elsefor|endfor|endif|break|else|fi)#(\s*\(\s*\))?)|(#ID_([^#]+)#\s*(\()))(.*)$/g,
     
@@ -2277,8 +2277,7 @@ Contemplate = {
         return out;
     }
     
-    ,queryvar: function( add_keys, remove_keys, url )  {
-        url = url || '';
+    ,queryvar: function( url, add_keys, remove_keys )  {
         remove_keys = remove_keys || null;
         var keys, key, value, k, l, last, q;
         if ( !!remove_keys )
@@ -2288,13 +2287,13 @@ Contemplate = {
             l = keys.length;
             for(k=0; k<l; k++)
             {
-                url = url.replace(RE('(\\?|&)' + encodeURIComponent( keys[k] ).replace(re_9, '\\$1') + '(\\[[^\\[\\]]*\\])*(=[^&]+)?','g'), '$1'); 
+                url = url.replace(RE('(\\?|&)' + urlencode( keys[k] ).replace(re_9, '\\$1') + '(\\[[^\\[\\]]*\\])*(=[^&]+)?','g'), '$1'); 
             }
+            url = url.replace(AMP_RE, '&').replace('?&', '?');
             last = url.slice(-1);
-            while ( '?' == last || '&' == last )
+            if ( '?' == last || '&' == last )
             {
                 url = url.slice(0,-1);
-                last = url.slice(-1);
             }
         }
         if ( !!add_keys )
@@ -2305,18 +2304,18 @@ Contemplate = {
             for(k=0; k<l; k++)
             {
                 key = keys[k]; value = add_keys[key];
-                key = encodeURIComponent( key );
+                key = urlencode( key );
                 if ( '[object Array]' === toString.call(value) )
                 {
                     for(var v=0,vl=value.length; v<vl; v++)
                     {
-                        url += q + key + '[]=' + encodeURIComponent( value[v] );
+                        url += q + key + '[]=' + urlencode( value[v] );
                         q = '&';
                     }
                 }
                 else
                 {
-                    url += q + key + '=' + encodeURIComponent( value );
+                    url += q + key + '=' + urlencode( value );
                 }
                 q = '&';
             }
@@ -2766,6 +2765,9 @@ var default_date_locale = {
         xhr.send( null );
     }),
     
+    // https://github.com/moxystudio/node-proper-lockfile
+    // https://developer.mozilla.org/en-US/docs/Archive/Add-ons/Overlay_Extensions/Firefox_addons_developer_guide/Using_XPCOM%E2%80%94Implementing_advanced_processes
+    // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions
     fwrite = isXPCOM
     ? function fwrite( file, data, enc ) {
         // file is URI, i.e file://...

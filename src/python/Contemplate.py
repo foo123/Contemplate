@@ -117,6 +117,7 @@ class _G:
 
     DS_RE = re.compile(r'[/\\]')
     TAG_RE = re.compile(r'<[^<>]+>',re.S|re.M|re.I)
+    AMP_RE = re.compile(r'&+')
     UNDERL = re.compile(r'[\W]+')
     ALPHA = re.compile(r'^[a-zA-Z_]')
     NUM = re.compile(r'^[0-9]')
@@ -192,6 +193,8 @@ def read_file( file, encoding ):
         buffer = f.read( )
     return buffer
 
+# https://stackoverflow.com/questions/186202/what-is-the-best-way-to-open-a-file-for-exclusive-access-in-python
+# https://github.com/drandreaskrueger/lockbydir
 def write_file( file, text, encoding ):
     with open_file(file, 'w', encoding) as f:
         f.write(text)
@@ -2238,7 +2241,9 @@ class Contemplate:
             if (not skip_empty) or len(s) > 0: out += sep + s
         return out
         
-    def queryvar( add_keys, remove_keys=None, url='' ):
+    def queryvar( url, add_keys, remove_keys=None ):
+        global _G
+        
         if remove_keys is not None and not Contemplate.is_array(remove_keys, True):
             remove_keys = [remove_keys]
         
@@ -2248,10 +2253,10 @@ class Contemplate:
             for key in keys:
                 url = re.sub(r'(\?|&)' + re.escape( urlencode( str(key) ) ) + r'(\[[^\[\]]*\])*(=[^&]+)?', '\\1', url)
             
+            url = re.sub(_G.AMP_RE, '&', url).replace('?&', '?')
             last = url[-1]
-            while '?' == last or '&' == last:
+            if '?' == last or '&' == last:
                 url = url[0:-1]
-                last = url[-1]
         
         if add_keys and len(add_keys):
             keys = add_keys

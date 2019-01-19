@@ -2278,9 +2278,8 @@ Contemplate = {
     }
     
     ,queryvar: function( url, add_keys, remove_keys )  {
-        remove_keys = remove_keys || null;
-        var keys, key, value, k, l, last, q;
-        if ( !!remove_keys )
+        var keys, key, value, k, l, last, q, to_str;
+        if ( null!=remove_keys )
         {
             // https://davidwalsh.name/php-remove-variable
             keys = [].concat(remove_keys);
@@ -2305,12 +2304,25 @@ Contemplate = {
             {
                 key = keys[k]; value = add_keys[key];
                 key = urlencode( key );
-                if ( '[object Array]' === toString.call(value) )
+                to_str = toString.call(value);
+                if ( '[object Array]' === to_str || '[object Object]' === to_str )
                 {
-                    for(var v=0,vl=value.length; v<vl; v++)
+                    if ( '[object Array]' === to_str )
                     {
-                        url += q + key + '[]=' + urlencode( value[v] );
-                        q = '&';
+                        for(var v=0,vl=value.length; v<vl; v++)
+                        {
+                            url += q + key + '[]=' + urlencode( value[v] );
+                            q = '&';
+                        }
+                    }
+                    else
+                    {
+                        
+                        for(var kvalue=Keys(value),v=0,vl=kvalue.length; v<vl; v++)
+                        {
+                            url += q + key + '[' + urlencode( kvalue[v] ) + ']=' + urlencode( value[kvalue[v]] );
+                            q = '&';
+                        }
                     }
                 }
                 else
@@ -2627,31 +2639,31 @@ var default_date_locale = {
     }),
     
     fmkdir = isXPCOM
-    ? function( file, mode ) {
-        // TODO!!!
-        return false;
+    ? function fmkdir( file, mode ) {
+        var nsfile = fileurl_2_nsfile( file );
+        return nsfile.create(nsfile.DIRECTORY_TYPE, mode);
     }
     : (isNode
-    ? function( file, mode ) {
+    ? function fmkdir( file, mode ) {
         return fs.mkdirSync(file, mode);
     }
-    : function( file, mode ){
+    : function fmkdir( file, mode ){
         // do nothing
         return false;
     }),
     
     fmkdir_async = isXPCOM
-    ? function( file, mode, cb ) {
-        // TODO!!!
-        if ( cb ) cb(false);
+    ? function fmkdir_async( file, mode, cb ) {
+        var res = fmkdir(file, mode);
+        if ( cb ) cb(res);
     }
     : (isNode
-    ? function( file, mode, cb ) {
+    ? function fmkdir_async( file, mode, cb ) {
         fs.mkdir(file, mode, function(err){
             if ( cb ) cb(err ? false : true);
         });
     }
-    : function( file, mode, cb ){
+    : function fmkdir_async( file, mode, cb ){
         // do nothing
         if ( cb ) cb(false);
     }),

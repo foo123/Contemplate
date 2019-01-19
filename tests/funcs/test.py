@@ -17,3 +17,4 @@ print(Contemplate.queryvar("https://example.com?key1=1&key2[]=21&key2[]=22",None
 print(Contemplate.queryvar("https://example.com?key1=1&key2[]=21&key2[]=22",None,["key2"]))
 print(Contemplate.queryvar("https://example.com?key1=1&key2[]=21&key2[]=22",{"key3":3,"key4":[41,42]}))
 print(Contemplate.queryvar("https://example.com?key1=1&key2[]=21&key2[]=22",{"key3":3,"key4":[41,42]},["key2"]))
+print(Contemplate.queryvar("https://example.com",{"key1":{"foo":1,"bar":2},"key2":[21,22]}))

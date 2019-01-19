@@ -2244,7 +2244,7 @@ class Contemplate:
     def queryvar( url, add_keys, remove_keys=None ):
         global _G
         
-        if remove_keys is not None and not Contemplate.is_array(remove_keys, True):
+        if remove_keys is not None and not isinstance(remove_keys, list):
             remove_keys = [remove_keys]
         
         if remove_keys and len(remove_keys):
@@ -2264,10 +2264,15 @@ class Contemplate:
             for key in keys:
                 value = keys[key]
                 key = urlencode( str(key) )
-                if Contemplate.is_array(value, True):
-                    for v in value:
-                        url += q + key + '[]=' + urlencode( str(v) )
-                        q = '&'
+                if isinstance(value, (list,tuple,dict)):
+                    if isinstance(value, (list,tuple)):
+                        for v in value:
+                            url += q + key + '[]=' + urlencode( str(v) )
+                            q = '&'
+                    else:
+                        for k in value:
+                            url += q + key + '[' + urlencode( k ) + ']=' + urlencode( str(value[k]) )
+                            q = '&'
                 else:
                     url += q + key + '=' + urlencode( str(value) )
                 q = '&'

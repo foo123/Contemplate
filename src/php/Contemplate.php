@@ -894,7 +894,7 @@ class Contemplate
 
     public static function queryvar( $url, $add_keys, $remove_keys=null )
     {
-        if ( !empty($remove_keys) )
+        if ( null!==$remove_keys )
         {
             // https://davidwalsh.name/php-remove-variable
             $keys = (array)$remove_keys;
@@ -916,12 +916,24 @@ class Contemplate
             foreach($keys as $key=>$value)
             {
                 $key = urlencode( $key );
-                if ( is_array($value) )
+                if ( $value instanceof \stdClass || is_array($value) )
                 {
-                    foreach($value as $v)
+                    if ( $value instanceof \stdClass ) $value = (array)$value;
+                    if ( self::is_list($value) )
                     {
-                        $url .= $q . $key . '[]=' . urlencode( $v );
-                        $q = '&';
+                        foreach($value as $v)
+                        {
+                            $url .= $q . $key . '[]=' . urlencode( $v );
+                            $q = '&';
+                        }
+                    }
+                    else
+                    {
+                        foreach($value as $k=>$v)
+                        {
+                            $url .= $q . $key . '[' . urlencode( $k ) . ']=' . urlencode( $v );
+                            $q = '&';
+                        }
                     }
                 }
                 else
@@ -1188,6 +1200,13 @@ class Contemplate
             } 
         }
         return $d;
+    }
+    
+    public static function is_list( $a )
+    {
+        if ( !is_array($a) ) return false;
+        $k = array_keys($a);
+        return $k == array_keys($k);
     }
     
     public static function local_variable( $variable=null, $block=null )

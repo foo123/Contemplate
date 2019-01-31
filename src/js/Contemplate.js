@@ -1777,6 +1777,7 @@ function Ctx( id )
     self.partials         = { };
     self.locale           = { };
     self.xlocale          = { };
+    self.pluralForm       = null;
     self.plugins          = { };
     self.prefix           = '';
     self.encoding         = isXPCOM ? 'UTF-8' : 'utf8';
@@ -1793,6 +1794,7 @@ Ctx[PROTO] = {
     ,partials: null
     ,locale: null
     ,xlocale: null
+    ,pluralForm: null
     ,plugins: null
     ,prefix: null
     ,encoding: null
@@ -1807,6 +1809,7 @@ Ctx[PROTO] = {
         self.partials = null;
         self.locale = null;
         self.xlocale = null;
+        self.pluralForm = null;
         self.plugins = null;
         self.prefix = null;
         self.encoding = null;
@@ -2062,6 +2065,16 @@ Contemplate = {
         }
     }
     
+    ,setPluralForm: function( form, ctx ) { 
+        var contx;
+        if ( form && "function" === typeof form )
+        {
+            if ( arguments.length < 2 ) ctx = 'global';
+            contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
+            contx.pluralForm = form;
+        }
+    }
+    
     ,clearLocales: function( ctx ) { 
         var contx;
         if ( arguments.length < 2 ) ctx = 'global';
@@ -2074,6 +2087,13 @@ Contemplate = {
         if ( arguments.length < 2 ) ctx = 'global';
         contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
         contx.xlocale = { }; 
+    }
+    
+    ,clearPluralForm: function( ctx ) { 
+        var contx;
+        if ( arguments.length < 1 ) ctx = 'global';
+        contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
+        contx.pluralForm = null;
     }
     
     ,setCacheDir: function( dir, ctx ) { 
@@ -2468,53 +2488,57 @@ Contemplate = {
         return localized_date( format, timestamp ); 
     }
     
-    ,locale: function( s ) { 
-        var locale = ('function' === typeof $__context.locale) || HAS.call($__context.locale,s)
+    ,locale: function( s, args ) { 
+        var ls, locale = ('function' === typeof $__context.locale) || HAS.call($__context.locale,s)
             ? $__context.locale
             : (('function' === typeof $__global.locale) || HAS.call($__global.locale,s)
             ? $__global.locale
             : null); 
-        if ( null === locale ) return s;
-        if ( 'function' === typeof locale ) return locale.apply(null, arguments);
-        return locale[s];
+        if ( 'function' === typeof locale )
+        {
+            ls = locale(s, args);
+        }
+        else
+        {
+            ls = null === locale ? s : locale[s];
+            if ( args ) ls = sprintf.apply(null, [ls].concat(args));
+        }
+        return ls;
     }
-    ,xlocale: function( s, l_ctx ) { 
-        var xlocale = ('function' === typeof $__context.xlocale) || (l_ctx && HAS.call($__context.xlocale,l_ctx) && HAS.call($__context.xlocale[l_ctx],s))
+    ,xlocale: function( s, args, l_ctx ) { 
+        var ls, xlocale = ('function' === typeof $__context.xlocale) || (l_ctx && HAS.call($__context.xlocale,l_ctx) && HAS.call($__context.xlocale[l_ctx],s))
             ? $__context.xlocale
             : (('function' === typeof $__global.xlocale) || (l_ctx && HAS.call($__global.xlocale,l_ctx) && HAS.call($__global.xlocale[l_ctx],s))
             ? $__global.xlocale
             : null); 
-        if ( null === xlocale ) return s;
-        if ( 'function' === typeof xlocale ) return xlocale.apply(null, arguments);
-        return xlocale[l_ctx][s];
-    }
-    ,nlocale: function( n, singular, plural ) { 
-        var locale = ('function' === typeof $__context.locale) || HAS.call($__context.locale,singular)
-            ? $__context.locale
-            : (('function' === typeof $__global.locale) || HAS.call($__global.locale,singular)
-            ? $__global.locale
-            : null); 
-        if ( null === locale ) return 1 == n ? singular : plural;
-        if ( 'function' === typeof locale )
-        {
-            var args = Array.prototype.splice.call(arguments, 0, 3, 1 == n ? singular : plural);
-            return locale.apply(null, args);
-        }
-        return 1 == n ? locale[singular] : (HAS.call(locale,plural) ? locale[plural] : plural);
-    }
-    ,nxlocale: function( n, singular, plural, l_ctx ) { 
-        var xlocale = ('function' === typeof $__context.xlocale) || (l_ctx && HAS.call($__context.xlocale,l_ctx) && HAS.call($__context.xlocale[l_ctx],singular))
-            ? $__context.xlocale
-            : (('function' === typeof $__global.xlocale) || (l_ctx && HAS.call($__global.xlocale,l_ctx) && HAS.call($__global.xlocale[l_ctx],singular))
-            ? $__global.xlocale
-            : null); 
-        if ( null === xlocale ) return 1 == n ? singular : plural;
         if ( 'function' === typeof xlocale )
         {
-            var args = Array.prototype.splice.call(arguments, 0, 3, 1 == n ? singular : plural);
-            return xlocale.apply(null, args);
+            ls = xlocale(s, args, l_ctx);
         }
-        return 1 == n ? xlocale[l_ctx][singular] : (HAS.call(xlocale[l_ctx],plural) ? xlocale[l_ctx][plural] : plural);
+        else
+        {
+            ls = null === xlocale ? s : xlocale[l_ctx][s];
+            if ( args ) ls = sprintf.apply(null, [ls].concat(args));
+        }
+        return ls;
+    }
+    ,nlocale: function( n, singular, plural, args ) { 
+        var form = 'function' === typeof $__context.pluralForm
+            ? $__context.pluralForm
+            : ('function' === typeof $__global.pluralForm
+            ? $__global.pluralForm
+            : null),
+            isSingular = form && ('function' === typeof form) ? !!form(n) : (1 == n); 
+        return this.locale(isSingular ? singular : plural, args);
+    }
+    ,nxlocale: function( n, singular, plural, args, l_ctx ) { 
+        var form = 'function' === typeof $__context.pluralForm
+            ? $__context.pluralForm
+            : ('function' === typeof $__global.pluralForm
+            ? $__global.pluralForm
+            : null),
+            isSingular = form && ('function' === typeof form) ? !!form(n) : (1 == n); 
+        return this.xlocale(isSingular ? singular : plural, args, l_ctx);
     }
     
     ,uuid: function( namespace ) {

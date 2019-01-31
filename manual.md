@@ -244,7 +244,20 @@ Contemplate.setLocales({
     "locale": "γλωσσική περιοχή"
 } [, ctx="global"]);
 
+// you can also set a custom translator function with signature: function(string, array_args=null)
+// `array_args` are optional and are formatting arguments in the style of `sprintf` 
+// if string to be translated can be formatted via `sprintf` with the arguments given (done automaticaly)
+Contemplate.setLocales(func [, ctx="global"]);
+
 Contemplate.clearLocales([ctx="global"]);
+
+// set custom plural form (ie singular/plural selection) based on numeric value given for current locale
+// default is singular => (1 == n)
+Contemplate.setPluralForm(function(n){
+    return 0==n || 1==n;
+} [, ctx="global"]);
+
+Contemplate.clearPluralForm([ctx="global"]);
 
 // add plugins
 Contemplate.addPlugin('print', function(v){

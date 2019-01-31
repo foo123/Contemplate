@@ -4,6 +4,8 @@ __1.2.0__
 * PHP/JS/PY: enable templates subfolders and paths. Meaning a template id can have relative path in its name and same relative path will be created and mirrored in template cacheDir and served as such. This accomodates templates used for different purposes having same basename but differing in relative path and also reflects structure and organisation of original templates. This resolves the issue and also allows more flexibility in handling many different templates and template folder structures. If path does not exist in cache folder it will be created automaticaly.
 * add new template function `queryvar` to add/remove `url query` variables from given `url` (needed sometimes in templates)
 * add new template function `striptags` to strip `html tags` from string
+* add custom `pluralForm` callable (per context) for current locale. It specifies whether a `singular` or `plural` string is to be used based on numeric value given (eg a-la wordpress) (see manual how to set or clear)
+* `locale`/`xlocale` methods slightly changed signature and can accept an optional `array`/`list` of arguments which will be used to format the string to be localised a-la `sprintf` functionality (done automaticaly) (NOTE: limited `sprintf` support for python implementation)
 
 
 __1.1.10__

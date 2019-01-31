@@ -317,6 +317,13 @@ def localized_date( format, timestamp ):
     return localised_datetime
 
 
+def sprintf( format, *args ):
+    #if len(args) and isinstance(args[0],(list,tuple)): args = args[0]
+    return format % tuple(args)
+
+def vsprintf( format, args ):
+    return format % tuple(args)
+
 #
 #  Auxilliary methods 
 # (mostly methods to simulate php-like functionality needed by the engine)
@@ -359,7 +366,7 @@ def import_tpl( filename, classname, cacheDir, doReload=False ):
     if os.path.exists(filename):
         
         modname = basename[:-3]  # remove .py extension
-        max_tries = 7
+        max_tries = 3
         tries = 0
         found = False
         # try to recover from module not found if created just before importing
@@ -372,7 +379,7 @@ def import_tpl( filename, classname, cacheDir, doReload=False ):
             except ModuleNotFoundError:
                 found = False
             
-            #if not found: time.sleep(1) # delay 1 sec
+            if 1 == tries and not found: time.sleep(1) # delay 1 sec
 
     if found:
         if doReload: reload(mod) # Might be out of date
@@ -1802,6 +1809,7 @@ class Ctx:
         self.partials         = { }
         self.locale           = { }
         self.xlocale          = { }
+        self.pluralForm       = None
         self.plugins          = { }
         self.prefix           = ''
         self.encoding         = 'utf-8'
@@ -1818,6 +1826,7 @@ class Ctx:
         self.partials = None
         self.locale = None
         self.xlocale = None
+        self.pluralForm = None
         self.plugins = None
         self.prefix = None
         self.encoding = None
@@ -2052,6 +2061,12 @@ class Contemplate:
             contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
             contx.xlocale = xlocales if callable(xlocales) else Contemplate.merge(contx.xlocale, xlocales)
     
+    def setPluralForm( form, ctx='global' ): 
+        global _G
+        if form and callable(form):
+            contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
+            contx.pluralForm = form
+    
     def clearLocales( ctx='global' ): 
         global _G
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
@@ -2061,6 +2076,11 @@ class Contemplate:
         global _G
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         contx.xlocale = {}
+    
+    def clearPluralForm( ctx='global' ): 
+        global _G
+        contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
+        contx.pluralForm = None
     
     def setCacheDir( dir, ctx='global' ): 
         global _G
@@ -2384,41 +2404,39 @@ class Contemplate:
         if timestamp is None: timestamp = php_time( ) 
         return localized_date( format, timestamp )
         
-    def locale( s, *args ): 
+    def locale( s, args=None ): 
         global _G
         locale = _G.context.locale if callable(_G.context.locale) or (s in _G.context.locale) else (_G.glob.locale if callable(_G.glob.locale) or (s in _G.glob.locale) else None)
-        if locale is None: return s
-        if callable(locale):
-            args = [s]+args
-            return locale(*args)
-        return locale[s]
+        if locale and callable(locale):
+            #args = [s]+args
+            ls = locale(s, args)
+        else:
+            ls = s if locale is None else locale[s]
+            if args: ls = vsprintf(ls, args)
+        return ls
     
-    def xlocale( s, l_ctx=None, *args ): 
+    def xlocale( s, args=None, l_ctx=None ): 
         global _G
         xlocale = _G.context.xlocale if callable(_G.context.xlocale) or (l_ctx and (l_ctx in _G.context.xlocale) and (s in _G.context.xlocale[l_ctx])) else (_G.glob.xlocale if callable(_G.glob.xlocale) or (l_ctx and (l_ctx in _G.glob.xlocale) and (s in _G.glob.xlocale[l_ctx])) else None)
-        if xlocale is None: return s
-        if callable(xlocale):
-            args = [s, l_ctx]+args
-            return xlocale(*args)
-        return xlocale[l_ctx][s]
+        if xlocale and callable(xlocale):
+            #args = [s, l_ctx]+args
+            ls = xlocale(s, args, l_ctx)
+        else:
+            ls = s if xlocale is None else xlocale[l_ctx][s]
+            if args: ls = vsprintf(ls, args)
+        return ls
     
-    def nlocale( n, singular, plural, *args ): 
+    def nlocale( n, singular, plural, args=None ): 
         global _G
-        locale = _G.context.locale if callable(_G.context.locale) or (singular in _G.context.locale) else (_G.glob.locale if callable(_G.glob.locale) or (singular in _G.glob.locale) else None)
-        if locale is None: return singular if 1 == n else plural
-        if callable(locale):
-            args = [singular if 1 == n else plural]+args
-            return locale(*args)
-        return locale[singular] if 1 == n else (locale[plural] if plural in locale else plural)
+        form = _G.context.pluralForm if callable(_G.context.pluralForm) else (_G.glob.pluralForm if callable(_G.glob.pluralForm) else None)
+        isSingular = form(n) if form and callable(form) else (1 == n)
+        return Contemplate.locale(singular if isSingular else plural, args)
     
-    def nxlocale( n, singular, plural, l_ctx=None, *args ): 
+    def nxlocale( n, singular, plural, args=None, l_ctx=None ): 
         global _G
-        xlocale = _G.context.xlocale if callable(_G.context.xlocale) or (l_ctx and (l_ctx in _G.context.xlocale) and (singular in _G.context.xlocale[l_ctx])) else (_G.glob.xlocale if callable(_G.glob.xlocale) or (l_ctx and (l_ctx in _G.glob.xlocale) and (singular in _G.glob.xlocale[l_ctx])) else None)
-        if xlocale is None: return singular if 1 == n else plural
-        if callable(xlocale):
-            args = [singular if 1 == n else plural,l_ctx]+args
-            return xlocale(*args)
-        return xlocale[l_ctx][singular] if 1 == n else (xlocale[l_ctx][plural] if plural in xlocale[l_ctx] else plural)
+        form = _G.context.pluralForm if callable(_G.context.pluralForm) else (_G.glob.pluralForm if callable(_G.glob.pluralForm) else None)
+        isSingular = form(n) if form and callable(form) else (1 == n)
+        return Contemplate.xlocale(singular if isSingular else plural, args, l_ctx)
     
     def uuid( namespace='UUID' ):
         global _G

@@ -6,6 +6,7 @@ __1.2.0__
 * add new template function `striptags` to strip `html tags` from string
 * add custom `pluralForm` callable (per context) for current locale. It specifies whether a `singular` or `plural` string is to be used based on numeric value given (eg a-la wordpress) (see manual how to set or clear)
 * `locale`/`xlocale` methods slightly changed signature and can accept an optional `array`/`list` of arguments which will be used to format the string to be localised a-la `sprintf` functionality (done automaticaly) (NOTE: limited `sprintf` support for python implementation)
+* JS/PY: `empty` function behaves now exactly like PHP's function, ie it returns `true` also for string with value `"0"`
 
 
 __1.1.10__

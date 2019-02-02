@@ -2314,8 +2314,9 @@ class Contemplate:
         return True
         
     def empty( v ):
+        # exactly like php's function
         #return bool(v) or (isinstance(v, (tuple,list,str,dict)) and 0 == len(v))
-        return not bool(v)
+        return (isinstance(v, str) and "0" == v) or not bool(v)
 
     #def iif( cond_, then_, else_=None ):
     #    return then_ if cond_ else else_

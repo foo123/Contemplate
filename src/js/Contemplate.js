@@ -2879,7 +2879,8 @@ function RE( r, f )
 }
 function empty( o )
 {
-    if ( !o || !Boolean(o) ) return true;
+    // exactly like php's empty function
+    if ( !o || !Boolean(o) || "0"===o ) return true;
     var to_string = toString.call(o);
     if ( (o instanceof Array || o instanceof String || '[object Array]' === to_string || '[object String]' === to_string) && !o.length ) return true;
     if ( (o instanceof Object || '[object Object]' === to_string) && !Keys(o).length ) return true;

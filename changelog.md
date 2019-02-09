@@ -1,5 +1,9 @@
 ### ChangeLog
 
+__1.2.5__
+* JS: enable asynchronous template loading, parsing and writing so that performance can be even greater in `Node.js` where `sync` methods may block. `Contemplate.tpl`, `Contemplate.getTemplateContents`, `Contemplate.parseTpl` all accept a `callback` (`nodeback`) as last argument with signature `function(err, result)` which if given all processing becomes **asynchronous**. Also if `Promises` are supported *"promisified"* versions of the above methods exist i.e `Contemplate.tplPromise`, `Contemplate.getTemplateContentsPromise`, `Contemplate.parseTplPromise` all return a `Promise` which resolves and rejects accordingly.
+* PHP/PY: update versions
+
 __1.2.0__
 * PHP/JS/PY: enable templates subfolders and paths. Meaning a template id can have relative path in its name and same relative path will be created and mirrored in template cacheDir and served as such. This accomodates templates used for different purposes having same basename but differing in relative path and also reflects structure and organisation of original templates. This resolves the issue and also allows more flexibility in handling many different templates and template folder structures. If path does not exist in cache folder it will be created automaticaly.
 * add new template function `queryvar` to add/remove `url query` variables from given `url` (needed sometimes in templates)

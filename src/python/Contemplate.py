@@ -1844,7 +1844,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "1.2.0"
+    VERSION = "1.2.5"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2

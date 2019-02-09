@@ -163,7 +163,7 @@ syntax, yet work the same in all the engine's implementations.
 
 * add support for multiple `contexts` (which include separate `templates`, `cache` directories and related parameters) so that the engine can be **used in same application by different modules independantly** [DONE]
 * simplify template `directives`, `functions` and `plugins` notation by eliminating the `%` prefix (compatibility mode to older versions also supported) [DONE]
-* support asynchronous template loading/rendering for `node/browser`
+* support **asynchronous template loading/parsing/rendering/writing** for `node/browser` [DONE]
 * add `Contemplate` implementations for `ActionScript, Perl, Java, Scala` [TODO?]
 * transform `Contemplate` (for `PHP`) into a `PHP` `C`-extension, `Contemplate` (for node) into standalone executable (eg. https://github.com/crcn/nexe) [TODO?]
 * keep-up with `php`, `node`, `python`, browsers updates

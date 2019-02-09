@@ -2,7 +2,7 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node, client-side and XPCOM/SDK JavaScript
 *
-*  @version: 1.2.0
+*  @version: 1.2.5
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -32,7 +32,7 @@ else if ( !(name in root) ) /* Browser/WebWorker/.. */
 //////////////////////////////////////////////////////////////////////////////////////
 
 // private vars
-var __version__ = "1.2.0", Contemplate,
+var __version__ = "1.2.5", Contemplate,
 
     PROTO = 'prototype', Obj = Object, Arr = Array,
     HAS = Obj[PROTO].hasOwnProperty, toString = Obj[PROTO].toString,
@@ -287,7 +287,7 @@ function is_local_variable( variable, block )
 // Control structures
 //
 
-function t_include( id/*, asyncCB*/ )
+function t_include( id, cb )
 {
     var tpl, state, ch, contx = $__context;
     id = trim( id );
@@ -295,17 +295,52 @@ function t_include( id/*, asyncCB*/ )
     ch = id.charAt(0);
     if ( ('"' === ch || "'" === ch) && (ch === id.charAt(id.length-1)) ) id = id.slice(1,-1); // quoted id
     
-    // cache it
-    if ( !contx.partials[id] /*&& !$__global.partials[id]*/ )
+    if ( 'function' === typeof cb )
     {
-        state = push_state( );
-        reset_state( );
-        tpl = get_template_contents( id, contx );
-        tpl = get_separators( tpl );
-        contx.partials[id] = " " + parse( tpl, $__leftTplSep, $__rightTplSep, false ) + "';" + $__TEOL;
-        pop_state( state );
+        // cache it
+        if ( !contx.partials[id] /*&& !$__global.partials[id]*/ )
+        {
+            get_template_contents( id, contx, function(err, tpl){
+                if ( err )
+                {
+                    cb(err, null);
+                    return;
+                }
+                state = push_state( );
+                reset_state( );
+                tpl = get_separators( tpl );
+                parse( tpl, $__leftTplSep, $__rightTplSep, false, function(err, text){
+                    if ( err )
+                    {
+                        cb(err, null);
+                        return;
+                    }
+                    contx.partials[id] = " " + text +  "';" + $__TEOL;
+                    pop_state( state );
+                    cb(null, align(contx.partials[id]));
+                } );
+            });
+        }
+        else
+        {
+            setTimeout(function(){cb(null, align(contx.partials[id]));}, 10);
+        }
+        return '';
     }
-    return align( contx.partials[id] /*|| $__global.partials[id]*/ );
+    else
+    {
+        // cache it
+        if ( !contx.partials[id] /*&& !$__global.partials[id]*/ )
+        {
+            state = push_state( );
+            reset_state( );
+            tpl = get_template_contents( id, contx );
+            tpl = get_separators( tpl );
+            contx.partials[id] = " " + parse( tpl, $__leftTplSep, $__rightTplSep, false ) + "';" + $__TEOL;
+            pop_state( state );
+        }
+        return align( contx.partials[id] /*|| $__global.partials[id]*/ );
+    }
 }
 function t_block( block )
 { 
@@ -347,14 +382,59 @@ function t_endblock( )
 
 //
 // auxilliary parsing methods
-function parse_constructs( match0, match1, match2, match3, match4, match5, match6, match7, match8, match9 )
+function parse_constructs_async( s, cb )
 {
-    var prefix = match1 || '',
+    var match = re_controls.exec( s ), s2;
+    if ( !match )
+    {
+        cb(null, s);
+        return;
+    }
+    parse_constructs(match, function(err, replace){
+        if ( err )
+        {
+            cb(err, null);
+            return;
+        }
+        s2 = s.slice(0, match.index) + replace;
+        // continue until end
+        parse_constructs_async( s.slice(match.index+match[0].length), function(err, replace2){
+            if ( err )
+            {
+                cb(err, null);
+                return;
+            }
+            cb(null, s2+replace2);
+        });
+    });
+}
+function parse_constructs( match, cb )
+{
+    cb = 'function' === typeof cb ? cb : null;
+    /*
+    main probelm with this function running async is the "include" directive
+    which needs to read external files and may need to do it async,
+    else rest parsing can be sync, specificaly args parsing can be synced even if original call is async since we can reasonably assume args will NOT contain "include" directive
+    */
+    var match0 = match[0],
+        match1 = match[1],
+        match2 = match[2],
+        match3 = match[3],
+        match4 = match[4],
+        match5 = match[5],
+        match6 = match[6],
+        match7 = match[7],
+        match8 = match[8],
+        match9 = match[9],
+        prefix = match1 || '',
         ctrl = match4 || match7 || '',
         rest = match9 || '',
         startParen = match8 || false,
         args = '',  out = '', paren = 0, l, i, ch, m,
-        varname, expr;
+        varname, expr,
+        parse_constructs_sync = function(m0,m1,m2,m3,m4,m5,m6,m7,m8,m9){
+            return parse_constructs([m0,m1,m2,m3,m4,m5,m6,m7,m8,m9]);
+        };
     
     // parse parentheses and arguments, accurately
     if ( startParen && startParen.length )
@@ -379,7 +459,7 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
         {
             case 0 /*'set'*/: 
             case 20 /*'local_set'*/: 
-                args = args.replace( re_controls, parse_constructs );
+                args = args.replace( re_controls, parse_constructs_sync );
                 args = split_arguments(args, ',');
                 varname = trim(args.shift());
                 expr = trim(args.join( ',' ));
@@ -391,7 +471,7 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
                 out = "';" + $__TEOL + align( varname + ' = ('+ expr +');' ) + $__TEOL;
                 break;
             case 1 /*'unset'*/: 
-                args = args.replace( re_controls, parse_constructs );
+                args = args.replace( re_controls, parse_constructs_sync );
                 varname = args;
                 if ( varname && varname.length )
                 {
@@ -404,12 +484,12 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
                 }
                 break;
             case 2 /*'isset'*/: 
-                args = args.replace( re_controls, parse_constructs );
+                args = args.replace( re_controls, parse_constructs_sync );
                 varname = args;
                 out = '("undefined" !== typeof(' + varname + ') && null !== ' + varname + ')';
                 break;
             case 3 /*'if'*/: 
-                args = args.replace( re_controls, parse_constructs );
+                args = args.replace( re_controls, parse_constructs_sync );
                 out = "';" + align([
                                 ""
                                 ,"if ("+args+")"
@@ -420,7 +500,7 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
                 $__level++;
                 break;
             case 4 /*'elseif'*/:  
-                args = args.replace( re_controls, parse_constructs );
+                args = args.replace( re_controls, parse_constructs_sync );
                 $__level--;
                 out = "';" + align([
                                 ""
@@ -452,7 +532,7 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
                             ].join( $__TEOL ));
                 break;
             case 7 /*'for'*/: 
-                args = args.replace( re_controls, parse_constructs );
+                args = args.replace( re_controls, parse_constructs_sync );
                 var for_expr = args, is_php_style = for_expr.indexOf(' as '),
                     is_python_style = for_expr.indexOf(' in '),
                     o, _o, kv, isAssoc
@@ -612,22 +692,22 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
                 out = t_endblock();
                 break;
             case 13 /*'include'*/:  
-                out = t_include( args );
+                out = cb ? '' : t_include( args );
                 break;
             case 14 /*'super'*/:  
-                args = args.replace( re_controls, parse_constructs );
+                args = args.replace( re_controls, parse_constructs_sync );
                 out = prefix + 'self.sprblock(' + args + ', data)';
                 break;
             case 15 /*'getblock'*/:  
-                args = args.replace( re_controls, parse_constructs );
+                args = args.replace( re_controls, parse_constructs_sync );
                 out = prefix + '__i__.block(' + args + ', data)';
                 break;
             case 16 /*'iif'*/:
-                args = split_arguments(args.replace( re_controls, parse_constructs ),',');
+                args = split_arguments(args.replace( re_controls, parse_constructs_sync ),',');
                 out = prefix + "(("+args[0]+")?("+args[1]+"):("+args[2]+"))";
                 break;
             case 17 /*'empty'*/:
-                args = args.replace( re_controls, parse_constructs );
+                args = args.replace( re_controls, parse_constructs_sync );
                 out = prefix + '(("undefined" === typeof(' + args + ')) || (null === ' + args + ') || Contemplate.empty(' + args + '))';
                 break;
             case 18 /*'continue'*/:
@@ -635,23 +715,75 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
                 out = "';" + $__TEOL + align( 18===m ? 'continue;' : 'break;' ) + $__TEOL;
                 break;
         }
-        return out + rest.replace( re_controls, parse_constructs );
+        if ( cb )
+        {
+            if ( 13 === m )/*'include'*/
+            {
+                // include may be async now
+                t_include( args, function(err,out){
+                    if ( err )
+                    {
+                        cb(err, null);
+                        return;
+                    }
+                    parse_constructs_async(rest, function(err, rest2){
+                        if ( err )
+                        {
+                            cb(err, null);
+                            return;
+                        }
+                        cb(null, out + rest2);
+                    });
+                } );
+            }
+            else
+            {
+                parse_constructs_async(rest, function(err, rest2){
+                    if ( err )
+                    {
+                        cb(err, null);
+                        return;
+                    }
+                    cb(null, out + rest2);
+                });
+            }
+            return;
+        }
+        else
+        {
+            return out + rest.replace(re_controls, parse_constructs_sync);
+        }
     }
     
     if ( HAS.call($__context.plugins,ctrl) || HAS.call($__global.plugins,ctrl) )
     {
         // allow custom plugins as template functions
         var pl = $__context.plugins[ ctrl ] || $__global.plugins[ ctrl ];
-        args = args.replace( re_controls, parse_constructs );
+        args = args.replace( re_controls, parse_constructs_sync );
         out = pl instanceof Contemplate.InlineTemplate ? pl.render([args].concat(split_arguments(args,','))) : 'Contemplate.plg_("' + ctrl + '"' + (!args.length ? '' : ','+args) + ')';
-        return prefix + out + rest.replace( re_controls, parse_constructs );
+        if ( cb )
+        {
+            parse_constructs_async(rest, function(err, rest2){
+                if ( err )
+                {
+                    cb(err, null);
+                    return;
+                }
+                cb(null, prefix + out + rest2);
+            });
+            return;
+        }
+        else
+        {
+            return prefix + out + rest.replace(re_controls, parse_constructs_sync);
+        }
     }
     
     if ( HAS.call($__aliases,ctrl) ) ctrl = $__aliases[ctrl];
     m = $__funcs.indexOf( ctrl );
     if ( -1 < m )
     {
-        args = args.replace( re_controls, parse_constructs );
+        args = args.replace( re_controls, parse_constructs_sync );
         // aliases and builtin functions
         switch( m )
         {
@@ -683,10 +815,40 @@ function parse_constructs( match0, match1, match2, match3, match4, match5, match
             case 30: out = 'JSON.parse('+args+')'; break;
             default: out = 'Contemplate.' + ctrl + '(' + args + ')';
         }
-        return prefix + out + rest.replace( re_controls, parse_constructs );
+        if ( cb )
+        {
+            parse_constructs_async(rest, function(err, rest2){
+                if ( err )
+                {
+                    cb(err, null);
+                    return;
+                }
+                cb(null, prefix + out + rest2);
+            });
+            return;
+        }
+        else
+        {
+            return prefix + out + rest.replace(re_controls, parse_constructs_sync);
+        }
     }
     
-    return /*match0*/ prefix + ctrl + (startParen ? '('+args.replace( re_controls, parse_constructs )+')' : '') + rest.replace( re_controls, parse_constructs );
+    if ( cb )
+    {
+        parse_constructs_async(rest, function(err, rest2){
+            if ( err )
+            {
+                cb(err, null);
+                return;
+            }
+            cb(null, /*match0*/ prefix + ctrl + (startParen ? '('+args.replace( re_controls, parse_constructs_sync )+')' : '') + rest2);
+        });
+        return;
+    }
+    else
+    {
+        return /*match0*/ prefix + ctrl + (startParen ? '('+args.replace( re_controls, parse_constructs_sync )+')' : '') + rest.replace(re_controls, parse_constructs_sync);
+    }
 }
 function parse_blocks( s )
 {
@@ -931,8 +1093,333 @@ function parse_variable( s, i, l )
     return null;
 }
 var str_re = /#STR_\d+#/g;
-function parse( tpl, leftTplSep, rightTplSep, withblocks )
+function parse_async( tpl, leftTplSep, rightTplSep, withblocks, cb )
 {
+    var t1, t2, p1, p2, l1, l2, len, parsed, s, i,
+        tag, tagTpl, strings, variables, hasVariables, hasStrings, varname, id,
+        countl, index, ch, out, tok, v, tokv, 
+        multisplit_re = InlineTemplate.multisplit_re,
+        ind, q, str_, escaped, si, space,
+        blockTag, hasBlock, notFoundBlock,
+        special_chars = "$'\" \n\r\t\v%",
+        non_compatibility_mode = !$__compatibility
+    ;
+    
+    t1 = leftTplSep; l1 = t1.length;
+    t2 = rightTplSep; l2 = t2.length;
+    parsed = '';
+    
+    var parse_chunk = function parse_chunk( ) {
+        if ( !tpl || !tpl.length )
+        {
+            parse_finish( );
+            return;
+        }
+        
+        p1 = tpl.indexOf( t1 );
+        if ( -1 === p1 )
+        {
+            s = tpl;
+            if ( $__escape ) s = s.split( "\\" ).join( "\\\\" ); // escape escapes
+            parsed += s
+                .split( "'" ).join( "\\'" )  // escape single quotes accurately (used by parse function)
+                .split( /*"\n"*/ /\n/ ).join( $__preserveLines ) // preserve lines
+            ;
+            
+            parse_finish( );
+            return;
+        }
+        
+        p2 = tpl.indexOf( t2, p1+l1 );
+        if ( -1 === p2 ) p2 = tpl.length;
+        
+        s = tpl.slice( 0, p1 );
+        if ( $__escape ) s = s.split( "\\" ).join( "\\\\" ); // escape escapes
+        parsed += s
+            .split( "'" ).join( "\\'" )  // escape single quotes accurately (used by parse function)
+            .split( /*"\n"*/ /\n/ ).join( $__preserveLines ) // preserve lines
+        ;
+        
+        // template TAG
+        s = tpl.slice(p1+l1, p2); tpl = tpl.slice(p2+l2);
+        
+        // parse each template tag section accurately
+        // refined parsing
+        countl = s.length;
+        variables = [];
+        strings = {};
+        hasVariables = false; 
+        hasStrings = false;
+        hasBlock = false;
+        index = 0; 
+        space = 0;
+        ch = ''; 
+        out = ''; 
+        
+        while ( index < countl )
+        {
+            ch = s.charAt( index++ );
+            ind = special_chars.indexOf( ch );
+            
+            if ( -1 < ind )
+            {
+                // variable
+                if ( 0 === ind )
+                {
+                    if ( space > 0 )
+                    {
+                        out += " ";
+                        space = 0;
+                    }
+                    tok = parse_variable(s, index, countl);
+                    if ( tok )
+                    {
+                        for (v=0,len=tok.length; v<len; v++)
+                        {
+                            tokv = tok[ v ];
+                            id = tokv[ 0 ];
+                            $__variables[$__currentblock][ id ] = tokv[ 1 ];
+                            if ( tokv[ 5 ] ) strings = merge( strings, tokv[ 6 ] );
+                        }
+                        out += id;
+                        index += tokv[ 4 ];
+                        variables = variables.concat( tok );
+                        hasVariables = true; 
+                        hasStrings = hasStrings || tokv[ 5 ];
+                    }
+                    else
+                    {
+                        out += '$';
+                    }
+                }
+                // literal string
+                else if ( 3 > ind )
+                {
+                    if ( space > 0 )
+                    {
+                        out += " ";
+                        space = 0;
+                    }
+                    //tok = parse_string(s, ch, index, countl);
+                    str_ = q = ch; escaped = false; si = index;
+                    while ( si < countl )
+                    {
+                        str_ += (ch=s.charAt(si++));
+                        if ( q === ch && !escaped )  break;
+                        escaped = (!escaped && '\\' === ch);
+                    }
+                    tok = str_;
+                    $__idcnt++;
+                    id = "#STR_"+$__idcnt+"#";
+                    strings[id] = tok;
+                    out += id;
+                    index += tok.length-1;
+                    hasStrings = true;
+                }
+                // spaces
+                else if ( 8 > ind )
+                {
+                    space++;
+                }
+                // directive or identifier or atom in compatibility mode
+                else //if ( 8 === ind )  
+                {
+                    if ( space > 0 )
+                    {
+                        out += " ";
+                        space = 0;
+                    }
+                    q = ch;
+                    if ( non_compatibility_mode || index >= countl || !ALPHA.test(ch=s.charAt(index)) )
+                    {
+                        out += q;
+                        continue;
+                    }
+                    index ++;
+                    tok = ch;
+                    while ( index < countl && ALPHANUM.test(ch = s.charAt(index)) )
+                    {
+                        index ++;
+                        tok += ch;
+                    }
+                    tok = '#ID_'+tok+'#';
+                    out += tok;
+                }
+            }
+            // directive or identifier or atom
+            else if ( non_compatibility_mode && ALPHA.test(ch) )
+            {
+                if ( space > 0 )
+                {
+                    out += " ";
+                    space = 0;
+                }
+                tok = ch;
+                while ( index < countl && ALPHANUM.test(ch=s.charAt(index)) )
+                {
+                    index ++;
+                    tok += ch;
+                }
+                if ( 'as' !== tok && 'in' !== tok && 'null' !== tok && 'false' !== tok && 'true' !== tok )
+                {
+                    tok = '#ID_'+tok+'#';
+                }
+                out += tok;
+            }
+            // rest, bypass
+            else
+            {
+                if ( space > 0 )
+                {
+                    out += " ";
+                    space = 0;
+                }
+                out += ch;
+            }
+        }
+        
+        // fix literal data notation, not needed here
+        //out = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), out);
+    
+        tag = "\t" + out + "\v";
+    
+        $__startblock = null;  $__endblock = null; $__blockptr = -1;
+        $__strings = strings;
+        
+        parse_controls( );
+    };
+    var after_parse_controls = function after_parse_controls( ) {
+        // check for blocks
+        if ( $__startblock )
+        {
+            $__startblock = "#BLOCK_"+$__startblock+"#";
+            hasBlock = true;
+        }
+        else if ( $__endblock )
+        {
+            $__endblock = "#/BLOCK_"+$__endblock+"#";
+            hasBlock = true;
+        }
+        notFoundBlock = hasBlock;
+        
+        // replacements
+        /*.replace( re_repls, "' + ($1) + '" );*/
+        if ( 9 === tag.charCodeAt(0) && 11 === tag.charCodeAt(tag.length-1) ) 
+            tag = "' + ("+trim(tag.slice(1,-1))+") + '";
+        
+        if ( hasVariables )
+        {
+            // replace variables
+            for (v=variables.length-1; v>=0; v--)
+            {
+                id = variables[ v ][ 0 ]; varname = variables[ v ][ 1 ];
+                tag = tag
+                    .split( id+'__RAW__' ).join( varname )
+                    .split( id ).join(( 
+                        HAS.call($__locals[$__currentblock],varname) 
+                        ? ('_loc_' + varname) /* local (loop) variable */
+                        : (variables[ v ][ 2 ]) /* default (data) variable */
+                        ) + variables[ v ][ 3 ])
+                ;
+            }
+        }
+        
+        if ( hasStrings )
+        {
+            // replace strings (accurately)
+            tagTpl = multisplit_re(tag, str_re);
+            tag = '';
+            for (v=0,len=tagTpl.length; v<len; v++)
+            {
+                if ( tagTpl[v][0] )
+                {
+                    // and replace blocks (accurately)
+                    if ( notFoundBlock )
+                    {
+                        if ( $__startblock )
+                        {
+                            blockTag = tagTpl[v][1].indexOf( $__startblock );
+                            if ( -1 !== blockTag )
+                            {
+                                $__allblocks[ $__blockptr-1 ][ 1 ] = blockTag + parsed.length + tag.length;
+                                notFoundBlock = false;
+                            }
+                        }
+                        else //if ( $__endblock )
+                        {
+                            blockTag = tagTpl[v][1].indexOf( $__endblock );
+                            if ( -1 !== blockTag )
+                            {
+                                $__allblocks[ $__blockptr-1 ][ 2 ] = blockTag + parsed.length + tag.length + $__endblock.length;
+                                notFoundBlock = false;
+                            }
+                        }
+                    }
+                    tag += tagTpl[v][1];
+                }
+                else
+                {
+                    tag += strings[ tagTpl[v][1] ];
+                }
+            }
+        }
+        else if ( hasBlock )
+        {
+            // replace blocks (accurately)
+            if ( $__startblock )
+                $__allblocks[ $__blockptr-1 ][ 1 ] = parsed.length + tag.indexOf( $__startblock );
+            else //if ( $__endblock )
+                $__allblocks[ $__blockptr-1 ][ 2 ] = parsed.length + tag.indexOf( $__endblock ) + $__endblock.length;
+        }
+        
+        // replace tpl separators
+        if ( /*"\v"*/11 === tag.charCodeAt(tag.length-1) ) 
+        {
+            tag = tag.slice(0,-1) + align($__tplEnd);
+        }
+        if ( /*"\t"*/9 === tag.charCodeAt(0) ) 
+        {
+            tag = $__tplStart + tag.slice(1);
+            if ( hasBlock )
+            {
+                // update blocks (accurately)
+                blockTag = $__tplStart.length-1;
+                if ( $__startblock )
+                    $__allblocks[ $__blockptr-1 ][ 1 ] += blockTag;
+                else //if ( $__endblock )
+                    $__allblocks[ $__blockptr-1 ][ 2 ] += blockTag;
+            }
+        }
+        
+        parsed += tag;
+        
+        // continue until end 
+        parse_chunk( );
+    };
+    var parse_controls = function parse_controls( ) {
+        // replace constructs, functions, etc..
+        parse_constructs_async(tag, function(err, repl){
+            if ( err )
+            {
+                setTimeout(function(){cb(err, null);}, 10);
+                return;
+            }
+            tag = repl;
+            after_parse_controls( );
+        });
+    };
+    var parse_finish = function parse_finish( ) {
+        setTimeout(function(){cb(null, false !== withblocks ? ($__allblocks.length>0 ? parse_blocks(parsed) : [parsed, []]) : parsed);}, 10);
+    };
+    parse_chunk( );
+}
+function parse( tpl, leftTplSep, rightTplSep, withblocks, cb )
+{
+    if ( 'function' === typeof cb )
+    {
+        parse_async(tpl, leftTplSep, rightTplSep, withblocks, cb);
+        return;
+    }
     var t1, t2, p1, p2, l1, l2, len, parsed, s, i,
         tag, tagTpl, strings, variables, hasVariables, hasStrings, varname, id,
         countl, index, ch, out, tok, v, tokv, 
@@ -1116,7 +1603,9 @@ function parse( tpl, leftTplSep, rightTplSep, withblocks )
         $__strings = strings;
         
         // replace constructs, functions, etc..
-        tag = tag.replace( re_controls, parse_constructs );
+        tag = tag.replace( re_controls, function(m0,m1,m2,m3,m4,m5,m6,m7,m8,m9){
+                return parse_constructs([m0,m1,m2,m3,m4,m5,m6,m7,m8,m9]);
+            } );
         
         // check for blocks
         if ( $__startblock )
@@ -1253,154 +1742,556 @@ function get_cached_template_class( id, ctx )
     }
     return 'Contemplate_' + filename.replace(UNDERLN, '_') + '__' + ctx.replace(UNDERLN, '_'); 
 }
-function get_template_contents( id, contx, asyncCB )
+function get_template_contents( id, contx, cb )
 {
+    cb = 'function' === typeof cb ? cb : null;
     var template = contx.templates[id] || $__global.templates[id] || null;
-    if ( template )
+    if ( !template )
     {
-        if ( template[1] ) //inline tpl
+        if ( cb )
         {
-            if ( $__async && asyncCB )
+            // async
+            setTimeout(function(){cb(null, '');}, 10);
+        }
+        return '';
+    }
+    
+    if ( template[1] ) //inline tpl
+    {
+        if ( cb )
+        {
+            // async
+            setTimeout(function(){cb(null, template[0]);}, 10);
+            return '';
+        }
+        else
+        {
+            // sync
+            return template[0];
+        }
+    }
+    else
+    {
+        // nodejs, xpcom
+        if ( isNode || isXPCOM ) 
+        { 
+            if ( cb )
             {
                 // async
-                asyncCB( template[0] );
+                fread_async(template[0], contx.encoding, function(err, data){
+                    if ( err )
+                    {
+                        cb(err, '');
+                    }
+                    else
+                    {                            
+                        cb(null, data);
+                    }
+                }); 
                 return '';
             }
             else
             {
                 // sync
-                return template[0];
+                return fread( template[0], contx.encoding );
+            }
+        }
+        // client-side js and #id of DOM script-element given as template holder
+        else if ( '#'===template[0].charAt(0) ) 
+        { 
+            if ( cb )
+            {
+                // async
+                setTimeout(function(){cb(null, window.document.getElementById(template[0].slice(1)).innerHTML || '');}, 10)
+                return '';
+            }
+            else
+            {
+                // sync
+                return window.document.getElementById(template[0].slice(1)).innerHTML || '';
+            }
+        }
+        // client-side js and url given as template location
+        else 
+        { 
+            if ( cb )
+            {
+                // async
+                fread_async(template[0], contx.encoding, function(err, data){
+                    if ( err )
+                    {
+                        cb(err, null);
+                    }
+                    else
+                    {
+                        cb(null, data);
+                    }
+                }); 
+                return '';
+            }
+            else
+            {
+                // sync
+                return fread( template[0], contx.encoding );
+            }
+        }
+    }
+}
+function create_template_render_function( id, contx, seps, cb )
+{
+    cb = 'function' === typeof cb ? cb : null;
+    var tpl, blocks, funcs = {}, b, bl, func, renderf, EOL = $__TEOL;
+    
+    if ( cb )
+    {
+        get_template_contents( id, contx, function(err, tpl){
+            if ( err )
+            {
+                cb(err, null);
+                return;
+            }
+            reset_state( );
+            tpl = get_separators( tpl, seps );
+            parse( tpl, $__leftTplSep, $__rightTplSep, true, function(err, blocks){
+                if ( err )
+                {
+                    cb(err, null);
+                    return;
+                }
+                clear_state( );
+                
+                renderf = blocks[0];
+                blocks = blocks[1];
+                bl = blocks.length;
+                
+               // Convert the template into pure JavaScript
+                func = TT_FUNC.render({
+                 'FCODE'         : $__extends ? "__p__ = '';" : "__p__ = '" + renderf + "';"
+                });
+                
+                // defined blocks
+                for (b=0; b<bl; b++) funcs[blocks[b][0]] = FUNC("Contemplate,data,self,__i__", blocks[b][1]);
+                
+                cb(null, [FUNC("Contemplate", func), funcs]);
+            } );
+        } );
+        return null;
+    }
+    else
+    {
+        reset_state( );
+        tpl = get_template_contents( id, contx );
+        tpl = get_separators( tpl, seps );
+        blocks = parse( tpl, $__leftTplSep, $__rightTplSep, true );
+        clear_state( );
+        
+        renderf = blocks[0];
+        blocks = blocks[1];
+        bl = blocks.length;
+        
+       // Convert the template into pure JavaScript
+        func = TT_FUNC.render({
+         'FCODE'         : $__extends ? "__p__ = '';" : "__p__ = '" + renderf + "';"
+        });
+        
+        // defined blocks
+        for (b=0; b<bl; b++) funcs[blocks[b][0]] = FUNC("Contemplate,data,self,__i__", blocks[b][1]);
+        
+        return [FUNC("Contemplate", func), funcs];
+    }
+}
+function create_cached_template( id, contx, filename, classname, seps, cb )
+{
+    cb = 'function' === typeof cb ? cb : null;
+    var tpl, funcs = {}, prefixCode, extendCode, renderCode,
+        b, bl, sblocks, blocks, renderf, EOL = $__TEOL;
+    
+    if ( cb )
+    {
+        get_template_contents( id, contx, function(err, tpl){
+            if ( err )
+            {
+                cb(err, null);
+                return;
+            }
+            reset_state( );
+            tpl = get_separators( tpl, seps );
+            parse( tpl, $__leftTplSep, $__rightTplSep, true, function(err, blocks){
+                if ( err )
+                {
+                    cb(err, null);
+                    return;
+                }
+                clear_state( );
+                
+                renderf = blocks[0];
+                blocks = blocks[1];
+                bl = blocks.length;
+                
+                // tpl-defined blocks
+                sblocks = [];
+                for (b=0; b<bl; b++) 
+                    sblocks.push(EOL + TT_BlockCode.render({
+                     'BLOCKNAME'            : blocks[b][0]
+                    ,'BLOCKMETHODNAME'      : blocks[b][0]
+                    ,'BLOCKMETHODCODE'      : align(blocks[b][1], 1)
+                    }));
+                sblocks = sblocks.length ? EOL + "self._blocks = {" + EOL + sblocks.join(',' + EOL) + EOL + "};" + EOL : '';
+                
+                renderCode = TT_RCODE.render({
+                 'RCODE'                : $__extends ? "__p__ = '';" : "__p__ += '" + renderf + "';"
+                });
+                //extendCode = $__extends ? "self.extend('" + $__extends + "');" : '';
+                extendCode = $__extends ? "self._extendsTpl = '" + $__extends + "';" : '';
+                prefixCode = contx.prefix ? contx.prefix : '';
+                
+              // generate tpl class
+                var classCode = TT_ClassCode.render({
+                 'CLASSNAME'            : classname
+                ,'TPLID'                : id
+                ,'PREFIXCODE'           : prefixCode
+                ,'EXTENDCODE'           : align(extendCode, 1)
+                ,'BLOCKS'               : align(sblocks, 1)
+                ,'RENDERCODE'           : align(renderCode, 1)
+                });
+                fwrite_async( filename, classCode, contx.encoding, function(err,res){
+                    cb(err, res);
+                } );
+            } );
+        } );
+        return null;
+    }
+    else
+    {
+        reset_state( );
+        tpl = get_template_contents( id, contx );
+        tpl = get_separators( tpl, seps );
+        blocks = parse( tpl, $__leftTplSep, $__rightTplSep, true );
+        clear_state( );
+        
+        renderf = blocks[0];
+        blocks = blocks[1];
+        bl = blocks.length;
+        
+        // tpl-defined blocks
+        sblocks = [];
+        for (b=0; b<bl; b++) 
+            sblocks.push(EOL + TT_BlockCode.render({
+             'BLOCKNAME'            : blocks[b][0]
+            ,'BLOCKMETHODNAME'      : blocks[b][0]
+            ,'BLOCKMETHODCODE'      : align(blocks[b][1], 1)
+            }));
+        sblocks = sblocks.length ? EOL + "self._blocks = {" + EOL + sblocks.join(',' + EOL) + EOL + "};" + EOL : '';
+        
+        renderCode = TT_RCODE.render({
+         'RCODE'                : $__extends ? "__p__ = '';" : "__p__ += '" + renderf + "';"
+        });
+        //extendCode = $__extends ? "self.extend('" + $__extends + "');" : '';
+        extendCode = $__extends ? "self._extendsTpl = '" + $__extends + "';" : '';
+        prefixCode = contx.prefix ? contx.prefix : '';
+        
+      // generate tpl class
+        var classCode = TT_ClassCode.render({
+         'CLASSNAME'            : classname
+        ,'TPLID'                : id
+        ,'PREFIXCODE'           : prefixCode
+        ,'EXTENDCODE'           : align(extendCode, 1)
+        ,'BLOCKS'               : align(sblocks, 1)
+        ,'RENDERCODE'           : align(renderCode, 1)
+        });
+        return fwrite( filename, classCode, contx.encoding );
+    }
+}
+function get_cached_template( id, contx, options, cb )
+{
+    cb = 'function' === typeof cb ? cb : null;
+    var template, tplclass, tpl, sprTpl, funcs, cachedTplFile, cachedTplClass, stat, stat2,
+        exists, fname, fpath;
+    template = contx.templates[id] || $__global.templates[id] || null;
+    if ( !template )
+    {
+        if ( cb )
+        {
+            setTimeout(function(){cb(null,null);}, 10);
+        }
+        return null;
+    }
+    if ( cb )
+    {
+        // inline templates saved only in-memory
+        if ( template[1] )
+        {
+            var setSuper = function( ){
+                sprTpl = $__extends || tpl._extendsTpl;
+                if ( sprTpl )
+                {
+                    Contemplate.tpl(sprTpl, null, contx.id, function(err, spr){
+                        if ( err )
+                        {
+                            cb(err, null);
+                            return;
+                        }
+                        tpl.extend(spr);
+                        setTimeout(function(){cb(null, tpl);}, 10);
+                    });
+                }
+                else
+                {
+                    setTimeout(function(){cb(null, tpl);}, 10);
+                }
+            };
+            // dynamic in-memory caching during page-request
+            tpl = new Contemplate.Template( id ).ctx( contx );
+            if ( options && options.parsed )
+            {
+                // already parsed code was given
+                tpl.setRenderFunction( FUNC("Contemplate", options.parsed) );
+                setSuper( );
+            }
+            else
+            {
+                // parse code and create template class
+                create_template_render_function( id, contx, options.separators, function(err,funcs){
+                    if ( err )
+                    {
+                        cb(err, null);
+                        return;
+                    }
+                    tpl.setRenderFunction( funcs[ 0 ] ).setBlocks( funcs[ 1 ] );
+                    setSuper( );
+                } ); 
             }
         }
         else
         {
-            // nodejs, xpcom
-            if ( isNode || isXPCOM ) 
-            { 
-                if ( $__async && asyncCB )
+            if ( !isNode && !isXPCOM ) contx.cacheMode = Contemplate.CACHE_TO_DISK_NONE;
+            
+            var create_and_load_tpl = function( do_create, check_exists ){
+                if ( false === do_create )
                 {
-                    // async
-                    fread_async(template[0], contx.encoding, function(err, data){
-                        if ( err ) asyncCB( '' );
-                        else asyncCB( data );
-                    }); 
-                    return '';
+                    if ( false === check_exists )
+                    {
+                        tplclass = import_module( cachedTplClass, cachedTplFile )( Contemplate );
+                        tpl = new tplclass( id )/*.setId( id )*/.ctx( contx );
+                        if ( sprTpl = tpl._extendsTpl )
+                        {
+                            Contemplate.tpl(sprTpl, null, contx.id, function(err, spr){
+                                if ( err )
+                                {
+                                    setTimeout(function(){cb(err, null);}, 10);
+                                    return;
+                                }
+                                tpl.extend(spr);
+                                setTimeout(function(){cb(null, tpl);}, 10);
+                            });
+                        }
+                        else
+                        {
+                            setTimeout(function(){cb(null, tpl);}, 10);
+                        }
+                    }
+                    else
+                    {
+                        fexists_async( cachedTplFile, function(err,exists){
+                            if ( err || !exists )
+                            {
+                                cb(err || new Error('Could not create or read file "'+cachedTplFile+'"!'), null);
+                                return;
+                            }
+                            tplclass = import_module( cachedTplClass, cachedTplFile )( Contemplate );
+                            tpl = new tplclass( id )/*.setId( id )*/.ctx( contx );
+                            if ( sprTpl = tpl._extendsTpl )
+                            {
+                                Contemplate.tpl(sprTpl, null, contx.id, function(err, spr){
+                                    if ( err )
+                                    {
+                                        cb(err, null);
+                                        return;
+                                    }
+                                    tpl.extend(spr);
+                                    cb(null, tpl);
+                                });
+                            }
+                            else
+                            {
+                                cb(null, tpl);
+                            }
+                        } );
+                    }
                 }
                 else
                 {
-                    // sync
-                    return fread( template[0], contx.encoding );
+                    create_cached_template( id, contx, cachedTplFile, cachedTplClass, options.separators, function(err,res){
+                        if ( err )
+                        {
+                            cb(err, null);
+                            return;
+                        }
+                        fexists_async( cachedTplFile, function(err,exists){
+                            if ( err || !exists )
+                            {
+                                cb(err || new Error('Could not create or read file "'+cachedTplFile+'"!'), null);
+                                return;
+                            }
+                            tplclass = import_module( cachedTplClass, cachedTplFile )( Contemplate );
+                            tpl = new tplclass( id )/*.setId( id )*/.ctx( contx );
+                            if ( sprTpl = tpl._extendsTpl )
+                            {
+                                Contemplate.tpl(sprTpl, null, contx.id, function(err, spr){
+                                    if ( err )
+                                    {
+                                        cb(err, null);
+                                        return;
+                                    }
+                                    tpl.extend(spr);
+                                    cb(null, tpl);
+                                });
+                            }
+                            else
+                            {
+                                cb(null, tpl);
+                            }
+                        } );
+                    } );
                 }
+            };
+            
+            if ( true !== options.autoUpdate && Contemplate.CACHE_TO_DISK_NOUPDATE === contx.cacheMode )
+            {
+                cachedTplFile = get_cached_template_name( id, contx.id, contx.cacheDir );
+                cachedTplClass = get_cached_template_class( id, contx.id );
+                fexists_async( cachedTplFile, function(err, exists){
+                    if ( !exists )
+                    {
+                        if ( -1 !== id.indexOf('/') || -1 !== id.indexOf('\\') )
+                        {
+                            fname = basename(id);
+                            fpath = trim(dirname(id), '/\\');
+                        }
+                        else
+                        {
+                            fname = id;
+                            fpath = '';
+                        }
+                        if ( fpath.length )
+                        {
+                            create_path(fpath, contx.cacheDir, parseInt('0755',8), function(err,res){
+                                if ( err )
+                                {
+                                    cb(err, null);
+                                    return;
+                                }
+                                create_and_load_tpl( );
+                            });
+                        }
+                        else
+                        {
+                            create_and_load_tpl( );
+                        }
+                    }
+                    else
+                    {
+                        create_and_load_tpl( false, false );
+                    }
+                });
             }
-            // client-side js and #id of DOM script-element given as template holder
-            else if ( '#'===template[0].charAt(0) ) 
-            { 
-                if ( $__async && asyncCB )
-                {
-                    // async
-                    asyncCB( window.document.getElementById(template[0].slice(1)).innerHTML || '' );
-                    return '';
-                }
-                else
-                {
-                    // sync
-                    return window.document.getElementById(template[0].slice(1)).innerHTML || '';
-                }
+            
+            else if ( true === options.autoUpdate || Contemplate.CACHE_TO_DISK_AUTOUPDATE === contx.cacheMode )
+            {    
+                cachedTplFile = get_cached_template_name( id, contx.id, contx.cacheDir );
+                cachedTplClass = get_cached_template_class( id, contx.id );
+                fexists_async( cachedTplFile, function(err, exists){
+                    if ( !exists )
+                    {
+                        // if tpl not exist create it
+                        if ( -1 !== id.indexOf('/') || -1 !== id.indexOf('\\') )
+                        {
+                            fname = basename(id);
+                            fpath = trim(dirname(id), '/\\');
+                        }
+                        else
+                        {
+                            fname = id;
+                            fpath = '';
+                        }
+                        if ( fpath.length )
+                        {
+                            create_path(fpath, contx.cacheDir, parseInt('0755',8), function(err, res){
+                                if ( err )
+                                {
+                                    cb(err, null);
+                                    return;
+                                }
+                                create_and_load_tpl( );
+                            });
+                        }
+                        else
+                        {
+                            create_and_load_tpl( );
+                        }
+                    }
+                    else
+                    {
+                        fstat_async(cachedTplFile, function(err, stat){
+                           if ( err )
+                           {
+                               cb(err, null);
+                               return;
+                           }
+                           fstat_async(template[0], function(err, stat2){
+                                if ( err )
+                                {
+                                    cb(err, null);
+                                    return;
+                                }
+                                if ( stat.mtime.getTime() <= stat2.mtime.getTime() )
+                                {
+                                    // is out-of-sync re-create it
+                                    create_and_load_tpl( );
+                                }
+                                else
+                                {
+                                    create_and_load_tpl( false, false );
+                                }
+                           });
+                        });
+                    }
+                } );
+                return null;
             }
-            // client-side js and url given as template location
-            else 
-            { 
-                if ( $__async && asyncCB )
-                {
-                    // async
-                    fread_async(template[0], contx.encoding, function(err, data){
-                        if ( err ) asyncCB( '' );
-                        else asyncCB( data );
-                    }); 
-                    return '';
-                }
-                else
-                {
-                    // sync
-                    return fread( template[0], contx.encoding );
-                }
+                    
+            else
+            {    
+                // dynamic in-memory caching during page-request
+                create_template_render_function( id, contx, options.separators, function(err, funcs){
+                    if ( err )
+                    {
+                        cb(err, null);
+                        return;
+                    }
+                    tpl = new Contemplate.Template( id ).ctx( contx ).setRenderFunction( funcs[ 0 ] ).setBlocks( funcs[ 1 ] );
+                    sprTpl = $__extends;
+                    if ( sprTpl )
+                    {
+                        Contemplate.tpl(sprTpl, null, contx.id, function(err, spr){
+                            if ( err )
+                            {
+                                cb(err, null);
+                                return;
+                            }
+                            tpl.extend(spr);
+                            cb(null, tpl);
+                        });
+                    }
+                    else
+                    {
+                        cb(null, tpl);
+                    }
+                } );
             }
         }
     }
-    return '';
-}
-function create_template_render_function( id, contx, seps )
-{
-    var tpl, blocks, funcs = {}, b, bl, func, renderf, EOL = $__TEOL;
-    
-    reset_state( );
-    tpl = get_template_contents( id, contx );
-    tpl = get_separators( tpl, seps );
-    blocks = parse( tpl, $__leftTplSep, $__rightTplSep );
-    clear_state( );
-    
-    renderf = blocks[0];
-    blocks = blocks[1];
-    bl = blocks.length;
-    
-   // Convert the template into pure JavaScript
-    func = TT_FUNC.render({
-     'FCODE'         : $__extends ? "__p__ = '';" : "__p__ = '" + renderf + "';"
-    });
-    
-    // defined blocks
-    for (b=0; b<bl; b++) funcs[blocks[b][0]] = FUNC("Contemplate,data,self,__i__", blocks[b][1]);
-    
-    return [FUNC("Contemplate", func), funcs];
-}
-function create_cached_template( id, contx, filename, classname, seps )
-{
-    var tpl, funcs = {}, prefixCode, extendCode, renderCode,
-        b, bl, sblocks, blocks, renderf, EOL = $__TEOL;
-    
-    reset_state( );
-    tpl = get_template_contents( id, contx );
-    tpl = get_separators( tpl, seps );
-    blocks = parse( tpl, $__leftTplSep, $__rightTplSep );
-    clear_state( );
-    
-    renderf = blocks[0];
-    blocks = blocks[1];
-    bl = blocks.length;
-    
-    // tpl-defined blocks
-    sblocks = [];
-    for (b=0; b<bl; b++) 
-        sblocks.push(EOL + TT_BlockCode.render({
-         'BLOCKNAME'            : blocks[b][0]
-        ,'BLOCKMETHODNAME'      : blocks[b][0]
-        ,'BLOCKMETHODCODE'      : align(blocks[b][1], 1)
-        }));
-    sblocks = sblocks.length ? EOL + "self._blocks = {" + EOL + sblocks.join(',' + EOL) + EOL + "};" + EOL : '';
-    
-    renderCode = TT_RCODE.render({
-     'RCODE'                : $__extends ? "__p__ = '';" : "__p__ += '" + renderf + "';"
-    });
-    extendCode = $__extends ? "self.extend('" + $__extends + "');" : '';
-    prefixCode = contx.prefix ? contx.prefix : '';
-    
-  // generate tpl class
-    var classCode = TT_ClassCode.render({
-     'CLASSNAME'            : classname
-    ,'TPLID'                : id
-    ,'PREFIXCODE'           : prefixCode
-    ,'EXTENDCODE'           : align(extendCode, 1)
-    ,'BLOCKS'               : align(sblocks, 1)
-    ,'RENDERCODE'           : align(renderCode, 1)
-    });
-    return fwrite( filename, classCode, contx.encoding );
-}
-function get_cached_template( id, contx, options )
-{
-    var template, tplclass, tpl, sprTpl, funcs, cachedTplFile, cachedTplClass, stat, stat2,
-        exists, fname, fpath;
-    template = contx.templates[id] || $__global.templates[id] || null;
-    if ( template )
+    else
     {
         // inline templates saved only in-memory
         if ( template[1] )
@@ -1418,7 +2309,7 @@ function get_cached_template( id, contx, options )
                 funcs = create_template_render_function( id, contx, options.separators ); 
                 tpl.setRenderFunction( funcs[ 0 ] ).setBlocks( funcs[ 1 ] );
             }
-            sprTpl = $__extends;
+            sprTpl = $__extends || tpl._extendsTpl;
             if ( sprTpl ) tpl.extend( Contemplate.tpl(sprTpl, null, contx.id) );
             return tpl;
         }
@@ -1444,13 +2335,14 @@ function get_cached_template( id, contx, options )
                         fname = id;
                         fpath = '';
                     }
-                    if ( fpath.length ) create_path(fpath, contx.cacheDir);
+                    if ( fpath.length ) create_path(fpath, contx.cacheDir, parseInt('0755',8));
                     create_cached_template( id, contx, cachedTplFile, cachedTplClass, options.separators );
                 }
                 if ( fexists( cachedTplFile ) )
                 {
                     tplclass = import_module( cachedTplClass, cachedTplFile )( Contemplate );
                     tpl = new tplclass( id )/*.setId( id )*/.ctx( contx );
+                    if ( tpl._extendsTpl ) tpl.extend(Contemplate.tpl(tpl._extendsTpl, null, contx.id));
                     return tpl;
                 }
                 return null;
@@ -1474,7 +2366,7 @@ function get_cached_template( id, contx, options )
                         fname = id;
                         fpath = '';
                     }
-                    if ( fpath.length ) create_path(fpath, contx.cacheDir);
+                    if ( fpath.length ) create_path(fpath, contx.cacheDir, parseInt('0755',8));
                     create_cached_template( id, contx, cachedTplFile, cachedTplClass, options.separators );
                 }
                 else
@@ -1490,6 +2382,7 @@ function get_cached_template( id, contx, options )
                 {
                     tplclass = import_module( cachedTplClass, cachedTplFile )( Contemplate );
                     tpl = new tplclass( id )/*.setId( id )*/.ctx( contx );
+                    if ( tpl._extendsTpl ) tpl.extend(Contemplate.tpl(tpl._extendsTpl, null, contx.id));
                     return tpl;
                 }
                 return null;
@@ -1500,19 +2393,18 @@ function get_cached_template( id, contx, options )
                 // dynamic in-memory caching during page-request
                 funcs = create_template_render_function( id, contx, options.separators );
                 tpl = new Contemplate.Template( id ).ctx( contx ).setRenderFunction( funcs[ 0 ] ).setBlocks( funcs[ 1 ] );
-                sprTpl = $__extends;
+                sprTpl = $__extends || tpl._extendsTpl;
                 if ( sprTpl ) tpl.extend( Contemplate.tpl(sprTpl, null, contx.id) );
                 return tpl;
             }
         }
     }
-    return null;
 }
 function split_and_filter(r, s, regex)
 {
     return s.split(r).map(function(x){return trim(x);}).filter(function(x){return 0<x.length;});
 }
-function create_path(path, root, mode)
+function create_path(path, root, mode, cb)
 {
     path = trim(path);
     if ( !path.length ) return;
@@ -1520,12 +2412,77 @@ function create_path(path, root, mode)
     root = root || '';
     var i, l,
         parts = split_and_filter(DS_RE, path),
-        current = rtrim(root, '/\\');
-    for(i=0,l=parts.length; i<l; i++)
+        current = rtrim(root, '/\\'), exists0 = true;
+    if ( 'function' === typeof cb )
     {
+        i = 0; l = parts.length;
         current += '/' + parts[i];
-        if ( !fexists(current) /*&& !fis_dir(current)*/ )
-            fmkdir(current, mode);
+        
+        var create_one_level = function create_one_level( ){
+            if ( i >= l )
+            {
+                cb(null, true);
+                return;
+            }
+            if ( false === exists0 )
+            {
+                fmkdir_async(current, mode, function(err,res){
+                    if ( err )
+                    {
+                        cb(err, null);
+                        return;
+                    }
+                    if ( i+1 < l )
+                    {
+                        i++;
+                        current += '/' + parts[i];
+                        create_one_level( );
+                    }
+                    else
+                    {
+                        cb(null, true);
+                    }
+                });
+            }
+            else
+            {
+                fexists_async(current, function(err,exists){
+                    if ( err )
+                    {
+                        cb(err, null);
+                        return;
+                    }
+                    if ( !exists ) exists0 = false;
+                    fmkdir_async(current, mode, function(err,res){
+                        if ( err )
+                        {
+                            cb(err, null);
+                            return;
+                        }
+                        if ( i+1 < l )
+                        {
+                            i++;
+                            current += '/' + parts[i];
+                            create_one_level( );
+                        }
+                        else
+                        {
+                            cb(null, true);
+                        }
+                    });
+                });
+            }
+        };
+        create_one_level( );
+    }
+    else
+    {
+        for(i=0,l=parts.length; i<l; i++)
+        {
+            current += '/' + parts[i];
+            if ( !fexists(current) /*&& !fis_dir(current)*/ )
+                fmkdir(current, mode);
+        }
     }
 }
 
@@ -1657,6 +2614,7 @@ function Template( id )
     self._renderer = null;
     self._blocks = null;
     self._extends = null;
+    self._extendsTpl = null;
     self._ctx = null;
     self._autonomus = false;
     self.id = null;
@@ -1684,6 +2642,7 @@ Template[PROTO] = {
     ,_renderer: null 
     ,_blocks: null
     ,_extends: null
+    ,_extendsTpl: null
     ,_ctx: null
     ,_autonomus: false
     
@@ -1693,6 +2652,7 @@ Template[PROTO] = {
         self._renderer = null;
         self._blocks = null;
         self._extends = null;
+        self._extendsTpl = null;
         self._ctx = null;
         self._autonomus = null;
         self.id = null;
@@ -2149,14 +3109,36 @@ Contemplate = {
         return !!tpl && (HAS.call(contx.templates,tpl) || HAS.call($__global.templates,tpl));
     }
 
-    ,getTemplateContents: function( id, ctx ) {
+    ,getTemplateContents: function( id, ctx, cb ) {
         var contx;
         if ( arguments.length < 2 ) ctx = 'global';
         contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
-        return get_template_contents( id, contx );
+        if ( 'function' === typeof cb )
+        {
+            get_template_contents( id, contx, function(err, tpl){
+                setTimeout(function(){cb(err,tpl);}, 10);
+            } );
+        }
+        else
+        {
+            return get_template_contents( id, contx );
+        }
     }
     
-    ,parseTpl: function( tpl, options ) {
+    ,getTemplateContentsPromise: function( id, ctx ) {
+        if ( 'function' === typeof Promise )
+        {
+            return new Promise(function(resolve, reject) {
+                Contemplate.getTemplateContents(id, ctx, function(err, data) {
+                    if ( err ) reject(err);
+                    else resolve(data);
+                });
+            });
+        }
+        return null;
+    }
+    
+    ,parseTpl: function( tpl, options, cb ) {
         var parsed, leftSep, rightSep, separators, _ctx, contx = null;
         
         // see what context this template may use
@@ -2187,25 +3169,68 @@ Contemplate = {
         separators = options && options.separators ? options.separators : null;
         if ( separators ) { leftSep = separators[ 0 ];  rightSep = separators[ 1 ]; }
         
-        _ctx = $__context;
-        $__context = contx;
-        reset_state( );
-        parsed = parse( tpl, leftSep, rightSep );
-        clear_state( );
-        $__context = _ctx;
-        
-        return parsed;
+        if ( 'function' === typeof cb )
+        {
+            _ctx = $__context;
+            $__context = contx;
+            reset_state( );
+            parse( tpl, leftSep, rightSep, true, function(err, parsed){
+                clear_state( );
+                $__context = _ctx;
+                setTimeout(function(){cb(err, parsed);}, 10);
+            } );
+            
+            return null;
+        }
+        else
+        {
+            _ctx = $__context;
+            $__context = contx;
+            reset_state( );
+            parsed = parse( tpl, leftSep, rightSep, true );
+            clear_state( );
+            $__context = _ctx;
+            
+            return parsed;
+        }
+    }
+    
+    ,parseTplPromise: function( tpl, options, options ) {
+        if ( 'function' === typeof Promise )
+        {
+            return new Promise(function(resolve, reject) {
+                Contemplate.parseTpl(tpl, options, function(err, parsed) {
+                    if ( err ) reject(err);
+                    else resolve(parsed);
+                });
+            });
+        }
+        return null;
     }
     
     //
     // Main Template functions
     //
     
-    ,tpl: function( tpl, data, options ) {
+    ,tpl: function( tpl, data, options, cb ) {
+        cb = 'function' === typeof cb ? cb : null;
         var tmpl, contx, _ctx;
         if ( tpl instanceof Contemplate.Template )
         {
             tmpl = tpl;
+            if ( cb )
+            {
+                setTimeout(function(){
+                    // Provide some basic currying to the user
+                    cb(null, data && "object"===typeof data ? tmpl.render( data ) : tmpl);
+                }, 10);
+                return null;
+            }
+            else
+            {
+                // Provide some basic currying to the user
+                return data && "object"===typeof data ? tmpl.render( data ) : tmpl;
+            }
         }
         else
         {
@@ -2240,24 +3265,68 @@ Contemplate = {
             
             $__escape = false !== options.escape;
             
-            // Figure out if we're getting a template, or if we need to
-            // load the template - and be sure to cache the result.
-            if ( !!options.refresh || (!contx.cache[ tpl ] && !$__global.cache[ tpl ]) )
+            if ( cb )
             {
-                _ctx = $__context;
-                $__context = contx;
-                contx.cache[ tpl ] = get_cached_template( tpl, contx, options );
-                $__context = _ctx;
+                // asynchronous loading, parsing and writing
+                if ( !!options.refresh || (!contx.cache[ tpl ] && !$__global.cache[ tpl ]) )
+                {
+                    _ctx = $__context;
+                    $__context = contx;
+                    get_cached_template( tpl, contx, options, function(err, ctpl){
+                        if ( err )
+                        {
+                            setTimeout(function(){cb(err, null);}, 10);
+                            return;
+                        }
+                        contx.cache[ tpl ] = ctpl;
+                        $__context = _ctx;
+                        tmpl = contx.cache[ tpl ] || $__global.cache[ tpl ];
+                        tmpl.autonomus( options.standalone );
+                        setTimeout(function(){cb(null, data && "object"===typeof data ? tmpl.render( data ) : tmpl);}, 10);
+                    } );
+                }
+                else
+                {
+                    tmpl = contx.cache[ tpl ] || $__global.cache[ tpl ];
+                    tmpl.autonomus( options.standalone );
+                    setTimeout(function(){cb(null, data && "object"===typeof data ? tmpl.render( data ) : tmpl);}, 10);
+                }
+                return null;
             }
+            else
+            {
+                // Figure out if we're getting a template, or if we need to
+                // load the template - and be sure to cache the result.
+                if ( !!options.refresh || (!contx.cache[ tpl ] && !$__global.cache[ tpl ]) )
+                {
+                    _ctx = $__context;
+                    $__context = contx;
+                    contx.cache[ tpl ] = get_cached_template( tpl, contx, options );
+                    $__context = _ctx;
+                }
+                
+                tmpl = contx.cache[ tpl ] || $__global.cache[ tpl ];
+                tmpl.autonomus( options.standalone );
             
-            tmpl = contx.cache[ tpl ] || $__global.cache[ tpl ];
-            tmpl.autonomus( options.standalone );
+                // Provide some basic currying to the user
+                return data && "object"===typeof data ? tmpl.render( data ) : tmpl;
+            }
         }
-        
-        // Provide some basic currying to the user
-        return data && "object"===typeof data ? tmpl.render( data ) : tmpl;
     }
     
+    
+    ,tplPromise: function( tpl, data, options ) {
+        if ( 'function' === typeof Promise )
+        {
+            return new Promise(function(resolve, reject) {
+                Contemplate.tpl(tpl, data, options, function(err, tpl) {
+                    if ( err ) reject(err);
+                    else resolve(tpl);
+                });
+            });
+        }
+        return null;
+    }
     
     ,inline: function( tpl, reps, compiled ) {
         return (tpl instanceof Contemplate.InlineTemplate) 
@@ -2627,14 +3696,32 @@ var default_date_locale = {
     fexists_async = isXPCOM
     ? function fexists_async( file, cb ) {
         // file is URI, i.e file://...
-        if ( cb ) cb ( fexists(file) );
+        if ( cb ) setTimeout(function(){cb(null, fexists(file));}, 10);
     }
     : (isNode
     ? function fexists_async( file, cb ) {
-        fs.exists(file, cb);
+        // exists is deprecated due to incompatible callback signature
+        //fs.exists(file, cb);
+        fs.stat(file, function(err, stat) {
+            if ( !cb ) return;
+            if ( !err )
+            {
+                // exists
+                cb(null, true);
+            }
+            else if ( 'ENOENT' === err.code )
+            {
+                // file does not exist
+                cb(null, false);
+            }
+            else // some other error
+            {
+                cb(err, null);
+            }
+        });
     }
     : function fexists_async( file, cb ) {
-        if ( cb ) cb ( true );
+        if ( cb ) setTimeout(function(){cb(null, true);}, 10);
     }),
     
     fis_dir = isXPCOM
@@ -2650,16 +3737,16 @@ var default_date_locale = {
     }),
     fis_dir_async = isXPCOM
     ? function fis_dir_async( file, cb ) {
-        if ( cb ) cb(fileurl_2_nsfile( file ).isDirectory());
+        if ( cb ) setTimeout(function(){cb(null, fileurl_2_nsfile( file ).isDirectory());}, 10);
     }
     : (isNode
     ? function fis_dir_async( file, cb ) {
         fs.lstat(file, function(err, stats){
-            if ( cb ) cb(err ? null : stats.isDirectory());
+            if ( cb ) cb(err, err ? null : stats.isDirectory());
         });
     }
     : function fis_dir_async( file, cb ) {
-        if ( cb ) cb(false);
+        if ( cb ) setTimeout(function(){cb(null, false);}, 10);
     }),
     
     fmkdir = isXPCOM
@@ -2679,17 +3766,17 @@ var default_date_locale = {
     fmkdir_async = isXPCOM
     ? function fmkdir_async( file, mode, cb ) {
         var res = fmkdir(file, mode);
-        if ( cb ) cb(res);
+        if ( cb ) setTimeout(function(){cb(null, res);}, 10);
     }
     : (isNode
     ? function fmkdir_async( file, mode, cb ) {
         fs.mkdir(file, mode, function(err){
-            if ( cb ) cb(err ? false : true);
+            if ( cb ) cb(err, err ? false : true);
         });
     }
     : function fmkdir_async( file, mode, cb ){
         // do nothing
-        if ( cb ) cb(false);
+        if ( cb ) setTimeout(function(){cb(null, false);}, 10);
     }),
     
     fstat = isXPCOM
@@ -2717,7 +3804,7 @@ var default_date_locale = {
     }),
     fstat_async = isXPCOM
     ? function fstat_async( file, cb ) {
-        if ( cb ) cb( fstat(file) );
+        if ( cb ) setTimeout(function(){cb(null,fstat(file));}, 10);
     }
     : (isNode
     ? function fstat_async( file, cb ) {
@@ -2734,7 +3821,7 @@ var default_date_locale = {
                 if ( mtime.toString() === 'Invalid Date' ) mtime = false;
                 stats.mtime = mtime;
             }
-            if ( cb ) cb( stats );
+            if ( cb ) cb(null, stats);
         };
         xhr.send(null);
     }),
@@ -2779,7 +3866,7 @@ var default_date_locale = {
                 data = err
                 ? ''
                 : NetUtil.readInputStreamToString( stream, stream.available(), {charset:enc||'UTF-8'} );
-            if ( cb ) cb( err, data );
+            if ( cb ) setTimeout(function(){cb(err, data);}, 10);
         });
     }
     : (isNode
@@ -2796,7 +3883,7 @@ var default_date_locale = {
         xhr.onload = function( ) {
             var err = 200 !== xhr.status,
                 data = err ? '' : xhr.responseText;
-            if ( cb ) cb( err, data );
+            if ( cb ) cb(err, data);
         };
         xhr.send( null );
     }),
@@ -2837,15 +3924,17 @@ var default_date_locale = {
         conv.charset = enc||"UTF-8";
         istream = conv.convertToInputStream( data );
         NetUtil.asyncCopy(istream, ostream, function( status ) {
-            if ( cb  ) cb ( Components.isSuccessCode(status) )
+            if ( cb  ) cb(Components.isSuccessCode(status));
         });
     }
     : (isNode
     ? function fwrite_async( file, data, enc, cb ) {
-        fs.writeFile(file, data, {encoding: enc||'utf8'}, cb);
+        fs.writeFile(file, data, {encoding: enc||'utf8'}, function(err,res){
+            cb(err,res);
+        });
     }
     : function fwrite_async( file, data, enc, cb ) {
-        if ( cb ) cb( );
+        if ( cb ) setTimeout(function(){cb(null);},10);
     }),
     FUNC = isXPCOM
     ? function FUNC( a, f ) {

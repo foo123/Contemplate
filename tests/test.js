@@ -130,15 +130,15 @@ http.createServer(function(request, response) {
     }
     
     // handle css/js/other file requests
-    Exists(filename, function(exists) {
-        if(!exists) {
+    fs.stat(filename, function(err, stat) {
+        if(err || !stat) {
             response.writeHead(404, {"Content-Type": "text/plain"});
             response.write("404 Not Found\n");
             response.end();
             return;
         }
 
-        if (fs.statSync(filename).isDirectory()) filename += '/index.html';
+        if (stat.isDirectory()) filename += '/index.html';
 
         Read(filename, "binary", function(err, file) {
             if(err) {        

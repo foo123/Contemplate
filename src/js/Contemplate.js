@@ -323,7 +323,7 @@ function t_include( id, cb )
         }
         else
         {
-            setTimeout(function(){cb(null, align(contx.partials[id]));}, 10);
+            cb(null, align(contx.partials[id]));
         }
         return '';
     }
@@ -1401,7 +1401,7 @@ function parse_async( tpl, leftTplSep, rightTplSep, withblocks, cb )
         parse_constructs_async(tag, function(err, repl){
             if ( err )
             {
-                setTimeout(function(){cb(err, null);}, 10);
+                cb(err, null);
                 return;
             }
             tag = repl;
@@ -1409,7 +1409,7 @@ function parse_async( tpl, leftTplSep, rightTplSep, withblocks, cb )
         });
     };
     var parse_finish = function parse_finish( ) {
-        setTimeout(function(){cb(null, false !== withblocks ? ($__allblocks.length>0 ? parse_blocks(parsed) : [parsed, []]) : parsed);}, 10);
+        cb(null, false !== withblocks ? ($__allblocks.length>0 ? parse_blocks(parsed) : [parsed, []]) : parsed);
     };
     parse_chunk( );
 }
@@ -1751,7 +1751,7 @@ function get_template_contents( id, contx, cb )
         if ( cb )
         {
             // async
-            setTimeout(function(){cb(null, '');}, 10);
+            cb(null, '');
         }
         return '';
     }
@@ -1761,7 +1761,7 @@ function get_template_contents( id, contx, cb )
         if ( cb )
         {
             // async
-            setTimeout(function(){cb(null, template[0]);}, 10);
+            cb(null, template[0]);
             return '';
         }
         else
@@ -1802,7 +1802,7 @@ function get_template_contents( id, contx, cb )
             if ( cb )
             {
                 // async
-                setTimeout(function(){cb(null, window.document.getElementById(template[0].slice(1)).innerHTML || '');}, 10)
+                cb(null, window.document.getElementById(template[0].slice(1)).innerHTML || '');
                 return '';
             }
             else
@@ -2012,7 +2012,7 @@ function get_cached_template( id, contx, options, cb )
     {
         if ( cb )
         {
-            setTimeout(function(){cb(null,null);}, 10);
+            cb(null,null);
         }
         return null;
     }
@@ -2032,12 +2032,12 @@ function get_cached_template( id, contx, options, cb )
                             return;
                         }
                         tpl.extend(spr);
-                        setTimeout(function(){cb(null, tpl);}, 10);
+                        cb(null, tpl);
                     });
                 }
                 else
                 {
-                    setTimeout(function(){cb(null, tpl);}, 10);
+                    cb(null, tpl);
                 }
             };
             // dynamic in-memory caching during page-request
@@ -2078,16 +2078,16 @@ function get_cached_template( id, contx, options, cb )
                             Contemplate.tpl(sprTpl, null, contx.id, function(err, spr){
                                 if ( err )
                                 {
-                                    setTimeout(function(){cb(err, null);}, 10);
+                                    cb(err, null);
                                     return;
                                 }
                                 tpl.extend(spr);
-                                setTimeout(function(){cb(null, tpl);}, 10);
+                                cb(null, tpl);
                             });
                         }
                         else
                         {
-                            setTimeout(function(){cb(null, tpl);}, 10);
+                            cb(null, tpl);
                         }
                     }
                     else
@@ -3116,7 +3116,7 @@ Contemplate = {
         if ( 'function' === typeof cb )
         {
             get_template_contents( id, contx, function(err, tpl){
-                setTimeout(function(){cb(err,tpl);}, 10);
+                cb(err,tpl);
             } );
         }
         else
@@ -3177,7 +3177,7 @@ Contemplate = {
             parse( tpl, leftSep, rightSep, true, function(err, parsed){
                 clear_state( );
                 $__context = _ctx;
-                setTimeout(function(){cb(err, parsed);}, 10);
+                cb(err, parsed);
             } );
             
             return null;
@@ -3195,7 +3195,7 @@ Contemplate = {
         }
     }
     
-    ,parseTplPromise: function( tpl, options, options ) {
+    ,parseTplPromise: function( tpl, options ) {
         if ( 'function' === typeof Promise )
         {
             return new Promise(function(resolve, reject) {
@@ -3220,10 +3220,8 @@ Contemplate = {
             tmpl = tpl;
             if ( cb )
             {
-                setTimeout(function(){
-                    // Provide some basic currying to the user
-                    cb(null, data && "object"===typeof data ? tmpl.render( data ) : tmpl);
-                }, 10);
+                // Provide some basic currying to the user
+                cb(null, data && "object"===typeof data ? tmpl.render( data ) : tmpl);
                 return null;
             }
             else
@@ -3275,21 +3273,21 @@ Contemplate = {
                     get_cached_template( tpl, contx, options, function(err, ctpl){
                         if ( err )
                         {
-                            setTimeout(function(){cb(err, null);}, 10);
+                            cb(err, null);
                             return;
                         }
                         contx.cache[ tpl ] = ctpl;
                         $__context = _ctx;
                         tmpl = contx.cache[ tpl ] || $__global.cache[ tpl ];
                         tmpl.autonomus( options.standalone );
-                        setTimeout(function(){cb(null, data && "object"===typeof data ? tmpl.render( data ) : tmpl);}, 10);
+                        cb(null, data && "object"===typeof data ? tmpl.render( data ) : tmpl);
                     } );
                 }
                 else
                 {
                     tmpl = contx.cache[ tpl ] || $__global.cache[ tpl ];
                     tmpl.autonomus( options.standalone );
-                    setTimeout(function(){cb(null, data && "object"===typeof data ? tmpl.render( data ) : tmpl);}, 10);
+                    cb(null, data && "object"===typeof data ? tmpl.render( data ) : tmpl);
                 }
                 return null;
             }
@@ -3696,7 +3694,7 @@ var default_date_locale = {
     fexists_async = isXPCOM
     ? function fexists_async( file, cb ) {
         // file is URI, i.e file://...
-        if ( cb ) setTimeout(function(){cb(null, fexists(file));}, 10);
+        if ( cb ) cb(null, fexists(file));
     }
     : (isNode
     ? function fexists_async( file, cb ) {
@@ -3721,7 +3719,7 @@ var default_date_locale = {
         });
     }
     : function fexists_async( file, cb ) {
-        if ( cb ) setTimeout(function(){cb(null, true);}, 10);
+        if ( cb ) cb(null, true);
     }),
     
     fis_dir = isXPCOM
@@ -3737,7 +3735,7 @@ var default_date_locale = {
     }),
     fis_dir_async = isXPCOM
     ? function fis_dir_async( file, cb ) {
-        if ( cb ) setTimeout(function(){cb(null, fileurl_2_nsfile( file ).isDirectory());}, 10);
+        if ( cb ) cb(null, fileurl_2_nsfile( file ).isDirectory());
     }
     : (isNode
     ? function fis_dir_async( file, cb ) {
@@ -3746,7 +3744,7 @@ var default_date_locale = {
         });
     }
     : function fis_dir_async( file, cb ) {
-        if ( cb ) setTimeout(function(){cb(null, false);}, 10);
+        if ( cb ) cb(null, false);
     }),
     
     fmkdir = isXPCOM
@@ -3766,7 +3764,7 @@ var default_date_locale = {
     fmkdir_async = isXPCOM
     ? function fmkdir_async( file, mode, cb ) {
         var res = fmkdir(file, mode);
-        if ( cb ) setTimeout(function(){cb(null, res);}, 10);
+        if ( cb ) cb(null, res);
     }
     : (isNode
     ? function fmkdir_async( file, mode, cb ) {
@@ -3776,7 +3774,7 @@ var default_date_locale = {
     }
     : function fmkdir_async( file, mode, cb ){
         // do nothing
-        if ( cb ) setTimeout(function(){cb(null, false);}, 10);
+        if ( cb ) cb(null, false);
     }),
     
     fstat = isXPCOM
@@ -3804,7 +3802,7 @@ var default_date_locale = {
     }),
     fstat_async = isXPCOM
     ? function fstat_async( file, cb ) {
-        if ( cb ) setTimeout(function(){cb(null,fstat(file));}, 10);
+        if ( cb ) cb(null,fstat(file));
     }
     : (isNode
     ? function fstat_async( file, cb ) {
@@ -3866,7 +3864,7 @@ var default_date_locale = {
                 data = err
                 ? ''
                 : NetUtil.readInputStreamToString( stream, stream.available(), {charset:enc||'UTF-8'} );
-            if ( cb ) setTimeout(function(){cb(err, data);}, 10);
+            if ( cb ) cb(err, data);
         });
     }
     : (isNode
@@ -3934,7 +3932,7 @@ var default_date_locale = {
         });
     }
     : function fwrite_async( file, data, enc, cb ) {
-        if ( cb ) setTimeout(function(){cb(null);},10);
+        if ( cb ) cb(null);
     }),
     FUNC = isXPCOM
     ? function FUNC( a, f ) {

@@ -21,7 +21,7 @@ else if ( ('function'===typeof define)&&define.amd&&('function'===typeof require
     define(name,['module'],function(module){factory.moduleUri = module.uri; return factory.call(root);});
 else if ( !(name in root) ) /* Browser/WebWorker/.. */
     (root[name] = factory.call(root)||1)&&('function'===typeof(define))&&define.amd&&define(function(){return root[name];} );
-}(  /* current root */          this, 
+}(  /* current root */          'undefined' !== typeof self ? self : this, 
     /* module name */           "Contemplate",
     /* module factory */        function ModuleFactory__Contemplate( undef ){
 "use strict";
@@ -2827,7 +2827,7 @@ Contemplate = {
             ,"    define(name,['module'],function(module){factory.moduleUri = module.uri; return factory.call(root);});"
             ,"else if ( !(name in root) ) /* Browser/WebWorker/.. */"
             ,"    (root[name] = factory.call(root)||1)&&('function'===typeof(define))&&define.amd&&define(function(){return root[name];} );"
-            ,"}(this,'#CLASSNAME#',function( ){"
+            ,"}('undefined' !== typeof self ? self : this,'#CLASSNAME#',function( ){"
             ,"\"use strict\";"
             ,"return function( Contemplate ) {"
             ,"/* Contemplate cached template '#TPLID#', constructor */"

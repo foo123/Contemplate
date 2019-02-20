@@ -306,30 +306,36 @@ function t_include( id, cb )
                     cb(err, null);
                     return;
                 }
+                tpl = get_separators( tpl );
                 state = push_state( );
                 reset_state( );
-                tpl = get_separators( tpl );
                 parse( tpl, $__leftTplSep, $__rightTplSep, false, function(err, text){
                     if ( err )
                     {
                         cb(err, null);
                         return;
                     }
-                    contx.partials[id] = " " + text +  "';" + $__TEOL;
-                    // add usedTpls used inside include tpl to current usedTpls
-                    for(var usedTpl=0; usedTpl<$__uses.length; usedTpl++)
-                    {
-                        if ( -1 === state[12].indexOf($__uses[usedTpl]) )
-                            state[12].push($__uses[usedTpl]);
-                    }
+                    contx.partials[id] = [" " + text +  "';" + $__TEOL, $__uses ? $__uses.slice() : []];
                     pop_state( state );
-                    cb(null, align(contx.partials[id]));
+                    // add usedTpls used inside include tpl to current usedTpls
+                    for(var uses = contx.partials[id][1],usedTpl=0; usedTpl<uses.length; usedTpl++)
+                    {
+                        if ( -1 === $__uses.indexOf(uses[usedTpl]) )
+                            $__uses.push(uses[usedTpl]);
+                    }
+                    cb(null, align(contx.partials[id][0]));
                 } );
             });
         }
         else
         {
-            cb(null, align(contx.partials[id]));
+            // add usedTpls used inside include tpl to current usedTpls
+            for(var uses = contx.partials[id][1],usedTpl=0; usedTpl<uses.length; usedTpl++)
+            {
+                if ( -1 === $__uses.indexOf(uses[usedTpl]) )
+                    $__uses.push(uses[usedTpl]);
+            }
+            cb(null, align(contx.partials[id][0]));
         }
         return '';
     }
@@ -338,20 +344,20 @@ function t_include( id, cb )
         // cache it
         if ( !HAS.call(contx.partials,id) /*&& !HAS.call($__global.partials,id)*/ )
         {
-            state = push_state( );
-            reset_state( );
             tpl = get_template_contents( id, contx );
             tpl = get_separators( tpl );
-            contx.partials[id] = " " + parse( tpl, $__leftTplSep, $__rightTplSep, false ) + "';" + $__TEOL;
-            // add usedTpls used inside include tpl to current usedTpls
-            for(var usedTpl=0; usedTpl<$__uses.length; usedTpl++)
-            {
-                if ( -1 === state[12].indexOf($__uses[usedTpl]) )
-                    state[12].push($__uses[usedTpl]);
-            }
+            state = push_state( );
+            reset_state( );
+            contx.partials[id] = [" " + parse( tpl, $__leftTplSep, $__rightTplSep, false ) + "';" + $__TEOL, $__uses ? $__uses.slice() : []];
             pop_state( state );
         }
-        return align( contx.partials[id] /*|| $__global.partials[id]*/ );
+        // add usedTpls used inside include tpl to current usedTpls
+        for(var uses = contx.partials[id][1],usedTpl=0; usedTpl<uses.length; usedTpl++)
+        {
+            if ( -1 === $__uses.indexOf(uses[usedTpl]) )
+                $__uses.push(uses[usedTpl]);
+        }
+        return align( contx.partials[id][0] /*|| $__global.partials[id][0]*/ );
     }
 }
 function t_block( block )

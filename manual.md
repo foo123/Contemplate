@@ -239,6 +239,17 @@ Contemplate.add({
     'dom_tpl': '#dom_tpl_id' // DOM template (for browser)
 } [, ctx="global"]);
 
+// set a custom template finder per context
+// for javascript engine it should support both sync and async operation if callback 2nd argument is given
+Contemplate.setTemplateFinder(function(tplId [,cb]){
+} [, ctx="global"]);
+
+// set an array of possible paths where contemplate may find templates per context (and custom templatefinder is not defined)
+Contemplate.setTemplateDirs(templateDirs [, ctx="global"]);
+
+// get the array of possible paths where contemplate may find templates per context (if set, else empty array)
+Contemplate.getTemplateDirs([ctx="global"]);
+
 // add localisation
 Contemplate.setLocales({
     "locale": "γλωσσική περιοχή"
@@ -279,7 +290,16 @@ var tpl = Contemplate.tpl('tpl_id' [, null, options={}]);
 // render template
 tpl.render(data);
 
-// render a template by id, load it and cache it if needed
+// render a template by id, load it and cache it if needed (sync operation all engines)
 Contemplate.tpl('tpl_id', data [, options]);
+
+// Javascript-only: get or render a template by id async (promise-based), load it and cache it if needed
+Contemplate.tplPromise('tpl_id', data [, options])
+.then(function(tpl){
+    // do something with tpl
+})
+.catch(function(err){
+    throw err;
+});
 
 ```

@@ -3,5 +3,5 @@
 
 <% block("section") %>
 <% include("include/sub.tpl.html") %>
-<% $foo %>
+<% template("common/bar.tpl.html", {"bar":$bar}) %>
 <% endblock %>

@@ -10,7 +10,8 @@ def __getTplClass__(Contemplate):
             self_ = self
             super(Contemplate_sub__global, self_).__init__( id )
             # extend tpl assign code starts here
-
+            
+            self_._usesTpl = []
             # extend tpl assign code ends here
         # tpl-defined blocks render code starts here
 

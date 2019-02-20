@@ -1,7 +1,7 @@
 Contemplate
 ===========
 
-__Light-weight, fast and flexible "object-oriented" template engine for PHP, Python, Node, XPCOM and client-side JavaScript__
+__Light-weight, fast and flexible "object-oriented" template engine for PHP, Python, Node, XPCOM and Browser client-side JavaScript__
 
 
 ![Contemplate](/screenshots/contemplate.jpg)
@@ -108,13 +108,13 @@ and trying to contain the needed functionality inside the common language subset
 * Most of the time this can be accomplished, the rest functionality is built with __custom functions__ which mostly resemble the `PHP`
 syntax, yet work the same in all the engine's implementations.
 
-* __Uniform functionality__, Engine Implementations for __PHP__ , __Python__ , __Node__ , __XPCOM__ and __client-side JavaScript__
+* __Uniform functionality__, Engine Implementations for __PHP__ , __Python__ , __Node__ , __XPCOM__ and __Browser client-side JavaScript__ (**NOTE** `javascript` engine supports **both sync and async operations both callback-based and promise-based**)
 
-* Simple and __light-weight__ ( only one relatively small class for each implementation, no other dependencies ) `~37kB` minified, `~13kB` zipped
+* Simple and __light-weight__ ( only one relatively small class for each implementation, no other dependencies ) `~50kB` minified, `~16kB` zipped
 
 * __Fast__ , can cache templates dynamically (filesystem caching has 3 modes, `NONE` which uses only in-memory caching, `NOUPDATE` which caches the templates only once and `AUTOUPDATE` which re-creates the cached template if original template has changed, useful for debugging)
 
-* Generated cached template code is __formatted and annotated__ with comments, for easy debugging (note: javascript cached templates are **`UMD` modules** which can be used in both `node`/`AMD`/`XPCOM`/`browser`)
+* Generated cached template code is __formatted and annotated__ with comments, for easy debugging (note: `javascript` cached templates are **`UMD` modules** which can be used in both `node`/`AMD`/`XPCOM`/`browser`)
 
 * Syntax __close to `PHP`__ (there was an effort to keep the engine syntax as close to `PHP` syntax as possible, to avoid learning another language syntax)
 

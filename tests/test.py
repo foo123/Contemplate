@@ -84,8 +84,7 @@ Contemplate.setCacheDir('./_tplcache')
 # dynamically update the cached template if original template has changed
 Contemplate.setCacheMode(Contemplate.CACHE_TO_DISK_AUTOUPDATE)
 
-# add the templates paths
-Contemplate.add({
+TPLS = {
     'main' : './_tpls/main.tpl.html',
     'base' : './_tpls/base.tpl.html',
     'demo' : './_tpls/demo.tpl.html',
@@ -93,7 +92,13 @@ Contemplate.add({
     'date' : './_tpls/date.tpl.html',
     # add an inline template
     'inlinetpl' : ['<% super("block") %><% for($list as $l=>$item) %> <% $l %> <% $item %><br /><% endfor %>']
-})
+}
+# add the templates paths
+#Contemplate.add(TPLS)
+def tplfinder(tpl):
+    global TPLS
+    return TPLS[tpl] if tpl in TPLS else None
+Contemplate.setTemplateFinder(tplfinder)
 
 #print (pprint.pformat(Contemplate.parseTpl( '<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>' ), 4))
 

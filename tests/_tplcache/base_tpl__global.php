@@ -1,6 +1,6 @@
 <?php 
 
-if (!class_exists('Contemplate_base__global'))
+if (!class_exists('Contemplate_base__global', false))
 {
 /* Contemplate cached template 'base' */
 final class Contemplate_base__global extends ContemplateTemplate
@@ -12,14 +12,15 @@ public function __construct($id=null)
     parent::__construct( $id );
     
     /* extend tpl assign code starts here */
-
+    
+    $self->_usesTpl = array();
     /* extend tpl assign code ends here */
 }    
 /* tpl-defined blocks render code starts here */
 
 
 /* tpl block render method for block 'Block3' */
-private function _blockfn_Block3(&$data, $self, $__i__) 
+protected function _blockfn_Block3(&$data, $self, $__i__) 
 { 
     
     $__p__ = '';
@@ -31,7 +32,7 @@ private function _blockfn_Block3(&$data, $self, $__i__)
 
 
 /* tpl block render method for block 'Block2' */
-private function _blockfn_Block2(&$data, $self, $__i__) 
+protected function _blockfn_Block2(&$data, $self, $__i__) 
 { 
     
     $__p__ = '';
@@ -43,7 +44,7 @@ private function _blockfn_Block2(&$data, $self, $__i__)
 
 
 /* tpl block render method for block 'Block12' */
-private function _blockfn_Block12(&$data, $self, $__i__) 
+protected function _blockfn_Block12(&$data, $self, $__i__) 
 { 
     
     $__p__ = '';
@@ -55,7 +56,7 @@ private function _blockfn_Block12(&$data, $self, $__i__)
 
 
 /* tpl block render method for block 'Block11' */
-private function _blockfn_Block11(&$data, $self, $__i__) 
+protected function _blockfn_Block11(&$data, $self, $__i__) 
 { 
     
     $__p__ = '';
@@ -67,7 +68,7 @@ private function _blockfn_Block11(&$data, $self, $__i__)
 
 
 /* tpl block render method for block 'Block1' */
-private function _blockfn_Block1(&$data, $self, $__i__) 
+protected function _blockfn_Block1(&$data, $self, $__i__) 
 { 
     
     $__p__ = '';

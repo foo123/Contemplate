@@ -53,7 +53,7 @@ Contemplate.setCacheDir(fs.realpathSync(path.join(__dirname, '/_tplcache')));
 Contemplate.setCacheMode(Contemplate.CACHE_TO_DISK_AUTOUPDATE);
 
 // add templates
-Contemplate.add({
+var TPLS = {
     'main' : path.join(__dirname, '/_tpls/main.tpl.html'),
     'base' : path.join(__dirname, '/_tpls/base.tpl.html'),
     'demo' : path.join(__dirname, '/_tpls/demo.tpl.html'),
@@ -61,6 +61,21 @@ Contemplate.add({
     'date' : path.join(__dirname, '/_tpls/date.tpl.html'),
     // add an inline template
     'inlinetpl' : ['<% super("block") %><% for($list as $l=>$item) %> <% $l %> <% $item %><br /><% endfor %>']
+};
+/*Contemplate.add(TPLS);*/
+Contemplate.setTemplateFinder(function(tpl, cb){
+    // can be sync or async operation depending if callback cb is provided
+    // handle accordingly
+    if ( Object.prototype.hasOwnProperty.call(TPLS, tpl) )
+    {
+        if ( 'function' === typeof cb ) return cb(TPLS[tpl]);
+        else return TPLS[tpl];
+    }
+    else
+    {
+        if ( 'function' === typeof cb ) return cb(null);
+        else return null;
+    }
 });
 
 /*console.log(Contemplate.parseTpl( '<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>' ));*/
@@ -124,8 +139,14 @@ http.createServer(function(request, response) {
 
     // return the main page
     if ('/'==uri || ''==uri) {
-        response.writeHead(200, { 'Content-Type': 'text/html' });
-        response.end( Contemplate.tpl('main', $main_template_data) );
+        // async operation promise-based
+        Contemplate.tplPromise('main', $main_template_data).then(function(content){
+            response.writeHead(200, { 'Content-Type': 'text/html' });
+            response.end( content );
+        }).catch(function(err){
+            response.writeHead(500, { 'Content-Type': 'text/plain' });
+            response.end( err.toString() );
+        });
         return;
     }
     
@@ -143,7 +164,7 @@ http.createServer(function(request, response) {
         Read(filename, "binary", function(err, file) {
             if(err) {        
                 response.writeHead(500, {"Content-Type": "text/plain"});
-                response.write(err + "\n");
+                response.write(err.toString() + "\n");
                 response.end();
                 return;
             }

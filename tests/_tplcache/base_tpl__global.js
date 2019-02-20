@@ -11,7 +11,7 @@ else if ( ('function'===typeof define)&&define.amd&&('function'===typeof require
     define(name,['module'],function(module){factory.moduleUri = module.uri; return factory.call(root);});
 else if ( !(name in root) ) /* Browser/WebWorker/.. */
     (root[name] = factory.call(root)||1)&&('function'===typeof(define))&&define.amd&&define(function(){return root[name];} );
-}(this,'Contemplate_base__global',function( ){
+}('undefined' !== typeof self ? self : this,'Contemplate_base__global',function( ){
 "use strict";
 return function( Contemplate ) {
 /* Contemplate cached template 'base', constructor */
@@ -86,7 +86,8 @@ function Contemplate_base__global( id )
     
     /* tpl-defined blocks render code ends here */
     /* extend tpl assign code starts here */
-
+    
+    self._usesTpl = [];
     /* extend tpl assign code ends here */
 }
 /* extends main Contemplate.Template class */

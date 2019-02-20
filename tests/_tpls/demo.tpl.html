@@ -328,8 +328,8 @@
     <li>stripslashes(&quot;this string's s\&apos;s s\\&apos;s s\\\&apos;s&quot;) = <% stripslashes("this string's s\'s s\\'s s\\\'s") %></li>
     <li>l(&quot;locale&quot;) = locale(&quot;locale&quot;) = <% l("locale") %> = <% locale("locale") %></li>
     <li>nl(2,&quot;locale&quot;,&quot;locales&quot;) = nlocale(2,&quot;locale&quot;,&quot;locales&quot;) = <% nl(2,"locale","locales") %> = <% nlocale(2,"locale","locales") %></li>
-    <li>xl(&quot;locale&quot;,&quot;custom&quot;) = xlocale(&quot;locale&quot;,&quot;custom&quot;) = <% xl("locale","custom") %> = <% xlocale("locale","custom") %></li>
-    <li>nxl(2,&quot;locale&quot;,&quot;locales&quot;,&quot;custom&quot;) = nxlocale(2,&quot;locale&quot;,&quot;locales&quot;,&quot;custom&quot;) = <% nxl(2,"locale","locales","custom") %> = <% nxlocale(2,"locale","locales","custom") %></li>
+    <li>xl(&quot;locale&quot;,null,&quot;custom&quot;) = xlocale(&quot;locale&quot;,null,&quot;custom&quot;) = <% xl("locale",null,"custom") %> = <% xlocale("locale",null,"custom") %></li>
+    <li>nxl(2,&quot;locale&quot;,&quot;locales&quot;,null,&quot;custom&quot;) = nxlocale(2,&quot;locale&quot;,&quot;locales&quot;,null,&quot;custom&quot;) = <% nxl(2,"locale","locales",null,"custom") %> = <% nxlocale(2,"locale","locales",null,"custom") %></li>
     <li>e(&#39;&lt;ok k=&quot;v&quot;&gt;&#39;) = <% e("<ok k=\"v\">") %></li>
     <li>queryvar("https://example.com?key1=1&key2[]=21&key2[]=22",null,["key2"]) = <% queryvar("https://example.com?key1=1&key2[]=21&key2[]=22",null,["key2"]) %></li>
     <li>queryvar("https://example.com?key1=1&key2[]=21&key2[]=22",{"key3":3,"key4":[41,42]}) = <% queryvar("https://example.com?key1=1&key2[]=21&key2[]=22",{"key3":3,"key4":[41,42]}) %></li>

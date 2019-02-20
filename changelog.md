@@ -1,5 +1,9 @@
 ### ChangeLog
 
+__1.3.0__
+* PHP/JS/PY: support custom template finder per context or even an array of possible template dirs in order to find templates dynamicaly not already added/defined (js engine supports both sync and async operations plus promise-based) (see manual for details)
+* JS: fix and complete async template loading, parsing and rendering (fix a small issue with async parsing not updating regex) and also do **static analysis** (during compilation) on dynamic templates used inside calling template (ie using `tpl`/`template` functions) and **pre-load them async** (if in async opreation) in order to be rendered without blocking. If sync operations everything functions as before
+
 __1.2.5__
 * JS: enable asynchronous template loading, parsing and writing so that performance can be even greater in `Node.js` where `sync` methods may block. `Contemplate.tpl`, `Contemplate.getTemplateContents`, `Contemplate.parseTpl` all accept a `callback` (`nodeback`) as last argument with signature `function(err, result)` which if given all processing becomes **asynchronous**. Also if `Promises` are supported *"promisified"* versions of the above methods exist i.e `Contemplate.tplPromise`, `Contemplate.getTemplateContentsPromise`, `Contemplate.parseTplPromise` all return a `Promise` which resolves and rejects accordingly.
 * PHP/PY: update versions

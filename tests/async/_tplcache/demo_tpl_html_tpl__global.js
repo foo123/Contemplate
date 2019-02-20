@@ -11,7 +11,7 @@ else if ( ('function'===typeof define)&&define.amd&&('function'===typeof require
     define(name,['module'],function(module){factory.moduleUri = module.uri; return factory.call(root);});
 else if ( !(name in root) ) /* Browser/WebWorker/.. */
     (root[name] = factory.call(root)||1)&&('function'===typeof(define))&&define.amd&&define(function(){return root[name];} );
-}(this,'Contemplate_demo_tpl_html__global',function( ){
+}('undefined' !== typeof self ? self : this,'Contemplate_demo_tpl_html__global',function( ){
 "use strict";
 return function( Contemplate ) {
 /* Contemplate cached template 'demo.tpl.html', constructor */
@@ -29,9 +29,9 @@ function Contemplate_demo_tpl_html__global( id )
         "use strict";
         var __p__ = '';
         
-        __p__ += '' + "\n" + ' <code><b>$foo</b>=<b>' + (data.foo) + '</b></code>';
+        __p__ += '' + "\n" + ' ' + (Contemplate.tpl("common/foo.tpl.html", {"foo":data.foo})) + '' + "\n" + '';
         
-        __p__ += '' + "\n" + '' + (data.foo) + '' + "\n" + '';
+        __p__ += '' + "\n" + '' + (Contemplate.tpl("common/bar.tpl.html", {"bar":data.bar})) + '' + "\n" + '';
         return __p__;
         
     }
@@ -41,6 +41,7 @@ function Contemplate_demo_tpl_html__global( id )
     /* tpl-defined blocks render code ends here */
     /* extend tpl assign code starts here */
     self._extendsTpl = 'layout/base.tpl.html';
+    self._usesTpl = ['common/foo.tpl.html','common/bar.tpl.html'];
     /* extend tpl assign code ends here */
 }
 /* extends main Contemplate.Template class */

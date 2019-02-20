@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 1.2.0
+#  @version 1.3.0
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -103,6 +103,7 @@ class _G:
     currentblock = None
     
     extends = None
+    uses = None
     id = 0
     funcId = 0
     uuid = 0
@@ -371,6 +372,7 @@ def import_tpl( filename, classname, cacheDir, doReload=False ):
         found = False
         # try to recover from module not found if created just before importing
         # retry a specified amount of times untill succeeded
+        # TO FIND and FIX: still fails sometimes even with delay added and multiple retries
         while tries < max_tries and not found:
             tries += 1
             try:
@@ -504,6 +506,7 @@ def reset_state( ):
     _G.openblocks = [[None, -1]]
     
     _G.extends = None
+    _G.uses = []
     _G.level = 0
     _G.id = 0
     
@@ -526,6 +529,7 @@ def clear_state( ):
     _G.openblocks = [[None, -1]]
     
     #_G.extends = None
+    #_G.uses = []
     _G.level = 0
     
     _G.locals = None 
@@ -540,7 +544,7 @@ def clear_state( ):
 def push_state( ):
     global _G
     return [_G.loops, _G.ifs, _G.loopifs, _G.level,
-    _G.allblocks, _G.allblockscnt, _G.openblocks,  _G.extends, _G.locals, _G.variables, _G.currentblock]
+    _G.allblocks, _G.allblockscnt, _G.openblocks,  _G.extends, _G.locals, _G.variables, _G.currentblock, _G.uses]
 
 
 def pop_state( state ):
@@ -560,6 +564,7 @@ def pop_state( state ):
     _G.variables = state[9] 
     _G.currentblock = state[10]
 
+    _G.uses = state[11]
 
 def align( s, level=None ):
     global _G
@@ -667,6 +672,10 @@ def t_include( id ):
         tpl = get_template_contents( id, contx )
         tpl = get_separators( tpl )
         contx.partials[id] = "" + parse( tpl, _G.leftTplSep, _G.rightTplSep, False ) + "'" + _G.TEOL
+        # add usedTpls used inside include tpl to current usedTpls
+        for usedTpl in _G.uses:
+            if usedTpl not in state[11]:
+                state[11].append(usedTpl)
         pop_state( state )
     return align( contx.partials[id] ) # if id in contx.partials else _G.glob.partials[id]
 
@@ -955,6 +964,14 @@ def parse_constructs( match ):
             args = split_arguments(args,',')
             out = "(("+args[0]+") in ("+args[1]+"))"
         else:
+            if 18==m:
+                args2 = split_arguments(args,',')
+                usedTpl = args2[0]
+                if usedTpl.startswith('#STR_') and usedTpl in _G.strings:
+                    # only literal string support here
+                    usedTpl = _G.strings[usedTpl][1:-1] # without quotes
+                    if usedTpl not in _G.uses:
+                        _G.uses.append(usedTpl)
             out = 'Contemplate.' + ctrl + '(' + args + ')'
         return prefix + out + re.sub(re_controls, parse_constructs, rest)
     
@@ -1419,6 +1436,14 @@ def get_cached_template_class( id, ctx ):
 
 def get_template_contents( id, contx ):
     global _G
+    
+    if not Contemplate.hasTpl(id, contx.id):
+        found = Contemplate.findTpl(id, contx.id)
+        if not found: return ''
+        tpldef = {}
+        tpldef[id] = found
+        Contemplate.add(tpldef, contx.id)
+        
     if id in contx.templates: template = contx.templates[id]
     elif id in _G.glob.templates: template = _G.glob.templates[id]
     else: return ''
@@ -1484,6 +1509,7 @@ def create_cached_template( id, contx, filename, classname, seps=None ):
      'RCODE'                : "__p__ = ''" if _G.extends else "__p__ += '" + renderf + "'" 
     })
     extendCode = "self_.extend('"+_G.extends+"')" if _G.extends else ''
+    extendCode += EOL + "self_._usesTpl = ["+("'"+"','".join(_G.uses)+"'" if len(_G.uses) else '')+"]"
     prefixCode = contx.prefix if contx.prefix else ''
         
     # generate tpl class
@@ -1514,7 +1540,7 @@ def get_cached_template( id, contx, options=dict() ):
                 tpl.setRenderFunction( create_function('_contemplateFn' + str(_G.funcId), 'data,self_,__i__', align(options['parsed'], 1), {'Contemplate': Contemplate}) )
             else:
                 fns = create_template_render_function( id, contx, options['separators'] )
-                tpl.setRenderFunction( fns[0] ).setBlocks( fns[1] )
+                tpl.setRenderFunction( fns[0] ).setBlocks( fns[1] ).usesTpl( _G.uses )
             sprTpl = _G.extends
             if sprTpl: tpl.extend( Contemplate.tpl(sprTpl, None, contx.id) )
             return tpl
@@ -1570,7 +1596,7 @@ def get_cached_template( id, contx, options=dict() ):
             # dynamic in-memory caching during page-request
             fns = create_template_render_function( id, contx, options['separators'] )
             tpl = Contemplate.Template( id )
-            tpl.ctx( contx ).setRenderFunction( fns[0] ).setBlocks( fns[1] )
+            tpl.ctx( contx ).setRenderFunction( fns[0] ).setBlocks( fns[1] ).usesTpl( _G.uses )
             sprTpl = _G.extends
             if sprTpl: tpl.extend( Contemplate.tpl(sprTpl, None, contx.id) )
             return tpl
@@ -1709,6 +1735,7 @@ class Template:
         self._renderer = None
         self._blocks = None
         self._extends = None
+        self._usesTpl = None
         self._ctx = None
         self._autonomus = False
         self.id = None
@@ -1721,6 +1748,7 @@ class Template:
         self._renderer = None
         self._blocks = None
         self._extends = None
+        self._usesTpl = None
         self._ctx = None
         self._autonomus = None
         self.id = None
@@ -1740,6 +1768,10 @@ class Template:
     
     def extend( self, tpl ): 
         self._extends = Contemplate.tpl( tpl ) if tpl and isinstance(tpl, str) else (tpl if isinstance(tpl, Template) else None)
+        return self
+    
+    def usesTpl( self, usesTpls ): 
+        self._usesTpl = [usesTpls] if isinstance(usesTpls,str) else usesTpls
         return self
     
     def setBlocks( self, blocks ): 
@@ -1805,6 +1837,7 @@ class Ctx:
         self.cacheMode        = 0
         self.cache            = { }
         self.templateDirs     = [ ]
+        self.templateFinder   = None
         self.templates        = { }
         self.partials         = { }
         self.locale           = { }
@@ -1822,6 +1855,7 @@ class Ctx:
         self.cacheDir = None
         self.cacheMode = None
         self.templateDirs = None
+        self.templateFinder = None
         self.templates = None
         self.partials = None
         self.locale = None
@@ -1844,7 +1878,7 @@ class Contemplate:
     """
     
     # constants (not real constants in Python)
-    VERSION = "1.2.5"
+    VERSION = "1.3.0"
     
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -2108,6 +2142,21 @@ class Contemplate:
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         contx.cacheMode = mode
     
+    def setTemplateDirs( dirs, ctx='global' ): 
+        global _G
+        contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
+        contx.templateDirs = [dirs] if isinstance(dirs,str) else dirs
+    
+    def getTemplateDirs( ctx='global' ): 
+        global _G
+        contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
+        return contx.templateDirs
+    
+    def setTemplateFinder( finder, ctx='global' ): 
+        global _G
+        contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
+        contx.templateFinder = finder if callable(finder) else None
+    
     def clearCache( all=False, ctx='global' ): 
         global _G
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
@@ -2138,6 +2187,33 @@ class Contemplate:
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         return get_template_contents( id, contx )
     
+    
+    def findTpl( tpl, ctx='global' ):
+        global _G
+        contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
+        
+        if callable(contx.templateFinder):
+            return contx.templateFinder(tpl)
+            
+        if len(contx.templateDirs):
+            filename = tpl.lstrip('/\\')
+            for dir in contx.templateDirs:
+                path = dir.rstrip('/\\') + '/' + filename
+                if os.path.exists(path): return path
+            return None
+        
+        if contx != _G.glob:
+            contx = _G.glob
+            if callable(contx.templateFinder):
+                return contx.templateFinder(tpl)
+                
+            if len(contx.templateDirs):
+                filename = tpl.lstrip('/\\')
+                for dir in contx.templateDirs:
+                    path = dir.rstrip('/\\') + '/' + filename
+                    if os.path.exists(path): return path
+                return None
+        return None
     
     def parseTpl( tpl, options=dict() ):
         global _G
@@ -2216,6 +2292,13 @@ class Contemplate:
             if not contx: contx = _G.context # current context
             
             _G.escape = False if False == options['escape'] else True
+            
+            if 'parsed' not in options and not Contemplate.hasTpl(tpl, contx.id):
+                path = Contemplate.findTpl(tpl, contx.id)
+                if not path: return '' if isinstance(data, dict) else None
+                tpldef = {}
+                tpldef[tpl] = path
+                Contemplate.add(tpldef, contx.id)
             
             # Figure out if we're getting a template, or if we need to
             # load the template - and be sure to cache the result.

@@ -1,6 +1,6 @@
 <?php 
 
-if (!class_exists('Contemplate_sub__global'))
+if (!class_exists('Contemplate_sub__global', false))
 {
 /* Contemplate cached template 'sub' */
 final class Contemplate_sub__global extends ContemplateTemplate
@@ -12,7 +12,8 @@ public function __construct($id=null)
     parent::__construct( $id );
     
     /* extend tpl assign code starts here */
-
+    
+    $self->_usesTpl = array();
     /* extend tpl assign code ends here */
 }    
 /* tpl-defined blocks render code starts here */

@@ -66,7 +66,8 @@ Contemplate::setCacheDir(ABSPATH.'/_tplcache');
 Contemplate::setCacheMode(Contemplate::CACHE_TO_DISK_AUTOUPDATE);
 
 // add the templates paths
-Contemplate::add(array(
+global $TPLS;
+$TPLS = array(
     'main' => ABSPATH.'/_tpls/main.tpl.html',
     'base' => ABSPATH.'/_tpls/base.tpl.html',
     'demo' => ABSPATH.'/_tpls/demo.tpl.html',
@@ -74,7 +75,12 @@ Contemplate::add(array(
     'date' => ABSPATH.'/_tpls/date.tpl.html',
     // add an inline template
     'inlinetpl' => array('<% super("block") %><% for($list as $l=>$item) %> <% $l %> <% $item %><br /><% endfor %>')
-));
+);
+//Contemplate::add($TPLS);
+Contemplate::setTemplateFinder(function($tpl){
+    global $TPLS;
+    return isset($TPLS[$tpl]) ? $TPLS[$tpl] : null;
+});
 
 /*print_r(Contemplate::parseTpl( '<% %for($list as $l=>$item) %> <% $l %> <% $item %><br /><% %endfor() %>' ));*/
 

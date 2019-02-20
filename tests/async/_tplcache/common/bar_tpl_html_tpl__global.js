@@ -11,55 +11,16 @@ else if ( ('function'===typeof define)&&define.amd&&('function'===typeof require
     define(name,['module'],function(module){factory.moduleUri = module.uri; return factory.call(root);});
 else if ( !(name in root) ) /* Browser/WebWorker/.. */
     (root[name] = factory.call(root)||1)&&('function'===typeof(define))&&define.amd&&define(function(){return root[name];} );
-}('undefined' !== typeof self ? self : this,'Contemplate_base_tpl_html__global',function( ){
+}('undefined' !== typeof self ? self : this,'Contemplate_bar_tpl_html__global',function( ){
 "use strict";
 return function( Contemplate ) {
-/* Contemplate cached template 'layout/base.tpl.html', constructor */
-function Contemplate_base_tpl_html__global( id )
+/* Contemplate cached template 'common/bar.tpl.html', constructor */
+function Contemplate_bar_tpl_html__global( id )
 {
     var self = this;
     Contemplate.Template.call( self, id );
     /* tpl-defined blocks render code starts here */
-    
-    self._blocks = {
-    
-    
-    /* tpl block render method for block 'footer' */
-    'footer': function( Contemplate, data, self, __i__ ) {
-        "use strict";
-        var __p__ = '';
-        
-        __p__ += '';
-        return __p__;
-        
-    }
-    ,
-    
-    
-    /* tpl block render method for block 'section' */
-    'section': function( Contemplate, data, self, __i__ ) {
-        "use strict";
-        var __p__ = '';
-        
-        __p__ += '';
-        return __p__;
-        
-    }
-    ,
-    
-    
-    /* tpl block render method for block 'header' */
-    'header': function( Contemplate, data, self, __i__ ) {
-        "use strict";
-        var __p__ = '';
-        
-        __p__ += '';
-        return __p__;
-        
-    }
-    
-    };
-    
+
     /* tpl-defined blocks render code ends here */
     /* extend tpl assign code starts here */
     
@@ -67,21 +28,21 @@ function Contemplate_base_tpl_html__global( id )
     /* extend tpl assign code ends here */
 }
 /* extends main Contemplate.Template class */
-Contemplate_base_tpl_html__global.prototype = Object.create(Contemplate.Template.prototype);
+Contemplate_bar_tpl_html__global.prototype = Object.create(Contemplate.Template.prototype);
 /* render method */
-Contemplate_base_tpl_html__global.prototype.render = function( data, __i__ ) {
+Contemplate_bar_tpl_html__global.prototype.render = function( data, __i__ ) {
     "use strict";
     var self = this, __p__ = '', __ctx = false;
     !__i__&&(__i__=self)&&(self._autonomus||(__ctx=Contemplate._set_ctx( self._ctx )));
     /* tpl main render code starts here */
     
-    __p__ += '<header>' +  __i__.block('header', data);__p__ += '</header>' + "\n" + '' + "\n" + '<section>' +  __i__.block('section', data);__p__ += '</section>' + "\n" + '' + "\n" + '<footer>' +  __i__.block('footer', data);__p__ += '</footer>' + "\n" + '';
+    __p__ += '<code><b>$bar</b>=<b>' + (data.bar) + '</b></code>';
     
     /* tpl main render code ends here */
     __ctx&&Contemplate._set_ctx( __ctx );
     return __p__;
 };
 // export it
-return Contemplate_base_tpl_html__global;
+return Contemplate_bar_tpl_html__global;
 };
 });

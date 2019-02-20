@@ -1,7 +1,7 @@
 <% %>
 <!DOCTYPE html>
 <html>
-    <!-- PROOf Of CONCEPT
+    <!--
     /*
     *  Simple light-weight template engine for PHP, Python, Node, XPCOM and client-side JavaScript
     *  @author: Nikos M.  http://nikos-web-development.netai.net/
@@ -53,11 +53,24 @@
         }});
 
         /* add the templates */
-        Contemplate.add({
+        var TPLS = {
          'base'     : "#base_tpl"
         ,'demo'     : "#demo_tpl"
         ,'sub'      : "#sub_tpl"
         ,'date'     : "#date_tpl"
+        };
+        //Contemplate.add(TPLS);
+        Contemplate.setTemplateFinder(function(tpl,cb){
+            if ( Object.prototype.hasOwnProperty.call(TPLS, tpl) )
+            {
+                if ( 'function' === typeof cb ) return cb(TPLS[tpl]);
+                else return TPLS[tpl];
+            }
+            else
+            {
+                if ( 'function' === typeof cb ) return cb(null);
+                else return null;
+            }
         });
         Contemplate.addPlugin('plg_test', function(v){
             if ( v ) return 'Plugin Test value: ' + v;

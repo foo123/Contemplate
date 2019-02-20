@@ -1338,16 +1338,16 @@ class Contemplate
             $tpl = self::get_separators( $tpl );
             $state = self::push_state( );
             self::reset_state( );
-            $contx->partials[$id]=" " . self::parse( $tpl, self::$__leftTplSep, self::$__rightTplSep, false ) . "';" . self::$__TEOL;
-            // add usedTpls used inside include tpl to current usedTpls
-            foreach(self::$__uses as $usedTpl)
-            {
-                if ( !in_array($usedTpl, $state[11]))
-                    $state[11][] = $usedTpl;
-            }
+            $contx->partials[$id]=array(" " . self::parse( $tpl, self::$__leftTplSep, self::$__rightTplSep, false ) . "';" . self::$__TEOL, isset(self::$__uses) ? self::$__uses : array());
             self::pop_state( $state );
         }
-        return self::align( /*isset($contx->partials[$id]) ?*/ $contx->partials[$id] /*: self::$__global->partials[$id]*/ );
+        // add usedTpls used inside include tpl to current usedTpls
+        foreach($contx->partials[$id][1] as $usedTpl)
+        {
+            if ( !in_array($usedTpl, self::$__uses))
+                self::$__uses[] = $usedTpl;
+        }
+        return self::align( /*isset($contx->partials[$id]) ?*/ $contx->partials[$id][0] /*: self::$__global->partials[$id][0]*/ );
     }
     
     protected static function t_block( $block ) 

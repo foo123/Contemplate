@@ -671,13 +671,13 @@ def t_include( id ):
         tpl = get_separators( tpl )
         state = push_state( )
         reset_state( )
-        contx.partials[id] = "" + parse( tpl, _G.leftTplSep, _G.rightTplSep, False ) + "'" + _G.TEOL
-        # add usedTpls used inside include tpl to current usedTpls
-        for usedTpl in _G.uses:
-            if usedTpl not in state[11]:
-                state[11].append(usedTpl)
+        contx.partials[id] = ["" + parse( tpl, _G.leftTplSep, _G.rightTplSep, False ) + "'" + _G.TEOL, _G.uses[:] if _G.uses else []]
         pop_state( state )
-    return align( contx.partials[id] ) # if id in contx.partials else _G.glob.partials[id]
+    # add usedTpls used inside include tpl to current usedTpls
+    for usedTpl in contx.partials[id][1]:
+        if usedTpl not in _G.uses:
+            _G.uses.append(usedTpl)
+    return align( contx.partials[id][0] ) # if id in contx.partials else _G.glob.partials[id][0]
 
 def t_block( block ):
     global _G

@@ -667,10 +667,10 @@ def t_include( id ):
     
     # cache it
     if id not in contx.partials: #and (id not in _G.glob.partials):
-        state = push_state( )
-        reset_state( )
         tpl = get_template_contents( id, contx )
         tpl = get_separators( tpl )
+        state = push_state( )
+        reset_state( )
         contx.partials[id] = "" + parse( tpl, _G.leftTplSep, _G.rightTplSep, False ) + "'" + _G.TEOL
         # add usedTpls used inside include tpl to current usedTpls
         for usedTpl in _G.uses:
@@ -1455,9 +1455,9 @@ def get_template_contents( id, contx ):
 def create_template_render_function( id, contx, seps=None ):
     global _G
     
-    reset_state( )
     tpl = get_template_contents( id, contx )
     tpl = get_separators( tpl, seps )
+    reset_state( )
     blocks = parse( tpl, _G.leftTplSep, _G.rightTplSep )
     clear_state( )
     
@@ -1485,9 +1485,9 @@ def create_template_render_function( id, contx, seps=None ):
 def create_cached_template( id, contx, filename, classname, seps=None ):
     global _G
     
-    reset_state( )
     tpl = get_template_contents( id, contx )
     tpl = get_separators( tpl, seps )
+    reset_state( )
     blocks = parse( tpl, _G.leftTplSep, _G.rightTplSep )
     clear_state( )
     
@@ -1529,20 +1529,25 @@ def get_cached_template( id, contx, options=dict() ):
     if id in contx.templates: template = contx.templates[id]
     elif id in _G.glob.templates: template = _G.glob.templates[id]
     else: template = None
+    
+    if not options: options = {'context':contx.id,'autoUpdate':False}
+    parsed = options['parsed'] if 'parsed' in options else None
+    if 'parsed' in options: del options['parsed']
+    
     if template:
         # inline templates saved only in-memory
         if template[1]:
             # dynamic in-memory caching during page-request
             tpl = Contemplate.Template( )
             tpl.setId( id ).ctx( contx )
-            if 'parsed' in options:
+            if parsed:
                 _G.funcId += 1
-                tpl.setRenderFunction( create_function('_contemplateFn' + str(_G.funcId), 'data,self_,__i__', align(options['parsed'], 1), {'Contemplate': Contemplate}) )
+                tpl.setRenderFunction( create_function('_contemplateFn' + str(_G.funcId), 'data,self_,__i__', align(parsed, 1), {'Contemplate': Contemplate}) )
             else:
                 fns = create_template_render_function( id, contx, options['separators'] )
                 tpl.setRenderFunction( fns[0] ).setBlocks( fns[1] ).usesTpl( _G.uses )
             sprTpl = _G.extends
-            if sprTpl: tpl.extend( Contemplate.tpl(sprTpl, None, contx.id) )
+            if sprTpl: tpl.extend( Contemplate.tpl(sprTpl, None, options) )
             return tpl
         
         CM = contx.cacheMode
@@ -1598,7 +1603,7 @@ def get_cached_template( id, contx, options=dict() ):
             tpl = Contemplate.Template( id )
             tpl.ctx( contx ).setRenderFunction( fns[0] ).setBlocks( fns[1] ).usesTpl( _G.uses )
             sprTpl = _G.extends
-            if sprTpl: tpl.extend( Contemplate.tpl(sprTpl, None, contx.id) )
+            if sprTpl: tpl.extend( Contemplate.tpl(sprTpl, None, options) )
             return tpl
         
     return None

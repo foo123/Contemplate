@@ -1334,10 +1334,10 @@ class Contemplate
         /* cache it */ 
         if ( !isset($contx->partials[$id]) /*&& !isset(self::$__global->partials[$id])*/ )
         {
-            $state = self::push_state( );
-            self::reset_state( );
             $tpl = self::get_template_contents( $id, $contx );
             $tpl = self::get_separators( $tpl );
+            $state = self::push_state( );
+            self::reset_state( );
             $contx->partials[$id]=" " . self::parse( $tpl, self::$__leftTplSep, self::$__rightTplSep, false ) . "';" . self::$__TEOL;
             // add usedTpls used inside include tpl to current usedTpls
             foreach(self::$__uses as $usedTpl)
@@ -2363,9 +2363,9 @@ class Contemplate
     
     protected static function create_template_render_function( $id, $contx, $seps=null )
     {
-        self::reset_state( );
         $tpl = self::get_template_contents( $id, $contx );
         $tpl = self::get_separators( $tpl, $seps );
+        self::reset_state( );
         $blocks = self::parse( $tpl, self::$__leftTplSep, self::$__rightTplSep );
         self::clear_state( );
         
@@ -2393,9 +2393,9 @@ class Contemplate
     
     protected static function create_cached_template( $id, $contx, $filename, $classname, $seps=null )
     {
-        self::reset_state( );
         $tpl = self::get_template_contents( $id, $contx );
         $tpl = self::get_separators( $tpl, $seps );
+        self::reset_state( );
         $blocks = self::parse( $tpl, self::$__leftTplSep, self::$__rightTplSep );
         self::clear_state( );
         
@@ -2439,6 +2439,11 @@ class Contemplate
         if ( isset($contx->templates[$id]) ) $template = $contx->templates[$id];
         elseif ( isset(self::$__global->templates[$id]) ) $template = self::$__global->templates[$id];
         else $template = null;
+        
+        if ( empty($options) ) $options = array('context'=>$contx->id,'autoUpdate'=>false);
+        $parsed = isset($options['parsed']) ? $options['parsed'] : null;
+        if ( isset($options['parsed']) ) unset($options['parsed']);
+        
         if ( $template )
         {
             // inline templates saved only in-memory
@@ -2447,11 +2452,11 @@ class Contemplate
                 // dynamic in-memory caching during page-request
                 //return new Contemplate($id, self::create_template_render_function($id));
                 $tpl = new ContemplateTemplate( $id ); $tpl->ctx( $contx );
-                if ( isset($options['parsed']) && is_string($options['parsed']) )
+                if ( $parsed && is_string($parsed) )
                 {
                     // already parsed code was given
                     // create_function is deprecated in PHP 7.2+
-                    $tpl->setRenderFunction( @create_function('&$data,$self,$__i__', $options['parsed']) ); 
+                    $tpl->setRenderFunction( @create_function('&$data,$self,$__i__', $parsed) ); 
                 }
                 else
                 {
@@ -2459,7 +2464,7 @@ class Contemplate
                     $tpl->setRenderFunction( $fns[0] )->setBlocks( $fns[1] )->usesTpl( self::$__uses );
                 }
                 $sprTpl = self::$__extends;
-                if ( $sprTpl ) $tpl->extend( self::tpl($sprTpl, null, $contx->id) );
+                if ( $sprTpl ) $tpl->extend( self::tpl($sprTpl, null, $options) );
                 return $tpl;
             }
             
@@ -2536,7 +2541,7 @@ class Contemplate
                     $tpl = new ContemplateTemplate( $id );
                     $tpl->ctx( $contx )->setRenderFunction( $fns[0] )->setBlocks( $fns[1] )->usesTpl( self::$__uses );
                     $sprTpl = self::$__extends;
-                    if ( $sprTpl ) $tpl->extend( self::tpl($sprTpl, null, $contx->id) );
+                    if ( $sprTpl ) $tpl->extend( self::tpl($sprTpl, null, $options) );
                     return $tpl;
                 }
             }

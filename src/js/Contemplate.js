@@ -1914,8 +1914,8 @@ function create_template_render_function( id, contx, seps, cb )
                 cb(err, null);
                 return;
             }
-            reset_state( );
             tpl = get_separators( tpl, seps );
+            reset_state( );
             parse( tpl, $__leftTplSep, $__rightTplSep, true, function(err, blocks){
                 if ( err )
                 {
@@ -1943,9 +1943,9 @@ function create_template_render_function( id, contx, seps, cb )
     }
     else
     {
-        reset_state( );
         tpl = get_template_contents( id, contx );
         tpl = get_separators( tpl, seps );
+        reset_state( );
         blocks = parse( tpl, $__leftTplSep, $__rightTplSep, true );
         clear_state( );
         
@@ -1978,8 +1978,8 @@ function create_cached_template( id, contx, filename, classname, seps, cb )
                 cb(err, null);
                 return;
             }
-            reset_state( );
             tpl = get_separators( tpl, seps );
+            reset_state( );
             parse( tpl, $__leftTplSep, $__rightTplSep, true, function(err, blocks){
                 if ( err )
                 {
@@ -2028,9 +2028,9 @@ function create_cached_template( id, contx, filename, classname, seps, cb )
     }
     else
     {
-        reset_state( );
         tpl = get_template_contents( id, contx );
         tpl = get_separators( tpl, seps );
+        reset_state( );
         blocks = parse( tpl, $__leftTplSep, $__rightTplSep, true );
         clear_state( );
         
@@ -2072,7 +2072,7 @@ function get_cached_template( id, contx, options, cb )
 {
     cb = 'function' === typeof cb ? cb : null;
     var template, tplclass, tpl, sprTpl, funcs, cachedTplFile, cachedTplClass, stat, stat2,
-        exists, fname, fpath;
+        exists, fname, fpath, parsed;
     template = contx.templates[id] || $__global.templates[id] || null;
     if ( !template )
     {
@@ -2082,6 +2082,10 @@ function get_cached_template( id, contx, options, cb )
         }
         return null;
     }
+    options = options || {context:contx.id,autoUpdate:false};
+    parsed = options.parsed || null;
+    if ( HAS.call(options,'parsed') ) delete options.parsed;
+    
     if ( cb )
     {
         var setUsedTpls = function( tpl, cb ) {
@@ -2094,7 +2098,7 @@ function get_cached_template( id, contx, options, cb )
                         cb(null, tpl);
                         return;
                     }
-                    Contemplate.tpl(usedTpls[i], null, contx.id, function(err,usedtpl){
+                    Contemplate.tpl(usedTpls[i], null, options, function(err,usedtpl){
                         i++;
                         load_one( );
                     });
@@ -2114,7 +2118,7 @@ function get_cached_template( id, contx, options, cb )
                 sprTpl = $__extends || tpl._extendsTpl;
                 if ( sprTpl )
                 {
-                    Contemplate.tpl(sprTpl, null, contx.id, function(err, spr){
+                    Contemplate.tpl(sprTpl, null, options, function(err, spr){
                         if ( err )
                         {
                             cb(err, null);
@@ -2131,10 +2135,10 @@ function get_cached_template( id, contx, options, cb )
             };
             // dynamic in-memory caching during page-request
             tpl = new Contemplate.Template( id ).ctx( contx );
-            if ( options && options.parsed )
+            if ( parsed )
             {
                 // already parsed code was given
-                tpl.setRenderFunction( FUNC("Contemplate", options.parsed) );
+                tpl.setRenderFunction( FUNC("Contemplate", parsed) );
                 setSuper(tpl, function(err, ctpl){
                    if ( !err ) setUsedTpls(ctpl, cb);
                    else cb(err, null);
@@ -2170,7 +2174,7 @@ function get_cached_template( id, contx, options, cb )
                         tpl = new tplclass( id )/*.setId( id )*/.ctx( contx );
                         if ( sprTpl = tpl._extendsTpl )
                         {
-                            Contemplate.tpl(sprTpl, null, contx.id, function(err, spr){
+                            Contemplate.tpl(sprTpl, null, options, function(err, spr){
                                 if ( err )
                                 {
                                     cb(err, null);
@@ -2197,7 +2201,7 @@ function get_cached_template( id, contx, options, cb )
                             tpl = new tplclass( id )/*.setId( id )*/.ctx( contx );
                             if ( sprTpl = tpl._extendsTpl )
                             {
-                                Contemplate.tpl(sprTpl, null, contx.id, function(err, spr){
+                                Contemplate.tpl(sprTpl, null, options, function(err, spr){
                                     if ( err )
                                     {
                                         cb(err, null);
@@ -2232,7 +2236,7 @@ function get_cached_template( id, contx, options, cb )
                             tpl = new tplclass( id )/*.setId( id )*/.ctx( contx );
                             if ( sprTpl = tpl._extendsTpl )
                             {
-                                Contemplate.tpl(sprTpl, null, contx.id, function(err, spr){
+                                Contemplate.tpl(sprTpl, null, options, function(err, spr){
                                     if ( err )
                                     {
                                         cb(err, null);
@@ -2364,11 +2368,11 @@ function get_cached_template( id, contx, options, cb )
                         cb(err, null);
                         return;
                     }
-                    tpl = new Contemplate.Template( id ).ctx( contx ).setRenderFunction( funcs[ 0 ] ).setBlocks( funcs[ 1 ] );
+                    tpl = new Contemplate.Template( id ).ctx( contx ).setRenderFunction( funcs[ 0 ] ).setBlocks( funcs[ 1 ] ).usesTpl( $__uses );
                     sprTpl = $__extends;
                     if ( sprTpl )
                     {
-                        Contemplate.tpl(sprTpl, null, contx.id, function(err, spr){
+                        Contemplate.tpl(sprTpl, null, options, function(err, spr){
                             if ( err )
                             {
                                 cb(err, null);
@@ -2393,10 +2397,10 @@ function get_cached_template( id, contx, options, cb )
         {
             // dynamic in-memory caching during page-request
             tpl = new Contemplate.Template( id ).ctx( contx );
-            if ( options && options.parsed )
+            if ( parsed )
             {
                 // already parsed code was given
-                tpl.setRenderFunction( FUNC("Contemplate", options.parsed) );
+                tpl.setRenderFunction( FUNC("Contemplate", parsed) );
             }
             else
             {
@@ -2405,7 +2409,7 @@ function get_cached_template( id, contx, options, cb )
                 tpl.setRenderFunction( funcs[ 0 ] ).setBlocks( funcs[ 1 ] ).usesTpl( $__uses );
             }
             sprTpl = $__extends || tpl._extendsTpl;
-            if ( sprTpl ) tpl.extend( Contemplate.tpl(sprTpl, null, contx.id) );
+            if ( sprTpl ) tpl.extend( Contemplate.tpl(sprTpl, null, options) );
             return tpl;
         }
         
@@ -2437,7 +2441,7 @@ function get_cached_template( id, contx, options, cb )
                 {
                     tplclass = import_module( cachedTplClass, cachedTplFile )( Contemplate );
                     tpl = new tplclass( id )/*.setId( id )*/.ctx( contx );
-                    if ( tpl._extendsTpl ) tpl.extend(Contemplate.tpl(tpl._extendsTpl, null, contx.id));
+                    if ( tpl._extendsTpl ) tpl.extend(Contemplate.tpl(tpl._extendsTpl, null, options));
                     return tpl;
                 }
                 return null;
@@ -2477,7 +2481,7 @@ function get_cached_template( id, contx, options, cb )
                 {
                     tplclass = import_module( cachedTplClass, cachedTplFile )( Contemplate );
                     tpl = new tplclass( id )/*.setId( id )*/.ctx( contx );
-                    if ( tpl._extendsTpl ) tpl.extend(Contemplate.tpl(tpl._extendsTpl, null, contx.id));
+                    if ( tpl._extendsTpl ) tpl.extend(Contemplate.tpl(tpl._extendsTpl, null, options));
                     return tpl;
                 }
                 return null;
@@ -2489,7 +2493,7 @@ function get_cached_template( id, contx, options, cb )
                 funcs = create_template_render_function( id, contx, options.separators );
                 tpl = new Contemplate.Template( id ).ctx( contx ).setRenderFunction( funcs[ 0 ] ).setBlocks( funcs[ 1 ] ).usesTpl( $__uses );
                 sprTpl = $__extends || tpl._extendsTpl;
-                if ( sprTpl ) tpl.extend( Contemplate.tpl(sprTpl, null, contx.id) );
+                if ( sprTpl ) tpl.extend( Contemplate.tpl(sprTpl, null, options) );
                 return tpl;
             }
         }

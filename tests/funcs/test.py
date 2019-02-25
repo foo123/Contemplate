@@ -13,7 +13,7 @@ import os
 # import the Contemplate.py engine (as a) module, probably you will want to place this in another dir/package
 Contemplate = import_module('Contemplate', os.path.join(os.path.dirname(__file__), '../../src/python/'))
 
-print(Contemplate.sprintf("%s is 1st argument, %s is 2nd argument, %06.2f",["arg1","arg2", 3.141592653589793]))
+print(Contemplate.sprintf("%s is 1st argument, %s is 2nd argument, %06.2f","arg1","arg2", 3.141592653589793))
 print(Contemplate.vsprintf("%2$s is 2nd argument, %1$s is 1st argument, %3$06.2f",["arg1","arg2", 3.141592653589793]))
 
 print(Contemplate.queryvar("https://example.com?key1=1&key2[]=21&key2[]=22",None,["key1"]))

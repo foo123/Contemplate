@@ -365,7 +365,7 @@ def sprintf_( fmt, args ):
 def sprintf( format, *args ):
     #if len(args) and isinstance(args[0],(list,tuple)): args = args[0]
     #return format % tuple(args)
-    return sprintf_(format, *args)
+    return sprintf_(format, args)
 
 def vsprintf( format, args ):
     #return format % tuple(args)

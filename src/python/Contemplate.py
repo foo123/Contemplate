@@ -158,7 +158,7 @@ class _G:
     'inline', 'tpl', 'uuid', 'haskey',
     'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
     'is_array', 'in_array', 'json_encode', 'json_decode',
-    'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale', 'join', 'queryvar', 'striptags'
+    'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale', 'join', 'queryvar', 'striptags', 'vsprintf'
     ]
     aliases = {
      'l'        : 'locale'
@@ -318,12 +318,58 @@ def localized_date( format, timestamp ):
     return localised_datetime
 
 
+sprintf_format_re = re.compile(r'%%|%(\d+\$)?([-+\'#0 ]*)(\*\d+\$|\*|\d+)?(\.(\*\d+\$|\*|\d+))?([scboxXuideEfFgG])', re.S)
+def sprintf_( fmt, args ):
+    global sprintf_format_re
+    
+    class nonlocal_:
+        index = 0
+        
+    def do_format( m ):
+        match = m.group(0)
+        if '%%' == match: return match
+        
+        valueIndex = m.group(1)
+        flags = m.group(2)
+        minWidth = m.group(3)
+        precision = m.group(4)
+        #precision = m.group(5)
+        type = m.group(6)
+        
+        if valueIndex:
+            repl = '%(arg_'+str(int(valueIndex[0:-1])-1)+')'
+        else:
+            repl = '%(arg_'+str(nonlocal_.index)+')'
+            nonlocal_.index += 1
+        
+        if flags:
+            repl += flags
+        if minWidth:
+            repl += minWidth
+        if precision:
+            repl += precision
+        if type:
+            repl += type
+        return repl
+        
+    fmt = re.sub(sprintf_format_re, do_format, fmt)
+    
+    arguments = {}
+    index = 0
+    for arg in args:
+        arguments['arg_'+str(index)] = arg
+        index += 1
+    
+    return fmt % arguments
+
 def sprintf( format, *args ):
     #if len(args) and isinstance(args[0],(list,tuple)): args = args[0]
-    return format % tuple(args)
+    #return format % tuple(args)
+    return sprintf_(format, *args)
 
 def vsprintf( format, args ):
-    return format % tuple(args)
+    #return format % tuple(args)
+    return sprintf_(format, args)
 
 #
 #  Auxilliary methods 
@@ -2474,9 +2520,8 @@ class Contemplate:
     def concat( *args ):
         return ''.join(args)
         
-    def sprintf( format, *args ):
-        if len(args)>0: return format % args
-        return ''
+    sprintf = sprintf
+    vsprintf = vsprintf
     
     #
     #  Localization functions

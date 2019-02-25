@@ -1,6 +1,6 @@
 ### Contemplate Manual
 
-**version 1.2.0; platforms: PHP, Python, Node/XPCOM/JS**
+**version 1.3.0; platforms: PHP, Python, Browser, Node/XPCOM/JS**
 
 
 ### Contents
@@ -168,7 +168,8 @@ TEMPLATE operations take place in the `current` context (which defaults to `glob
 * `json_decode( val )`  (`php`-like) function to json-decode `val`
 * `addslashes( str )`  addslashes (`php`-like) function
 * `stripslashes( str )`  stripslashes (`php`-like) function
-* `sprintf( format, val1, val2, .. )`   return a formatted string using `val1`, `val2`, etc..
+* `sprintf( format, val1, val2, .. )`   return a formatted string using `val1`, `val2`, etc.. as arguments
+* `vsprintf( format, values )`   return a formatted string using `values` array as arguments
 * `concat( val1, val2, val3, .. )` / `cc( val1, val2, val3, .. )`  string concatenate the values
 * `join( sep, [val2, val3, ..], skip_empty=false )` / `j( sep, [val2, val3, ..], skip_empty=false )` (flatly) string-concatenate with `sep` separator the passed array (of arrays)
 * `ltrim( val [, delim] )`   left trim `val` of delim (default to spaces)

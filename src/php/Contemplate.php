@@ -430,7 +430,7 @@ class Contemplate
     'inline', 'tpl', 'uuid', 'haskey',
     'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
     'is_array', 'in_array', 'json_encode', 'json_decode',
-    'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale', 'join', 'queryvar', 'striptags'
+    'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale', 'join', 'queryvar', 'striptags', 'vsprintf'
     );
     protected static $__aliases = array(
      'l'        => 'locale'
@@ -1658,6 +1658,7 @@ class Contemplate
                 case 10: $out = 'ucfirst(' . $args . ')'; break;
                 case 11: $out = 'lcfirst(' . $args . ')'; break;
                 case 12: $out = 'sprintf(' . $args . ')'; break;
+                case 40: $out = 'vsprintf(' . $args . ')'; break;
                 case 13: $out = 'date(' . $args . ')'; break;
                 case 21: $out = '('.implode(').(',self::split_arguments($args,',')).')'; break;
                 case 22: $out = 'ltrim(' . $args . ')'; break;

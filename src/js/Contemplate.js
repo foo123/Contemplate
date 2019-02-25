@@ -101,7 +101,7 @@ var __version__ = "1.3.0", Contemplate,
     'inline', 'tpl', 'uuid', 'haskey',
     'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
     'is_array', 'in_array', 'json_encode', 'json_decode',
-    'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale', 'join', 'queryvar', 'striptags'
+    'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale', 'join', 'queryvar', 'striptags', 'vsprintf'
     ],
     $__aliases = {
      'l'        : 'locale'
@@ -3827,6 +3827,9 @@ Contemplate = {
         return join.call( arguments, '' ); 
     }
     ,sprintf: sprintf
+    ,vsprintf: function( fmt, args ) {
+        return sprintf.apply(null, [fmt].concat(args||[]));
+    }
     
     //
     //  Localization functions

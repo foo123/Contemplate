@@ -6,6 +6,12 @@ function echo_($s)
 }
 include dirname(dirname(ABSPATH)).'/src/php/Contemplate.php';
 
+$tpl = '<% for($v in $list) %><% $v %><% endfor %>';
+Contemplate::add(array(
+'inline' => array($tpl)
+));
+
+echo_(Contemplate::tpl('inline', array('list'=>array(1,2,3))));
 echo_(Contemplate::queryvar("https://example.com?key1=1&key2[]=21&key2[]=22",null,array("key1")));
 echo_(Contemplate::queryvar("https://example.com?key1=1&key2[]=21&key2[]=22",null,array("key2")));
 echo_(Contemplate::queryvar("https://example.com?key1=1&key2[]=21&key2[]=22",array("key3"=>3,"key4"=>array(41,42))));

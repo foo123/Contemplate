@@ -12,6 +12,22 @@
 **/
 if (!class_exists('Contemplate', false))
 {
+// create_function is depreceated in PHP 7.2.0+
+if ( version_compare(PHP_VERSION, '7.2.0', '>=') )
+{
+    
+    function Contemplate_create_dynamic_function_($args, $code)
+    {
+        return eval('return function('.$args.'){'.$code.'};');
+    }
+}
+else
+{
+    function Contemplate_create_dynamic_function_($args, $code)
+    {
+        return create_function($args, $code);
+    }
+}
 class ContemplateInlineTemplate
 { 
     public $id = null;
@@ -78,7 +94,7 @@ class ContemplateInlineTemplate
         }
         $out .= ');';
         // create_function is deprecated in PHP 7.2+
-        return @create_function('$args', $out);
+        return Contemplate_create_dynamic_function_('$args', $out);
     }
     
     public function __construct( $tpl='', $replacements=null, $compiled=false ) 
@@ -122,7 +138,7 @@ class ContemplateInlineTemplate
         if ( $this->_renderer )
         {
             $renderer = $this->_renderer;
-            return $renderer( $args );
+            return call_user_func($renderer, $args);
         }
         
         $tpl =& $this->tpl; 
@@ -2381,13 +2397,13 @@ class Contemplate
         ));
         
         // create_function is deprecated in PHP 7.2+
-        $fn = @create_function('&$data,$self,$__i__', $func);
+        $fn = Contemplate_create_dynamic_function_('&$data,$self,$__i__', $func);
         
         $blockfns = array();  
         for($b=0; $b<$bl; $b++) 
         {
             // create_function is deprecated in PHP 7.2+
-            $blockfns[$blocks[$b][0]] = @create_function('&$data,$self,$__i__', $blocks[$b][1]);
+            $blockfns[$blocks[$b][0]] = Contemplate_create_dynamic_function_('&$data,$self,$__i__', $blocks[$b][1]);
         }
         return array($fn, $blockfns);
     }
@@ -2457,7 +2473,7 @@ class Contemplate
                 {
                     // already parsed code was given
                     // create_function is deprecated in PHP 7.2+
-                    $tpl->setRenderFunction( @create_function('&$data,$self,$__i__', $parsed) ); 
+                    $tpl->setRenderFunction( Contemplate_create_dynamic_function_('&$data,$self,$__i__', $parsed) ); 
                 }
                 else
                 {

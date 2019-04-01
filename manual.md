@@ -1,6 +1,6 @@
 ### Contemplate Manual
 
-**version 1.3.0; platforms: PHP, Python, Browser, Node/XPCOM/JS**
+**version 1.4.0; platforms: PHP, Python, Node.js, Browser, XPCOM Javascript**
 
 
 ### Contents
@@ -27,14 +27,17 @@ in the first non-empty line, separated by a space (see examples and tests). Opti
 #### Template Variables
 
 
-Variables in a template are referenced using `PHP`-style Notation with `$` sign. 
+Variables in a template are referenced using `PHP`-style Notation with `$` sign.
+Note Object properties are referenced using (php-style) arrow notation (`->`)
 
 example:
 
 ```javascript
 
+// single variable
 $x 
 
+// array notation
 $obj["key"]
 
 $obj.key  // this will also work
@@ -48,6 +51,13 @@ $obj["key"].key2
 $obj.key["key2"]  // this will also work
 
 $obj.key.key2  // this will also work
+
+// object notation
+$obj->prop
+
+$obj->method()
+
+$obj->prop->prop2
 
 // etc..
 
@@ -164,6 +174,8 @@ TEMPLATE operations take place in the `current` context (which defaults to `glob
 * `qq( val )` / `dq( val )`  wrap `val` in double-quotes
 * `is_array( val [, strict=false] )`  (`php`-like) function test whether `val` is `array` (`strict`) or `object`
 * `in_array( val, array )`  (`php`-like) function test whether `val` is contained in `array`
+* `keys( obj )`  (`php`-like) for `array_keys`
+* `values( obj )`  (`php`-like) for `array_values`
 * `json_encode( val )`  (`php`-like) function to json-encode `val`
 * `json_decode( val )`  (`php`-like) function to json-decode `val`
 * `addslashes( str )`  addslashes (`php`-like) function
@@ -195,6 +207,8 @@ TEMPLATE operations take place in the `current` context (which defaults to `glob
 * `tpl( tpl_id_string, {"var1" : val1, "var2" : val2, ..} )` / `template( tpl_id_string, {"var1" : val1, "var2" : val2, ..} )`  CALL a subtemplate referenced by 'tpl_id', passing the necessary data
 * `e( val )`   custom fast html escape
 * `url( val )`  url-encode val (`urlencode`)
+* `buildquery( data )`  `php`-like function `http_build_query` to make a query string from structured data
+* `parsequery( str )`  `php`-like function `parse_str` to parse a query string to structured data
 * `queryvar( url, add_keys, remove_keys=null )`  add/remove `url query` keys, given in `add_keys` and `remove_keys` respectively, from given `url`
 * `striptags( string )`  strip `html tags` from string
 * `pluginName( [val1, val2, ..] )`  call a custom (user-defined) `plugin` as a template function (see examples)

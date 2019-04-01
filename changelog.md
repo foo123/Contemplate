@@ -1,5 +1,10 @@
 ### ChangeLog
 
+__1.4.0__
+* support `php`-like object accesss notation (arrow notation `->`) to support not only strictly arrays as template data but arbitrary objects as well (works same for all js/php/python)
+* add new template functions `keys` (php-like `array_keys`), `values` (php-like `array_values`), `buildquery` (php-like `http_build_query`), `parsequery` (php-like `parse_str`)
+* update tests and live examples along with contemplate grammar
+
 __1.3.0__
 * PHP/JS/PY: support custom template finder per context or even an array of possible template dirs in order to find templates dynamicaly not already added/defined (js engine supports both sync and async operations plus promise-based) (see manual for details)
 * PHP/JS/PY: add template function `vsprintf` similar to `sprintf` but accepts an array of arguments instead of them being passed individualy as separate arguments during function call (can be useful when needing to format string based on arguments from data or parameters)

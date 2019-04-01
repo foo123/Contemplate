@@ -309,6 +309,10 @@
     <li>is_array({"1":1,"2":2,"3":3},true) = <% is_array({"1":1,"2":2,"3":3},true) %></li>
     <li>in_array(2,[1,2,3]) = <% in_array(2,[1,2,3]) %></li>
     <li>in_array(4,[1,2,3]) = <% in_array(4,[1,2,3]) %></li>
+    <li>keys([1,2,3]) = <% plg_print(keys([1,2,3])) %></li>
+    <li>keys({"1":1,"2":2,"3":3}) = <% plg_print(keys({"1":1,"2":2,"3":3})) %></li>
+    <li>values([1,2,3]) = <% plg_print(values([1,2,3])) %></li>
+    <li>values({"1":1,"2":2,"3":3}) = <% plg_print(values({"1":1,"2":2,"3":3})) %></li>
     <li>json_encode({"array":[1,2,3]}) = <% plg_print(json_encode({"array":[1,2,3]})) %></li>
     <li>json_decode('{"array":[1,2,3]}') = <% plg_print(json_decode('{"array":[1,2,3]}')) %></li>
     <li>q(123) = <% q(123) %></li>
@@ -331,6 +335,8 @@
     <li>xl(&quot;locale&quot;,null,&quot;custom&quot;) = xlocale(&quot;locale&quot;,null,&quot;custom&quot;) = <% xl("locale",null,"custom") %> = <% xlocale("locale",null,"custom") %></li>
     <li>nxl(2,&quot;locale&quot;,&quot;locales&quot;,null,&quot;custom&quot;) = nxlocale(2,&quot;locale&quot;,&quot;locales&quot;,null,&quot;custom&quot;) = <% nxl(2,"locale","locales",null,"custom") %> = <% nxlocale(2,"locale","locales",null,"custom") %></li>
     <li>e(&#39;&lt;ok k=&quot;v&quot;&gt;&#39;) = <% e("<ok k=\"v\">") %></li>
+    <li>buildquery({"foo":["bar","baz"]}) = <% buildquery({"foo":["bar","baz"]}) %></li>
+    <li>parsequery("foo[0]=bar&foo[1]=baz") = <% plg_print(parsequery("foo[0]=bar&foo[1]=baz")) %></li>
     <li>queryvar("https://example.com?key1=1&key2[]=21&key2[]=22",null,["key2"]) = <% queryvar("https://example.com?key1=1&key2[]=21&key2[]=22",null,["key2"]) %></li>
     <li>queryvar("https://example.com?key1=1&key2[]=21&key2[]=22",{"key3":3,"key4":[41,42]}) = <% queryvar("https://example.com?key1=1&key2[]=21&key2[]=22",{"key3":3,"key4":[41,42]}) %></li>
     <li>queryvar("https://example.com?key1=1&key2[]=21&key2[]=22",{"key3":3,"key4":[41,42]},["key2"]) = <% queryvar("https://example.com?key1=1&key2[]=21&key2[]=22",{"key3":3,"key4":[41,42]},["key2"]) %></li>

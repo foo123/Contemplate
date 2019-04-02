@@ -18,5 +18,5 @@ function test()
     this.prop = 'prop';
     this.func = function(){ return 'func'; };
 }
-
-echo(Contemplate.tpl('test', {'v':new test()}));
+var arr = ['foo',{'prop':'prop'}];
+echo(Contemplate.tpl('test', {'v':new test(),'a':arr}));

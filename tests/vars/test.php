@@ -23,4 +23,5 @@ class test
     public function func(){ return 'func'; }
 }
 
-echo_(Contemplate::tpl('test', array('v'=>new test())));
+$arr = array('foo',array('prop'=>'prop'));
+echo_(Contemplate::tpl('test', array('v'=>new test(),'a'=>$arr)));

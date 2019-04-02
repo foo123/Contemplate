@@ -3749,12 +3749,12 @@ Contemplate = {
     }
 
     ,haskey: function( v/*, key1, key2, etc.. */ ) {
-        var to_string = toString.call( v ), args, i, tmp;
-        if (!v || "[object Array]" !== to_string && "[object Object]" !== to_string) return false;
+        var args, i, tmp;
+        if (!v || !Contemplate.is_array(v)) return false;
         args = arguments; tmp = v;
         for (i=1; i<args.length; i++)
         {
-            if ( null==tmp || !HAS.call(tmp,args[i]) ) return false;
+            if ( null==tmp || !Contemplate.is_array(tmp) || !HAS.call(tmp,args[i]) ) return false;
             tmp = tmp[ args[i] ];
         }
         return true;

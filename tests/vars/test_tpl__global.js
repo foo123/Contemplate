@@ -36,7 +36,7 @@ Contemplate_test__global.prototype.render = function( data, __i__ ) {
     !__i__&&(__i__=self)&&(self._autonomus||(__ctx=Contemplate._set_ctx( self._ctx )));
     /* tpl main render code starts here */
     
-    __p__ += '' + "\n" + '' + (data.v.prop) + '' + "\n" + '' + "\n" + '' + (data.v.func(Contemplate.url(data.v.prop))) + '' + "\n" + '';
+    __p__ += '' + "\n" + '' + (data.v.prop) + '' + "\n" + '' + "\n" + '' + (data.v.func(Contemplate.url(data.v.prop))) + '' + "\n" + '' + "\n" + '' + (data.a[0]) + '' + "\n" + '' + "\n" + '' + (data.a[1].prop) + '' + "\n" + '';
     
     /* tpl main render code ends here */
     __ctx&&Contemplate._set_ctx( __ctx );

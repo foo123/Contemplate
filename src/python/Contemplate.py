@@ -33,8 +33,8 @@ ODict = dict
 
 
 #except ImportError:
-# Python 2.x
-import cgi
+#   # Python 2.x
+#   import cgi
 
 try:
     # Python 3.x
@@ -2632,13 +2632,19 @@ class Contemplate:
         return re.sub(_G.TAG_RE, '', s)
 
     def haskey( v, *args ):
-        if not v or not (isinstance(v, list) or isinstance(v, dict)): return False
-        argslen = len(args)
+        if not v or not isinstance(v, (list,dict)): return False
         tmp = v
-        for i in range(argslen):
-
-            if args[i] not in tmp: return False
-            tmp = tmp[args[i]]
+        for i in range(len(args)):
+            if isinstance(tmp,(list,tuple)):
+                k = int(args[i])
+                if k < 0 or k >= len(tmp): return False
+                tmp = tmp[k]
+            elif isinstance(tmp,dict):
+                k = str(args[i])
+                if k not in tmp: return False
+                tmp = tmp[k]
+            else:
+                return False
         return True
 
     def empty( v ):

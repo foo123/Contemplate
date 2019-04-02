@@ -52,7 +52,7 @@ public function render(&$data, $__i__=null)
     {
         /* tpl main render code starts here */
         
-        $__p__ .= '' . "\n" . '' . ($data['v']->prop) . '' . "\n" . '' . "\n" . '' . ($data['v']->func(Contemplate::url($data['v']->prop))) . '' . "\n" . '';
+        $__p__ .= '' . "\n" . '' . ($data['v']->prop) . '' . "\n" . '' . "\n" . '' . ($data['v']->func(Contemplate::url($data['v']->prop))) . '' . "\n" . '' . "\n" . '' . ($data['a'][0]) . '' . "\n" . '' . "\n" . '' . ($data['a'][1]['prop']) . '' . "\n" . '';
         
         /* tpl main render code ends here */
     }

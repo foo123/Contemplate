@@ -32,4 +32,5 @@ class test:
         return 'func'
 
 
-print(Contemplate.tpl('test', {'v':test()}))
+arr = ['foo',{'prop':'prop'}]
+print(Contemplate.tpl('test', {'v':test(),'a':arr}))

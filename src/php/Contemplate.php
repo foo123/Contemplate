@@ -1084,7 +1084,7 @@ class Contemplate
         $tmp = $v;
         for ($i=1; $i<$argslen; $i++)
         {
-            if (!array_key_exists($args[$i], $tmp)) return false;
+            if ( !is_array($tmp) || !array_key_exists($args[$i], $tmp) ) return false;
             $tmp = $tmp[$args[$i]];
         }
         return true;

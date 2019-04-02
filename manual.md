@@ -28,37 +28,42 @@ in the first non-empty line, separated by a space (see examples and tests). Opti
 
 
 Variables in a template are referenced using `PHP`-style Notation with `$` sign.
-Note Object properties are referenced using (php-style) arrow notation (`->`)
+**Note** Object properties are referenced using (`php`-style) arrow notation (`->`)
 
 example:
 
-```javascript
+```php
 
 // single variable
-$x 
+$x, $v, $foo, $bar 
+// etc..
 
-// array notation
+// numeric/associative array access notation, equivalent notations
+//================================================================
 $obj["key"]
-
-$obj.key  // this will also work
+$obj.key
 
 $obj[0]["key"]
+$obj[0].key
 
-$obj.0.key  // this will also work
+$obj["key"][0]
+$obj.key[0]
 
 $obj["key"].key2
+$obj.key["key2"]
+$obj.key.key2
 
-$obj.key["key2"]  // this will also work
+// access associative array property, property name is dynamic and given in variable $prop
+$obj[$prop]
 
-$obj.key.key2  // this will also work
-
-// object notation
+// object access notation
+//=======================
 $obj->prop
-
 $obj->method()
-
 $obj->prop->prop2
 
+
+// any valid combination of the above
 // etc..
 
 ```
@@ -68,7 +73,7 @@ $obj->prop->prop2
 #### Literal Template Data
 
 
-Literal `object`/`array` data are constructed in a template using `JavaScript` Literal Object-style Notation (similar to `JSON`)
+Literal `object`/`array` data are constructed in a template using `JavaScript` **Literal Object-style Notation** (similar to `JSON`)
 
 example:
 

@@ -7,8 +7,11 @@ Contemplate::add(array(
     "test_uncached"     => THISPATH.'/contemplate.tpl.html',
     "test_cached"       => THISPATH.'/contemplate.tpl.html'
 ));
-//Contemplate::setCacheDir(THISPATH);
-Contemplate::setCacheMode(Contemplate::CACHE_TO_DISK_NONE);
+Contemplate::setCacheDir(THISPATH);
+Contemplate::setCacheMode(Contemplate::CACHE_TO_DISK_AUTOUPDATE);
+
+@unlink(THISPATH.'/test_uncached_tpl__global.php');
+@unlink(THISPATH.'/test_cached_tpl__global.php');
 
 // escape function for raw output
 function escape ($val, $charset = 'UTF-8')
@@ -38,14 +41,16 @@ function avg_perf( $n, $func, $args=null )
     $avg_t = 0; $avg_m = 0;
     for($i=0; $i<$n; $i++)
     {
+        ob_start();
         $start = microtime(true);
         $mem = memory_get_peak_usage();
         call_user_func( $func, $args );
         $t = microtime(true) - $start;
         $mem = memory_get_peak_usage() - $mem;
-        $avg_t += $t/$n; $avg_m += $mem/$n;
+        ob_end_clean();
+        $avg_t += $t; $avg_m += $mem;
     }
-    return array(1000*$avg_t, round($avg_m/1000));
+    return array(1000*$avg_t/$n, round($avg_m/1000/$n));
 }
 
 $data1 = array(
@@ -58,11 +63,10 @@ $data2 = array(
     'show_people' => true,
     'people'    => array('person 1','person 2','person 3','person 4','person 5')
 );
-$perf1 = avg_perf(20, 'template_raw',       $data1);
-$perf2 = avg_perf(20, 'template_uncached',  $data2);
-$perf3 = avg_perf(20, 'template_cached',    $data2);
+$perf1 = avg_perf(1000, 'template_raw',       $data1);
+$perf2 = avg_perf(1000, 'template_uncached',  $data2);
+$perf3 = avg_perf(1000, 'template_cached',    $data2);
 
-echo "\n\n";
 echo "\n            PHP (raw) : Time = {$perf1[0]} ms, Mem = {$perf1[1]} KB";
 echo "\nContemplate (nocache) : Time = {$perf2[0]} ms, Mem = {$perf2[1]} KB";
 echo "\n  Contemplate (cache) : Time = {$perf3[0]} ms, Mem = {$perf3[1]} KB";

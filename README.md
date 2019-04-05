@@ -1,7 +1,7 @@
 Contemplate
 ===========
 
-__Light-weight, fast and flexible "object-oriented" template engine for PHP, Python, Node.js, XPCOM and Browser client-side JavaScript__
+__Light-weight, fast and flexible "object-oriented" template engine for PHP, Python, Node.js, Browser client-side and XPCOM JavaScript__
 
 
 ![Contemplate](/screenshots/contemplate.jpg)

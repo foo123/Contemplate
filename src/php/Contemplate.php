@@ -1090,7 +1090,7 @@ class Contemplate
         return true;
     }
 
-    public static function GET( $v, $keys, $default_value=null )
+    public static function get( $v, $keys, $default_value=null )
     {
         if ( !is_array($keys) ) $keys = array($keys);
         $o = $v;
@@ -1508,7 +1508,7 @@ class Contemplate
                     break;
                 case 21 /*'get'*/:
                     $args = preg_replace_callback( $re_controls, $parse_constructs, $args );
-                    $out = $prefix . 'Contemplate::GET(' . $args . ')';
+                    $out = $prefix . 'Contemplate::get(' . $args . ')';
                     break;
                 case 1 /*'unset'*/:
                     $args = preg_replace_callback( $re_controls, $parse_constructs, $args );

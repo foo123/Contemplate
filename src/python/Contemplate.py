@@ -977,7 +977,7 @@ def parse_constructs( match ):
             out = "'" + _G.TEOL + align( varname + ' = ('+ expr +')' ) + _G.TEOL
         elif 21==m: # get
             args = re.sub(re_controls, parse_constructs, args)
-            out = prefix + 'Contemplate.GET(' + args + ')'
+            out = prefix + 'Contemplate.get(' + args + ')'
         elif 1==m: # unset
             args = re.sub(re_controls, parse_constructs, args)
             varname = args
@@ -2650,7 +2650,7 @@ class Contemplate:
                 return False
         return True
 
-    def GET( v, keys, default_value=None ):
+    def get( v, keys, default_value=None ):
         if not Contemplate.is_array(keys, True): keys = [keys]
         o = v
         found = 1

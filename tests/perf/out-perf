@@ -1,4 +1,4 @@
 
-            PHP (raw) : Time = 0.098005056381226 ms, Mem = 0 KB
-Contemplate (nocache) : Time = 0.25701498985291 ms, Mem = 0 KB
-  Contemplate (cache) : Time = 0.0060000419616699 ms, Mem = 0 KB
+            PHP (raw) : Time = 0.10920000076294 ms, Mem = 0 KB
+Contemplate (nocache) : Time = 0.23399996757507 ms, Mem = 0 KB
+  Contemplate (cache) : Time = 0.015599966049194 ms, Mem = 0 KB

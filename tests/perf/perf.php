@@ -10,30 +10,32 @@ Contemplate::add(array(
 Contemplate::setCacheDir(THISPATH);
 Contemplate::setCacheMode(Contemplate::CACHE_TO_DISK_AUTOUPDATE);
 
-@unlink(THISPATH.'/test_uncached_tpl__global.php');
-@unlink(THISPATH.'/test_cached_tpl__global.php');
+//@unlink(THISPATH.'/test_uncached_tpl__global.php');
+//@unlink(THISPATH.'/test_cached_tpl__global.php');
 
 // escape function for raw output
 function escape ($val, $charset = 'UTF-8')
 {
-	return htmlspecialchars ($val, ENT_QUOTES, $charset);
+	return htmlspecialchars($val, ENT_QUOTES, $charset);
 }
 
 // function to render the template
-function template_raw( $data )
+function template_raw( $____DATA____ )
 {
-    extract( $data );
-	require( THISPATH.'/php.tpl.php' );
+    ob_start();
+    extract( $____DATA____ );
+	include( THISPATH . '/php.tpl.php' );
+    return ob_get_clean();
 }
 
 function template_uncached( $data )
 {
-    $tpl = Contemplate::tpl("test_uncached", $data, array('refresh'=>true));
+    return Contemplate::tpl("test_uncached", $data, array('refresh'=>true));
 }
 
 function template_cached( $data )
 {
-    Contemplate::tpl("test_cached", $data);
+    return Contemplate::tpl("test_cached", $data);
 }
 
 function avg_perf( $n, $func, $args=null )
@@ -41,13 +43,11 @@ function avg_perf( $n, $func, $args=null )
     $avg_t = 0; $avg_m = 0;
     for($i=0; $i<$n; $i++)
     {
-        ob_start();
         $start = microtime(true);
         $mem = memory_get_peak_usage();
         call_user_func( $func, $args );
         $t = microtime(true) - $start;
         $mem = memory_get_peak_usage() - $mem;
-        ob_end_clean();
         $avg_t += $t; $avg_m += $mem;
     }
     return array(1000*$avg_t/$n, round($avg_m/1000/$n));

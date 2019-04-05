@@ -493,7 +493,7 @@ function parse_constructs( match, cb )
                 break;
             case 21 /*'get'*/:
                 args = args.replace( re_controls, parse_constructs_sync );
-                out = prefix + 'Contemplate.GET(' + args + ')';
+                out = prefix + 'Contemplate.get(' + args + ')';
                 break;
             case 1 /*'unset'*/:
                 args = args.replace( re_controls, parse_constructs_sync );
@@ -3763,7 +3763,7 @@ Contemplate = {
         }
         return true;
     }
-    ,GET: function( v, keys, default_value ) {
+    ,get: function( v, keys, default_value ) {
         default_value = null != default_value ? default_value : null;
         if ( !Contemplate.is_array(keys, true) ) keys = [keys];
         var o = v, k = 0, l = keys.length, found = 1;

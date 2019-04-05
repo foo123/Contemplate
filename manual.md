@@ -61,11 +61,16 @@ $obj[$prop]
 $obj->prop
 $obj->method()
 $obj->prop->prop2
+$obj->prop->method()
 
 
 // any valid combination of the above
 // etc..
 
+
+// to access variable (nested) properties based on arbitrary expressions use built-in `get` directive e.g:
+get($var, [1+n($index), url("foo")])
+// will try to access $var[ 1+n($index) ][ url("foo") ]
 ```
 
 
@@ -142,6 +147,7 @@ TEMPLATE operations take place in the `current` context (which defaults to `glob
 
 * `set( $var, expression_or_value )`  SET / UPDATE a tpl variable `$var` to given value or expression
 * `local_set( $var, expression_or_value )`  SET / UPDATE a **local** tpl variable `$var` to given value or expression
+* `get( $var, keys [, default_value=null] )`  GET arbirtary (nested) variable property (given in `keys` array) based on arbitrary expressions, else return `default_value` if not found
 * `unset( $var )`  UNSET / DELETE tpl variable `$var`
 * `isset( $var )`  CHECK whether a tpl variable `$var` is set
 * `iif( cond, then_value, else_value )`   inline (ternary) `IF` construct

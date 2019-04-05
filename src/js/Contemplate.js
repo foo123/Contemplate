@@ -87,7 +87,7 @@ var __version__ = "1.4.0", Contemplate,
     'if', 'elseif', 'else', 'endif',
     'for', 'elsefor', 'endfor',
     'extends', 'block', 'endblock',
-    'include', 'super', 'getblock', 'iif', 'empty', 'continue', 'break', 'local_set'
+    'include', 'super', 'getblock', 'iif', 'empty', 'continue', 'break', 'local_set', 'get'
     ],
     $__directive_aliases = {
      'elif'     : 'elseif'
@@ -490,6 +490,10 @@ function parse_constructs( match, cb )
                     varname = 'var '+varname;
                 }
                 out = "';" + $__TEOL + align( varname + ' = ('+ expr +');' ) + $__TEOL;
+                break;
+            case 21 /*'get'*/:
+                args = args.replace( re_controls, parse_constructs_sync );
+                out = prefix + 'Contemplate.GET(' + args + ')';
                 break;
             case 1 /*'unset'*/:
                 args = args.replace( re_controls, parse_constructs_sync );
@@ -3759,6 +3763,24 @@ Contemplate = {
         }
         return true;
     }
+    ,GET: function( v, keys, default_value ) {
+        default_value = null != default_value ? default_value : null;
+        if ( !Contemplate.is_array(keys, true) ) keys = [keys];
+        var o = v, k = 0, l = keys.length, found = 1;
+        for(k=0; k<l; k++)
+        {
+            if ( HAS.call(o, keys[k]) )
+            {
+                o = o[keys[k]];
+            }
+            else
+            {
+                found = 0;
+                break;
+            }
+        }
+        return found ? o : default_value;
+    }
     ,empty: empty
     //,iif: iif
 
@@ -4282,7 +4304,7 @@ function empty( o )
     if ( !o || !Boolean(o) || "0"===o ) return true;
     var to_string = toString.call(o);
     if ( (o instanceof Array || o instanceof String || '[object Array]' === to_string || '[object String]' === to_string) && !o.length ) return true;
-    if ( (o instanceof Object || '[object Object]' === to_string) && !Keys(o).length ) return true;
+    if ( (o instanceof Object || '[object Object]' === to_string) && !array_keys(o).length ) return true;
     return false;
 }
 /*function iif( cond_, then_, else_ )

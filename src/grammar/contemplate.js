@@ -68,7 +68,7 @@ var contemplate_grammar = {
                                 "extends", "block", "endblock", "super", "getblock", "include",
                                 "if", "elseif", "elif", "else", "endif", "fi", 
                                 "for", "elsefor", "endfor", "as", "in",
-                                "set", "unset", "isset", "empty", "iif", "continue", "break", "local_set"
+                                "set", "unset", "isset", "empty", "iif", "continue", "break", "local_set", "get"
                                 ]}
     ,"function"                 : {"autocomplete":true,"tokens":[
                                 "n","s","f","q","qq","dq","addslashes","stripslashes","sprintf",
@@ -91,7 +91,7 @@ var contemplate_grammar_compat = {
                                 "%extends", "%block", "%endblock", "%super", "%getblock", "%include",
                                 "%if", "%elseif", "%elif", "%else", "%endif", "%fi", 
                                 "%for", "%elsefor", "%endfor", "as", "in",
-                                "%set", "%unset", "%isset", "%empty", "%iif", "%continue", "%break", "%local_set"
+                                "%set", "%unset", "%isset", "%empty", "%iif", "%continue", "%break", "%local_set", "%get"
                                 ]}
     ,"function"                 : {"autocomplete":true,"tokens":[
                                 "%n","%s","%f","%q","%qq","%dq","%addslashes","%stripslashes","%sprintf",

@@ -13,7 +13,7 @@
 if (!class_exists('Contemplate', false))
 {
 // create_function is depreceated in PHP 7.2.0+
-if ( version_compare(PHP_VERSION, '7.2.0', '>=') )
+if ( version_compare(PHP_VERSION, '5.3.0', '>=') )
 {
 
     function Contemplate_create_dynamic_function_($args, $code)
@@ -432,7 +432,7 @@ class Contemplate
     'if', 'elseif', 'else', 'endif',
     'for', 'elsefor', 'endfor',
     'extends', 'block', 'endblock',
-    'include', 'super', 'getblock', 'iif', 'empty', 'continue', 'break', 'local_set'
+    'include', 'super', 'getblock', 'iif', 'empty', 'continue', 'break', 'local_set', 'get'
     );
     protected static $__directive_aliases = array(
      'elif'      => 'elseif'
@@ -1090,6 +1090,47 @@ class Contemplate
         return true;
     }
 
+    public static function GET( $v, $keys, $default_value=null )
+    {
+        if ( !is_array($keys) ) $keys = array($keys);
+        $o = $v;
+        $found = 1;
+        foreach($keys as $key)
+        {
+            if ( is_array($o) )
+            {
+                if ( array_key_exists($key, $o) )
+                {
+                    $o = $o[$key];
+                }
+                else
+                {
+                    $found = 0;
+                    break;
+                }
+            }
+            elseif ( is_object($o) )
+            {
+                $key = (string)$key;
+                if ( property_exists($o, $key) )
+                {
+                    $o = $o->{$key};
+                }
+                else
+                {
+                    $found = 0;
+                    break;
+                }
+            }
+            else
+            {
+                $found = 0;
+                break;
+            }
+        }
+        return $found ? $o : $default_value;
+    }
+    
     /*public static function iif( $cond, $then, $else=null )
     {
         return $cond ? $then : $else;
@@ -1464,6 +1505,10 @@ class Contemplate
                     $expr = trim(implode(',', $args));
                     if ( 20 === $m && !self::is_local_variable($varname) ) self::local_variable( $varname ); // make it a local variable
                     $out = "';" . self::$__TEOL . self::align( "$varname = ($expr);" ) . self::$__TEOL;
+                    break;
+                case 21 /*'get'*/:
+                    $args = preg_replace_callback( $re_controls, $parse_constructs, $args );
+                    $out = $prefix . 'Contemplate::GET(' . $args . ')';
                     break;
                 case 1 /*'unset'*/:
                     $args = preg_replace_callback( $re_controls, $parse_constructs, $args );

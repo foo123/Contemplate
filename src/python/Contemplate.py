@@ -190,7 +190,7 @@ class _G:
     'if', 'elseif', 'else', 'endif',
     'for', 'elsefor', 'endfor',
     'extends', 'block', 'endblock',
-    'include', 'super', 'getblock', 'iif', 'empty', 'continue', 'break', 'local_set'
+    'include', 'super', 'getblock', 'iif', 'empty', 'continue', 'break', 'local_set', 'get'
     ]
     directive_aliases = {
      'elif'         : 'elseif'
@@ -975,6 +975,9 @@ def parse_constructs( match ):
             expr = ','.join(args).strip()
             if 20 == m and not is_local_variable(varname): local_variable( varname ) # make it a local variable
             out = "'" + _G.TEOL + align( varname + ' = ('+ expr +')' ) + _G.TEOL
+        elif 21==m: # get
+            args = re.sub(re_controls, parse_constructs, args)
+            out = prefix + 'Contemplate.GET(' + args + ')'
         elif 1==m: # unset
             args = re.sub(re_controls, parse_constructs, args)
             varname = args
@@ -2647,6 +2650,33 @@ class Contemplate:
                 return False
         return True
 
+    def GET( v, keys, default_value=None ):
+        if not Contemplate.is_array(keys, True): keys = [keys]
+        o = v
+        found = 1
+        for key in keys:
+            if isinstance(o, (list,tuple)):
+                key = int(key)
+                if 0 <= key and key < len(o):
+                    o = o[key]
+                else:
+                    found = 0
+                    break
+            elif isinstance(o, dict):
+                key = str(key)
+                if key in o:
+                    o = o[key]
+                else:
+                    found = 0
+                    break
+            else:
+                try:
+                    o = getattr(o, str(key))
+                except AttributeError:
+                    found = 0
+                    break
+        return o if found else default_value
+    
     def empty( v ):
         # exactly like php's function
         #return bool(v) or (isinstance(v, (tuple,list,str,dict)) and 0 == len(v))

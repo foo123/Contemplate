@@ -21,6 +21,7 @@ class test
 {
     public $prop = 'prop';
     public function func(){ return 'func'; }
+    public function getPropGetter(){ return 'propGetter'; }
 }
 
 $arr = array('foo',array('prop'=>'prop'));

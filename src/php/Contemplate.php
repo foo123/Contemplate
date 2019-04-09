@@ -1118,8 +1118,17 @@ class Contemplate
                 }
                 else
                 {
-                    $found = 0;
-                    break;
+                    $keyGetter = 'get' . ucfirst($key);
+                    if ( method_exists($o, $keyGetter)/*is_callable(array($o,$keyGetter))*/ )
+                    {
+                        $o = $o->{$keyGetter}( );
+                        //$o = call_user_func(array($o,$keyGetter))
+                    }
+                    else
+                    {
+                        $found = 0;
+                        break;
+                    }
                 }
             }
             else

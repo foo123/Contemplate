@@ -2670,11 +2670,17 @@ class Contemplate:
                     found = 0
                     break
             else:
-                try:
-                    o = getattr(o, str(key))
-                except AttributeError:
-                    found = 0
-                    break
+                key = str(key)
+                if hasattr(o, key):
+                    o = getattr(o, key)
+                else:
+                    keyGetter = 'get' + key[0].upper() + key[1:]
+                    if hasattr(o, keyGetter) and callable(getattr(o, keyGetter)):
+                        o = getattr(o, keyGetter)( )
+                    else:
+                        found = 0
+                        break
+        
         return o if found else default_value
     
     def empty( v ):

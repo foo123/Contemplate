@@ -71,6 +71,13 @@ $obj->prop->method()
 // to access variable (nested) properties based on arbitrary expressions use built-in `get` directive e.g:
 get($var, [1+n($index), url("foo")])
 // will try to access $var[ 1+n($index) ][ url("foo") ]
+
+// also `get` directive can access properties which have associated dynamic getter methods,
+// i.e access computed property `computed` which is dynamicaly computed by an associated `getComputed` method
+get($var, ["computed","otherProp"])
+// will try to access $var->getComputed()->otherProp
+
+// etc..
 ```
 
 

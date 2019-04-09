@@ -3766,17 +3766,26 @@ Contemplate = {
     ,get: function( v, keys, default_value ) {
         default_value = null != default_value ? default_value : null;
         if ( !Contemplate.is_array(keys, true) ) keys = [keys];
-        var o = v, k = 0, l = keys.length, found = 1;
+        var o = v, k = 0, l = keys.length, found = 1, key, keyGetter;
         for(k=0; k<l; k++)
         {
-            if ( HAS.call(o, keys[k]) )
+            key = String(keys[k]);
+            if ( HAS.call(o, key) )
             {
-                o = o[keys[k]];
+                o = o[key];
             }
             else
             {
-                found = 0;
-                break;
+                keyGetter = 'get' + key.charAt(0).toUpperCase() + key.substring(1);
+                if ( /*HAS.call(o, keyGetter) &&*/ ("function" === typeof o[keyGetter]) )
+                {
+                    o = o[keyGetter]( );
+                }
+                else
+                {
+                    found = 0;
+                    break;
+                }
             }
         }
         return found ? o : default_value;

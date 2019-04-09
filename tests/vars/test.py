@@ -30,6 +30,9 @@ class test:
     
     def func(self, *args):
         return 'func'
+    
+    def getPropGetter(self, *args):
+        return 'propGetter'
 
 
 arr = ['foo',{'prop':'prop'}]

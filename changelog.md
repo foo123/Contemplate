@@ -1,7 +1,7 @@
 ### ChangeLog
 
 __1.4.0__
-* support `php`-like object accesss notation (arrow notation `->`) to support not only strictly arrays as template data but arbitrary objects as well (works same for all js/php/python)
+* support `php`-like object accesss notation (arrow notation `->`) to support not only strictly arrays as template data but arbitrary objects as well. Support arbitrary chained prop/method access (works same for all js/php/python engines)
 * add `get` template directive to access arbitrary (nested) variable properties based on arbitrary expressions (arbitrary expressions not supported by literal object access notation above, see manual) and also access dynamic properties that use `getter` methods
 * add new template functions `keys` (php-like `array_keys`), `values` (php-like `array_values`), `buildquery` (php-like `http_build_query`), `parsequery` (php-like `parse_str`)
 * update tests and live examples along with contemplate grammar

@@ -59,9 +59,11 @@ $obj[$prop]
 // object access notation
 //=======================
 $obj->prop
-$obj->method()
+$obj->method(..args)
 $obj->prop->prop2
-$obj->prop->method()
+$obj->prop->method(..args)
+$obj->method1(..args)->method2(..args)
+$obj->method(..args)->prop
 
 
 // any valid combination of the above

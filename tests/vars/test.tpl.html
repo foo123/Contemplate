@@ -8,6 +8,14 @@
 
 <% $a[1].prop %>
 
+<% $v->method(url($v->prop))->func("foo") %>
+
+<% url($v->method("foo")->func("bar")) %>
+
+<% url($v->method("foo")->prop) %>
+
+<% url($v->method("foo")->prop2->prop) %>
+
 <% get($a, [0+1, "prop"]) %>
 
 <% get($a, [n("0")+1,"prop"]) %>

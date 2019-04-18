@@ -1514,7 +1514,7 @@ def parse( tpl, leftTplSep, rightTplSep, withblocks=True ):
                 hasStrings = True
 
             # spaces
-            elif "\n" == ch or "\r" == ch or "\t" == ch or "\v" == ch:
+            elif "\n" == ch or "\r" == ch or "\t" == ch or "\v" == ch or "\0" == ch:
                 space += 1
 
             # directive or identifier or atom in compatibility mode
@@ -1548,6 +1548,7 @@ def parse( tpl, leftTplSep, rightTplSep, withblocks=True ):
                 if space > 0:
                     out += " "
                     space = 0
+                is_prop_access = (2<index and '-'==s[index-3] and '>'==s[index-2])
                 tok = ch
                 while index < count:
                     ch = s[index]
@@ -1558,7 +1559,7 @@ def parse( tpl, leftTplSep, rightTplSep, withblocks=True ):
                 if 'null' == tok: tok = 'None'
                 elif 'false' == tok: tok = 'False'
                 elif 'true' == tok: tok = 'True'
-                elif 'as' != tok and 'in' != tok: tok = '#ID_'+tok+'#'
+                elif 'as' != tok and 'in' != tok and not is_prop_access: tok = '#ID_'+tok+'#'
                 out += tok
 
             # rest, bypass
@@ -1570,6 +1571,10 @@ def parse( tpl, leftTplSep, rightTplSep, withblocks=True ):
 
         # fix literal data notation python-style
         if compatibility_mode: out = out.replace('true', 'True').replace('false', 'False').replace('null', 'None')
+        # fix literal data notation, not needed here
+        #out = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), out);
+        # fix pending "->" arrow notation for variable object
+        out = out.replace('->', '.')
         out = re.sub(_G.T_NOT, r'\1 not \3', re.sub(_G.T_OR, r'\1 or \3', re.sub(_G.T_AND, r'\1 and \3', out)))
 
         tag = "\t" + out + "\v"

@@ -27,6 +27,7 @@ Contemplate.setCacheMode(Contemplate.CACHE_TO_DISK_AUTOUPDATE)
 class test:
     def __init__(self):
         self.prop = 'prop'
+        self.prop2 = self
     
     def func(self, *args):
         return 'func'
@@ -34,6 +35,8 @@ class test:
     def getPropGetter(self, *args):
         return 'propGetter'
 
+    def method(self, *args):
+        return self
 
 arr = ['foo',{'prop':'prop'}]
 print(Contemplate.tpl('test', {'v':test(),'a':arr}))

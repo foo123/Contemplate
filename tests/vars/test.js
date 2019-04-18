@@ -16,8 +16,10 @@ Contemplate.setCacheMode(Contemplate.CACHE_TO_DISK_AUTOUPDATE);
 function test()
 {
     this.prop = 'prop';
+    this.prop2 = this;
     this.func = function(){ return 'func'; };
     this.getPropGetter = function(){ return 'propGetter'; };
+    this.method = function(){ return this; };
 }
 var arr = ['foo',{'prop':'prop'}];
 echo(Contemplate.tpl('test', {'v':new test(),'a':arr}));

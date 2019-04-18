@@ -52,7 +52,7 @@ public function render(&$data, $__i__=null)
     {
         /* tpl main render code starts here */
         
-        $__p__ .= '' . "\n" . '' . ($data['v']->prop) . '' . "\n" . '' . "\n" . '' . ($data['v']->func(Contemplate::url($data['v']->prop))) . '' . "\n" . '' . "\n" . '' . ($data['a'][0]) . '' . "\n" . '' . "\n" . '' . ($data['a'][1]['prop']) . '' . "\n" . '' . "\n" . '' . (Contemplate::get($data['a'], array(0+1, "prop"))) . '' . "\n" . '' . "\n" . '' . (Contemplate::get($data['a'], array(intval("0")+1,"prop"))) . '' . "\n" . '' . "\n" . '' . (Contemplate::get($data['v'], "propGetter")) . '' . "\n" . '';
+        $__p__ .= '' . "\n" . '' . ($data['v']->prop) . '' . "\n" . '' . "\n" . '' . ($data['v']->func(Contemplate::url($data['v']->prop))) . '' . "\n" . '' . "\n" . '' . ($data['a'][0]) . '' . "\n" . '' . "\n" . '' . ($data['a'][1]['prop']) . '' . "\n" . '' . "\n" . '' . ($data['v']->method(Contemplate::url($data['v']->prop))->func("foo")) . '' . "\n" . '' . "\n" . '' . (Contemplate::url($data['v']->method("foo")->func("bar"))) . '' . "\n" . '' . "\n" . '' . (Contemplate::url($data['v']->method("foo")->prop)) . '' . "\n" . '' . "\n" . '' . (Contemplate::url($data['v']->method("foo")->prop2->prop)) . '' . "\n" . '' . "\n" . '' . (Contemplate::get($data['a'], array(0+1, "prop"))) . '' . "\n" . '' . "\n" . '' . (Contemplate::get($data['a'], array(intval("0")+1,"prop"))) . '' . "\n" . '' . "\n" . '' . (Contemplate::get($data['v'], "propGetter")) . '' . "\n" . '';
         
         /* tpl main render code ends here */
     }

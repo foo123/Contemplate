@@ -45,7 +45,7 @@ def __getTplClass__(Contemplate):
             else:
                 # tpl main render code starts here
                 
-                __p__ += '' + "\n" + '' + str(data['v'].prop) + '' + "\n" + '' + "\n" + '' + str(data['v'].func(Contemplate.url(data['v'].prop))) + '' + "\n" + '' + "\n" + '' + str(data['a'][0]) + '' + "\n" + '' + "\n" + '' + str(data['a'][1]['prop']) + '' + "\n" + '' + "\n" + '' + str(Contemplate.get(data['a'], [0+1, "prop"])) + '' + "\n" + '' + "\n" + '' + str(Contemplate.get(data['a'], [int("0")+1,"prop"])) + '' + "\n" + '' + "\n" + '' + str(Contemplate.get(data['v'], "propGetter")) + '' + "\n" + ''
+                __p__ += '' + "\n" + '' + str(data['v'].prop) + '' + "\n" + '' + "\n" + '' + str(data['v'].func(Contemplate.url(data['v'].prop))) + '' + "\n" + '' + "\n" + '' + str(data['a'][0]) + '' + "\n" + '' + "\n" + '' + str(data['a'][1]['prop']) + '' + "\n" + '' + "\n" + '' + str(data['v'].method(Contemplate.url(data['v'].prop)).func("foo")) + '' + "\n" + '' + "\n" + '' + str(Contemplate.url(data['v'].method("foo").func("bar"))) + '' + "\n" + '' + "\n" + '' + str(Contemplate.url(data['v'].method("foo").prop)) + '' + "\n" + '' + "\n" + '' + str(Contemplate.url(data['v'].method("foo").prop2.prop)) + '' + "\n" + '' + "\n" + '' + str(Contemplate.get(data['a'], [0+1, "prop"])) + '' + "\n" + '' + "\n" + '' + str(Contemplate.get(data['a'], [int("0")+1,"prop"])) + '' + "\n" + '' + "\n" + '' + str(Contemplate.get(data['v'], "propGetter")) + '' + "\n" + ''
                 
                 # tpl main render code ends here
 

@@ -2147,7 +2147,7 @@ class Contemplate
                 $ch = $s[$index++];
 
                 // variable
-                if ( '$' == $ch )
+                if ( '$' === $ch )
                 {
                     if ( $space > 0 )
                     {
@@ -2175,7 +2175,7 @@ class Contemplate
                     }
                 }
                 // literal string
-                elseif ( '"' == $ch || "'" == $ch )
+                elseif ( '"' === $ch || "'" === $ch )
                 {
                     if ( $space > 0 )
                     {
@@ -2202,7 +2202,7 @@ class Contemplate
                     $hasStrings = true;
                 }
                 // spaces
-                elseif ( " " === $ch || "\n" === $ch || "\r" === $ch || "\t" === $ch || "\v" === $ch )
+                elseif ( " " === $ch || "\n" === $ch || "\r" === $ch || "\t" === $ch || "\v" === $ch || "\0" === $ch )
                 {
                     $space++;
                 }
@@ -2244,7 +2244,7 @@ class Contemplate
                         $out .= $q;
                     }
                 }
-                // directive or identifier or atom
+                // directive or identifier or atom and not variable object property access
                 elseif ( $non_compatibility_mode && preg_match($ALPHA, $ch, $m) )
                 {
                     if ( $space > 0 )
@@ -2252,6 +2252,7 @@ class Contemplate
                         $out .= " ";
                         $space = 0;
                     }
+                    $is_prop_access = (2<$index && '-'===$s[$index-3] && '>'===$s[$index-2]);
                     $tok = $ch;
                     while ( $index < $count )
                     {
@@ -2264,7 +2265,7 @@ class Contemplate
                         }
                         else break;
                     }
-                    if ( 'as' !== $tok && 'in' !== $tok && 'null' !== $tok && 'false' !== $tok && 'true' !== $tok )
+                    if ( !$is_prop_access && 'as' !== $tok && 'in' !== $tok && 'null' !== $tok && 'false' !== $tok && 'true' !== $tok )
                     {
                         $tok = '#ID_'.$tok.'#';
                     }
@@ -2284,6 +2285,8 @@ class Contemplate
 
             // fix literal data notation
             $out = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), $out);
+            // fix pending "->" arrow-notation for object variable (not needed here)
+            //$out = str_replace('->', '.', $out);
 
             $tag = "\t" . $out . "\v";
 

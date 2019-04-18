@@ -1163,8 +1163,9 @@ function parse_async( tpl, leftTplSep, rightTplSep, withblocks, cb )
         multisplit_re = InlineTemplate.multisplit_re,
         ind, q, str_, escaped, si, space,
         blockTag, hasBlock, notFoundBlock,
-        special_chars = "$'\" \n\r\t\v%",
-        non_compatibility_mode = !$__compatibility
+        special_chars = "$'\" \n\r\t\v\0%",
+        non_compatibility_mode = !$__compatibility,
+        is_prop_access
     ;
 
     t1 = leftTplSep; l1 = t1.length;
@@ -1279,12 +1280,12 @@ function parse_async( tpl, leftTplSep, rightTplSep, withblocks, cb )
                     hasStrings = true;
                 }
                 // spaces
-                else if ( 8 > ind )
+                else if ( 9 > ind )
                 {
                     space++;
                 }
                 // directive or identifier or atom in compatibility mode
-                else //if ( 8 === ind )
+                else //if ( 9 === ind )
                 {
                     if ( space > 0 )
                     {
@@ -1308,7 +1309,7 @@ function parse_async( tpl, leftTplSep, rightTplSep, withblocks, cb )
                     out += tok;
                 }
             }
-            // directive or identifier or atom
+            // directive or identifier or atom and not variable object property access
             else if ( non_compatibility_mode && ALPHA.test(ch) )
             {
                 if ( space > 0 )
@@ -1316,13 +1317,14 @@ function parse_async( tpl, leftTplSep, rightTplSep, withblocks, cb )
                     out += " ";
                     space = 0;
                 }
+                is_prop_access = (2<index && '-'===s.charAt(index-3) && '>'===s.charAt(index-2));
                 tok = ch;
                 while ( index < countl && ALPHANUM.test(ch=s.charAt(index)) )
                 {
                     index ++;
                     tok += ch;
                 }
-                if ( 'as' !== tok && 'in' !== tok && 'null' !== tok && 'false' !== tok && 'true' !== tok )
+                if ( !is_prop_access && 'as' !== tok && 'in' !== tok && 'null' !== tok && 'false' !== tok && 'true' !== tok )
                 {
                     tok = '#ID_'+tok+'#';
                 }
@@ -1342,6 +1344,8 @@ function parse_async( tpl, leftTplSep, rightTplSep, withblocks, cb )
 
         // fix literal data notation, not needed here
         //out = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), out);
+        // fix pending "->" arrow-notation for object variable
+        out = out.split('->').join('.');
 
         tag = "\t" + out + "\v";
 
@@ -1488,8 +1492,9 @@ function parse( tpl, leftTplSep, rightTplSep, withblocks, cb )
         multisplit_re = InlineTemplate.multisplit_re,
         ind, q, str_, escaped, si, space,
         blockTag, hasBlock, notFoundBlock,
-        special_chars = "$'\" \n\r\t\v%",
-        non_compatibility_mode = !$__compatibility
+        special_chars = "$'\" \n\r\t\v\0%",
+        non_compatibility_mode = !$__compatibility,
+        is_prop_access
     ;
 
     t1 = leftTplSep; l1 = t1.length;
@@ -1595,12 +1600,12 @@ function parse( tpl, leftTplSep, rightTplSep, withblocks, cb )
                     hasStrings = true;
                 }
                 // spaces
-                else if ( 8 > ind )
+                else if ( 9 > ind )
                 {
                     space++;
                 }
                 // directive or identifier or atom in compatibility mode
-                else //if ( 8 === ind )
+                else //if ( 9 === ind )
                 {
                     if ( space > 0 )
                     {
@@ -1624,7 +1629,7 @@ function parse( tpl, leftTplSep, rightTplSep, withblocks, cb )
                     out += tok;
                 }
             }
-            // directive or identifier or atom
+            // directive or identifier or atom and not variable object property access
             else if ( non_compatibility_mode && ALPHA.test(ch) )
             {
                 if ( space > 0 )
@@ -1632,13 +1637,14 @@ function parse( tpl, leftTplSep, rightTplSep, withblocks, cb )
                     out += " ";
                     space = 0;
                 }
+                is_prop_access = (2<index && '-'===s.charAt(index-3) && '>'===s.charAt(index-2));
                 tok = ch;
                 while ( index < countl && ALPHANUM.test(ch=s.charAt(index)) )
                 {
                     index ++;
                     tok += ch;
                 }
-                if ( 'as' !== tok && 'in' !== tok && 'null' !== tok && 'false' !== tok && 'true' !== tok )
+                if ( !is_prop_access && 'as' !== tok && 'in' !== tok && 'null' !== tok && 'false' !== tok && 'true' !== tok )
                 {
                     tok = '#ID_'+tok+'#';
                 }
@@ -1658,6 +1664,8 @@ function parse( tpl, leftTplSep, rightTplSep, withblocks, cb )
 
         // fix literal data notation, not needed here
         //out = str_replace(array('{', '}', '[', ']', ':'), array('array(', ')','array(', ')', '=>'), out);
+        // fix pending "->" arrow-notation for object variable
+        out = out.split('->').join('.');
 
         tag = "\t" + out + "\v";
 

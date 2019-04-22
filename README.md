@@ -51,12 +51,12 @@ There are a couple of other frameworks named also `contemplate`
 
 ----------------------------------------------------------------------------------------------------------------------
 
-[![Contemplate](/screenshots/contemplate-interactive.png)](http://foo123.github.com/examples/contemplate/)
+[![Contemplate](/screenshots/contemplate-interactive.png)](https://foo123.github.com/examples/contemplate/)
 
 
 ### Contents
 
-* [Online Playground Example](http://foo123.github.com/examples/contemplate/)
+* [Online Playground Example](https://foo123.github.com/examples/contemplate/)
 * [Rationale](#rationale)
 * [Features](#features)
 * [API Reference](/manual.md)

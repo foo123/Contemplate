@@ -1,6 +1,6 @@
-var path = require('path'), echo = console.log,
-    Contemplate = require(path.join(__dirname, '../../src/js/Contemplate.js'))
-;
+"use strict";
+const path = require('path'), echo = console.log;
+const Contemplate = require(path.join(__dirname, '../../src/js/Contemplate.js'));
 
 Contemplate.setCacheDir(path.join(__dirname, '/cache'));
 Contemplate.setCacheMode(Contemplate.CACHE_TO_DISK_AUTOUPDATE);

@@ -2865,7 +2865,7 @@ InlineTemplate[PROTO] = {
             self._args = null;
             self._parsed = true;
         }
-        if (self._renderer) return self._renderer(args);
+        if (is_callable(self._renderer)) return self._renderer(args);
 
         var tpl = self.tpl, l = tpl.length,
             i, notIsSub, s, out = ''
@@ -2905,7 +2905,7 @@ Template.spr = function(data, __i__) {
 Template.fixr = function(tpl) {
     tpl.render = tpl._extends instanceof Template
                 ? Template.spr
-                : ('function'===typeof tpl._renderer
+                : (is_callable(tpl._renderer)
                 ? tpl._renderer
                 : tpl.constructor[PROTO].render);
     return tpl;
@@ -2970,7 +2970,7 @@ Template[PROTO] = {
 
     ,setRenderFunction: function(renderfunc) {
         var self = this;
-        self._renderer = 'function'===typeof renderfunc
+        self._renderer = is_callable(renderfunc)
                     ? renderfunc(Contemplate)
                     : null;
         Template.fixr(self);
@@ -3250,11 +3250,11 @@ Contemplate = {
 
     ,plg_: function(plg) {
         var args = arguments;
-        if (HAS.call($__context.plugins, plg) && ("function" === typeof $__context.plugins[plg]))
+        if (HAS.call($__context.plugins, plg) && is_callable($__context.plugins[plg]))
         {
             return $__context.plugins[plg].apply(null, slice.call(args, 1));
         }
-        else if (HAS.call($__global.plugins, plg) && ("function" === typeof $__global.plugins[plg]))
+        else if (HAS.call($__global.plugins, plg) && is_callable($__global.plugins[plg]))
         {
             return $__global.plugins[plg].apply(null, slice.call(args, 1));
         }
@@ -3307,7 +3307,7 @@ Contemplate = {
         var contx;
         if (arguments.length < 2) ctx = 'global';
         contx = ctx && HAS.call($__ctx, ctx) ? $__ctx[ctx] : $__context;
-        contx.templateFinder = 'function' === typeof finder ? finder : null;
+        contx.templateFinder = is_callable(finder) ? finder : null;
     }
 
     ,clearCache: function(all, ctx) {
@@ -3353,7 +3353,7 @@ Contemplate = {
         var contx;
         if (arguments.length < 2) ctx = 'global';
         contx = ctx && HAS.call($__ctx, ctx) ? $__ctx[ctx] : $__context;
-        if ('function' === typeof cb)
+        if (is_callable(cb))
         {
             get_template_contents(id, contx, function(err, tpl) {
                 cb(err, tpl);
@@ -3383,7 +3383,7 @@ Contemplate = {
         if (arguments.length < 2) ctx = 'global';
         contx = ctx && HAS.call($__ctx, ctx) ? $__ctx[ctx] : $__context;
 
-        if ('function' === typeof cb)
+        if (is_callable(cb))
         {
             var templateDirs, filename, dir,
                 search_one = function search_one() {
@@ -3405,7 +3405,7 @@ Contemplate = {
                         }
                     });
                 };
-            if ('function' === typeof contx.templateFinder)
+            if (is_callable(contx.templateFinder))
             {
                 // supposed to be async operation with callback given
                 contx.templateFinder(tpl, function(found) {
@@ -3424,7 +3424,7 @@ Contemplate = {
             if (contx != $__global)
             {
                 contx = $__global;
-                if ('function' === typeof contx.templateFinder)
+                if (is_callable(contx.templateFinder))
                 {
                     // supposed to be async operation with callback given
                     contx.templateFinder(tpl, function(found) {
@@ -3446,7 +3446,7 @@ Contemplate = {
         else
         {
             var filename, path, dir, l;
-            if ('function' === typeof contx.templateFinder)
+            if (is_callable(contx.templateFinder))
             {
                 // supposed to be sync operation if no callback provided
                 return contx.templateFinder(tpl);
@@ -3466,7 +3466,7 @@ Contemplate = {
             if (contx != $__global)
             {
                 contx = $__global
-                if ('function' === typeof contx.templateFinder)
+                if (is_callable(contx.templateFinder))
                 {
                     // supposed to be sync operation if no callback provided
                     return contx.templateFinder(tpl);
@@ -3536,7 +3536,7 @@ Contemplate = {
             rightSep = separators[1];
         }
 
-        if ('function' === typeof cb)
+        if (is_callable(cb))
         {
             _ctx = $__context;
             $__context = contx;
@@ -3580,7 +3580,7 @@ Contemplate = {
     //
 
     ,tpl: function(tpl, data, options, cb) {
-        cb = 'function' === typeof cb ? cb : null;
+        cb = is_callable(cb) ? cb : null;
         var tmpl, contx, _ctx;
         if (tpl instanceof Contemplate.Template)
         {
@@ -3935,7 +3935,7 @@ Contemplate = {
             else
             {
                 keyGetter = 'get' + key.charAt(0).toUpperCase() + key.substring(1);
-                if (/*HAS.call(o, keyGetter) &&*/ ("function" === typeof o[keyGetter]))
+                if (/*HAS.call(o, keyGetter) &&*/ is_callable(o[keyGetter]))
                 {
                     o = o[keyGetter]();
                 }
@@ -4298,6 +4298,10 @@ function empty(o)
     return false;
 }
 // php-like functions, mostly adapted and optimised from phpjs project, https://github.com/kvz/phpjs
+function is_callable(o)
+{
+    return 'function' === typeof o;
+}
 // http://jsperf.com/instanceof-array-vs-array-isarray/6
 function is_array(o)
 {
@@ -4319,7 +4323,7 @@ function count(mixed_var)
 }
 function array_keys(o)
 {
-    if ('function' === typeof (Object.keys)) return Object.keys(o);
+    if (is_callable(Object.keys)) return Object.keys(o);
     var v, k, l;
     if (is_array(o))
     {
@@ -4339,7 +4343,7 @@ function array_keys(o)
 function array_values(o)
 {
     if (is_array(o)) return o;
-    if ('function' === typeof (Object.values)) return Object.values(o);
+    if (is_callable(Object.values)) return Object.values(o);
     var v = [], k;
     for (k in o)
         if (HAS.call(o, k))

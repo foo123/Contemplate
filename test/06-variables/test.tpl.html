@@ -2,19 +2,19 @@
 
 <% $v->prop %>
 
-<% $v->func(url($v->prop)) %>
+<% $v->func(urlencode($v->prop)) %>
 
 <% $a[0] %>
 
 <% $a[1].prop %>
 
-<% $v->method(url($v->prop))->func("foo") %>
+<% $v->method(urlencode($v->prop))->func("foo") %>
 
-<% url($v->method("foo")->func("bar")) %>
+<% urlencode($v->method("foo")->func("bar")) %>
 
-<% url($v->method("foo")->prop) %>
+<% urlencode($v->method("foo")->prop) %>
 
-<% url($v->method("foo")->prop2->prop) %>
+<% urlencode($v->method("foo")->prop2->prop) %>
 
 <% get($a, [0+1, "prop"]) %>
 

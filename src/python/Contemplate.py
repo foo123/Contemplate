@@ -1,4 +1,3 @@
-# -*- coding: UTF-8 -*-
 ##
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
@@ -1954,7 +1953,7 @@ class InlineTemplate:
             self._args = None
             self._parsed = True
 
-        if self._renderer is not None: return self._renderer(args)
+        if callable(self._renderer): return self._renderer(args)
 
         tpl = self.tpl
         out = ''
@@ -2019,7 +2018,7 @@ class Template:
         return self
 
     def setRenderFunction(self, renderFunc = None):
-        self._renderer = renderFunc if renderFunc else None
+        self._renderer = renderFunc if callable(renderFunc) else None
         return self
 
     def sprblock(self, block, data):
@@ -2035,7 +2034,7 @@ class Template:
             __i__ = self
             if not self._autonomus: __ctx = Contemplate._set_ctx(self._ctx)
 
-        if (self._blocks) and (block in self._blocks):
+        if (self._blocks) and (block in self._blocks) and callable(self._blocks[block]):
             blockfunc = self._blocks[block]
             r = blockfunc(data, self, __i__)
         elif self._extends:
@@ -2053,7 +2052,7 @@ class Template:
 
         if self._extends:
             __p__ = self._extends.render(data, __i__)
-        elif self._renderer is not None:
+        elif callable(self._renderer):
             # dynamic function
             __p__ = self._renderer(data, self, __i__)
 
@@ -2291,13 +2290,13 @@ class Contemplate:
         global _G
         if name and pluginCode:
             contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
-            contx.plugins[ str(name) ] = pluginCode
+            contx.plugins[str(name)] = pluginCode
 
     def plg_(plg, *args):
         global _G
         if plg in _G.context.plugins and callable(_G.context.plugins[plg]):
             return _G.context.plugins[plg](*args)
-        elif plg in _G.glob.plugins and callable(_G.glob.plugins[ plg ]):
+        elif plg in _G.glob.plugins and callable(_G.glob.plugins[plg]):
             return _G.glob.plugins[plg](*args)
         return ''
 
@@ -2512,7 +2511,7 @@ class Contemplate:
         return str(tmpl.render(data)) if isinstance(data, dict) else tmpl
 
     def inline(tpl, reps = None, compiled = False):
-        if isinstance(tpl, Contemplate.InlineTemplate): return str(tpl.render( reps ))
+        if isinstance(tpl, Contemplate.InlineTemplate): return str(tpl.render(reps))
         return Contemplate.InlineTemplate(tpl, reps, compiled)
 
     def concat(*args):
@@ -2523,7 +2522,7 @@ class Contemplate:
         skip_empty = skip_empty is True
         if not isinstance(args, (list,tuple)): return '' if skip_empty and not len(str(args)) else str(args)
         if sep is None: sep = ''
-        if not isinstance(sep,str): sep = str(sep)
+        if not isinstance(sep, str): sep = str(sep)
         l = len(args)
         out = (Contemplate.join(sep, args[0], skip_empty) if isinstance(args[0], (list,tuple)) else ('' if skip_empty and (args[0] is None or not len(str(args[0]))) else str(args[0]))) if l > 0 else ''
         for i in range(1, l):

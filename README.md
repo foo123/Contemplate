@@ -7,6 +7,11 @@ Contemplate
 ![Contemplate](/screenshots/contemplate.jpg)
 
 
+This started as a a **proof-of-concept** but developed into a **full-blown and versatile** template engine for PHP, JavaScript and Python.
+
+The original inspiration came from an old post by [John Resig](https://github.com/jeresig)  (http://ejohn.org/blog/javascript-micro-templating/)
+
+
 **see also:**
 
 * [ModelView](https://github.com/foo123/modelview.js) a simple, fast, powerful and flexible MVVM framework for JavaScript
@@ -25,11 +30,6 @@ Contemplate
 * [Unicache](https://github.com/foo123/Unicache) a simple and flexible agnostic caching framework, supporting various platforms, for PHP, JavaScript, Python
 * [Xpresion](https://github.com/foo123/Xpresion) a simple and flexible eXpression parser engine (with custom functions and variables support), based on [GrammarTemplate](https://github.com/foo123/GrammarTemplate), for PHP, JavaScript, Python
 * [Regex Analyzer/Composer](https://github.com/foo123/RegexAnalyzer) Regular Expression Analyzer and Composer for PHP, JavaScript, Python
-
-
-This started as a a **proof-of-concept** but developed into a **full-blown and versatile** template engine for multiple platforms.
-
-The original inspiration came from an old post by [John Resig](https://github.com/jeresig)  (http://ejohn.org/blog/javascript-micro-templating/)
 
 
 [![Contemplate](/screenshots/contemplate-interactive.png)](https://foo123.github.io/examples/contemplate/)

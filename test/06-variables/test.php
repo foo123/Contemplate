@@ -21,10 +21,10 @@ class test
 {
     public $prop = 'prop';
     public $prop2 = null;
-    public function __construct(){ $this->prop2 = $this; }
-    public function func(){ return 'func'; }
-    public function getPropGetter(){ return 'propGetter'; }
-    public function method(){ return $this; }
+    public function __construct() {$this->prop2 = $this;}
+    public function func() {return 'func';}
+    public function getPropGetter() {return 'propGetter';}
+    public function method() {return $this;}
 }
 
 $arr = array('foo',array('prop'=>'prop'));

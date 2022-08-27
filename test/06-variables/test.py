@@ -28,10 +28,10 @@ class test:
     def __init__(self):
         self.prop = 'prop'
         self.prop2 = self
-    
+
     def func(self, *args):
         return 'func'
-    
+
     def getPropGetter(self, *args):
         return 'propGetter'
 

@@ -11,22 +11,22 @@
 *
 **/
 
-//  Run as: node test.js
+//  run as: node test.js
 
-var http = require('http'), httpPort = 1337,
+var http = require('http'), httpPort = 8002,
     url = require('url'),
     path = require('path'), fs = require('fs'),
     Exists = fs.exists, //path.exists,
     Read = fs.readFile,
     echo = console.log,
-    Contemplate = require(path.join(__dirname, '../src/js/Contemplate.js'))
+    Contemplate = require(path.join(__dirname, '../../src/js/Contemplate.js'))
 ;
 
-Contemplate.addPlugin('plg_test', function(v){
-    if ( v ) return 'Plugin Test value: ' + v;
+Contemplate.addPlugin('plg_test', function(v) {
+    if (v) return 'Plugin Test value: ' + v;
     return 'Plugin Test no value given';
 });
-Contemplate.addPlugin('plg_print', function(v){
+Contemplate.addPlugin('plg_print', function(v) {
     return '<pre>' + JSON.stringify(v, null, 4) + '</pre>';
 });
 global.bracket = function(v)
@@ -36,7 +36,7 @@ global.bracket = function(v)
 Contemplate.addPlugin('inlinedBracket', Contemplate.inline('bracket($0)',{'$0':0},false));
 
 // make sure it exists
-Contemplate.setCacheDir(fs.realpathSync(path.join(__dirname, '/_tplcache')));
+Contemplate.setCacheDir(path.join(__dirname, '/_tplcache'));
 
 // dynamically update the cached template if original template has changed
 Contemplate.setCacheMode(Contemplate.CACHE_TO_DISK_AUTOUPDATE);
@@ -124,22 +124,23 @@ var
 // create a node http server to serve the rendered templates
 http.createServer(function(request, response) {
 
-    var uri = url.parse(request.url).pathname, filename = path.join(process.cwd(), uri);
+    var uri = url.parse(request.url).pathname, filename = '';
 
     // return the main page
     if ('/'==uri || ''==uri) {
         // async operation promise-based
-        Contemplate.tplPromise('main', $main_template_data).then(function(content){
-            response.writeHead(200, { 'Content-Type': 'text/html' });
-            response.end( content );
+        Contemplate.tplPromise('main', $main_template_data).then(function(content) {
+            response.writeHead(200, {'Content-Type': 'text/html'});
+            response.end(content);
         }).catch(function(err){
-            response.writeHead(500, { 'Content-Type': 'text/plain' });
-            response.end( err.toString() );
+            response.writeHead(500, {'Content-Type': 'text/plain'});
+            response.end(err.toString());
         });
         return;
     }
 
     // handle css/js/other file requests
+    filename = path.join(process.cwd(), uri);
     fs.stat(filename, function(err, stat) {
         if(err || !stat) {
             response.writeHead(404, {"Content-Type": "text/plain"});

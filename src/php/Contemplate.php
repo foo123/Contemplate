@@ -135,9 +135,9 @@ class ContemplateInlineTemplate
             $this->_args = null;
             $this->_parsed = true;
         }
-        if ($this->_renderer)
+        if (is_callable($this->_renderer))
         {
-            return call_user_func($this->_renderer, $args);
+            return @call_user_func($this->_renderer, $args);
         }
 
         $tpl =& $this->tpl;
@@ -256,9 +256,9 @@ class ContemplateTemplate
             $__i__ = $self;
             if (!$this->_autonomus) $__ctx = Contemplate::_set_ctx($self->_ctx);
         }
-        if ($self->_blocks && isset($self->_blocks[$block]))
+        if ($self->_blocks && isset($self->_blocks[$block]) && is_callable($self->_blocks[$block]))
         {
-            $r = call_user_func($self->_blocks[$block], $data, $self, $__i__);
+            $r = @call_user_func($self->_blocks[$block], $data, $self, $__i__);
         }
         elseif ($self->_extends)
         {
@@ -281,7 +281,7 @@ class ContemplateTemplate
         {
             $__p__ = $self->_extends->render($data, $__i__);
         }
-        elseif ($self->_renderer)
+        elseif (is_callable($self->_renderer))
         {
             /* dynamic function */
             $__p__ = @call_user_func($self->_renderer, $data, $self, $__i__);
@@ -742,7 +742,7 @@ class Contemplate
         $contx = $ctx && isset(self::$__ctx[$ctx]) ? self::$__ctx[$ctx] : self::$__context;
         if (is_callable($contx->templateFinder))
         {
-            return call_user_func($contx->templateFinder, $tpl);
+            return @call_user_func($contx->templateFinder, $tpl);
         }
         if (!empty($contx->templateDirs))
         {
@@ -759,7 +759,7 @@ class Contemplate
             $contx = self::$__global;
             if (is_callable($contx->templateFinder))
             {
-                return call_user_func($contx->templateFinder, $tpl);
+                return @call_user_func($contx->templateFinder, $tpl);
             }
             if (!empty($contx->templateDirs))
             {

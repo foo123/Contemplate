@@ -1,8 +1,8 @@
-var  echo = console.log,
-    Contemplate = require(__dirname+ '/../../src/js/Contemplate.js')
-;
+"use strict";
+const echo = console.log;
+const Contemplate = require(__dirname+ '/../../src/js/Contemplate.js');
 
-var tpl = '<% $v->prop %><% $v->func() %>';
+const tpl = '<% $v->prop %><% $v->func() %>';
 Contemplate.add({
     //'inline' : [tpl],
     'test' : __dirname+'/test.tpl.html'
@@ -17,9 +17,9 @@ function test()
 {
     this.prop = 'prop';
     this.prop2 = this;
-    this.func = function(){ return 'func'; };
-    this.getPropGetter = function(){ return 'propGetter'; };
-    this.method = function(){ return this; };
+    this.func = function() {return 'func';};
+    this.getPropGetter = function() {return 'propGetter';};
+    this.method = function() {return this;};
 }
-var arr = ['foo',{'prop':'prop'}];
+let arr = ['foo',{'prop':'prop'}];
 echo(Contemplate.tpl('test', {'v':new test(),'a':arr}));

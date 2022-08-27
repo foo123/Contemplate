@@ -12,23 +12,28 @@
 *
 **/
 
-/**
-** !! Needs to be run through a web server, eg Apache, XAMPP etc.. !!
-**      start your web server, 
-**      make sure this file's path is accessible to the server
-**      point the browser to this file and view the output
-**/
+// run as: "php -S localhost:8001 test.php"
 
 define('ABSPATH', dirname(__FILE__));
-// include the Contemplate Class
-include dirname(ABSPATH).'/src/php/Contemplate.php';
 
-function test_plugin($v=null)
+$uri = /*urldecode(*/parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH)/*)*/;
+
+if ($uri === '') $uri = '/';
+
+if ($uri !== '/' && file_exists(ABSPATH . '/' . $uri))
 {
-    if ( $v ) return 'Plugin Test value: ' . $v;
+    return false; // existing file, serve as-is
+}
+
+// include the Contemplate Class
+include_once(ABSPATH.'/../../src/php/Contemplate.php');
+
+function test_plugin($v = null)
+{
+    if ($v) return 'Plugin Test value: ' . $v;
     return 'Plugin Test no value given';
 }
-function print_plugin($v=null)
+function print_plugin($v = null)
 {
     return '<pre>' . print_r($v, true) . '</pre>';
 }
@@ -37,13 +42,13 @@ function print_plugin($v=null)
 {
     return 'uuid overriden';
 }
-// does not override native Contemplate::uuid method, 
+// does not override native Contemplate::uuid method,
 // so make this expected behaviour for other Contemplate implementations as well
 Contemplate::addPlugin('uuid', 'uuid_override');*/
 
 Contemplate::addPlugin('plg_test', 'test_plugin');
 Contemplate::addPlugin('plg_print', 'print_plugin');
-function bracket($v=null)
+function bracket($v = null)
 {
     return '[[' . $v . ']]';
 }
@@ -83,16 +88,16 @@ Contemplate::setTemplateFinder(function($tpl){
 
 
 // the data to be used by the templates
-$listdata=array('list'=>array('item1', 'item2', 'item3'));
+$listdata = array('list'=>array('item1', 'item2', 'item3'));
 
-$data=array(
+$data = array(
     'users' => array(
-        array( 
+        array(
             array('name'=>'u1', 'text'=>'text1', 'id'=>'id1'),
             array('name'=>'u2', 'text'=>'text2', 'id'=>'id2', 'key1'=>'key1'),
             array('name'=>'u3', 'text'=>'text3', 'id'=>'id3'),
         ),
-        array( 
+        array(
             array('name'=>'u4', 'text'=>'text4', 'id'=>'id4'),
             array('name'=>'u5', 'text'=>'text5', 'id'=>'id5'),
             array('name'=>'u6', 'text'=>'text6', 'id'=>'id6', 'key'=>array('key1'=>'key1')),
@@ -117,7 +122,7 @@ $data=array(
     )
 );
 
-$main_template_data=array(
+$main_template_data = array(
     'templates' => array(
         'base' => Contemplate::getTemplateContents('base'),
         'demo' => Contemplate::getTemplateContents('demo'),
@@ -133,4 +138,3 @@ $main_template_data=array(
 );
 
 echo Contemplate::tpl('main', $main_template_data);
-exit(0);

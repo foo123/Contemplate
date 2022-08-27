@@ -1,0 +1,36 @@
+<% %>
+
+<% for ($v in $list) %>
+<%php:
+	$foo = "php";
+	$bar = "code";
+%><%js:
+    var foo = "js";
+    var bar = "code";
+%><%py:
+    foo = "py"
+    bar = "code"
+%>
+<% $v %>
+<%php:= "php" %><%js:= "js" %><%py:= "py" %>
+<% endfor %>
+
+<%php:postdent(1):
+foreach ($data['list'] as $v)
+{
+%><%js:postdent(1):
+for (var i=0; i<data['list'].length; ++i)
+{
+	var v = data['list'][i];
+%><%py:postdent(1):
+for v in data['list']:
+	#tabbed comment
+%><%php:= $v %><%js:= v %><%py:= v %>
+<%php:predent(-1):
+}
+%><%js:predent(-1):
+}
+%><%py:predent(-1):
+
+%>
+

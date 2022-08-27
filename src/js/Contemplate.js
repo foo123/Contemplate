@@ -2,28 +2,26 @@
 *  Contemplate
 *  Light-weight Template Engine for PHP, Python, Node, client-side and XPCOM/SDK JavaScript
 *
-*  @version: 1.4.0
+*  @version: 1.5.0
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
 *  http://ejohn.org/blog/javascript-micro-templating/
 *
 **/
-!function( root, name, factory ){
+!function(root, name, factory) {
 "use strict";
-if ( ('undefined'!==typeof Components)&&('object'===typeof Components.classes)&&('object'===typeof Components.classesByID)&&Components.utils&&('function'===typeof Components.utils['import']) ) /* XPCOM */
+if (('undefined'!==typeof Components)&&('object'===typeof Components.classes)&&('object'===typeof Components.classesByID)&&Components.utils&&('function'===typeof Components.utils['import'])) /* XPCOM */
     (root.$deps = root.$deps||{}) && (root.EXPORTED_SYMBOLS = [name]) && (root[name] = root.$deps[name] = factory.call(root));
-else if ( ('object'===typeof module)&&module.exports ) /* CommonJS */
+else if (('object'===typeof module)&&module.exports) /* CommonJS */
     (module.$deps = module.$deps||{}) && (module.exports = module.$deps[name] = factory.call(root));
-else if ( ('undefined'!==typeof System)&&('function'===typeof System.register)&&('function'===typeof System['import']) ) /* ES6 module */
-    System.register(name,[],function($__export){$__export(name, factory.call(root));});
-else if ( ('function'===typeof define)&&define.amd&&('function'===typeof require)&&('function'===typeof require.specified)&&require.specified(name) /*&& !require.defined(name)*/ ) /* AMD */
+else if (('function'===typeof define)&&define.amd&&('function'===typeof require)&&('function'===typeof require.specified)&&require.specified(name) /*&& !require.defined(name)*/) /* AMD */
     define(name,['module'],function(module){factory.moduleUri = module.uri; return factory.call(root);});
-else if ( !(name in root) ) /* Browser/WebWorker/.. */
+else if (!(name in root)) /* Browser/WebWorker/.. */
     (root[name] = factory.call(root)||1)&&('function'===typeof(define))&&define.amd&&define(function(){return root[name];} );
 }(  /* current root */          'undefined' !== typeof self ? self : this,
     /* module name */           "Contemplate",
-    /* module factory */        function ModuleFactory__Contemplate( undef ){
+    /* module factory */        function ModuleFactory__Contemplate(undef) {
 "use strict";
 /////////////////////////////////////////////////////////////////////////////////////
 //
@@ -32,7 +30,7 @@ else if ( !(name in root) ) /* Browser/WebWorker/.. */
 //////////////////////////////////////////////////////////////////////////////////////
 
 // private vars
-var __version__ = "1.4.0", Contemplate,
+var __version__ = "1.5.0", Contemplate,
 
     PROTO = 'prototype', Obj = Object, Arr = Array,
     HAS = Obj[PROTO].hasOwnProperty, toString = Obj[PROTO].toString,
@@ -49,14 +47,14 @@ var __version__ = "1.4.0", Contemplate,
     import_ = isXPCOM ? Cu['import'] : (isNode ? require : NOP),
     fs = isNode ? import_('fs') : null,
     import_module = isXPCOM
-    ? function import_module( name, path ){ import_( path, $Scope ); return $Scope[ name ]; }
+    ? function import_module(name, path) {import_(path, $Scope); return $Scope[name];}
     : (isNode
-    ? function import_module( name, path ){ return import_( path ); }
+    ? function import_module(name, path) {return import_(path);}
     : NOP),
-    XHR = function( ) {
+    XHR = function() {
     return window.XMLHttpRequest
         // code for IE7+, Firefox, Chrome, Opera, Safari
-        ? new XMLHttpRequest( )
+        ? new XMLHttpRequest()
         // code for IE6, IE5
         : new ActiveXObject("Microsoft.XMLHTTP") // or ActiveXObject("Msxml2.XMLHTTP"); ??
     ;
@@ -68,7 +66,7 @@ var __version__ = "1.4.0", Contemplate,
     // https://nodejs.org/api/os.html#os_os_eol
     //
     $__EOL = "\n", $__TEOL = /*isNode ? import_('os').EOL :*/ "\n", $__escape = true,
-    $__preserveLinesDefault = "' + \"\\n\" + '", $__preserveLines = '',  $__compatibility = false,
+    $__preserveLinesDefault = "' + \"\\n\" + '", $__preserveLines = '',
 
     $__level = 0, $__pad = "    ", $__idcnt = 0,
     $__locals, $__variables, $__loops = 0, $__ifs = 0, $__loopifs = 0, $__forType = 2,
@@ -78,8 +76,11 @@ var __version__ = "1.4.0", Contemplate,
     $__ctx, $__global, $__context, $__uuid = 0,
 
     UNDERLN = /[\W]+/g, NEWLINE = /\n\r|\r\n|\n|\r/g, SQUOTE = /'/g,
-    DS_RE = /[\/\\]/, BASENAME_RE = /[\/\\]?[^\/\\]+$/, TAG_RE = /<[^<>]+>/gm, AMP_RE = /&+/g,
-    ALPHA = /^[a-zA-Z_]/, NUM = /^[0-9]/, ALPHANUM = /^[a-zA-Z0-9_]/i, SPACE = /^\s/,
+    DS_RE = /[\/\\]/, BASENAME_RE = /[\/\\]?[^\/\\]+$/,
+    TAG_RE = /<\/?[a-zA-Z0-9:_\-]+[^<>]*>/gm, AMP_RE = /&+/g,
+    ALPHA = /^[a-zA-Z_]/, NUM = /^[0-9]/, ALPHANUM = /^[a-zA-Z0-9_]/i,
+    SPACE = /^\s/, ALL_SPACE = /^\s+$/,
+    INDENT = /^(postdent|predent)\((-?\d+)\):/,
     re_controls = /(\t|\s?)\s*((#ID_(continue|endblock|elsefor|endfor|endif|break|else|fi)#(\s*\(\s*\))?)|(#ID_([^#]+)#\s*(\()))(.*)$/g,
 
     $__directives = [
@@ -93,23 +94,8 @@ var __version__ = "1.4.0", Contemplate,
      'elif'     : 'elseif'
     ,'fi'       : 'endif'
     },
-    $__funcs = [
-    's', 'n', 'f', 'q', 'qq',
-    'echo', 'time', 'count',
-    'lowercase', 'uppercase', 'ucfirst', 'lcfirst', 'sprintf',
-    'date', 'ldate', 'locale', 'xlocale',
-    'inline', 'tpl', 'uuid', 'haskey',
-    'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
-    'is_array', 'in_array', 'json_encode', 'json_decode',
-    'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale', 'join', 'queryvar', 'striptags', 'vsprintf',
-    'buildquery', 'parsequery', 'keys', 'values'
-    ],
     $__aliases = {
-     'l'        : 'locale'
-    ,'xl'       : 'xlocale'
-    ,'nl'       : 'nlocale'
-    ,'nxl'      : 'nxlocale'
-    ,'cc'       : 'concat'
+     'cc'       : 'concat'
     ,'j'        : 'join'
     ,'dq'       : 'qq'
     ,'now'      : 'time'
@@ -122,18 +108,18 @@ var __version__ = "1.4.0", Contemplate,
     TT_FUNC, TT_RCODE
 ;
 
-if ( isXPCOM )
+if (isXPCOM)
 {
     // do some necessary imports
     import_("resource://gre/modules/NetUtil.jsm");
     import_("resource://gre/modules/FileUtils.jsm");
 }
 
-/*function HAS( o, x )
+/*function HAS(o, x)
 {
     return !!(o && Object.prototype.hasOwnProperty.call(o, x));
 }*/
-function reset_state( )
+function reset_state()
 {
     $__loops = 0; $__ifs = 0; $__loopifs = 0; $__forType = 2; $__level = 0;
     $__allblocks = []; $__allblockscnt = {}; $__openblocks = [[null, -1]];
@@ -141,7 +127,7 @@ function reset_state( )
     $__locals[$__currentblock] = $__locals[$__currentblock] || {};
     $__variables[$__currentblock] = $__variables[$__currentblock] || {};
 }
-function clear_state( )
+function clear_state()
 {
     $__loops = 0; $__ifs = 0; $__loopifs = 0; $__forType = 2; $__level = 0;
     $__allblocks = null; $__allblockscnt = null; $__openblocks = null;
@@ -149,32 +135,105 @@ function clear_state( )
     $__idcnt = 0; $__strings = null;
     /*$__extends = null; $__uses = [];*/
 }
-function push_state( )
+function push_state()
 {
     return [$__loops, $__ifs, $__loopifs, $__forType, $__level,
     $__allblocks, $__allblockscnt, $__openblocks, $__extends, $__locals, $__variables, $__currentblock, $__uses];
 }
-function pop_state( state )
+function pop_state(state)
 {
     $__loops = state[0]; $__ifs = state[1]; $__loopifs = state[2]; $__forType = state[3]; $__level = state[4];
     $__allblocks = state[5]; $__allblockscnt = state[6]; $__openblocks = state[7];
     $__extends = state[8]; $__locals = state[9]; $__variables = state[10]; $__currentblock = state[11]; $__uses = state[12];
 }
-function align( s, level )
+function remove_initial_space(s)
+{
+    var l = s.length, sl, i, initial_space, c, pos;
+    if (l)
+    {
+        initial_space = '';
+        for (i=0; i<l; ++i)
+        {
+            c = s.charAt(i);
+            if (' ' === c || "\t" === c) initial_space += c;
+            else break;
+        }
+        sl = initial_space.length;
+        if (sl)
+        {
+            s = s.slice(sl);
+            pos = s.indexOf("\n", 0);
+            while (-1 !== pos)
+            {
+                if (initial_space === s.slice(pos+1, pos+1+sl))
+                {
+                    s = s.slice(0, pos+1) + s.slice(pos+1+sl);
+                }
+                pos = s.indexOf("\n", pos + 1);
+            }
+        }
+    }
+    return s;
+}
+function remove_blank_lines(s)
+{
+    var lines = s.split("\n"), n = lines.length, start = 0, end = n-1, i, l;
+    for (i=0; i<n; ++i)
+    {
+        l = lines[i];
+        if (l.length && !ALL_SPACE.test(l))
+        {
+            start = i;
+            break;
+        }
+    }
+    for (i=n-1; i>=start; --i)
+    {
+        l = lines[i];
+        if (l.length && !ALL_SPACE.test(l))
+        {
+            end = i;
+            break;
+        }
+    }
+    return lines.slice(start, end+1).join("\n");
+}
+function align(s, level)
 {
     // pad lines to generate formatted code
-    if ( 2 > arguments.length ) level = $__level;
-    var aligned = '', alignment, c, i, l = s.length;
-    if ( l && (0 < level) )
+    if (2 > arguments.length) level = $__level;
+    s = remove_initial_space(s);
+    var aligned = '', alignment, c, i, l = s.length, is_line_start;
+    if (l && (0 < level))
     {
         alignment = new Arr(level+1).join($__pad);
         aligned = alignment;
-        for(i=0; i<l; i++)
+        is_line_start = true;
+        for (i=0; i<l; ++i)
         {
             c = s.charAt(i);
-            /*if ( "\r" === c ) continue;
-            else*/if ( "\n" === c ) aligned += /*$__TEOL*/"\n" + alignment;
-            else  aligned += c;
+            if ("\n" === c)
+            {
+                aligned += "\n" + alignment;
+                is_line_start = true;
+            }
+            else if (is_line_start)
+            {
+                // consistently replace tabs with our tabbed spaces
+                if (SPACE.test(c))
+                {
+                    aligned += "\t" === c ? $__pad : c;
+                }
+                else
+                {
+                    aligned += c;
+                    is_line_start = false;
+                }
+            }
+            else
+            {
+                aligned += c;
+            }
         }
     }
     else
@@ -183,104 +242,104 @@ function align( s, level )
     }
     return aligned;
 }
-function merge( )
+function merge()
 {
     var args = arguments, l = args.length;
-    if ( l < 1 ) return;
+    if (l < 1) return;
     var merged = args[0], i, k, o;
-    for (i=1; i<l; i++)
+    for (i=1; i<l; ++i)
     {
-        o = args[ i ];
-        if ( o ) for (k in o) if ( HAS.call(o,k) ) merged[ k ] = o[ k ];
+        o = args[i];
+        if (o) for (k in o) if (HAS.call(o,k)) merged[k] = o[k];
     }
     return merged;
 }
-function get_separators( text, separators )
+function get_separators(text, separators)
 {
     var line, seps, pos, i, l;
-    if ( separators )
+    if (separators)
     {
-        seps = trim( separators ).split( " " );
-        $__leftTplSep = trim( seps[ 0 ] );
-        $__rightTplSep = trim( seps[ 1 ] );
+        seps = trim(separators).split(" ");
+        $__leftTplSep = trim(seps[0]);
+        $__rightTplSep = trim(seps[1]);
     }
     else
     {
         // tpl separators are defined on 1st (non-empty) line of tpl content
         l = text.length; i = 0; pos = 0; line = "";
-        while ( i < l && -1 < pos && !line.length )
+        while (i < l && -1 < pos && !line.length)
         {
-            pos = text.indexOf( "\n", i );
-            line = -1 < pos ? trim( text.slice(i, pos+1) ) : "";
+            pos = text.indexOf("\n", i);
+            line = -1 < pos ? trim(text.slice(i, pos+1)) : "";
             i = pos+1;
         }
-        if ( line.length )
+        if (line.length)
         {
-            seps = line.split( " " );
-            $__leftTplSep = trim( seps[ 0 ] );
-            $__rightTplSep = trim( seps[ 1 ] );
-            text = text.slice( pos+1 );
+            seps = line.split(" ");
+            $__leftTplSep = trim(seps[0]);
+            $__rightTplSep = trim(seps[1]);
+            text = text.slice(pos+1);
         }
     }
     return text;
 }
 
-function split_arguments( args, delim )
+function split_arguments(args, delim)
 {
     args = trim(args);
-    if ( !args.length ) return [''];
-    if ( arguments.length < 2 ) delim = ',';
+    if (!args.length) return [''];
+    if (arguments.length < 2) delim = ',';
     var a = [], paren = [], s = '', i = 0, l = args.length, c;
     while (i < l)
     {
         c = args.charAt(i++);
-        if ( delim === c && !paren.length )
+        if (delim === c && !paren.length)
         {
             a.push(trim(s));
             s = '';
             continue;
         }
         s += c;
-        if ( '(' === c )
+        if ('(' === c)
         {
             paren.unshift(')');
         }
-        else if ( '{' === c )
+        else if ('{' === c)
         {
             paren.unshift('}');
         }
-        else if ( '[' === c )
+        else if ('[' === c)
         {
             paren.unshift(']');
         }
-        else if ( ')' === c || '}' === c || ']' === c )
+        else if (')' === c || '}' === c || ']' === c)
         {
-            if ( !paren.length || paren[0] !== c ) break;
+            if (!paren.length || paren[0] !== c) break;
             paren.shift();
         }
     }
-    if ( s.length ) a.push(trim(s));
-    if ( i < l ) a.push(trim(args.slice(i)));
+    if (s.length) a.push(trim(s));
+    if (i < l) a.push(trim(args.slice(i)));
     return a;
 }
 
-function local_variable( variable, block )
+function local_variable(variable, block)
 {
-    if ( null == variable )
+    if (null == variable)
     {
         return '_loc_' + (++$__idcnt);
     }
     else
     {
-        if ( null == block ) block = $__currentblock;
+        if (null == block) block = $__currentblock;
         $__locals[block][$__variables[block][variable]] = 1;
         return variable;
     }
 }
 
-function is_local_variable( variable, block )
+function is_local_variable(variable, block)
 {
-    if ( null == block ) block = $__currentblock;
+    if (null == block) block = $__currentblock;
     return '_loc_' === variable.slice(0, 5) || !!$__locals[block][$__variables[block][variable]];
 }
 
@@ -288,40 +347,40 @@ function is_local_variable( variable, block )
 // Control structures
 //
 
-function t_include( id, cb )
+function t_include(id, cb)
 {
     var tpl, state, ch, contx = $__context;
-    id = trim( id );
-    if ( $__strings && HAS.call($__strings,id) ) id = $__strings[id];
+    id = trim(id);
+    if ($__strings && HAS.call($__strings, id)) id = $__strings[id];
     ch = id.charAt(0);
-    if ( ('"' === ch || "'" === ch) && (ch === id.charAt(id.length-1)) ) id = id.slice(1,-1); // quoted id
+    if (('"' === ch || "'" === ch) && (ch === id.charAt(id.length-1))) id = id.slice(1, -1); // quoted id
 
-    if ( 'function' === typeof cb )
+    if ('function' === typeof cb)
     {
         // cache it
-        if ( !HAS.call(contx.partials,id) /*&& !HAS.call($__global.partials,id)*/ )
+        if (!HAS.call(contx.partials, id) /*&& !HAS.call($__global.partials,id)*/)
         {
-            get_template_contents( id, contx, function(err, tpl){
-                if ( err )
+            get_template_contents(id, contx, function(err, tpl) {
+                if (err)
                 {
                     cb(err, null);
                     return;
                 }
-                tpl = get_separators( tpl );
-                state = push_state( );
-                reset_state( );
-                parse( tpl, $__leftTplSep, $__rightTplSep, false, function(err, text){
-                    if ( err )
+                tpl = get_separators(tpl);
+                state = push_state();
+                reset_state();
+                parse(tpl, $__leftTplSep, $__rightTplSep, false, function(err, text) {
+                    if (err)
                     {
                         cb(err, null);
                         return;
                     }
                     contx.partials[id] = [" " + text +  "';" + $__TEOL, $__uses ? $__uses.slice() : []];
-                    pop_state( state );
+                    pop_state(state);
                     // add usedTpls used inside include tpl to current usedTpls
-                    for(var uses = contx.partials[id][1],usedTpl=0; usedTpl<uses.length; usedTpl++)
+                    for (var uses = contx.partials[id][1],usedTpl=0; usedTpl<uses.length; ++usedTpl)
                     {
-                        if ( -1 === $__uses.indexOf(uses[usedTpl]) )
+                        if (-1 === $__uses.indexOf(uses[usedTpl]))
                             $__uses.push(uses[usedTpl]);
                     }
                     cb(null, align(contx.partials[id][0]));
@@ -331,9 +390,9 @@ function t_include( id, cb )
         else
         {
             // add usedTpls used inside include tpl to current usedTpls
-            for(var uses = contx.partials[id][1],usedTpl=0; usedTpl<uses.length; usedTpl++)
+            for (var uses = contx.partials[id][1],usedTpl=0; usedTpl<uses.length; ++usedTpl)
             {
-                if ( -1 === $__uses.indexOf(uses[usedTpl]) )
+                if (-1 === $__uses.indexOf(uses[usedTpl]))
                     $__uses.push(uses[usedTpl]);
             }
             cb(null, align(contx.partials[id][0]));
@@ -343,37 +402,37 @@ function t_include( id, cb )
     else
     {
         // cache it
-        if ( !HAS.call(contx.partials,id) /*&& !HAS.call($__global.partials,id)*/ )
+        if (!HAS.call(contx.partials, id) /*&& !HAS.call($__global.partials,id)*/)
         {
-            tpl = get_template_contents( id, contx );
-            tpl = get_separators( tpl );
-            state = push_state( );
-            reset_state( );
-            contx.partials[id] = [" " + parse( tpl, $__leftTplSep, $__rightTplSep, false ) + "';" + $__TEOL, $__uses ? $__uses.slice() : []];
-            pop_state( state );
+            tpl = get_template_contents(id, contx);
+            tpl = get_separators(tpl);
+            state = push_state();
+            reset_state();
+            contx.partials[id] = [" " + parse(tpl, $__leftTplSep, $__rightTplSep, false) + "';" + $__TEOL, $__uses ? $__uses.slice() : []];
+            pop_state(state);
         }
         // add usedTpls used inside include tpl to current usedTpls
-        for(var uses = contx.partials[id][1],usedTpl=0; usedTpl<uses.length; usedTpl++)
+        for (var uses = contx.partials[id][1],usedTpl=0; usedTpl<uses.length; ++usedTpl)
         {
-            if ( -1 === $__uses.indexOf(uses[usedTpl]) )
+            if (-1 === $__uses.indexOf(uses[usedTpl]))
                 $__uses.push(uses[usedTpl]);
         }
-        return align( contx.partials[id][0] /*|| $__global.partials[id][0]*/ );
+        return align(contx.partials[id][0] /*|| $__global.partials[id][0]*/);
     }
 }
-function t_block( block )
+function t_block(block)
 {
     block = block.split(',');
     var echoed = !(block.length>1 ? "false"===trim(block[1]) : false);
     block = trim(block[0]);
-    if ( $__strings && HAS.call($__strings,block) ) block = $__strings[block];
+    if ($__strings && HAS.call($__strings, block)) block = $__strings[block];
     var ch = block.charAt(0);
-    if ( ('"' === ch || "'" === ch) && (ch === block.charAt(block.length-1)) ) block = block.slice(1,-1); // quoted block
+    if (('"' === ch || "'" === ch) && (ch === block.charAt(block.length-1))) block = block.slice(1, -1); // quoted block
 
-    $__allblocks.push( [block, -1, -1, 0, $__openblocks[ 0 ][ 1 ], echoed] );
-    $__allblockscnt[ block ] = $__allblockscnt[ block ] ? ($__allblockscnt[ block ]+1) : 1;
+    $__allblocks.push([block, -1, -1, 0, $__openblocks[0][1], echoed]);
+    $__allblockscnt[block] = $__allblockscnt[block] ? ($__allblockscnt[block]+1) : 1;
     $__blockptr = $__allblocks.length;
-    $__openblocks.unshift( [block, $__blockptr-1] );
+    $__openblocks.unshift([block, $__blockptr-1]);
     $__startblock = block;
     $__endblock = null;
     $__currentblock = block;
@@ -381,11 +440,11 @@ function t_block( block )
     $__variables[$__currentblock] = $__variables[$__currentblock] || {};
     return "' +  #BLOCK_" + block + "#";
 }
-function t_endblock( )
+function t_endblock()
 {
-    if ( 1 < $__openblocks.length )
+    if (1 < $__openblocks.length)
     {
-        var block = $__openblocks.shift( );
+        var block = $__openblocks.shift();
         $__endblock = block[0];
         $__blockptr = block[1]+1;
         $__startblock = null;
@@ -401,26 +460,26 @@ function t_endblock( )
 
 //
 // auxilliary parsing methods
-function parse_constructs_async( s, cb )
+function parse_constructs_async(s, cb)
 {
     // reset lastIndex of regex, else it may fail where it should succeed
     re_controls.lastIndex = 0;
-    var match = re_controls.exec( s ), s2;
-    if ( !match )
+    var match = re_controls.exec(s), s2;
+    if (!match)
     {
         cb(null, s);
         return;
     }
-    parse_constructs(match, function(err, replace){
-        if ( err )
+    parse_constructs(match, function(err, replace) {
+        if (err)
         {
             cb(err, null);
             return;
         }
         s2 = s.slice(0, match.index) + replace;
         // continue until end
-        parse_constructs_async( s.slice(match.index+match[0].length), function(err, replace2){
-            if ( err )
+        parse_constructs_async(s.slice(match.index+match[0].length), function(err, replace2) {
+            if (err)
             {
                 cb(err, null);
                 return;
@@ -429,7 +488,7 @@ function parse_constructs_async( s, cb )
         });
     });
 }
-function parse_constructs( match, cb )
+function parse_constructs(match, cb)
 {
     cb = 'function' === typeof cb ? cb : null;
     /*
@@ -453,55 +512,55 @@ function parse_constructs( match, cb )
         startParen = match8 || false,
         args = '',  out = '', paren = 0, l, i, ch, m,
         varname, expr, args2, usedTpl,
-        parse_constructs_sync = function(m0,m1,m2,m3,m4,m5,m6,m7,m8,m9){
+        parse_constructs_sync = function(m0,m1,m2,m3,m4,m5,m6,m7,m8,m9) {
             return parse_constructs([m0,m1,m2,m3,m4,m5,m6,m7,m8,m9]);
         };
 
     // parse parentheses and arguments, accurately
-    if ( startParen && startParen.length )
+    if (startParen && startParen.length)
     {
         paren = 1; l = rest.length; i = 0;
-        while ( i < l && paren > 0 )
+        while (i < l && paren > 0)
         {
             ch = rest.charAt(i++);
-            if ( '(' === ch ) paren++;
-            else if ( ')' === ch ) paren--;
-            if ( paren > 0 ) args += ch;
+            if ('(' === ch) ++paren;
+            else if (')' === ch) --paren;
+            if (paren > 0) args += ch;
         }
         rest = rest.slice(args.length+1);
     }
     args = trim(args);
 
-    if ( HAS.call($__directive_aliases,ctrl) ) ctrl = $__directive_aliases[ctrl];
-    m = $__directives.indexOf( ctrl );
-    if ( -1 < m )
+    if (HAS.call($__directive_aliases, ctrl)) ctrl = $__directive_aliases[ctrl];
+    m = $__directives.indexOf(ctrl);
+    if (-1 < m)
     {
-        switch ( m )
+        switch (m)
         {
             case 0 /*'set'*/:
             case 20 /*'local_set'*/:
-                args = args.replace( re_controls, parse_constructs_sync );
+                args = args.replace(re_controls, parse_constructs_sync);
                 args = split_arguments(args, ',');
                 varname = trim(args.shift());
-                expr = trim(args.join( ',' ));
-                if ( 20 === m && !is_local_variable(varname) )
+                expr = trim(args.join(','));
+                if (20 === m && !is_local_variable(varname))
                 {
-                    local_variable( varname ); // make it a local variable
+                    local_variable(varname); // make it a local variable
                     varname = 'var '+varname;
                 }
-                out = "';" + $__TEOL + align( varname + ' = ('+ expr +');' ) + $__TEOL;
+                out = "';" + $__TEOL + align(varname + ' = ('+ expr +');') + $__TEOL;
                 break;
             case 21 /*'get'*/:
-                args = args.replace( re_controls, parse_constructs_sync );
+                args = args.replace(re_controls, parse_constructs_sync);
                 out = prefix + 'Contemplate.get(' + args + ')';
                 break;
             case 1 /*'unset'*/:
-                args = args.replace( re_controls, parse_constructs_sync );
+                args = args.replace(re_controls, parse_constructs_sync);
                 varname = args;
-                if ( varname && varname.length )
+                if (varname && varname.length)
                 {
-                    varname = trim( varname );
-                    out = "';" + $__TEOL + align( 'if ("undefined" !== typeof(' + varname + ')) delete ' + varname + ';' ) + $__TEOL;
+                    varname = trim(varname);
+                    out = "';" + $__TEOL + align('if ("undefined" !== typeof(' + varname + ')) delete ' + varname + ';') + $__TEOL;
                 }
                 else
                 {
@@ -509,79 +568,79 @@ function parse_constructs( match, cb )
                 }
                 break;
             case 2 /*'isset'*/:
-                args = args.replace( re_controls, parse_constructs_sync );
+                args = args.replace(re_controls, parse_constructs_sync);
                 varname = args;
                 out = '("undefined" !== typeof(' + varname + ') && null !== ' + varname + ')';
                 break;
             case 3 /*'if'*/:
-                args = args.replace( re_controls, parse_constructs_sync );
+                args = args.replace(re_controls, parse_constructs_sync);
                 out = "';" + align([
                                 ""
                                 ,"if ("+args+")"
                                 ,"{"
                                 ,""
-                            ].join( $__TEOL ));
-                $__ifs++;
-                $__level++;
+                            ].join($__TEOL));
+                ++$__ifs;
+                ++$__level;
                 break;
             case 4 /*'elseif'*/:
-                args = args.replace( re_controls, parse_constructs_sync );
-                $__level--;
+                args = args.replace(re_controls, parse_constructs_sync);
+                --$__level;
                 out = "';" + align([
                                 ""
                                 ,"}"
                                 ,"else if ("+args+")"
                                 ,"{"
                                 ,""
-                            ].join( $__TEOL ));
-                $__level++;
+                            ].join($__TEOL));
+                ++$__level;
                 break;
             case 5 /*'else'*/:
-                $__level--;
+                --$__level;
                 out = "';" + align([
                                 ""
                                 ,"}"
                                 ,"else"
                                 ,"{"
                                 ,""
-                            ].join( $__TEOL ));
-                $__level++;
+                            ].join($__TEOL));
+                ++$__level;
                 break;
             case 6 /*'endif'*/:
-                $__ifs--;
-                $__level--;
+                --$__ifs;
+                --$__level;
                 out = "';" + align([
                                 ""
                                 ,"}"
                                 ,""
-                            ].join( $__TEOL ));
+                            ].join($__TEOL));
                 break;
             case 7 /*'for'*/:
-                args = args.replace( re_controls, parse_constructs_sync );
+                args = args.replace(re_controls, parse_constructs_sync);
                 var for_expr = args, is_php_style = for_expr.indexOf(' as '),
                     is_python_style = for_expr.indexOf(' in '),
                     o, _o, kv, isAssoc
                 ;
 
-                if ( -1 < is_python_style )
+                if (-1 < is_python_style)
                 {
                     for_expr = [for_expr.slice(0, is_python_style), for_expr.slice(is_python_style+4)];
                     o = trim(for_expr[1]);
-                    _o = local_variable( );
+                    _o = local_variable();
                     kv = for_expr[0].split(',');
                 }
-                else /*if ( -1 < is_php_style )*/
+                else/*if ( -1 < is_php_style )*/
                 {
                     for_expr = [for_expr.slice(0, is_php_style), for_expr.slice(is_php_style+4)];
                     o = trim(for_expr[0]);
-                    _o = local_variable( );
+                    _o = local_variable();
                     kv = for_expr[1].split('=>');
                 }
                 isAssoc = kv.length >= 2
 
                 // http://jsperf.com/values-extraction/5
                 // raw 'in' loop with .hasOwnProperty is faster than looping over Object.keys
-                if ( isAssoc )
+                if (isAssoc)
                 {
                     var k = trim(kv[0]),
                         v = trim(kv[1]),
@@ -589,19 +648,19 @@ function parse_constructs( match, cb )
                         _k = '_loc_' + (++$__idcnt),
                         _l = '_loc_' + (++$__idcnt)
                     ;
-                    local_variable( k ); local_variable( v );
+                    local_variable(k); local_variable(v);
                     out = "';" + align([
                                     ""
                                     ,"var "+_o+" = "+o+", "+_oK+" = "+_o+" ? Object.keys("+_o+") : null,"
                                     ,"    "+_k+", "+k+", "+v+", "+_l+" = "+_o+" ? "+_oK+".length : 0;"
                                     ,"if ("+_l+")"
                                     ,"{"
-                                    ,"    for ("+_k+"=0; "+_k+"<"+_l+"; "+_k+"++)"
+                                    ,"    for ("+_k+"=0; "+_k+"<"+_l+"; ++"+_k+")"
                                     ,"    {"
                                     ,"        "+k+" = "+_oK+"["+_k+"]; "+v+" = "+_o+"["+k+"];"
                                     ,"        "
                                     ,""
-                                ].join( $__TEOL ));
+                                ].join($__TEOL));
                     $__forType = 2;
                     $__level+=2;
                 }
@@ -614,7 +673,7 @@ function parse_constructs( match, cb )
                         _kk = '_loc_' + (++$__idcnt),
                         _l = '_loc_' + (++$__idcnt)
                     ;
-                    local_variable( v );
+                    local_variable(v);
                     out = "';" + align([
                                     ""
                                     ,"var "+_o+" = "+o+", "+_arr+" = !!"+_o+".forEach,"
@@ -622,23 +681,23 @@ function parse_constructs( match, cb )
                                     ,"    "+_k+", "+_kk+", "+v+", "+_l+" = "+_oV+" ? "+_oV+".length : 0;"
                                     ,"if ("+_l+")"
                                     ,"{"
-                                    ,"    for ("+_k+"=0; "+_k+"<"+_l+"; "+_k+"++)"
+                                    ,"    for ("+_k+"=0; "+_k+"<"+_l+"; ++"+_k+")"
                                     ,"    {"
                                     ,"        "+_kk+" = "+_oV+"["+_k+"];"
                                     ,"        "+v+" = "+_arr+" ? "+_kk+" : "+_o+"["+_kk+"];"
                                     ,"        "
                                     ,""
-                                ].join( $__TEOL ));
+                                ].join($__TEOL));
                     $__forType = 1;
                     $__level+=2;
                 }
-                $__loops++;  $__loopifs++;
+                ++$__loops;  ++$__loopifs;
                 break;
             case 8 /*'elsefor'*/:
                 /* else attached to  for loop */
-                if ( 2 === $__forType )
+                if (2 === $__forType)
                 {
-                    $__loopifs--;
+                    --$__loopifs;
                     $__level+=-2;
                     out = "';" + align([
                                     ""
@@ -647,12 +706,12 @@ function parse_constructs( match, cb )
                                     ,"else"
                                     ,"{  "
                                     ,""
-                                ].join( $__TEOL ));
-                    $__level+=1;
+                                ].join($__TEOL));
+                    ++$__level;
                 }
                 else
                 {
-                    $__loopifs--;
+                    --$__loopifs;
                     $__level+=-2;
                     out = "';" + align([
                                     ""
@@ -661,98 +720,98 @@ function parse_constructs( match, cb )
                                     ,"else"
                                     ,"{  "
                                     ,""
-                                ].join( $__TEOL ));
-                    $__level+=1;
+                                ].join($__TEOL));
+                    ++$__level;
                 }
                 break;
             case 9 /*'endfor'*/:
-                if ( $__loopifs === $__loops )
+                if ($__loopifs === $__loops)
                 {
-                    if ( 2 === $__forType )
+                    if (2 === $__forType)
                     {
-                        $__loops--; $__loopifs--;
+                        --$__loops; --$__loopifs;
                         $__level+=-2;
                         out = "';" + align([
                                         ""
                                         ,"    }"
                                         ,"}"
                                         ,""
-                                    ].join( $__TEOL ));
+                                    ].join($__TEOL));
                     }
                     else
                     {
-                        $__loops--; $__loopifs--;
+                        --$__loops; --$__loopifs;
                         $__level+=-2;
                         out = "';" + align([
                                         ""
                                         ,"    }"
                                         ,"}"
                                         ,""
-                                    ].join( $__TEOL ));
+                                    ].join($__TEOL));
                     }
                 }
                 else
                 {
-                    $__loops--;
-                    $__level+=-1;
+                    --$__loops;
+                    --$__level;
                     out = "';" + align([
                                     ""
                                     ,"}"
                                     ,""
-                                ].join( $__TEOL ));
+                                ].join($__TEOL));
                 }
                 break;
             case 10 /*'extends'*/:
-                var id = trim( args );
-                if ( $__strings && HAS.call($__strings,id) ) id = $__strings[id];
+                var id = trim(args);
+                if ($__strings && HAS.call($__strings, id)) id = $__strings[id];
                 var ch = id.charAt(0);
-                if ( ('"' === ch || "'" === ch) && (ch === id.charAt(id.length-1)) ) id = id.slice(1,-1); // quoted id
+                if (('"' === ch || "'" === ch) && (ch === id.charAt(id.length-1))) id = id.slice(1, -1); // quoted id
                 $__extends = id;
                 out = "';" + $__TEOL;
                 break;
             case 11 /*'block'*/:
-                out = t_block( args );
+                out = t_block(args);
                 break;
             case 12 /*'endblock'*/:
                 out = t_endblock();
                 break;
             case 13 /*'include'*/:
-                out = cb ? '' : t_include( args );
+                out = cb ? '' : t_include(args);
                 break;
             case 14 /*'super'*/:
-                args = args.replace( re_controls, parse_constructs_sync );
+                args = args.replace(re_controls, parse_constructs_sync);
                 out = prefix + 'self.sprblock(' + args + ', data)';
                 break;
             case 15 /*'getblock'*/:
-                args = args.replace( re_controls, parse_constructs_sync );
+                args = args.replace(re_controls, parse_constructs_sync);
                 out = prefix + '__i__.block(' + args + ', data)';
                 break;
             case 16 /*'iif'*/:
-                args = split_arguments(args.replace( re_controls, parse_constructs_sync ),',');
-                out = prefix + "(("+args[0]+")?("+args[1]+"):("+args[2]+"))";
+                args = split_arguments(args.replace(re_controls, parse_constructs_sync), ',');
+                out = prefix + "(("+args[0]+") ? ("+args[1]+") : ("+args[2]+"))";
                 break;
             case 17 /*'empty'*/:
-                args = args.replace( re_controls, parse_constructs_sync );
+                args = args.replace(re_controls, parse_constructs_sync);
                 out = prefix + '(("undefined" === typeof(' + args + ')) || (null === ' + args + ') || Contemplate.empty(' + args + '))';
                 break;
             case 18 /*'continue'*/:
             case 19 /*'break'*/:
-                out = "';" + $__TEOL + align( 18===m ? 'continue;' : 'break;' ) + $__TEOL;
+                out = "';" + $__TEOL + align(18 === m ? 'continue;' : 'break;') + $__TEOL;
                 break;
         }
-        if ( cb )
+        if (cb)
         {
-            if ( 13 === m )/*'include'*/
+            if (13 === m)/*'include'*/
             {
                 // include may be async now
-                t_include( args, function(err,out){
-                    if ( err )
+                t_include(args, function(err,out) {
+                    if (err)
                     {
                         cb(err, null);
                         return;
                     }
-                    parse_constructs_async(rest, function(err, rest2){
-                        if ( err )
+                    parse_constructs_async(rest, function(err, rest2) {
+                        if (err)
                         {
                             cb(err, null);
                             return;
@@ -763,8 +822,8 @@ function parse_constructs( match, cb )
             }
             else
             {
-                parse_constructs_async(rest, function(err, rest2){
-                    if ( err )
+                parse_constructs_async(rest, function(err, rest2) {
+                    if (err)
                     {
                         cb(err, null);
                         return;
@@ -780,16 +839,16 @@ function parse_constructs( match, cb )
         }
     }
 
-    if ( HAS.call($__context.plugins,ctrl) || HAS.call($__global.plugins,ctrl) )
+    if (HAS.call($__context.plugins, ctrl) || HAS.call($__global.plugins, ctrl))
     {
         // allow custom plugins as template functions
-        var pl = $__context.plugins[ ctrl ] || $__global.plugins[ ctrl ];
-        args = args.replace( re_controls, parse_constructs_sync );
-        out = pl instanceof Contemplate.InlineTemplate ? pl.render([args].concat(split_arguments(args,','))) : 'Contemplate.plg_("' + ctrl + '"' + (!args.length ? '' : ','+args) + ')';
-        if ( cb )
+        var pl = $__context.plugins[ctrl] || $__global.plugins[ctrl];
+        args = args.replace(re_controls, parse_constructs_sync);
+        out = pl instanceof Contemplate.InlineTemplate ? pl.render([args].concat(split_arguments(args, ','))) : 'Contemplate.plg_("' + ctrl + '"' + (!args.length ? '' : ','+args) + ')';
+        if (cb)
         {
-            parse_constructs_async(rest, function(err, rest2){
-                if ( err )
+            parse_constructs_async(rest, function(err, rest2) {
+                if (err)
                 {
                     cb(err, null);
                     return;
@@ -804,136 +863,114 @@ function parse_constructs( match, cb )
         }
     }
 
-    if ( HAS.call($__aliases,ctrl) ) ctrl = $__aliases[ctrl];
-    m = $__funcs.indexOf( ctrl );
-    if ( -1 < m )
+    if (HAS.call($__aliases, ctrl)) ctrl = $__aliases[ctrl];
+    args = args.replace(re_controls, parse_constructs_sync);
+    // aliases and builtin functions
+    switch (ctrl)
     {
-        args = args.replace( re_controls, parse_constructs_sync );
-        // aliases and builtin functions
-        switch( m )
-        {
-            case 0: case 5: out = 'String(' + args + ')'; break;
-            case 1: out = 'parseInt(' + args + ')'; break;
-            case 2: out = 'parseFloat(' + args + ')'; break;
-            case 3: out = '"\'"+(' + args + ')+"\'"'; break;
-            case 4: out = '\'"\'+(' + args + ')+\'"\''; break;
-            case 6: out = 'Contemplate.time()'; break;
-            case 7: out = 'Contemplate.count(' + args + ')'; break;
-            case 8: out = '(' + args + ').toLowerCase()'; break;
-            case 9: out = '(' + args + ').toUpperCase()'; break;
-            case 10: out = 'Contemplate.ucfirst(' + args + ')'; break;
-            case 11: out = 'Contemplate.lcfirst(' + args + ')'; break;
-            case 12: out = 'Contemplate.sprintf(' + args + ')'; break;
-            case 21: out = 'String('+split_arguments(args,',').join(')+String(')+')'; break;
-            case 27:
-                args = split_arguments(args,',');
-                if ( args.length > 1 )
-                    out = "(("+args[1]+")?'[object Array]'===Object.prototype.toString.call("+args[0]+"):'[object Array]'===Object.prototype.toString.call("+args[0]+")||'[object Object]'===Object.prototype.toString.call("+args[0]+"))";
-                else
-                    out = "('[object Array]'===Object.prototype.toString.call("+args[0]+")||'[object Object]'===Object.prototype.toString.call("+args[0]+"))";
-                break;
-            case 28:
-                args = split_arguments(args,',');
-                out = '(-1<('+args[1]+').indexOf('+args[0]+'))';
-                break;
-            case 29: out = 'JSON.stringify('+args+')'; break;
-            case 30: out = 'JSON.parse('+args+')'; break;
-            case 18:
-                args2 = split_arguments(args,',');
-                usedTpl = args2[0];
-                if ( '#STR_' === usedTpl.slice(0, 5) && HAS.call($__strings,usedTpl) )
-                {
-                    // only literal string support here
-                    usedTpl = $__strings[usedTpl].slice(1,-1); // without quotes
-                    if (-1 === $__uses.indexOf(usedTpl))
-                        $__uses.push(usedTpl);
-                }
-                // no break
-            default: out = 'Contemplate.' + ctrl + '(' + args + ')';
-        }
-        if ( cb )
-        {
-            parse_constructs_async(rest, function(err, rest2){
-                if ( err )
-                {
-                    cb(err, null);
-                    return;
-                }
-                cb(null, prefix + out + rest2);
-            });
-            return;
-        }
-        else
-        {
-            return prefix + out + rest.replace(re_controls, parse_constructs_sync);
-        }
+        case 's': out = 'String(' + args + ')'; break;
+        case 'n': out = 'parseInt(' + args + ')'; break;
+        case 'f': out = 'parseFloat(' + args + ')'; break;
+        case 'q': out = '"\'"+(' + args + ')+"\'"'; break;
+        case 'qq': out = '\'"\'+(' + args + ')+\'"\''; break;
+        case 'concat': out = 'String('+split_arguments(args, ',').join(')+String(')+')'; break;
+        case 'is_array':
+            args = split_arguments(args, ',');
+            if (args.length > 1)
+                out = "(("+args[1]+") ? '[object Array]' === Object.prototype.toString.call("+args[0]+") : '[object Array]' === Object.prototype.toString.call("+args[0]+") || '[object Object]' === Object.prototype.toString.call("+args[0]+"))";
+            else
+                out = "('[object Array]'===Object.prototype.toString.call("+args[0]+")||'[object Object]'===Object.prototype.toString.call("+args[0]+"))";
+            break;
+        case 'in_array':
+            args = split_arguments(args, ',');
+            out = '(-1<('+args[1]+').indexOf('+args[0]+'))';
+            break;
+        case 'tpl':
+            args2 = split_arguments(args, ',');
+            usedTpl = args2[0];
+            if ('#STR_' === usedTpl.slice(0, 5) && HAS.call($__strings, usedTpl))
+            {
+                // only literal string support here
+                usedTpl = $__strings[usedTpl].slice(1, -1); // without quotes
+                if (-1 === $__uses.indexOf(usedTpl))
+                    $__uses.push(usedTpl);
+            }
+            // no break
+        default:
+            if (HAS.call(Contemplate, ctrl) && ('function' === typeof Contemplate[ctrl]))
+            {
+                out = 'Contemplate.' + ctrl + '(' + args + ')';
+            }
+            else
+            {
+                out = ctrl + (startParen ? '('+args+')' : '');
+            }
     }
-
-    if ( cb )
+    if (cb)
     {
-        parse_constructs_async(rest, function(err, rest2){
-            if ( err )
+        parse_constructs_async(rest, function(err, rest2) {
+            if (err)
             {
                 cb(err, null);
                 return;
             }
-            cb(null, /*match0*/ prefix + ctrl + (startParen ? '('+args.replace( re_controls, parse_constructs_sync )+')' : '') + rest2);
+            cb(null, prefix + out + rest2);
         });
         return;
     }
     else
     {
-        return /*match0*/ prefix + ctrl + (startParen ? '('+args.replace( re_controls, parse_constructs_sync )+')' : '') + rest.replace(re_controls, parse_constructs_sync);
+        return prefix + out + rest.replace(re_controls, parse_constructs_sync);
     }
 }
-function parse_blocks( s )
+function parse_blocks(s)
 {
     var blocks = [], bl = $__allblocks.length,
         block, delims, tag, rep, tl, rl,
         pos1, pos2, off, containerblock, echoed, EOL = $__TEOL
     ;
 
-    while ( bl-- )
+    while (bl--)
     {
-        delims = $__allblocks[ bl ];
+        delims = $__allblocks[bl];
 
-        block = delims[ 0 ];
-        pos1 = delims[ 1 ];
-        pos2 = delims[ 2 ];
-        off = delims[ 3 ];
-        containerblock = delims[ 4 ];
-        echoed = delims[ 5 ];
+        block = delims[0];
+        pos1 = delims[1];
+        pos2 = delims[2];
+        off = delims[3];
+        containerblock = delims[4];
+        echoed = delims[5];
         tag = "#BLOCK_" + block + "#";
         rep = echoed ? "__i__.block('" + block + "', data);" : "'';";
         tl = tag.length; rl = rep.length;
 
-        if ( -1 < containerblock )
+        if (-1 < containerblock)
         {
             // adjust the ending position of the container block (if nested)
             // to compensate for the replacements in this (nested) block
-            $__allblocks[ containerblock ][ 3 ] += rl - (pos2-pos1+1);
+            $__allblocks[containerblock][3] += rl - (pos2-pos1+1);
         }
         // adjust the ending position of this block (if nested)
         // to compensate for the replacements of any (nested) block(s)
         pos2 += off;
 
-        if ( 1 === $__allblockscnt[ block ] )
+        if (1 === $__allblockscnt[block])
         {
             // 1st occurance, block definition
-            blocks.push([ block, TT_BLOCK.render({
+            blocks.push([block, TT_BLOCK.render({
              'BLOCKCODE'    : s.slice( pos1+tl, pos2-tl-1 ) + "';"
             })]);
         }
         s = s.slice(0, pos1) + rep + s.slice(pos2+1);
-        if ( 1 <= $__allblockscnt[ block ] ) $__allblockscnt[ block ]--;
+        if (1 <= $__allblockscnt[block]) --$__allblockscnt[block];
     }
     //$__allblocks = null; $__allblockscnt = null; $__openblocks = null;
 
     return [s, blocks];
 }
-function parse_variable( s, i, l )
+function parse_variable(s, i, l)
 {
-    if ( ALPHA.test(s[i]) )
+    if (ALPHA.test(s[i]))
     {
         var strings = {}, variables = [], subvariables,
             id, variable, property, variable_raw, variable_main, variable_rest,
@@ -944,10 +981,10 @@ function parse_variable( s, i, l )
 
         // main variable
         variable = s.charAt(i++);
-        while ( i < l && ALPHANUM.test(ch=s.charAt(i)) )
+        while (i < l && ALPHANUM.test(ch=s.charAt(i)))
         {
             variable += ch;
-            i++;
+            ++i;
         }
 
         variable_raw = variable;
@@ -955,45 +992,45 @@ function parse_variable( s, i, l )
         //variable_main = "data['"+variable_raw+"']";
         variable_main = "data."+variable_raw;
         variable_rest = '';
-        $__idcnt++;
+        ++$__idcnt;
         id = "#VAR_"+$__idcnt+"#";
         len = variable_raw.length;
 
         // extra space
         space = 0;
-        while ( i < l && SPACE.test(s.charAt(i)) )
+        while (i < l && SPACE.test(s.charAt(i)))
         {
-            space++;
-            i++;
+            ++space;
+            ++i;
         }
 
         bracketcnt = 0;
 
         // optional properties
-        while ( i < l && ('.' === s.charAt(i) || '[' === s.charAt(i) || '->' === s.substring(i,i+2)) )
+        while (i < l && ('.' === s.charAt(i) || '[' === s.charAt(i) || '->' === s.substring(i, i+2)))
         {
             delim = s.charAt(i++);
             // -> (php) object notation property
-            if ( '-' === delim ) delim += s.charAt(i++);
+            if ('-' === delim) delim += s.charAt(i++);
 
             // extra space
-            while ( i < l && SPACE.test(s.charAt(i)) )
+            while (i < l && SPACE.test(s.charAt(i)))
             {
-                space++;
-                i++;
+                ++space;
+                ++i;
             }
 
             // alpha-numeric dot property
-            if ( '.' === delim )
+            if ('.' === delim)
             {
                 // property
                 property = '';
-                while ( i < l && ALPHANUM.test(s.charAt(i)) )
+                while (i < l && ALPHANUM.test(s.charAt(i)))
                 {
                     property += s.charAt(i++);
                 }
                 lp = property.length;
-                if ( lp )
+                if (lp)
                 {
                     // transform into tpl variable bracketed property
                     //variable_rest += "['" + property + "']";
@@ -1008,16 +1045,16 @@ function parse_variable( s, i, l )
             }
 
             // alpha-numeric (php) object notation property
-            else if ( '->' === delim /*&& ALPHA.test(s.charAt(i))*/ )
+            else if ('->' === delim /*&& ALPHA.test(s.charAt(i))*/)
             {
                 // property
                 property = '';
-                while ( i < l && ALPHANUM.test(s.charAt(i)) )
+                while (i < l && ALPHANUM.test(s.charAt(i)))
                 {
                     property += s.charAt(i++);
                 }
                 lp = property.length;
-                if ( lp )
+                if (lp)
                 {
                     // transform into tpl variable object property
                     //variable_rest += "['" + property + "']";
@@ -1032,26 +1069,26 @@ function parse_variable( s, i, l )
             }
 
             // bracketed property
-            else if ( '[' === delim )
+            else if ('[' === delim)
             {
-                bracketcnt++;
+                ++bracketcnt;
 
                 ch = s.charAt(i);
 
                 // literal string property
                 /*'"' === ch || "'" === ch*/
-                if ( '"' === ch || "'" === ch )
+                if ('"' === ch || "'" === ch)
                 {
                     //property = parse_string(s, ch, i+1, l);
                     str_ = q = ch; escaped = false; si = i+1;
-                    while ( si < l )
+                    while (si < l)
                     {
                         str_ += (ch=s.charAt(si++));
-                        if ( q === ch && !escaped )  break;
+                        if (q === ch && !escaped)  break;
                         escaped = (!escaped && '\\' === ch);
                     }
                     property = str_;
-                    $__idcnt++;
+                    ++$__idcnt;
                     strid = "#STR_"+$__idcnt+"#";
                     strings[strid] = property;
                     variable_rest += delim + strid;
@@ -1063,10 +1100,10 @@ function parse_variable( s, i, l )
                 }
 
                 // numeric array property
-                else if ( NUM.test( ch ) )
+                else if (NUM.test(ch))
                 {
                     property = s.charAt(i++);
-                    while ( i < l && NUM.test(s.charAt(i)) )
+                    while (i < l && NUM.test(s.charAt(i)))
                     {
                         property += s.charAt(i++);
                     }
@@ -1077,11 +1114,11 @@ function parse_variable( s, i, l )
                 }
 
                 // sub-variable property
-                else if ( '$' === ch )
+                else if ('$' === ch)
                 {
                     sub = s.slice(i+1);
                     subvariables = parse_variable(sub, 0, sub.length);
-                    if ( subvariables )
+                    if (subvariables)
                     {
                         // transform into tpl variable property
                         property = subvariables[subvariables.length-1];
@@ -1096,11 +1133,11 @@ function parse_variable( s, i, l )
                 }
 
                 // close bracket
-                else if ( ']' === ch )
+                else if (']' === ch)
                 {
-                    if ( bracketcnt > 0 )
+                    if (bracketcnt > 0)
                     {
-                        bracketcnt--;
+                        --bracketcnt;
                         variable_rest += delim + s.charAt(i++);
                         len += space + 2;
                         space = 0;
@@ -1118,18 +1155,18 @@ function parse_variable( s, i, l )
 
 
                 // extra space
-                while ( i < l && SPACE.test( s.charAt(i) ) )
+                while (i < l && SPACE.test(s.charAt(i)))
                 {
-                    space++;
-                    i++;
+                    ++space;
+                    ++i;
                 }
 
                 // close bracket
-                if ( ']' === s.charAt(i) )
+                if (']' === s.charAt(i))
                 {
-                    if ( bracketcnt > 0 )
+                    if (bracketcnt > 0)
                     {
-                        bracketcnt--;
+                        --bracketcnt;
                         variable_rest += s.charAt(i++);
                         len += space + 1;
                         space = 0;
@@ -1142,20 +1179,20 @@ function parse_variable( s, i, l )
             }
 
             // extra space
-            while ( i < l && SPACE.test(s.charAt(i)) )
+            while (i < l && SPACE.test(s.charAt(i)))
             {
-                space++;
-                i++;
+                ++space;
+                ++i;
             }
         }
 
-        variables.push( [id, variable_raw, variable_main, variable_rest, len, hasStrings, strings] );
+        variables.push([id, variable_raw, variable_main, variable_rest, len, hasStrings, strings]);
         return variables
     }
     return null;
 }
 var str_re = /#STR_\d+#/g;
-function parse_async( tpl, leftTplSep, rightTplSep, withblocks, cb )
+function parse_async(tpl, leftTplSep, rightTplSep, withblocks, cb)
 {
     var t1, t2, p1, p2, l1, l2, len, parsed, s, i,
         tag, tagTpl, strings, variables, hasVariables, hasStrings, varname, id,
@@ -1164,44 +1201,94 @@ function parse_async( tpl, leftTplSep, rightTplSep, withblocks, cb )
         ind, q, str_, escaped, si, space,
         blockTag, hasBlock, notFoundBlock,
         special_chars = "$'\" \n\r\t\v\0%",
-        non_compatibility_mode = !$__compatibility,
-        is_prop_access
+        non_compatibility_mode = true,
+        is_prop_access, isphp, isjs, ispy,
+        code, indent, l3, indenttype, m
     ;
 
     t1 = leftTplSep; l1 = t1.length;
     t2 = rightTplSep; l2 = t2.length;
     parsed = '';
 
-    var parse_chunk = function parse_chunk( ) {
-        if ( !tpl || !tpl.length )
+    var parse_chunk = function parse_chunk() {
+        if (!tpl || !tpl.length)
         {
-            parse_finish( );
+            parse_finish();
             return;
         }
 
-        p1 = tpl.indexOf( t1 );
-        if ( -1 === p1 )
+        p1 = tpl.indexOf(t1);
+        if (-1 === p1)
         {
             s = tpl;
-            if ( $__escape ) s = s.split( "\\" ).join( "\\\\" ); // escape escapes
+            if ($__escape) s = s.split("\\").join("\\\\"); // escape escapes
             parsed += s
-                .split( "'" ).join( "\\'" )  // escape single quotes accurately (used by parse function)
-                .split( /*"\n"*/ /\n/ ).join( $__preserveLines ) // preserve lines
+                .split("'").join("\\'")  // escape single quotes accurately (used by parse function)
+                .split(/*"\n"*/ /\n/).join($__preserveLines) // preserve lines
             ;
 
-            parse_finish( );
+            parse_finish();
             return;
         }
 
-        p2 = tpl.indexOf( t2, p1+l1 );
-        if ( -1 === p2 ) p2 = tpl.length;
+        p2 = tpl.indexOf(t2, p1+l1);
+        if (-1 === p2) p2 = tpl.length;
 
-        s = tpl.slice( 0, p1 );
-        if ( $__escape ) s = s.split( "\\" ).join( "\\\\" ); // escape escapes
-        parsed += s
-            .split( "'" ).join( "\\'" )  // escape single quotes accurately (used by parse function)
-            .split( /*"\n"*/ /\n/ ).join( $__preserveLines ) // preserve lines
-        ;
+        if (p1 > 0)
+        {
+            s = tpl.slice(0, p1);
+            if ($__escape) s = s.split("\\").join("\\\\"); // escape escapes
+            parsed += s
+                .split("'").join("\\'")  // escape single quotes accurately (used by parse function)
+                .split(/*"\n"*/ /\n/).join($__preserveLines) // preserve lines
+            ;
+        }
+
+        // php literal code block
+        isphp = 'php:' === tpl.slice(p1+l1, p1+l1+4);
+        // js literal code block
+        isjs = 'js:' === tpl.slice(p1+l1, p1+l1+3);
+        // py literal code block
+        ispy = 'py:' === tpl.slice(p1+l1, p1+l1+3);
+        if (isphp || isjs || ispy)
+        {
+            // include if in same language else ignore
+            if (isjs)
+            {
+                if ('=' === tpl.slice(p1+l1+3, p1+l1+4))
+                {
+                    parsed += "';" + align("\n/* js code start */") + align("\n__p__ += String(" + trim(tpl.slice(p1+l1+4, p2)) + ");") + align("\n/* js code end */\n__p__ += '");
+                }
+                else
+                {
+                    indent = 0; l3 = 0; indenttype = 'none';
+                    if (m = tpl.slice(p1+l1+3).match(INDENT))
+                    {
+                        indenttype = m[1];
+                        indent = parseInt(m[2]);
+                        l3 = m[0].length;
+                    }
+                    code = remove_blank_lines(tpl.slice(p1+l1+3+l3, p2));
+                    if ('predent' === indenttype)
+                    {
+                        $__level = Math.max(0, $__level + indent);
+                    }
+                    parsed += "';" + align("\n/* js code start */");
+                    if (trim(code).length)
+                    {
+                        parsed += "\n" + align(code);
+                    }
+                    if ('postdent' === indenttype)
+                    {
+                        $__level = Math.max(0, $__level + indent);
+                    }
+                    parsed += align("\n/* js code end */\n__p__ += '");
+                }
+            }
+            tpl = tpl.slice(p2+l2);
+            parse_chunk();
+            return;
+        }
 
         // template TAG
         s = tpl.slice(p1+l1, p2); tpl = tpl.slice(p2+l2);
@@ -1219,36 +1306,36 @@ function parse_async( tpl, leftTplSep, rightTplSep, withblocks, cb )
         ch = '';
         out = '';
 
-        while ( index < countl )
+        while (index < countl)
         {
-            ch = s.charAt( index++ );
-            ind = special_chars.indexOf( ch );
+            ch = s.charAt(index++);
+            ind = special_chars.indexOf(ch);
 
-            if ( -1 < ind )
+            if (-1 < ind)
             {
                 // variable
-                if ( 0 === ind )
+                if (0 === ind)
                 {
-                    if ( space > 0 )
+                    if (space > 0)
                     {
                         out += " ";
                         space = 0;
                     }
                     tok = parse_variable(s, index, countl);
-                    if ( tok )
+                    if (tok)
                     {
-                        for (v=0,len=tok.length; v<len; v++)
+                        for (v=0,len=tok.length; v<len; ++v)
                         {
-                            tokv = tok[ v ];
-                            id = tokv[ 0 ];
-                            $__variables[$__currentblock][ id ] = tokv[ 1 ];
-                            if ( tokv[ 5 ] ) strings = merge( strings, tokv[ 6 ] );
+                            tokv = tok[v];
+                            id = tokv[0];
+                            $__variables[$__currentblock][id] = tokv[1];
+                            if (tokv[5]) strings = merge(strings, tokv[6]);
                         }
                         out += id;
-                        index += tokv[ 4 ];
-                        variables = variables.concat( tok );
+                        index += tokv[4];
+                        variables = variables.concat(tok);
                         hasVariables = true;
-                        hasStrings = hasStrings || tokv[ 5 ];
+                        hasStrings = hasStrings || tokv[5];
                     }
                     else
                     {
@@ -1256,23 +1343,23 @@ function parse_async( tpl, leftTplSep, rightTplSep, withblocks, cb )
                     }
                 }
                 // literal string
-                else if ( 3 > ind )
+                else if (3 > ind)
                 {
-                    if ( space > 0 )
+                    if (space > 0)
                     {
                         out += " ";
                         space = 0;
                     }
                     //tok = parse_string(s, ch, index, countl);
                     str_ = q = ch; escaped = false; si = index;
-                    while ( si < countl )
+                    while (si < countl)
                     {
                         str_ += (ch=s.charAt(si++));
-                        if ( q === ch && !escaped )  break;
+                        if (q === ch && !escaped)  break;
                         escaped = (!escaped && '\\' === ch);
                     }
                     tok = str_;
-                    $__idcnt++;
+                    ++$__idcnt;
                     id = "#STR_"+$__idcnt+"#";
                     strings[id] = tok;
                     out += id;
@@ -1280,14 +1367,14 @@ function parse_async( tpl, leftTplSep, rightTplSep, withblocks, cb )
                     hasStrings = true;
                 }
                 // spaces
-                else if ( 9 > ind )
+                else if (9 > ind)
                 {
-                    space++;
+                    ++space;
                 }
                 // directive or identifier or atom in compatibility mode
-                else //if ( 9 === ind )
+                else//if (9 === ind)
                 {
-                    if ( space > 0 )
+                    if (space > 0)
                     {
                         out += " ";
                         space = 0;
@@ -1298,11 +1385,11 @@ function parse_async( tpl, leftTplSep, rightTplSep, withblocks, cb )
                         out += q;
                         continue;
                     }
-                    index ++;
+                    ++index;
                     tok = ch;
-                    while ( index < countl && ALPHANUM.test(ch = s.charAt(index)) )
+                    while (index < countl && ALPHANUM.test(ch = s.charAt(index)))
                     {
-                        index ++;
+                        ++index;
                         tok += ch;
                     }
                     tok = '#ID_'+tok+'#';
@@ -1310,21 +1397,21 @@ function parse_async( tpl, leftTplSep, rightTplSep, withblocks, cb )
                 }
             }
             // directive or identifier or atom and not variable object property access
-            else if ( non_compatibility_mode && ALPHA.test(ch) )
+            else if (non_compatibility_mode && ALPHA.test(ch))
             {
-                if ( space > 0 )
+                if (space > 0)
                 {
                     out += " ";
                     space = 0;
                 }
-                is_prop_access = (2<index && '-'===s.charAt(index-3) && '>'===s.charAt(index-2));
+                is_prop_access = (2 < index && '-' === s.charAt(index-3) && '>' === s.charAt(index-2));
                 tok = ch;
-                while ( index < countl && ALPHANUM.test(ch=s.charAt(index)) )
+                while (index < countl && ALPHANUM.test(ch=s.charAt(index)))
                 {
-                    index ++;
+                    ++index;
                     tok += ch;
                 }
-                if ( !is_prop_access && 'as' !== tok && 'in' !== tok && 'null' !== tok && 'false' !== tok && 'true' !== tok )
+                if (!is_prop_access && 'as' !== tok && 'in' !== tok && 'null' !== tok && 'false' !== tok && 'true' !== tok)
                 {
                     tok = '#ID_'+tok+'#';
                 }
@@ -1333,7 +1420,7 @@ function parse_async( tpl, leftTplSep, rightTplSep, withblocks, cb )
             // rest, bypass
             else
             {
-                if ( space > 0 )
+                if (space > 0)
                 {
                     out += " ";
                     space = 0;
@@ -1352,16 +1439,16 @@ function parse_async( tpl, leftTplSep, rightTplSep, withblocks, cb )
         $__startblock = null;  $__endblock = null; $__blockptr = -1;
         $__strings = strings;
 
-        parse_controls( );
+        parse_controls();
     };
-    var after_parse_controls = function after_parse_controls( ) {
+    var after_parse_controls = function after_parse_controls() {
         // check for blocks
-        if ( $__startblock )
+        if ($__startblock)
         {
             $__startblock = "#BLOCK_"+$__startblock+"#";
             hasBlock = true;
         }
-        else if ( $__endblock )
+        else if ($__endblock)
         {
             $__endblock = "#/BLOCK_"+$__endblock+"#";
             hasBlock = true;
@@ -1370,53 +1457,53 @@ function parse_async( tpl, leftTplSep, rightTplSep, withblocks, cb )
 
         // replacements
         /*.replace( re_repls, "' + ($1) + '" );*/
-        if ( 9 === tag.charCodeAt(0) && 11 === tag.charCodeAt(tag.length-1) )
-            tag = "' + ("+trim(tag.slice(1,-1))+") + '";
+        if (9 === tag.charCodeAt(0) && 11 === tag.charCodeAt(tag.length-1))
+            tag = "' + ("+trim(tag.slice(1, -1))+") + '";
 
-        if ( hasVariables )
+        if (hasVariables)
         {
             // replace variables
-            for (v=variables.length-1; v>=0; v--)
+            for (v=variables.length-1; v>=0; --v)
             {
-                id = variables[ v ][ 0 ]; varname = variables[ v ][ 1 ];
+                id = variables[v][0]; varname = variables[v][1];
                 tag = tag
-                    .split( id+'__RAW__' ).join( varname )
-                    .split( id ).join((
-                        HAS.call($__locals[$__currentblock],varname)
+                    .split(id+'__RAW__').join(varname)
+                    .split(id).join((
+                        HAS.call($__locals[$__currentblock], varname)
                         ? ('_loc_' + varname) /* local (loop) variable */
-                        : (variables[ v ][ 2 ]) /* default (data) variable */
-                        ) + variables[ v ][ 3 ])
+                        : (variables[v][2]) /* default (data) variable */
+                        ) + variables[v][3])
                 ;
             }
         }
 
-        if ( hasStrings )
+        if (hasStrings)
         {
             // replace strings (accurately)
             tagTpl = multisplit_re(tag, str_re);
             tag = '';
-            for (v=0,len=tagTpl.length; v<len; v++)
+            for (v=0,len=tagTpl.length; v<len; ++v)
             {
-                if ( tagTpl[v][0] )
+                if (tagTpl[v][0])
                 {
                     // and replace blocks (accurately)
-                    if ( notFoundBlock )
+                    if (notFoundBlock)
                     {
-                        if ( $__startblock )
+                        if ($__startblock)
                         {
-                            blockTag = tagTpl[v][1].indexOf( $__startblock );
-                            if ( -1 !== blockTag )
+                            blockTag = tagTpl[v][1].indexOf($__startblock);
+                            if (-1 !== blockTag)
                             {
-                                $__allblocks[ $__blockptr-1 ][ 1 ] = blockTag + parsed.length + tag.length;
+                                $__allblocks[$__blockptr-1][1] = blockTag + parsed.length + tag.length;
                                 notFoundBlock = false;
                             }
                         }
-                        else //if ( $__endblock )
+                        else//if ($__endblock)
                         {
-                            blockTag = tagTpl[v][1].indexOf( $__endblock );
-                            if ( -1 !== blockTag )
+                            blockTag = tagTpl[v][1].indexOf($__endblock);
+                            if (-1 !== blockTag)
                             {
-                                $__allblocks[ $__blockptr-1 ][ 2 ] = blockTag + parsed.length + tag.length + $__endblock.length;
+                                $__allblocks[$__blockptr-1][2] = blockTag + parsed.length + tag.length + $__endblock.length;
                                 notFoundBlock = false;
                             }
                         }
@@ -1425,63 +1512,63 @@ function parse_async( tpl, leftTplSep, rightTplSep, withblocks, cb )
                 }
                 else
                 {
-                    tag += strings[ tagTpl[v][1] ];
+                    tag += strings[tagTpl[v][1]];
                 }
             }
         }
-        else if ( hasBlock )
+        else if (hasBlock)
         {
             // replace blocks (accurately)
-            if ( $__startblock )
-                $__allblocks[ $__blockptr-1 ][ 1 ] = parsed.length + tag.indexOf( $__startblock );
-            else //if ( $__endblock )
-                $__allblocks[ $__blockptr-1 ][ 2 ] = parsed.length + tag.indexOf( $__endblock ) + $__endblock.length;
+            if ($__startblock)
+                $__allblocks[$__blockptr-1][1] = parsed.length + tag.indexOf($__startblock);
+            else//if ($__endblock)
+                $__allblocks[$__blockptr-1][2] = parsed.length + tag.indexOf($__endblock) + $__endblock.length;
         }
 
         // replace tpl separators
-        if ( /*"\v"*/11 === tag.charCodeAt(tag.length-1) )
+        if (/*"\v"*/11 === tag.charCodeAt(tag.length-1))
         {
-            tag = tag.slice(0,-1) + align($__tplEnd);
+            tag = tag.slice(0, -1) + align($__tplEnd);
         }
-        if ( /*"\t"*/9 === tag.charCodeAt(0) )
+        if (/*"\t"*/9 === tag.charCodeAt(0))
         {
             tag = $__tplStart + tag.slice(1);
-            if ( hasBlock )
+            if (hasBlock)
             {
                 // update blocks (accurately)
                 blockTag = $__tplStart.length-1;
-                if ( $__startblock )
-                    $__allblocks[ $__blockptr-1 ][ 1 ] += blockTag;
-                else //if ( $__endblock )
-                    $__allblocks[ $__blockptr-1 ][ 2 ] += blockTag;
+                if ($__startblock)
+                    $__allblocks[$__blockptr-1][1] += blockTag;
+                else//if ($__endblock)
+                    $__allblocks[$__blockptr-1][2] += blockTag;
             }
         }
 
         parsed += tag;
 
         // continue until end
-        parse_chunk( );
+        parse_chunk();
     };
-    var parse_controls = function parse_controls( ) {
+    var parse_controls = function parse_controls() {
         // replace constructs, functions, etc..
-        parse_constructs_async(tag, function(err, repl){
-            if ( err )
+        parse_constructs_async(tag, function(err, repl) {
+            if (err)
             {
                 cb(err, null);
                 return;
             }
             tag = repl;
-            after_parse_controls( );
+            after_parse_controls();
         });
     };
-    var parse_finish = function parse_finish( ) {
+    var parse_finish = function parse_finish() {
         cb(null, false !== withblocks ? ($__allblocks.length>0 ? parse_blocks(parsed) : [parsed, []]) : parsed);
     };
-    parse_chunk( );
+    parse_chunk();
 }
-function parse( tpl, leftTplSep, rightTplSep, withblocks, cb )
+function parse(tpl, leftTplSep, rightTplSep, withblocks, cb)
 {
-    if ( 'function' === typeof cb )
+    if ('function' === typeof cb)
     {
         parse_async(tpl, leftTplSep, rightTplSep, withblocks, cb);
         return;
@@ -1493,35 +1580,84 @@ function parse( tpl, leftTplSep, rightTplSep, withblocks, cb )
         ind, q, str_, escaped, si, space,
         blockTag, hasBlock, notFoundBlock,
         special_chars = "$'\" \n\r\t\v\0%",
-        non_compatibility_mode = !$__compatibility,
-        is_prop_access
+        non_compatibility_mode = true,
+        is_prop_access, isphp, isjs, ispy,
+        code, indent, l3, indenttype, m
     ;
 
     t1 = leftTplSep; l1 = t1.length;
     t2 = rightTplSep; l2 = t2.length;
     parsed = '';
-    while ( tpl && tpl.length )
+    while (tpl && tpl.length)
     {
-        p1 = tpl.indexOf( t1 );
-        if ( -1 === p1 )
+        p1 = tpl.indexOf(t1);
+        if (-1 === p1)
         {
             s = tpl;
-            if ( $__escape ) s = s.split( "\\" ).join( "\\\\" ); // escape escapes
+            if ($__escape) s = s.split("\\").join("\\\\"); // escape escapes
             parsed += s
-                .split( "'" ).join( "\\'" )  // escape single quotes accurately (used by parse function)
-                .split( /*"\n"*/ /\n/ ).join( $__preserveLines ) // preserve lines
+                .split("'").join("\\'")  // escape single quotes accurately (used by parse function)
+                .split(/*"\n"*/ /\n/).join($__preserveLines) // preserve lines
             ;
             break;
         }
-        p2 = tpl.indexOf( t2, p1+l1 );
-        if ( -1 === p2 ) p2 = tpl.length;
+        p2 = tpl.indexOf(t2, p1+l1);
+        if (-1 === p2) p2 = tpl.length;
 
-        s = tpl.slice( 0, p1 );
-        if ( $__escape ) s = s.split( "\\" ).join( "\\\\" ); // escape escapes
-        parsed += s
-            .split( "'" ).join( "\\'" )  // escape single quotes accurately (used by parse function)
-            .split( /*"\n"*/ /\n/ ).join( $__preserveLines ) // preserve lines
-        ;
+        if (p1 > 0)
+        {
+            s = tpl.slice(0, p1);
+            if ($__escape) s = s.split("\\").join("\\\\"); // escape escapes
+            parsed += s
+                .split("'").join("\\'")  // escape single quotes accurately (used by parse function)
+                .split(/*"\n"*/ /\n/).join($__preserveLines) // preserve lines
+            ;
+        }
+
+        // php literal code block
+        isphp = 'php:' === tpl.slice(p1+l1, p1+l1+4);
+        // js literal code block
+        isjs = 'js:' === tpl.slice(p1+l1, p1+l1+3);
+        // py literal code block
+        ispy = 'py:' === tpl.slice(p1+l1, p1+l1+3);
+        if (isphp || isjs || ispy)
+        {
+            // include if in same language else ignore
+            if (isjs)
+            {
+                if ('=' === tpl.slice(p1+l1+3, p1+l1+4))
+                {
+                    parsed += "';" + align("\n/* js code start */") + align("\n__p__ += String(" + trim(tpl.slice(p1+l1+4, p2)) + ");") + align("\n/* js code end */\n__p__ += '");
+                }
+                else
+                {
+                    indent = 0; l3 = 0; indenttype = 'none';
+                    if (m = tpl.slice(p1+l1+3).match(INDENT))
+                    {
+                        indenttype = m[1];
+                        indent = parseInt(m[2]);
+                        l3 = m[0].length;
+                    }
+                    code = remove_blank_lines(tpl.slice(p1+l1+3+l3, p2));
+                    if ('predent' === indenttype)
+                    {
+                        $__level = Math.max(0, $__level + indent);
+                    }
+                    parsed += "';" + align("\n/* js code start */");
+                    if (trim(code).length)
+                    {
+                        parsed += "\n" + align(code);
+                    }
+                    if ('postdent' === indenttype)
+                    {
+                        $__level = Math.max(0, $__level + indent);
+                    }
+                    parsed += align("\n/* js code end */\n__p__ += '");
+                }
+            }
+            tpl = tpl.slice(p2+l2);
+            continue;
+        }
 
         // template TAG
         s = tpl.slice(p1+l1, p2); tpl = tpl.slice(p2+l2);
@@ -1539,36 +1675,36 @@ function parse( tpl, leftTplSep, rightTplSep, withblocks, cb )
         ch = '';
         out = '';
 
-        while ( index < countl )
+        while (index < countl)
         {
-            ch = s.charAt( index++ );
-            ind = special_chars.indexOf( ch );
+            ch = s.charAt(index++);
+            ind = special_chars.indexOf(ch);
 
-            if ( -1 < ind )
+            if (-1 < ind)
             {
                 // variable
-                if ( 0 === ind )
+                if (0 === ind)
                 {
-                    if ( space > 0 )
+                    if (space > 0)
                     {
                         out += " ";
                         space = 0;
                     }
                     tok = parse_variable(s, index, countl);
-                    if ( tok )
+                    if (tok)
                     {
-                        for (v=0,len=tok.length; v<len; v++)
+                        for (v=0,len=tok.length; v<len; ++v)
                         {
-                            tokv = tok[ v ];
-                            id = tokv[ 0 ];
-                            $__variables[$__currentblock][ id ] = tokv[ 1 ];
-                            if ( tokv[ 5 ] ) strings = merge( strings, tokv[ 6 ] );
+                            tokv = tok[v];
+                            id = tokv[0];
+                            $__variables[$__currentblock][id] = tokv[1];
+                            if (tokv[5]) strings = merge(strings, tokv[6]);
                         }
                         out += id;
-                        index += tokv[ 4 ];
-                        variables = variables.concat( tok );
+                        index += tokv[4];
+                        variables = variables.concat(tok);
                         hasVariables = true;
-                        hasStrings = hasStrings || tokv[ 5 ];
+                        hasStrings = hasStrings || tokv[5];
                     }
                     else
                     {
@@ -1576,23 +1712,23 @@ function parse( tpl, leftTplSep, rightTplSep, withblocks, cb )
                     }
                 }
                 // literal string
-                else if ( 3 > ind )
+                else if (3 > ind)
                 {
-                    if ( space > 0 )
+                    if (space > 0)
                     {
                         out += " ";
                         space = 0;
                     }
                     //tok = parse_string(s, ch, index, countl);
                     str_ = q = ch; escaped = false; si = index;
-                    while ( si < countl )
+                    while (si < countl)
                     {
                         str_ += (ch=s.charAt(si++));
-                        if ( q === ch && !escaped )  break;
+                        if (q === ch && !escaped)  break;
                         escaped = (!escaped && '\\' === ch);
                     }
                     tok = str_;
-                    $__idcnt++;
+                    ++$__idcnt;
                     id = "#STR_"+$__idcnt+"#";
                     strings[id] = tok;
                     out += id;
@@ -1600,29 +1736,29 @@ function parse( tpl, leftTplSep, rightTplSep, withblocks, cb )
                     hasStrings = true;
                 }
                 // spaces
-                else if ( 9 > ind )
+                else if (9 > ind)
                 {
-                    space++;
+                    ++space;
                 }
                 // directive or identifier or atom in compatibility mode
-                else //if ( 9 === ind )
+                else//if (9 === ind)
                 {
-                    if ( space > 0 )
+                    if (space > 0)
                     {
                         out += " ";
                         space = 0;
                     }
                     q = ch;
-                    if ( non_compatibility_mode || index >= countl || !ALPHA.test(ch=s.charAt(index)) )
+                    if (non_compatibility_mode || index >= countl || !ALPHA.test(ch=s.charAt(index)))
                     {
                         out += q;
                         continue;
                     }
-                    index ++;
+                    ++index;
                     tok = ch;
-                    while ( index < countl && ALPHANUM.test(ch = s.charAt(index)) )
+                    while (index < countl && ALPHANUM.test(ch = s.charAt(index)))
                     {
-                        index ++;
+                        ++index;
                         tok += ch;
                     }
                     tok = '#ID_'+tok+'#';
@@ -1630,21 +1766,21 @@ function parse( tpl, leftTplSep, rightTplSep, withblocks, cb )
                 }
             }
             // directive or identifier or atom and not variable object property access
-            else if ( non_compatibility_mode && ALPHA.test(ch) )
+            else if (non_compatibility_mode && ALPHA.test(ch))
             {
-                if ( space > 0 )
+                if (space > 0)
                 {
                     out += " ";
                     space = 0;
                 }
-                is_prop_access = (2<index && '-'===s.charAt(index-3) && '>'===s.charAt(index-2));
+                is_prop_access = (2 < index && '-' === s.charAt(index-3) && '>' === s.charAt(index-2));
                 tok = ch;
-                while ( index < countl && ALPHANUM.test(ch=s.charAt(index)) )
+                while (index < countl && ALPHANUM.test(ch=s.charAt(index)))
                 {
-                    index ++;
+                    ++index;
                     tok += ch;
                 }
-                if ( !is_prop_access && 'as' !== tok && 'in' !== tok && 'null' !== tok && 'false' !== tok && 'true' !== tok )
+                if (!is_prop_access && 'as' !== tok && 'in' !== tok && 'null' !== tok && 'false' !== tok && 'true' !== tok)
                 {
                     tok = '#ID_'+tok+'#';
                 }
@@ -1653,7 +1789,7 @@ function parse( tpl, leftTplSep, rightTplSep, withblocks, cb )
             // rest, bypass
             else
             {
-                if ( space > 0 )
+                if (space > 0)
                 {
                     out += " ";
                     space = 0;
@@ -1673,17 +1809,17 @@ function parse( tpl, leftTplSep, rightTplSep, withblocks, cb )
         $__strings = strings;
 
         // replace constructs, functions, etc..
-        tag = tag.replace( re_controls, function(m0,m1,m2,m3,m4,m5,m6,m7,m8,m9){
-                return parse_constructs([m0,m1,m2,m3,m4,m5,m6,m7,m8,m9]);
-            } );
+        tag = tag.replace(re_controls, function(m0,m1,m2,m3,m4,m5,m6,m7,m8,m9) {
+            return parse_constructs([m0,m1,m2,m3,m4,m5,m6,m7,m8,m9]);
+        });
 
         // check for blocks
-        if ( $__startblock )
+        if ($__startblock)
         {
             $__startblock = "#BLOCK_"+$__startblock+"#";
             hasBlock = true;
         }
-        else if ( $__endblock )
+        else if ($__endblock)
         {
             $__endblock = "#/BLOCK_"+$__endblock+"#";
             hasBlock = true;
@@ -1692,53 +1828,53 @@ function parse( tpl, leftTplSep, rightTplSep, withblocks, cb )
 
         // replacements
         /*.replace( re_repls, "' + ($1) + '" );*/
-        if ( 9 === tag.charCodeAt(0) && 11 === tag.charCodeAt(tag.length-1) )
+        if (9 === tag.charCodeAt(0) && 11 === tag.charCodeAt(tag.length-1))
             tag = "' + ("+trim(tag.slice(1,-1))+") + '";
 
-        if ( hasVariables )
+        if (hasVariables)
         {
             // replace variables
-            for (v=variables.length-1; v>=0; v--)
+            for (v=variables.length-1; v>=0; --v)
             {
-                id = variables[ v ][ 0 ]; varname = variables[ v ][ 1 ];
+                id = variables[v][0]; varname = variables[v][1];
                 tag = tag
-                    .split( id+'__RAW__' ).join( varname )
-                    .split( id ).join((
-                        HAS.call($__locals[$__currentblock],varname)
+                    .split(id+'__RAW__').join(varname)
+                    .split(id).join((
+                        HAS.call($__locals[$__currentblock], varname)
                         ? ('_loc_' + varname) /* local (loop) variable */
-                        : (variables[ v ][ 2 ]) /* default (data) variable */
-                        ) + variables[ v ][ 3 ])
+                        : (variables[v][2]) /* default (data) variable */
+                        ) + variables[v][3])
                 ;
             }
         }
 
-        if ( hasStrings )
+        if (hasStrings)
         {
             // replace strings (accurately)
             tagTpl = multisplit_re(tag, str_re);
             tag = '';
-            for (v=0,len=tagTpl.length; v<len; v++)
+            for (v=0,len=tagTpl.length; v<len; ++v)
             {
-                if ( tagTpl[v][0] )
+                if (tagTpl[v][0])
                 {
                     // and replace blocks (accurately)
-                    if ( notFoundBlock )
+                    if (notFoundBlock)
                     {
-                        if ( $__startblock )
+                        if ($__startblock)
                         {
-                            blockTag = tagTpl[v][1].indexOf( $__startblock );
-                            if ( -1 !== blockTag )
+                            blockTag = tagTpl[v][1].indexOf($__startblock);
+                            if (-1 !== blockTag)
                             {
-                                $__allblocks[ $__blockptr-1 ][ 1 ] = blockTag + parsed.length + tag.length;
+                                $__allblocks[$__blockptr-1][1] = blockTag + parsed.length + tag.length;
                                 notFoundBlock = false;
                             }
                         }
-                        else //if ( $__endblock )
+                        else//if ($__endblock)
                         {
-                            blockTag = tagTpl[v][1].indexOf( $__endblock );
-                            if ( -1 !== blockTag )
+                            blockTag = tagTpl[v][1].indexOf($__endblock);
+                            if (-1 !== blockTag)
                             {
-                                $__allblocks[ $__blockptr-1 ][ 2 ] = blockTag + parsed.length + tag.length + $__endblock.length;
+                                $__allblocks[$__blockptr-1][2] = blockTag + parsed.length + tag.length + $__endblock.length;
                                 notFoundBlock = false;
                             }
                         }
@@ -1747,50 +1883,50 @@ function parse( tpl, leftTplSep, rightTplSep, withblocks, cb )
                 }
                 else
                 {
-                    tag += strings[ tagTpl[v][1] ];
+                    tag += strings[tagTpl[v][1]];
                 }
             }
         }
-        else if ( hasBlock )
+        else if (hasBlock)
         {
             // replace blocks (accurately)
-            if ( $__startblock )
-                $__allblocks[ $__blockptr-1 ][ 1 ] = parsed.length + tag.indexOf( $__startblock );
-            else //if ( $__endblock )
-                $__allblocks[ $__blockptr-1 ][ 2 ] = parsed.length + tag.indexOf( $__endblock ) + $__endblock.length;
+            if ($__startblock)
+                $__allblocks[$__blockptr-1][1] = parsed.length + tag.indexOf($__startblock);
+            else//if ($__endblock)
+                $__allblocks[$__blockptr-1][2] = parsed.length + tag.indexOf($__endblock) + $__endblock.length;
         }
 
         // replace tpl separators
-        if ( /*"\v"*/11 === tag.charCodeAt(tag.length-1) )
+        if (/*"\v"*/11 === tag.charCodeAt(tag.length-1))
         {
             tag = tag.slice(0,-1) + align($__tplEnd);
         }
-        if ( /*"\t"*/9 === tag.charCodeAt(0) )
+        if (/*"\t"*/9 === tag.charCodeAt(0))
         {
             tag = $__tplStart + tag.slice(1);
-            if ( hasBlock )
+            if (hasBlock)
             {
                 // update blocks (accurately)
                 blockTag = $__tplStart.length-1;
-                if ( $__startblock )
-                    $__allblocks[ $__blockptr-1 ][ 1 ] += blockTag;
-                else //if ( $__endblock )
-                    $__allblocks[ $__blockptr-1 ][ 2 ] += blockTag;
+                if ($__startblock)
+                    $__allblocks[$__blockptr-1][1] += blockTag;
+                else//if ($__endblock)
+                    $__allblocks[$__blockptr-1][2] += blockTag;
             }
         }
 
         parsed += tag;
     }
-    return false !== withblocks ? ($__allblocks.length>0 ? parse_blocks( parsed ) : [parsed, []]) : parsed;
+    return false !== withblocks ? ($__allblocks.length>0 ? parse_blocks(parsed) : [parsed, []]) : parsed;
 }
-function get_cached_template_name( id, ctx, cacheDir )
+function get_cached_template_name(id, ctx, cacheDir)
 {
     var filename, path;
-    if ( (isNode || isXPCOM) && (-1 !== id.indexOf('/') || -1 !== id.indexOf('\\')) )
+    if ((isNode || isXPCOM) && (-1 !== id.indexOf('/') || -1 !== id.indexOf('\\')))
     {
         filename = basename(id);
         path = trim(dirname(id), '/\\');
-        if ( path.length ) path += '/';
+        if (path.length) path += '/';
     }
     else
     {
@@ -1799,10 +1935,10 @@ function get_cached_template_name( id, ctx, cacheDir )
     }
     return cacheDir + path + filename.replace(UNDERLN, '_') + '_tpl__' + ctx.replace(UNDERLN, '_') + '.js';
 }
-function get_cached_template_class( id, ctx )
+function get_cached_template_class(id, ctx)
 {
     var filename;
-    if ( (isNode || isXPCOM) && (-1 !== id.indexOf('/') || -1 !== id.indexOf('\\')) )
+    if ((isNode || isXPCOM) && (-1 !== id.indexOf('/') || -1 !== id.indexOf('\\')))
     {
         filename = basename(id);
     }
@@ -1812,14 +1948,14 @@ function get_cached_template_class( id, ctx )
     }
     return 'Contemplate_' + filename.replace(UNDERLN, '_') + '__' + ctx.replace(UNDERLN, '_');
 }
-function get_template_contents( id, contx, cb )
+function get_template_contents(id, contx, cb)
 {
     cb = 'function' === typeof cb ? cb : null;
-    var proceed = function( ) {
+    var proceed = function() {
         var template = contx.templates[id] || $__global.templates[id] || null;
-        if ( !template )
+        if (!template)
         {
-            if ( cb )
+            if (cb)
             {
                 // async
                 cb(null, '');
@@ -1827,9 +1963,9 @@ function get_template_contents( id, contx, cb )
             return '';
         }
 
-        if ( template[1] ) //inline tpl
+        if (template[1]) //inline tpl
         {
-            if ( cb )
+            if (cb)
             {
                 // async
                 cb(null, template[0]);
@@ -1844,13 +1980,13 @@ function get_template_contents( id, contx, cb )
         else
         {
             // nodejs, xpcom
-            if ( isNode || isXPCOM )
+            if (isNode || isXPCOM)
             {
-                if ( cb )
+                if (cb)
                 {
                     // async
-                    fread_async(template[0], contx.encoding, function(err, data){
-                        if ( err )
+                    fread_async(template[0], contx.encoding, function(err, data) {
+                        if (err)
                         {
                             cb(err, '');
                         }
@@ -1864,13 +2000,13 @@ function get_template_contents( id, contx, cb )
                 else
                 {
                     // sync
-                    return fread( template[0], contx.encoding );
+                    return fread(template[0], contx.encoding);
                 }
             }
             // client-side js and #id of DOM script-element given as template holder
-            else if ( '#'===template[0].charAt(0) )
+            else if ('#' === template[0].charAt(0))
             {
-                if ( cb )
+                if (cb)
                 {
                     // async
                     cb(null, window.document.getElementById(template[0].slice(1)).innerHTML || '');
@@ -1885,11 +2021,11 @@ function get_template_contents( id, contx, cb )
             // client-side js and url given as template location
             else
             {
-                if ( cb )
+                if (cb)
                 {
                     // async
-                    fread_async(template[0], contx.encoding, function(err, data){
-                        if ( err )
+                    fread_async(template[0], contx.encoding, function(err, data) {
+                        if (err)
                         {
                             cb(err, null);
                         }
@@ -1903,17 +2039,17 @@ function get_template_contents( id, contx, cb )
                 else
                 {
                     // sync
-                    return fread( template[0], contx.encoding );
+                    return fread(template[0], contx.encoding);
                 }
             }
         }
     };
-    if ( !Contemplate.hasTpl(id, contx.id) )
+    if (!Contemplate.hasTpl(id, contx.id))
     {
-        if ( cb )
+        if (cb)
         {
-            Contemplate.findTpl(id, contx.id, function(err,found){
-                if ( err || !found )
+            Contemplate.findTpl(id, contx.id, function(err, found) {
+                if (err || !found)
                 {
                     cb(null, '');
                     return;
@@ -1921,47 +2057,47 @@ function get_template_contents( id, contx, cb )
                 var tpldef = {};
                 tpldef[id] = found;
                 Contemplate.add(tpldef, contx.id);
-                proceed( );
+                proceed();
             });
         }
         else
         {
             // supposed to be sync operation if no callback given
             var found = Contemplate.findTpl(id, contx.id);
-            if ( !found ) return '';
+            if (!found) return '';
             var tpldef = {};
             tpldef[id] = found;
             Contemplate.add(tpldef, contx.id);
-            return proceed( );
+            return proceed();
         }
     }
     else
     {
-        return proceed( );
+        return proceed();
     }
 }
-function create_template_render_function( id, contx, seps, cb )
+function create_template_render_function(id, contx, seps, cb)
 {
     cb = 'function' === typeof cb ? cb : null;
     var tpl, blocks, funcs = {}, b, bl, func, renderf, EOL = $__TEOL;
 
-    if ( cb )
+    if (cb)
     {
-        get_template_contents( id, contx, function(err, tpl){
-            if ( err )
+        get_template_contents(id, contx, function(err, tpl) {
+            if (err)
             {
                 cb(err, null);
                 return;
             }
-            tpl = get_separators( tpl, seps );
-            reset_state( );
-            parse( tpl, $__leftTplSep, $__rightTplSep, true, function(err, blocks){
-                if ( err )
+            tpl = get_separators(tpl, seps);
+            reset_state();
+            parse(tpl, $__leftTplSep, $__rightTplSep, true, function(err, blocks) {
+                if (err)
                 {
                     cb(err, null);
                     return;
                 }
-                clear_state( );
+                clear_state();
 
                 renderf = blocks[0];
                 blocks = blocks[1];
@@ -1973,20 +2109,20 @@ function create_template_render_function( id, contx, seps, cb )
                 });
 
                 // defined blocks
-                for (b=0; b<bl; b++) funcs[blocks[b][0]] = FUNC("Contemplate,data,self,__i__", blocks[b][1]);
+                for (b=0; b<bl; ++b) funcs[blocks[b][0]] = FUNC("Contemplate,data,self,__i__", blocks[b][1]);
 
                 cb(null, [FUNC("Contemplate", func), funcs]);
-            } );
-        } );
+            });
+        });
         return null;
     }
     else
     {
-        tpl = get_template_contents( id, contx );
-        tpl = get_separators( tpl, seps );
-        reset_state( );
-        blocks = parse( tpl, $__leftTplSep, $__rightTplSep, true );
-        clear_state( );
+        tpl = get_template_contents(id, contx);
+        tpl = get_separators(tpl, seps);
+        reset_state();
+        blocks = parse(tpl, $__leftTplSep, $__rightTplSep, true);
+        clear_state();
 
         renderf = blocks[0];
         blocks = blocks[1];
@@ -1998,34 +2134,34 @@ function create_template_render_function( id, contx, seps, cb )
         });
 
         // defined blocks
-        for (b=0; b<bl; b++) funcs[blocks[b][0]] = FUNC("Contemplate,data,self,__i__", blocks[b][1]);
+        for (b=0; b<bl; ++b) funcs[blocks[b][0]] = FUNC("Contemplate,data,self,__i__", blocks[b][1]);
 
         return [FUNC("Contemplate", func), funcs];
     }
 }
-function create_cached_template( id, contx, filename, classname, seps, cb )
+function create_cached_template(id, contx, filename, classname, seps, cb)
 {
     cb = 'function' === typeof cb ? cb : null;
     var tpl, funcs = {}, prefixCode, extendCode, renderCode,
         b, bl, sblocks, blocks, renderf, EOL = $__TEOL;
 
-    if ( cb )
+    if (cb)
     {
-        get_template_contents( id, contx, function(err, tpl){
-            if ( err )
+        get_template_contents(id, contx, function(err, tpl) {
+            if (err)
             {
                 cb(err, null);
                 return;
             }
-            tpl = get_separators( tpl, seps );
-            reset_state( );
-            parse( tpl, $__leftTplSep, $__rightTplSep, true, function(err, blocks){
-                if ( err )
+            tpl = get_separators(tpl, seps);
+            reset_state();
+            parse(tpl, $__leftTplSep, $__rightTplSep, true, function(err, blocks) {
+                if (err)
                 {
                     cb(err, null);
                     return;
                 }
-                clear_state( );
+                clear_state();
 
                 renderf = blocks[0];
                 blocks = blocks[1];
@@ -2033,7 +2169,7 @@ function create_cached_template( id, contx, filename, classname, seps, cb )
 
                 // tpl-defined blocks
                 sblocks = [];
-                for (b=0; b<bl; b++)
+                for (b=0; b<bl; ++b)
                     sblocks.push(EOL + TT_BlockCode.render({
                      'BLOCKNAME'            : blocks[b][0]
                     ,'BLOCKMETHODNAME'      : blocks[b][0]
@@ -2058,20 +2194,20 @@ function create_cached_template( id, contx, filename, classname, seps, cb )
                 ,'BLOCKS'               : align(sblocks, 1)
                 ,'RENDERCODE'           : align(renderCode, 1)
                 });
-                fwrite_async( filename, classCode, contx.encoding, function(err,res){
+                fwrite_async(filename, classCode, contx.encoding, function(err, res) {
                     cb(err, res);
-                } );
-            } );
-        } );
+                });
+            });
+        });
         return null;
     }
     else
     {
-        tpl = get_template_contents( id, contx );
-        tpl = get_separators( tpl, seps );
-        reset_state( );
-        blocks = parse( tpl, $__leftTplSep, $__rightTplSep, true );
-        clear_state( );
+        tpl = get_template_contents(id, contx);
+        tpl = get_separators(tpl, seps);
+        reset_state();
+        blocks = parse(tpl, $__leftTplSep, $__rightTplSep, true);
+        clear_state();
 
         renderf = blocks[0];
         blocks = blocks[1];
@@ -2079,7 +2215,7 @@ function create_cached_template( id, contx, filename, classname, seps, cb )
 
         // tpl-defined blocks
         sblocks = [];
-        for (b=0; b<bl; b++)
+        for (b=0; b<bl; ++b)
             sblocks.push(EOL + TT_BlockCode.render({
              'BLOCKNAME'            : blocks[b][0]
             ,'BLOCKMETHODNAME'      : blocks[b][0]
@@ -2104,45 +2240,45 @@ function create_cached_template( id, contx, filename, classname, seps, cb )
         ,'BLOCKS'               : align(sblocks, 1)
         ,'RENDERCODE'           : align(renderCode, 1)
         });
-        return fwrite( filename, classCode, contx.encoding );
+        return fwrite(filename, classCode, contx.encoding);
     }
 }
-function get_cached_template( id, contx, options, cb )
+function get_cached_template(id, contx, options, cb)
 {
     cb = 'function' === typeof cb ? cb : null;
     var template, tplclass, tpl, sprTpl, funcs, cachedTplFile, cachedTplClass, stat, stat2,
         exists, fname, fpath, parsed;
     template = contx.templates[id] || $__global.templates[id] || null;
-    if ( !template )
+    if (!template)
     {
-        if ( cb )
+        if (cb)
         {
-            cb(null,null);
+            cb(null, null);
         }
         return null;
     }
     options = options || {context:contx.id,autoUpdate:false};
     parsed = options.parsed || null;
-    if ( HAS.call(options,'parsed') ) delete options.parsed;
+    if (HAS.call(options, 'parsed')) delete options.parsed;
 
-    if ( cb )
+    if (cb)
     {
-        var setUsedTpls = function( tpl, cb ) {
+        var setUsedTpls = function(tpl, cb) {
             var usedTpls = tpl._usesTpl && tpl._usesTpl.length ? tpl._usesTpl : null;
-            if ( usedTpls )
+            if (usedTpls)
             {
-                var i = 0, load_one = function load_one(){
-                    if ( i >= usedTpls.length )
+                var i = 0, load_one = function load_one() {
+                    if (i >= usedTpls.length)
                     {
                         cb(null, tpl);
                         return;
                     }
-                    Contemplate.tpl(usedTpls[i], null, options, function(err,usedtpl){
-                        i++;
-                        load_one( );
+                    Contemplate.tpl(usedTpls[i], null, options, function(err, usedtpl) {
+                        ++i;
+                        load_one();
                     });
                 };
-                load_one( );
+                load_one();
             }
             else
             {
@@ -2151,14 +2287,14 @@ function get_cached_template( id, contx, options, cb )
         };
 
         // inline templates saved only in-memory
-        if ( template[1] )
+        if (template[1])
         {
-            var setSuper = function( tpl, cb ){
+            var setSuper = function(tpl, cb) {
                 sprTpl = $__extends || tpl._extendsTpl;
-                if ( sprTpl )
+                if (sprTpl)
                 {
-                    Contemplate.tpl(sprTpl, null, options, function(err, spr){
-                        if ( err )
+                    Contemplate.tpl(sprTpl, null, options, function(err, spr) {
+                        if (err)
                         {
                             cb(err, null);
                             return;
@@ -2173,48 +2309,48 @@ function get_cached_template( id, contx, options, cb )
                 }
             };
             // dynamic in-memory caching during page-request
-            tpl = new Contemplate.Template( id ).ctx( contx );
-            if ( parsed )
+            tpl = new Contemplate.Template(id).ctx(contx);
+            if (parsed)
             {
                 // already parsed code was given
-                tpl.setRenderFunction( FUNC("Contemplate", parsed) );
-                setSuper(tpl, function(err, ctpl){
-                   if ( !err ) setUsedTpls(ctpl, cb);
+                tpl.setRenderFunction(FUNC("Contemplate", parsed));
+                setSuper(tpl, function(err, ctpl) {
+                   if (!err) setUsedTpls(ctpl, cb);
                    else cb(err, null);
                 });
             }
             else
             {
                 // parse code and create template class
-                create_template_render_function( id, contx, options.separators, function(err,funcs){
-                    if ( err )
+                create_template_render_function(id, contx, options.separators, function(err, funcs) {
+                    if (err)
                     {
                         cb(err, null);
                         return;
                     }
-                    tpl.setRenderFunction( funcs[ 0 ] ).setBlocks( funcs[ 1 ] ).usesTpl( $__uses );
-                    setSuper(tpl, function(err, ctpl){
-                       if ( !err ) setUsedTpls(ctpl, cb);
+                    tpl.setRenderFunction(funcs[0]).setBlocks(funcs[1]).usesTpl($__uses);
+                    setSuper(tpl, function(err, ctpl) {
+                       if (!err) setUsedTpls(ctpl, cb);
                        else cb(err, null);
                     });
-                } );
+                });
             }
         }
         else
         {
-            if ( !isNode && !isXPCOM ) contx.cacheMode = Contemplate.CACHE_TO_DISK_NONE;
+            if (!isNode && !isXPCOM) contx.cacheMode = Contemplate.CACHE_TO_DISK_NONE;
 
-            var create_and_load_tpl = function( do_create, check_exists ){
-                if ( false === do_create )
+            var create_and_load_tpl = function(do_create, check_exists) {
+                if (false === do_create)
                 {
-                    if ( false === check_exists )
+                    if (false === check_exists)
                     {
-                        tplclass = import_module( cachedTplClass, cachedTplFile )( Contemplate );
-                        tpl = new tplclass( id )/*.setId( id )*/.ctx( contx );
-                        if ( sprTpl = tpl._extendsTpl )
+                        tplclass = import_module(cachedTplClass, cachedTplFile)(Contemplate);
+                        tpl = (new tplclass(id))/*.setId(id)*/.ctx(contx);
+                        if (sprTpl = tpl._extendsTpl)
                         {
-                            Contemplate.tpl(sprTpl, null, options, function(err, spr){
-                                if ( err )
+                            Contemplate.tpl(sprTpl, null, options, function(err, spr) {
+                                if (err)
                                 {
                                     cb(err, null);
                                     return;
@@ -2230,18 +2366,18 @@ function get_cached_template( id, contx, options, cb )
                     }
                     else
                     {
-                        fexists_async( cachedTplFile, function(err,exists){
-                            if ( err || !exists )
+                        fexists_async(cachedTplFile, function(err, exists) {
+                            if (err || !exists)
                             {
                                 cb(err || new Error('Could not create or read file "'+cachedTplFile+'"!'), null);
                                 return;
                             }
-                            tplclass = import_module( cachedTplClass, cachedTplFile )( Contemplate );
-                            tpl = new tplclass( id )/*.setId( id )*/.ctx( contx );
-                            if ( sprTpl = tpl._extendsTpl )
+                            tplclass = import_module(cachedTplClass, cachedTplFile)(Contemplate);
+                            tpl = (new tplclass(id))/*.setId(id)*/.ctx(contx);
+                            if (sprTpl = tpl._extendsTpl)
                             {
-                                Contemplate.tpl(sprTpl, null, options, function(err, spr){
-                                    if ( err )
+                                Contemplate.tpl(sprTpl, null, options, function(err, spr) {
+                                    if (err)
                                     {
                                         cb(err, null);
                                         return;
@@ -2259,24 +2395,24 @@ function get_cached_template( id, contx, options, cb )
                 }
                 else
                 {
-                    create_cached_template( id, contx, cachedTplFile, cachedTplClass, options.separators, function(err,res){
-                        if ( err )
+                    create_cached_template(id, contx, cachedTplFile, cachedTplClass, options.separators, function(err, res) {
+                        if (err)
                         {
                             cb(err, null);
                             return;
                         }
-                        fexists_async( cachedTplFile, function(err,exists){
-                            if ( err || !exists )
+                        fexists_async(cachedTplFile, function(err, exists) {
+                            if (err || !exists)
                             {
                                 cb(err || new Error('Could not create or read file "'+cachedTplFile+'"!'), null);
                                 return;
                             }
-                            tplclass = import_module( cachedTplClass, cachedTplFile )( Contemplate );
-                            tpl = new tplclass( id )/*.setId( id )*/.ctx( contx );
-                            if ( sprTpl = tpl._extendsTpl )
+                            tplclass = import_module(cachedTplClass, cachedTplFile)(Contemplate);
+                            tpl = (new tplclass(id))/*.setId(id)*/.ctx(contx);
+                            if (sprTpl = tpl._extendsTpl)
                             {
-                                Contemplate.tpl(sprTpl, null, options, function(err, spr){
-                                    if ( err )
+                                Contemplate.tpl(sprTpl, null, options, function(err, spr) {
+                                    if (err)
                                     {
                                         cb(err, null);
                                         return;
@@ -2294,14 +2430,14 @@ function get_cached_template( id, contx, options, cb )
                 }
             };
 
-            if ( true !== options.autoUpdate && Contemplate.CACHE_TO_DISK_NOUPDATE === contx.cacheMode )
+            if (true !== options.autoUpdate && Contemplate.CACHE_TO_DISK_NOUPDATE === contx.cacheMode)
             {
-                cachedTplFile = get_cached_template_name( id, contx.id, contx.cacheDir );
-                cachedTplClass = get_cached_template_class( id, contx.id );
-                fexists_async( cachedTplFile, function(err, exists){
-                    if ( !exists )
+                cachedTplFile = get_cached_template_name(id, contx.id, contx.cacheDir);
+                cachedTplClass = get_cached_template_class(id, contx.id);
+                fexists_async(cachedTplFile, function(err, exists) {
+                    if (!exists)
                     {
-                        if ( -1 !== id.indexOf('/') || -1 !== id.indexOf('\\') )
+                        if (-1 !== id.indexOf('/') || -1 !== id.indexOf('\\'))
                         {
                             fname = basename(id);
                             fpath = trim(dirname(id), '/\\');
@@ -2311,38 +2447,38 @@ function get_cached_template( id, contx, options, cb )
                             fname = id;
                             fpath = '';
                         }
-                        if ( fpath.length )
+                        if (fpath.length)
                         {
-                            create_path(fpath, contx.cacheDir, parseInt('0755',8), function(err,res){
-                                if ( err )
+                            create_path(fpath, contx.cacheDir, parseInt('0755', 8), function(err, res) {
+                                if (err)
                                 {
                                     cb(err, null);
                                     return;
                                 }
-                                create_and_load_tpl( );
+                                create_and_load_tpl();
                             });
                         }
                         else
                         {
-                            create_and_load_tpl( );
+                            create_and_load_tpl();
                         }
                     }
                     else
                     {
-                        create_and_load_tpl( false, false );
+                        create_and_load_tpl(false, false);
                     }
                 });
             }
 
-            else if ( true === options.autoUpdate || Contemplate.CACHE_TO_DISK_AUTOUPDATE === contx.cacheMode )
+            else if (true === options.autoUpdate || Contemplate.CACHE_TO_DISK_AUTOUPDATE === contx.cacheMode)
             {
-                cachedTplFile = get_cached_template_name( id, contx.id, contx.cacheDir );
-                cachedTplClass = get_cached_template_class( id, contx.id );
-                fexists_async( cachedTplFile, function(err, exists){
-                    if ( !exists )
+                cachedTplFile = get_cached_template_name(id, contx.id, contx.cacheDir);
+                cachedTplClass = get_cached_template_class(id, contx.id);
+                fexists_async(cachedTplFile, function(err, exists) {
+                    if (!exists)
                     {
                         // if tpl not exist create it
-                        if ( -1 !== id.indexOf('/') || -1 !== id.indexOf('\\') )
+                        if (-1 !== id.indexOf('/') || -1 !== id.indexOf('\\'))
                         {
                             fname = basename(id);
                             fpath = trim(dirname(id), '/\\');
@@ -2352,44 +2488,44 @@ function get_cached_template( id, contx, options, cb )
                             fname = id;
                             fpath = '';
                         }
-                        if ( fpath.length )
+                        if (fpath.length)
                         {
-                            create_path(fpath, contx.cacheDir, parseInt('0755',8), function(err, res){
-                                if ( err )
+                            create_path(fpath, contx.cacheDir, parseInt('0755',8), function(err, res) {
+                                if (err)
                                 {
                                     cb(err, null);
                                     return;
                                 }
-                                create_and_load_tpl( );
+                                create_and_load_tpl();
                             });
                         }
                         else
                         {
-                            create_and_load_tpl( );
+                            create_and_load_tpl();
                         }
                     }
                     else
                     {
-                        fstat_async(cachedTplFile, function(err, stat){
-                           if ( err )
+                        fstat_async(cachedTplFile, function(err, stat) {
+                           if (err)
                            {
                                cb(err, null);
                                return;
                            }
-                           fstat_async(template[0], function(err, stat2){
-                                if ( err )
+                           fstat_async(template[0], function(err, stat2) {
+                                if (err)
                                 {
                                     cb(err, null);
                                     return;
                                 }
-                                if ( stat.mtime.getTime() <= stat2.mtime.getTime() )
+                                if (stat.mtime.getTime() <= stat2.mtime.getTime())
                                 {
                                     // is out-of-sync re-create it
-                                    create_and_load_tpl( );
+                                    create_and_load_tpl();
                                 }
                                 else
                                 {
-                                    create_and_load_tpl( false, false );
+                                    create_and_load_tpl(false, false);
                                 }
                            });
                         });
@@ -2401,18 +2537,18 @@ function get_cached_template( id, contx, options, cb )
             else
             {
                 // dynamic in-memory caching during page-request
-                create_template_render_function( id, contx, options.separators, function(err, funcs){
-                    if ( err )
+                create_template_render_function(id, contx, options.separators, function(err, funcs) {
+                    if (err)
                     {
                         cb(err, null);
                         return;
                     }
-                    tpl = new Contemplate.Template( id ).ctx( contx ).setRenderFunction( funcs[ 0 ] ).setBlocks( funcs[ 1 ] ).usesTpl( $__uses );
+                    tpl = (new Contemplate.Template(id)).ctx(contx).setRenderFunction(funcs[0]).setBlocks(funcs[1]).usesTpl($__uses);
                     sprTpl = $__extends;
-                    if ( sprTpl )
+                    if (sprTpl)
                     {
-                        Contemplate.tpl(sprTpl, null, options, function(err, spr){
-                            if ( err )
+                        Contemplate.tpl(sprTpl, null, options, function(err, spr) {
+                            if (err)
                             {
                                 cb(err, null);
                                 return;
@@ -2425,45 +2561,45 @@ function get_cached_template( id, contx, options, cb )
                     {
                         setUsedTpls(tpl, cb);
                     }
-                } );
+                });
             }
         }
     }
     else
     {
         // inline templates saved only in-memory
-        if ( template[1] )
+        if (template[1])
         {
             // dynamic in-memory caching during page-request
-            tpl = new Contemplate.Template( id ).ctx( contx );
-            if ( parsed )
+            tpl = (new Contemplate.Template(id)).ctx(contx);
+            if (parsed)
             {
                 // already parsed code was given
-                tpl.setRenderFunction( FUNC("Contemplate", parsed) );
+                tpl.setRenderFunction(FUNC("Contemplate", parsed));
             }
             else
             {
                 // parse code and create template class
-                funcs = create_template_render_function( id, contx, options.separators );
-                tpl.setRenderFunction( funcs[ 0 ] ).setBlocks( funcs[ 1 ] ).usesTpl( $__uses );
+                funcs = create_template_render_function(id, contx, options.separators);
+                tpl.setRenderFunction(funcs[0]).setBlocks(funcs[1]).usesTpl($__uses);
             }
             sprTpl = $__extends || tpl._extendsTpl;
-            if ( sprTpl ) tpl.extend( Contemplate.tpl(sprTpl, null, options) );
+            if (sprTpl) tpl.extend(Contemplate.tpl(sprTpl, null, options));
             return tpl;
         }
 
         else
         {
-            if ( !isNode && !isXPCOM ) contx.cacheMode = Contemplate.CACHE_TO_DISK_NONE;
+            if (!isNode && !isXPCOM) contx.cacheMode = Contemplate.CACHE_TO_DISK_NONE;
 
-            if ( true !== options.autoUpdate && Contemplate.CACHE_TO_DISK_NOUPDATE === contx.cacheMode )
+            if (true !== options.autoUpdate && Contemplate.CACHE_TO_DISK_NOUPDATE === contx.cacheMode)
             {
-                cachedTplFile = get_cached_template_name( id, contx.id, contx.cacheDir );
-                cachedTplClass = get_cached_template_class( id, contx.id );
-                exists = fexists( cachedTplFile );
-                if ( !exists )
+                cachedTplFile = get_cached_template_name(id, contx.id, contx.cacheDir);
+                cachedTplClass = get_cached_template_class(id, contx.id);
+                exists = fexists(cachedTplFile);
+                if (!exists)
                 {
-                    if ( -1 !== id.indexOf('/') || -1 !== id.indexOf('\\') )
+                    if (-1 !== id.indexOf('/') || -1 !== id.indexOf('\\'))
                     {
                         fname = basename(id);
                         fpath = trim(dirname(id), '/\\');
@@ -2473,28 +2609,28 @@ function get_cached_template( id, contx, options, cb )
                         fname = id;
                         fpath = '';
                     }
-                    if ( fpath.length ) create_path(fpath, contx.cacheDir, parseInt('0755',8));
-                    create_cached_template( id, contx, cachedTplFile, cachedTplClass, options.separators );
+                    if (fpath.length) create_path(fpath, contx.cacheDir, parseInt('0755', 8));
+                    create_cached_template(id, contx, cachedTplFile, cachedTplClass, options.separators);
                 }
-                if ( fexists( cachedTplFile ) )
+                if (fexists(cachedTplFile))
                 {
-                    tplclass = import_module( cachedTplClass, cachedTplFile )( Contemplate );
-                    tpl = new tplclass( id )/*.setId( id )*/.ctx( contx );
-                    if ( tpl._extendsTpl ) tpl.extend(Contemplate.tpl(tpl._extendsTpl, null, options));
+                    tplclass = import_module(cachedTplClass, cachedTplFile)(Contemplate);
+                    tpl = (new tplclass(id))/*.setId(id)*/.ctx(contx);
+                    if (tpl._extendsTpl) tpl.extend(Contemplate.tpl(tpl._extendsTpl, null, options));
                     return tpl;
                 }
                 return null;
             }
 
-            else if ( true === options.autoUpdate || Contemplate.CACHE_TO_DISK_AUTOUPDATE === contx.cacheMode )
+            else if (true === options.autoUpdate || Contemplate.CACHE_TO_DISK_AUTOUPDATE === contx.cacheMode)
             {
-                cachedTplFile = get_cached_template_name( id, contx.id, contx.cacheDir );
-                cachedTplClass = get_cached_template_class( id, contx.id );
-                exists = fexists( cachedTplFile );
-                if ( !exists )
+                cachedTplFile = get_cached_template_name(id, contx.id, contx.cacheDir);
+                cachedTplClass = get_cached_template_class(id, contx.id);
+                exists = fexists(cachedTplFile);
+                if (!exists)
                 {
                     // if tpl not exist create it
-                    if ( -1 !== id.indexOf('/') || -1 !== id.indexOf('\\') )
+                    if (-1 !== id.indexOf('/') || -1 !== id.indexOf('\\'))
                     {
                         fname = basename(id);
                         fpath = trim(dirname(id), '/\\');
@@ -2504,23 +2640,23 @@ function get_cached_template( id, contx, options, cb )
                         fname = id;
                         fpath = '';
                     }
-                    if ( fpath.length ) create_path(fpath, contx.cacheDir, parseInt('0755',8));
-                    create_cached_template( id, contx, cachedTplFile, cachedTplClass, options.separators );
+                    if (fpath.length) create_path(fpath, contx.cacheDir, parseInt('0755', 8));
+                    create_cached_template(id, contx, cachedTplFile, cachedTplClass, options.separators);
                 }
                 else
                 {
-                    stat = fstat( cachedTplFile ); stat2 = fstat( template[0] );
-                    if ( stat.mtime.getTime() <= stat2.mtime.getTime() )
+                    stat = fstat(cachedTplFile); stat2 = fstat(template[0]);
+                    if (stat.mtime.getTime() <= stat2.mtime.getTime())
                     {
                         // is out-of-sync re-create it
-                        create_cached_template( id, contx, cachedTplFile, cachedTplClass, options.separators );
+                        create_cached_template(id, contx, cachedTplFile, cachedTplClass, options.separators);
                     }
                 }
-                if ( fexists( cachedTplFile ) )
+                if (fexists(cachedTplFile))
                 {
-                    tplclass = import_module( cachedTplClass, cachedTplFile )( Contemplate );
-                    tpl = new tplclass( id )/*.setId( id )*/.ctx( contx );
-                    if ( tpl._extendsTpl ) tpl.extend(Contemplate.tpl(tpl._extendsTpl, null, options));
+                    tplclass = import_module(cachedTplClass, cachedTplFile)(Contemplate);
+                    tpl = (new tplclass(id))/*.setId(id)*/.ctx(contx);
+                    if (tpl._extendsTpl) tpl.extend(Contemplate.tpl(tpl._extendsTpl, null, options));
                     return tpl;
                 }
                 return null;
@@ -2529,10 +2665,10 @@ function get_cached_template( id, contx, options, cb )
             else
             {
                 // dynamic in-memory caching during page-request
-                funcs = create_template_render_function( id, contx, options.separators );
-                tpl = new Contemplate.Template( id ).ctx( contx ).setRenderFunction( funcs[ 0 ] ).setBlocks( funcs[ 1 ] ).usesTpl( $__uses );
+                funcs = create_template_render_function(id, contx, options.separators);
+                tpl = (new Contemplate.Template(id)).ctx(contx).setRenderFunction(funcs[0]).setBlocks(funcs[1]).usesTpl($__uses);
                 sprTpl = $__extends || tpl._extendsTpl;
-                if ( sprTpl ) tpl.extend( Contemplate.tpl(sprTpl, null, options) );
+                if (sprTpl) tpl.extend(Contemplate.tpl(sprTpl, null, options));
                 return tpl;
             }
         }
@@ -2540,41 +2676,41 @@ function get_cached_template( id, contx, options, cb )
 }
 function split_and_filter(r, s, regex)
 {
-    return s.split(r).map(function(x){return trim(x);}).filter(function(x){return 0<x.length;});
+    return s.split(r).map(function(x) {return trim(x);}).filter(function(x) {return 0<x.length;});
 }
 function create_path(path, root, mode, cb)
 {
     path = trim(path);
-    if ( !path.length ) return;
-    mode = mode || parseInt('0755',8);
+    if (!path.length) return;
+    mode = mode || parseInt('0755', 8);
     root = root || '';
     var i, l,
         parts = split_and_filter(DS_RE, path),
         current = rtrim(root, '/\\'), exists0 = true;
-    if ( 'function' === typeof cb )
+    if ('function' === typeof cb)
     {
         i = 0; l = parts.length;
         current += '/' + parts[i];
 
-        var create_one_level = function create_one_level( ){
-            if ( i >= l )
+        var create_one_level = function create_one_level() {
+            if (i >= l)
             {
                 cb(null, true);
                 return;
             }
-            if ( false === exists0 )
+            if (false === exists0)
             {
-                fmkdir_async(current, mode, function(err,res){
-                    if ( err )
+                fmkdir_async(current, mode, function(err, res) {
+                    if (err)
                     {
                         cb(err, null);
                         return;
                     }
-                    if ( i+1 < l )
+                    if (i+1 < l)
                     {
-                        i++;
+                        ++i;
                         current += '/' + parts[i];
-                        create_one_level( );
+                        create_one_level();
                     }
                     else
                     {
@@ -2584,24 +2720,24 @@ function create_path(path, root, mode, cb)
             }
             else
             {
-                fexists_async(current, function(err,exists){
-                    if ( err )
+                fexists_async(current, function(err, exists) {
+                    if (err)
                     {
                         cb(err, null);
                         return;
                     }
-                    if ( !exists ) exists0 = false;
-                    fmkdir_async(current, mode, function(err,res){
-                        if ( err )
+                    if (!exists) exists0 = false;
+                    fmkdir_async(current, mode, function(err, res) {
+                        if (err)
                         {
                             cb(err, null);
                             return;
                         }
-                        if ( i+1 < l )
+                        if (i+1 < l)
                         {
-                            i++;
+                            ++i;
                             current += '/' + parts[i];
-                            create_one_level( );
+                            create_one_level();
                         }
                         else
                         {
@@ -2611,66 +2747,66 @@ function create_path(path, root, mode, cb)
                 });
             }
         };
-        create_one_level( );
+        create_one_level();
     }
     else
     {
-        for(i=0,l=parts.length; i<l; i++)
+        for(i=0,l=parts.length; i<l; ++i)
         {
             current += '/' + parts[i];
-            if ( !fexists(current) /*&& !fis_dir(current)*/ )
+            if (!fexists(current) /*&& !fis_dir(current)*/)
                 fmkdir(current, mode);
         }
     }
 }
 
 // can use inline templates for plugins etc.. to enable non-linear plugin compile-time replacement
-function InlineTemplate( tpl, replacements, compiled )
+function InlineTemplate(tpl, replacements, compiled)
 {
     var self = this;
-    if ( !(self instanceof InlineTemplate) ) return new InlineTemplate(tpl, replacements, compiled);
+    if (!(self instanceof InlineTemplate)) return new InlineTemplate(tpl, replacements, compiled);
     self.id = null;
     self._renderer = null;
     self._parsed = false; // lazy init, only if needed, as and when needed
     self._args = [tpl, replacements, compiled];
     self.tpl = null;
 }
-InlineTemplate.multisplit = function multisplit( tpl, reps, as_array ) {
+InlineTemplate.multisplit = function multisplit(tpl, reps, as_array) {
     var r, sr, s, i, j, a, b, c, al, bl/*, as_array = is_array(reps)*/;
     as_array = !!as_array;
-    a = [ [1, tpl] ];
-    for ( r in reps )
+    a = [[1, tpl]];
+    for (r in reps)
     {
-        if ( !reps.hasOwnProperty( r ) ) continue;
-        c = [ ]; sr = as_array ? reps[ r ] : r; s = [0, reps[ r ]];
-        for (i=0,al=a.length; i<al; i++)
+        if (!HAS.call(reps, r)) continue;
+        c = []; sr = as_array ? reps[r] : r; s = [0, reps[r]];
+        for (i=0,al=a.length; i<al; ++i)
         {
-            if ( 1 === a[ i ][ 0 ] )
+            if (1 === a[i][0])
             {
-                b = a[ i ][ 1 ].split( sr ); bl = b.length;
-                c.push( [1, b[0]] );
-                if ( bl > 1 )
+                b = a[i][1].split(sr); bl = b.length;
+                c.push([1, b[0]]);
+                if (bl > 1)
                 {
-                    for (j=0; j<bl-1; j++)
+                    for (j=0; j<bl-1; ++j)
                     {
-                        c.push( s );
-                        c.push( [1, b[j+1]] );
+                        c.push(s);
+                        c.push([1, b[j+1]]);
                     }
                 }
             }
             else
             {
-                c.push( a[ i ] );
+                c.push(a[i]);
             }
         }
         a = c;
     }
     return a;
 };
-InlineTemplate.multisplit_re = function multisplit_re( tpl, re ) {
-    re = re.global ? re : new RegExp(re.source, re.ignoreCase?"gi":"g"); /* make sure global flag is added */
-    var a = [ ], i = 0, m;
-    while ( m = re.exec( tpl ) )
+InlineTemplate.multisplit_re = function multisplit_re(tpl, re) {
+    re = re.global ? re : new RegExp(re.source, re.ignoreCase ? "gi" : "g"); /* make sure global flag is added */
+    var a = [], i = 0, m;
+    while (m = re.exec(tpl))
     {
         a.push([1, tpl.slice(i, re.lastIndex - m[0].length)]);
         a.push([0, m[1] ? m[1] : m[0]]);
@@ -2679,15 +2815,15 @@ InlineTemplate.multisplit_re = function multisplit_re( tpl, re ) {
     a.push([1, tpl.slice(i)]);
     return a;
 };
-InlineTemplate.compile = function( tpl ) {
+InlineTemplate.compile = function(tpl) {
     var l = tpl.length,
         i, notIsSub, s, out = '"use strict";' + "\n" + 'return (';
     ;
 
-    for (i=0; i<l; i++)
+    for (i=0; i<l; ++i)
     {
-        notIsSub = tpl[ i ][ 0 ]; s = tpl[ i ][ 1 ];
-        if ( notIsSub ) out += "'" + s.replace(SQUOTE, "\\'").replace(NEWLINE, "' + \"\\n\" + '") + "'";
+        notIsSub = tpl[i][0]; s = tpl[i][1];
+        if (notIsSub) out += "'" + s.replace(SQUOTE, "\\'").replace(NEWLINE, "' + \"\\n\" + '") + "'";
         else out += " + String(args['" + s + "']) + ";
     }
     out += ');';
@@ -2702,7 +2838,7 @@ InlineTemplate[PROTO] = {
     ,_parsed: false
     ,_args: null
 
-    ,dispose: function( ) {
+    ,dispose: function() {
         var self = this;
         self.id = null;
         self.tpl = null;
@@ -2711,44 +2847,44 @@ InlineTemplate[PROTO] = {
         self._args = null;
         return self;
     }
-    ,render: function( args ) {
+    ,render: function(args) {
         var self = this;
-        args = args || [ ];
+        args = args || [];
 
-        if ( !self._parsed ) // lazy init, only if needed, as and when needed
+        if (!self._parsed) // lazy init, only if needed, as and when needed
         {
             var tpl = self._args[0], replacements = self._args[1], compiled = self._args[2];
             self.tpl = replacements instanceof RegExp
                 ? InlineTemplate.multisplit_re(tpl||'', replacements)
                 : InlineTemplate.multisplit(tpl||'', replacements||{});
-            if ( true === compiled )
+            if (true === compiled)
             {
-                self._renderer = InlineTemplate.compile( self.tpl );
+                self._renderer = InlineTemplate.compile(self.tpl);
                 self.render = self._renderer;
             }
             self._args = null;
             self._parsed = true;
         }
-        if ( self._renderer ) return self._renderer( args );
+        if (self._renderer) return self._renderer(args);
 
         var tpl = self.tpl, l = tpl.length,
             i, notIsSub, s, out = ''
         ;
 
-        for (i=0; i<l; i++)
+        for (i=0; i<l; ++i)
         {
-            notIsSub = tpl[ i ][ 0 ]; s = tpl[ i ][ 1 ];
-            out += (notIsSub ? s : args[ s ]);
+            notIsSub = tpl[i][0]; s = tpl[i][1];
+            out += (notIsSub ? s : args[s]);
         }
         return out;
     }
 };
 
 
-function Template( id )
+function Template(id)
 {
     var self = this;
-    if ( !(self instanceof Template) ) return new Template( id );
+    if (!(self instanceof Template)) return new Template(id);
     self._renderer = null;
     self._blocks = null;
     self._extends = null;
@@ -2757,16 +2893,16 @@ function Template( id )
     self._ctx = null;
     self._autonomus = false;
     self.id = null;
-    if ( id ) self.id = id;
+    if (id) self.id = id;
 }
-Template.spr = function( data, __i__ ) {
+Template.spr = function(data, __i__) {
     var self = this, r, __ctx = false;
-    !__i__&&(__i__=self)&&(self._autonomus||(__ctx=Contemplate._set_ctx( self._ctx )));
-    r = self._extends.render( data, __i__ );
-    __ctx&&Contemplate._set_ctx( __ctx );
+    !__i__&&(__i__=self)&&(self._autonomus||(__ctx=Contemplate._set_ctx(self._ctx)));
+    r = self._extends.render(data, __i__);
+    __ctx&&Contemplate._set_ctx(__ctx);
     return r;
 };
-Template.fixr = function( tpl ) {
+Template.fixr = function(tpl) {
     tpl.render = tpl._extends instanceof Template
                 ? Template.spr
                 : ('function'===typeof tpl._renderer
@@ -2787,7 +2923,7 @@ Template[PROTO] = {
     ,_autonomus: false
 
     // public methods
-    ,dispose: function( ) {
+    ,dispose: function() {
         var self = this;
         self._renderer = null;
         self._blocks = null;
@@ -2800,71 +2936,71 @@ Template[PROTO] = {
         return self;
     }
 
-    ,setId: function( id ) {
-        if ( id ) this.id = id;
+    ,setId: function(id) {
+        if (id) this.id = id;
         return this;
     }
 
-    ,ctx: function( ctx ) {
+    ,ctx: function(ctx) {
         this._ctx = ctx;
         return this;
     }
 
-    ,autonomus: function( enable ) {
+    ,autonomus: function(enable) {
         this._autonomus = !arguments.length ? true : !!enable;
         return this;
     }
 
-    ,extend: function( tpl ) {
+    ,extend: function(tpl) {
         var self = this;
         self._extends = tpl && tpl.substr
-                    ? Contemplate.tpl( tpl )
+                    ? Contemplate.tpl(tpl)
                     : (tpl instanceof Template
                     ? tpl
                     : null);
-        Template.fixr( self );
+        Template.fixr(self);
         return self;
     }
 
-    ,usesTpl: function( usedTpls ) {
+    ,usesTpl: function(usedTpls) {
         var self = this;
         self._usesTpl = [].concat(usedTpls);
         return self;
     }
 
-    ,setRenderFunction: function( renderfunc ) {
+    ,setRenderFunction: function(renderfunc) {
         var self = this;
         self._renderer = 'function'===typeof renderfunc
-                    ? renderfunc( Contemplate )
+                    ? renderfunc(Contemplate)
                     : null;
-        Template.fixr( self );
+        Template.fixr(self);
         return self;
     }
 
-    ,setBlocks: function( blocks ) {
+    ,setBlocks: function(blocks) {
         var self = this;
-        if ( 'object' === typeof blocks )
-            self._blocks = merge(self._blocks||{}, blocks);
+        if ('object' === typeof blocks)
+            self._blocks = merge(self._blocks || {}, blocks);
         return self;
     }
 
-    ,sprblock: function( block, data/*, __i__*/ ) {
+    ,sprblock: function(block, data/*, __i__*/) {
         var self = this;
         //__i__ = __i__ || self;
-        if ( self._extends ) return self._extends.block(block, data, self._extends);
+        if (self._extends) return self._extends.block(block, data, self._extends);
         return '';
     }
 
-    ,block: function( block, data, __i__ ) {
+    ,block: function(block, data, __i__) {
         var self = this, r = '', __ctx = false, blocks = self._blocks;
-        !__i__&&(__i__=self)&&(self._autonomus||(__ctx=Contemplate._set_ctx( self._ctx )));
-        if ( blocks && HAS.call(blocks,block) ) r = blocks[block](Contemplate, data, self, __i__);
-        else if ( self._extends ) r = self._extends.block(block, data, __i__);
-        __ctx&&Contemplate._set_ctx( __ctx );
+        !__i__&&(__i__=self)&&(self._autonomus||(__ctx=Contemplate._set_ctx(self._ctx)));
+        if (blocks && HAS.call(blocks, block)) r = blocks[block](Contemplate, data, self, __i__);
+        else if (self._extends) r = self._extends.block(block, data, __i__);
+        __ctx&&Contemplate._set_ctx(__ctx);
         return r;
     }
 
-    ,render: function( data, __i__ ) {
+    ,render: function(data, __i__) {
         return '';
     }
 }
@@ -2872,21 +3008,18 @@ Template[PROTO] = {
 Template[PROTO].renderBlock = Template[PROTO].block;
 Template[PROTO].renderSuperBlock = Template[PROTO].sprblock;
 
-function Ctx( id )
+function Ctx(id)
 {
     var self = this;
     self.id               = id;
     self.cacheDir         = './';
     self.cacheMode        = 0;
-    self.cache            = { };
-    self.templateDirs     = [ ];
+    self.cache            = {};
+    self.templateDirs     = [];
     self.templateFinder   = null;
-    self.templates        = { };
-    self.partials         = { };
-    self.locale           = { };
-    self.xlocale          = { };
-    self.pluralForm       = null;
-    self.plugins          = { };
+    self.templates        = {};
+    self.partials         = {};
+    self.plugins          = {};
     self.prefix           = '';
     self.encoding         = isXPCOM ? 'UTF-8' : 'utf8';
 }
@@ -2901,14 +3034,11 @@ Ctx[PROTO] = {
     ,templateFinder: null
     ,templates: null
     ,partials: null
-    ,locale: null
-    ,xlocale: null
-    ,pluralForm: null
     ,plugins: null
     ,prefix: null
     ,encoding: null
 
-    ,dispose: function( ) {
+    ,dispose: function() {
         var self = this;
         self.id = null;
         self.cacheDir = null;
@@ -2917,17 +3047,14 @@ Ctx[PROTO] = {
         self.templateFinder = null;
         self.templates = null;
         self.partials = null;
-        self.locale = null;
-        self.xlocale = null;
-        self.pluralForm = null;
         self.plugins = null;
         self.prefix = null;
         self.encoding = null;
-        if ( self.cache )
+        if (self.cache)
         {
             for(var tpl in self.cache)
-                if ( HAS.call(self.cache,tpl) )
-                    self.cache[tpl].dispose( );
+                if (HAS.call(self.cache, tpl))
+                    self.cache[tpl].dispose();
         }
         self.cache = null;
     }
@@ -2947,8 +3074,8 @@ Contemplate = {
     ,InlineTemplate: InlineTemplate
     ,Ctx: Ctx
 
-    ,init: function( ) {
-        if ( $__isInited ) return;
+    ,init: function() {
+        if ($__isInited) return;
 
         // a default global context
         $__global = new Ctx('global');
@@ -2965,26 +3092,24 @@ Contemplate = {
         // make compilation templates
         TT_ClassCode = new InlineTemplate([
             "#PREFIXCODE#"
-            ,"!function( root, name, factory ){"
+            ,"!function(root, name, factory) {"
             ,"\"use strict\";"
-            ,"if ( ('undefined'!==typeof Components)&&('object'===typeof Components.classes)&&('object'===typeof Components.classesByID)&&Components.utils&&('function'===typeof Components.utils['import']) ) /* XPCOM */"
+            ,"if (('undefined'!==typeof Components)&&('object'===typeof Components.classes)&&('object'===typeof Components.classesByID)&&Components.utils&&('function'===typeof Components.utils['import'])) /* XPCOM */"
             ,"    (root.$deps = root.$deps||{}) && (root.EXPORTED_SYMBOLS = [name]) && (root[name] = root.$deps[name] = factory.call(root));"
-            ,"else if ( ('object'===typeof module)&&module.exports ) /* CommonJS */"
+            ,"else if (('object'===typeof module)&&module.exports) /* CommonJS */"
             ,"    (module.$deps = module.$deps||{}) && (module.exports = module.$deps[name] = factory.call(root));"
-            ,"else if ( ('undefined'!==typeof System)&&('function'===typeof System.register)&&('function'===typeof System['import']) ) /* ES6 module */"
-            ,"    System.register(name,[],function($__export){$__export(name, factory.call(root));});"
-            ,"else if ( ('function'===typeof define)&&define.amd&&('function'===typeof require)&&('function'===typeof require.specified)&&require.specified(name) /*&& !require.defined(name)*/ ) /* AMD */"
+            ,"else if (('function'===typeof define)&&define.amd&&('function'===typeof require)&&('function'===typeof require.specified)&&require.specified(name) /*&& !require.defined(name)*/) /* AMD */"
             ,"    define(name,['module'],function(module){factory.moduleUri = module.uri; return factory.call(root);});"
-            ,"else if ( !(name in root) ) /* Browser/WebWorker/.. */"
+            ,"else if (!(name in root)) /* Browser/WebWorker/.. */"
             ,"    (root[name] = factory.call(root)||1)&&('function'===typeof(define))&&define.amd&&define(function(){return root[name];} );"
-            ,"}('undefined' !== typeof self ? self : this,'#CLASSNAME#',function( ){"
+            ,"}('undefined' !== typeof self ? self : this,'#CLASSNAME#',function() {"
             ,"\"use strict\";"
-            ,"return function( Contemplate ) {"
+            ,"return function(Contemplate) {"
             ,"/* Contemplate cached template '#TPLID#', constructor */"
-            ,"function #CLASSNAME#( id )"
+            ,"function #CLASSNAME#(id)"
             ,"{"
             ,"    var self = this;"
-            ,"    Contemplate.Template.call( self, id );"
+            ,"    Contemplate.Template.call(self, id);"
             ,"    /* tpl-defined blocks render code starts here */"
             ,"#BLOCKS#"
             ,"    /* tpl-defined blocks render code ends here */"
@@ -2995,14 +3120,14 @@ Contemplate = {
             ,"/* extends main Contemplate.Template class */"
             ,"#CLASSNAME#.prototype = Object.create(Contemplate.Template.prototype);"
             ,"/* render method */"
-            ,"#CLASSNAME#.prototype.render = function( data, __i__ ) {"
+            ,"#CLASSNAME#.prototype.render = function(data, __i__) {"
             ,"    \"use strict\";"
             ,"    var self = this, __p__ = '', __ctx = false;"
-            ,"    !__i__&&(__i__=self)&&(self._autonomus||(__ctx=Contemplate._set_ctx( self._ctx )));"
+            ,"    !__i__&&(__i__=self)&&(self._autonomus||(__ctx=Contemplate._set_ctx(self._ctx)));"
             ,"    /* tpl main render code starts here */"
             ,"#RENDERCODE#"
             ,"    /* tpl main render code ends here */"
-            ,"    __ctx&&Contemplate._set_ctx( __ctx );"
+            ,"    __ctx&&Contemplate._set_ctx(__ctx);"
             ,"    return __p__;"
             ,"};"
             ,"// export it"
@@ -3010,7 +3135,7 @@ Contemplate = {
             ,"};"
             ,"});"
             ,""
-        ].join( $__TEOL ), {
+        ].join($__TEOL), {
              "#PREFIXCODE#"         : "PREFIXCODE"
             ,"#CLASSNAME#"          : "CLASSNAME"
             ,"#TPLID#"              : "TPLID"
@@ -3022,11 +3147,11 @@ Contemplate = {
         TT_BlockCode = new InlineTemplate([
             ""
             ,"/* tpl block render method for block '#BLOCKNAME#' */"
-            ,"'#BLOCKMETHODNAME#': function( Contemplate, data, self, __i__ ) {"
+            ,"'#BLOCKMETHODNAME#': function(Contemplate, data, self, __i__) {"
             ,"#BLOCKMETHODCODE#"
             ,"}"
             ,""
-        ].join( $__TEOL ), {
+        ].join($__TEOL), {
              "#BLOCKNAME#"          : "BLOCKNAME"
             ,"#BLOCKMETHODNAME#"    : "BLOCKMETHODNAME"
             ,"#BLOCKMETHODCODE#"    : "BLOCKMETHODCODE"
@@ -3038,21 +3163,21 @@ Contemplate = {
             ,"#BLOCKCODE#"
             ,"return __p__;"
             ,""
-        ].join( $__TEOL ), {
+        ].join($__TEOL), {
              "#BLOCKCODE#"          : "BLOCKCODE"
         }, false);
 
 
         TT_FUNC = new InlineTemplate([
-            "return function( data, __i__ ){"
+            "return function(data, __i__){"
             ,"\"use strict\";"
             ,"var self = this, __p__ = '', __ctx = false;"
-            ,"!__i__&&(__i__=self)&&(self._autonomus||(__ctx=Contemplate._set_ctx( self._ctx )));"
+            ,"!__i__&&(__i__=self)&&(self._autonomus||(__ctx=Contemplate._set_ctx(self._ctx)));"
             ,"#FCODE#"
-            ,"__ctx&&Contemplate._set_ctx( __ctx );"
+            ,"__ctx&&Contemplate._set_ctx(__ctx);"
             ,"return __p__;"
             ,"};"
-        ].join( $__TEOL ), {
+        ].join($__TEOL), {
              "#FCODE#"              : "FCODE"
         }, false);
 
@@ -3060,15 +3185,15 @@ Contemplate = {
             ""
             ,"#RCODE#"
             ,""
-        ].join( $__TEOL ), {
+        ].join($__TEOL), {
              "#RCODE#"              : "RCODE"
         }, false);
 
-        clear_state( );
+        clear_state();
         $__isInited = true;
     }
 
-    ,_set_ctx: function( ctx ) {
+    ,_set_ctx: function(ctx) {
         var contx = $__context;
         /*if ( ctx instanceof Ctx ) $__context = ctx;
         else if ( ctx && HAS.call($__ctx,ctx) ) $__context = $__ctx[ctx];
@@ -3081,227 +3206,171 @@ Contemplate = {
     // Main API methods
     //
 
-    ,createCtx: function( ctx ) {
-        if ( ctx && 'global' !== ctx && !HAS.call($__ctx,ctx) ) $__ctx[ctx] = new Ctx( ctx );
+    ,createCtx: function(ctx) {
+        if (ctx && 'global' !== ctx && !HAS.call($__ctx,ctx)) $__ctx[ctx] = new Ctx(ctx);
     }
 
-    ,disposeCtx: function( ctx ) {
-        if ( ctx && 'global' !== ctx && HAS.call($__ctx,ctx) )
+    ,disposeCtx: function(ctx) {
+        if (ctx && 'global' !== ctx && HAS.call($__ctx, ctx))
         {
-            $__ctx[ctx].dispose( );
+            $__ctx[ctx].dispose();
             delete $__ctx[ctx];
         }
     }
 
-    ,setCompatibilityMode: function( enable ) {
-        if ( arguments.length < 1 ) enable = true;
-        $__compatibility = !!enable;
-    }
-
-    ,setTemplateSeparators: function( seps ) {
-        if ( seps )
+    ,setTemplateSeparators: function(seps) {
+        if (seps)
         {
-            if ( seps['left'] )  $__leftTplSep = ''+seps['left'];
-            if ( seps['right'] ) $__rightTplSep = ''+seps['right'];
+            if (seps['left'])  $__leftTplSep = ''+seps['left'];
+            if (seps['right']) $__rightTplSep = ''+seps['right'];
         }
     }
 
-    ,setPreserveLines: function( enable ) {
-        if ( arguments.length < 1 ) enable = true;
+    ,setPreserveLines: function(enable) {
+        if (arguments.length < 1) enable = true;
         $__preserveLines = !!enable ? $__preserveLinesDefault : '';
     }
 
-    ,hasPlugin: function( name, ctx ) {
+    ,hasPlugin: function(name, ctx) {
         var contx;
-        if ( arguments.length < 2 ) ctx = 'global';
-        contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
-        return !!name && (HAS.call(contx.plugins,name) || HAS.call($__global.plugins,name));
+        if (arguments.length < 2) ctx = 'global';
+        contx = ctx && HAS.call($__ctx, ctx) ? $__ctx[ctx] : $__context;
+        return !!name && (HAS.call(contx.plugins, name) || HAS.call($__global.plugins, name));
     }
 
-    ,addPlugin: function( name, pluginCode, ctx ) {
+    ,addPlugin: function(name, pluginCode, ctx) {
         var contx;
-        if ( name && pluginCode )
+        if (name && pluginCode)
         {
-            if ( arguments.length < 2 ) ctx = 'global';
-            contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
-            contx.plugins[ name ] = pluginCode;
+            if (arguments.length < 2) ctx = 'global';
+            contx = ctx && HAS.call($__ctx, ctx) ? $__ctx[ctx] : $__context;
+            contx.plugins[name] = pluginCode;
         }
     }
 
-    ,plg_: function( plg ) {
+    ,plg_: function(plg) {
         var args = arguments;
-        if ( HAS.call($__context.plugins, plg ) && "function" === typeof $__context.plugins[ plg ] )
+        if (HAS.call($__context.plugins, plg) && ("function" === typeof $__context.plugins[plg]))
         {
-            return $__context.plugins[ plg ].apply( null, slice.call(args, 1) );
+            return $__context.plugins[plg].apply(null, slice.call(args, 1));
         }
-        else if ( HAS.call($__global.plugins, plg ) && "function" === typeof $__global.plugins[ plg ] )
+        else if (HAS.call($__global.plugins, plg) && ("function" === typeof $__global.plugins[plg]))
         {
-            return $__global.plugins[ plg ].apply( null, slice.call(args, 1) );
+            return $__global.plugins[plg].apply(null, slice.call(args, 1));
         }
         return '';
     }
 
-    ,setPrefixCode: function( preCode, ctx ) {
+    ,setPrefixCode: function(preCode, ctx) {
         var contx;
-        if ( arguments.length < 2 ) ctx = 'global';
-        contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
-        if ( preCode ) contx.prefix = '' + preCode;
+        if (arguments.length < 2) ctx = 'global';
+        contx = ctx && HAS.call($__ctx, ctx) ? $__ctx[ctx] : $__context;
+        if (preCode) contx.prefix = '' + preCode;
     }
 
-    ,setEncoding: function( encoding, ctx ) {
+    ,setEncoding: function(encoding, ctx) {
         var contx;
-        if ( arguments.length < 2 ) ctx = 'global';
+        if (arguments.length < 2) ctx = 'global';
         contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
         contx.encoding = encoding;
     }
 
-    ,setLocales: function( locales, ctx ) {
+    ,setCacheDir: function(dir, ctx) {
         var contx;
-        if ( locales && ("function" === typeof locales || "object"===typeof locales) )
-        {
-            if ( arguments.length < 2 ) ctx = 'global';
-            contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
-            contx.locale = "function" === typeof locales ? locales : merge(contx.locale, locales);
-        }
-    }
-
-    ,setXLocales: function( xlocales, ctx ) {
-        var contx;
-        if ( xlocales && ("function" === typeof xlocales || "object"===typeof xlocales) )
-        {
-            if ( arguments.length < 2 ) ctx = 'global';
-            contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
-            contx.xlocale = "function" === typeof xlocales ? xlocales : merge(contx.xlocale, xlocales);
-        }
-    }
-
-    ,setPluralForm: function( form, ctx ) {
-        var contx;
-        if ( form && "function" === typeof form )
-        {
-            if ( arguments.length < 2 ) ctx = 'global';
-            contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
-            contx.pluralForm = form;
-        }
-    }
-
-    ,clearLocales: function( ctx ) {
-        var contx;
-        if ( arguments.length < 2 ) ctx = 'global';
-        contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
-        contx.locale = { };
-    }
-
-    ,clearXLocales: function( ctx ) {
-        var contx;
-        if ( arguments.length < 2 ) ctx = 'global';
-        contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
-        contx.xlocale = { };
-    }
-
-    ,clearPluralForm: function( ctx ) {
-        var contx;
-        if ( arguments.length < 1 ) ctx = 'global';
-        contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
-        contx.pluralForm = null;
-    }
-
-    ,setCacheDir: function( dir, ctx ) {
-        var contx;
-        if ( arguments.length < 2 ) ctx = 'global';
-        contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
+        if (arguments.length < 2) ctx = 'global';
+        contx = ctx && HAS.call($__ctx, ctx) ? $__ctx[ctx] : $__context;
         contx.cacheDir = rtrim(dir, '/\\') + '/';
     }
 
-    ,setCacheMode: function( mode, ctx ) {
+    ,setCacheMode: function(mode, ctx) {
         var contx;
-        if ( arguments.length < 2 ) ctx = 'global';
-        contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
+        if (arguments.length < 2) ctx = 'global';
+        contx = ctx && HAS.call($__ctx, ctx) ? $__ctx[ctx] : $__context;
         contx.cacheMode = isNode || isXPCOM ? mode : Contemplate.CACHE_TO_DISK_NONE;
     }
 
-    ,setTemplateDirs: function( dirs, ctx ) {
+    ,setTemplateDirs: function(dirs, ctx) {
         var contx;
-        if ( arguments.length < 2 ) ctx = 'global';
-        contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
+        if (arguments.length < 2) ctx = 'global';
+        contx = ctx && HAS.call($__ctx, ctx) ? $__ctx[ctx] : $__context;
         contx.templateDirs = [].concat(dirs);
     }
 
-    ,getTemplateDirs: function( ctx ) {
+    ,getTemplateDirs: function(ctx) {
         var contx;
-        if ( arguments.length < 1 ) ctx = 'global';
-        contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
+        if (arguments.length < 1) ctx = 'global';
+        contx = ctx && HAS.call($__ctx, ctx) ? $__ctx[ctx] : $__context;
         return contx.templateDirs;
     }
 
-    ,setTemplateFinder: function( finder, ctx ) {
+    ,setTemplateFinder: function(finder, ctx) {
         var contx;
-        if ( arguments.length < 2 ) ctx = 'global';
-        contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
+        if (arguments.length < 2) ctx = 'global';
+        contx = ctx && HAS.call($__ctx, ctx) ? $__ctx[ctx] : $__context;
         contx.templateFinder = 'function' === typeof finder ? finder : null;
     }
 
-    ,clearCache: function( all, ctx ) {
+    ,clearCache: function(all, ctx) {
         var contx;
-        if ( arguments.length < 2 ) ctx = 'global';
-        contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
-        contx.cache = { };
-        if ( all ) contx.partials = { };
+        if (arguments.length < 2) ctx = 'global';
+        contx = ctx && HAS.call($__ctx, ctx) ? $__ctx[ctx] : $__context;
+        contx.cache = {};
+        if (all) contx.partials = {};
     }
 
-    ,add: function( tpls, ctx ) {
+    ,add: function(tpls, ctx) {
         var contx, tplID;
-        if ( tpls && "object"===typeof tpls )
+        if (tpls && ("object" === typeof tpls))
         {
-            if ( arguments.length < 2 ) ctx = 'global';
-            contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
+            if (arguments.length < 2) ctx = 'global';
+            contx = ctx && HAS.call($__ctx, ctx) ? $__ctx[ctx] : $__context;
             for (tplID in tpls)
             {
-                if ( !HAS.call(tpls,tplID) ) continue;
-                if ( is_array( tpls[ tplID ] ) )
+                if (!HAS.call(tpls, tplID)) continue;
+                if (is_array(tpls[tplID]))
                 {
                     // unified way to add tpls both as reference and inline
                     // inline tpl, passed as array
-                    if ( tpls[ tplID ][ 0 ] )
-                        contx.templates[ tplID ] = [tpls[ tplID ][ 0 ], true];
+                    if (tpls[tplID][0])
+                        contx.templates[tplID] = [tpls[tplID][0], true];
                 }
                 else
                 {
-                    contx.templates[ tplID ] = [tpls[ tplID ], false];
+                    contx.templates[tplID] = [tpls[tplID], false];
                 }
             }
         }
     }
 
-    ,hasTpl: function( tpl, ctx ) {
+    ,hasTpl: function(tpl, ctx) {
         var contx;
-        if ( arguments.length < 2 ) ctx = 'global';
-        contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
-        return !!tpl && (HAS.call(contx.templates,tpl) || HAS.call($__global.templates,tpl));
+        if (arguments.length < 2) ctx = 'global';
+        contx = ctx && HAS.call($__ctx, ctx) ? $__ctx[ctx] : $__context;
+        return !!tpl && (HAS.call(contx.templates, tpl) || HAS.call($__global.templates, tpl));
     }
 
-    ,getTemplateContents: function( id, ctx, cb ) {
+    ,getTemplateContents: function(id, ctx, cb) {
         var contx;
-        if ( arguments.length < 2 ) ctx = 'global';
-        contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
-        if ( 'function' === typeof cb )
+        if (arguments.length < 2) ctx = 'global';
+        contx = ctx && HAS.call($__ctx, ctx) ? $__ctx[ctx] : $__context;
+        if ('function' === typeof cb)
         {
-            get_template_contents( id, contx, function(err, tpl){
-                cb(err,tpl);
-            } );
+            get_template_contents(id, contx, function(err, tpl) {
+                cb(err, tpl);
+            });
         }
         else
         {
-            return get_template_contents( id, contx );
+            return get_template_contents(id, contx);
         }
     }
 
-    ,getTemplateContentsPromise: function( id, ctx ) {
-        if ( 'function' === typeof Promise )
+    ,getTemplateContentsPromise: function(id, ctx) {
+        if ('function' === typeof Promise)
         {
             return new Promise(function(resolve, reject) {
                 Contemplate.getTemplateContents(id, ctx, function(err, data) {
-                    if ( err ) reject(err);
+                    if (err) reject(err);
                     else resolve(data);
                 });
             });
@@ -3309,66 +3378,66 @@ Contemplate = {
         return null;
     }
 
-    ,findTpl: function( tpl, ctx, cb ) {
+    ,findTpl: function(tpl, ctx, cb) {
         var contx;
-        if ( arguments.length < 2 ) ctx = 'global';
-        contx = ctx && HAS.call($__ctx,ctx) ? $__ctx[ctx] : $__context;
+        if (arguments.length < 2) ctx = 'global';
+        contx = ctx && HAS.call($__ctx, ctx) ? $__ctx[ctx] : $__context;
 
-        if ( 'function' === typeof cb )
+        if ('function' === typeof cb)
         {
             var templateDirs, filename, dir,
-                search_one = function search_one( ) {
-                    if ( dir >= templateDirs.length )
+                search_one = function search_one() {
+                    if (dir >= templateDirs.length)
                     {
                         cb(null, null);
                         return;
                     }
                     var path = rtrim(templateDirs[dir],'/\\') + '/' + filename;
-                    fexists_async(path, function(err,exists){
-                        if ( !err && exists )
+                    fexists_async(path, function(err, exists) {
+                        if (!err && exists)
                         {
                             cb(null, path);
                         }
                         else
                         {
-                            dir++;
-                            search_one( );
+                            ++dir;
+                            search_one();
                         }
                     });
                 };
-            if ( 'function' === typeof contx.templateFinder )
+            if ('function' === typeof contx.templateFinder)
             {
                 // supposed to be async operation with callback given
-                contx.templateFinder(tpl, function(found){
+                contx.templateFinder(tpl, function(found) {
                     cb(null, found);
                 });
                 return;
             }
-            if ( contx.templateDirs && contx.templateDirs.length )
+            if (contx.templateDirs && contx.templateDirs.length)
             {
                 templateDirs = contx.templateDirs;
                 filename = ltrim(tpl,'/\\');
                 dir = 0;
-                search_one( );
+                search_one();
                 return;
             }
-            if ( contx != $__global )
+            if (contx != $__global)
             {
                 contx = $__global;
-                if ( 'function' === typeof contx.templateFinder )
+                if ('function' === typeof contx.templateFinder)
                 {
                     // supposed to be async operation with callback given
-                    contx.templateFinder(tpl, function(found){
+                    contx.templateFinder(tpl, function(found) {
                         cb(null, found);
                     });
                     return;
                 }
-                if ( contx.templateDirs && contx.templateDirs.length )
+                if (contx.templateDirs && contx.templateDirs.length)
                 {
                     templateDirs = contx.templateDirs;
                     filename = ltrim(tpl,'/\\');
                     dir = 0;
-                    search_one( );
+                    search_one();
                     return;
                 }
             }
@@ -3377,7 +3446,7 @@ Contemplate = {
         else
         {
             var filename, path, dir, l;
-            if ( 'function' === typeof contx.templateFinder)
+            if ('function' === typeof contx.templateFinder)
             {
                 // supposed to be sync operation if no callback provided
                 return contx.templateFinder(tpl);
@@ -3385,19 +3454,19 @@ Contemplate = {
 
             if (contx.templateDirs && contx.templateDirs.length)
             {
-                filename = ltrim(tpl,'/\\');
-                for(dir=0,l=contx.templateDirs.length; dir<l; dir++)
+                filename = ltrim(tpl, '/\\');
+                for(dir=0,l=contx.templateDirs.length; dir<l; ++dir)
                 {
                     path = rtrim(contx.templateDirs[dir],'/\\') + '/' + filename;
-                    if ( fexists(path) ) return path;
+                    if (fexists(path)) return path;
                 }
                 return null;
             }
 
-            if ( contx != $__global )
+            if (contx != $__global)
             {
                 contx = $__global
-                if ( 'function' === typeof contx.templateFinder)
+                if ('function' === typeof contx.templateFinder)
                 {
                     // supposed to be sync operation if no callback provided
                     return contx.templateFinder(tpl);
@@ -3405,11 +3474,11 @@ Contemplate = {
 
                 if (contx.templateDirs && contx.templateDirs.length)
                 {
-                    filename = ltrim(tpl,'/\\');
-                    for(dir=0,l=contx.templateDirs.length; dir<l; dir++)
+                    filename = ltrim(tpl, '/\\');
+                    for(dir=0,l=contx.templateDirs.length; dir<l; ++dir)
                     {
                         path = rtrim(contx.templateDirs[dir],'/\\') + '/' + filename;
-                        if ( fexists(path) ) return path;
+                        if (fexists(path)) return path;
                     }
                     return null;
                 }
@@ -3418,13 +3487,13 @@ Contemplate = {
         return null;
     }
 
-    ,findTplPromise: function( tpl, ctx ) {
-        if ( 'function' === typeof Promise )
+    ,findTplPromise: function(tpl, ctx) {
+        if ('function' === typeof Promise)
         {
-            if ( arguments.length < 2 ) ctx = 'global';
+            if (arguments.length < 2) ctx = 'global';
             return new Promise(function(resolve, reject) {
                 Contemplate.findTpl(tpl, ctx, function(err, found) {
-                    if ( err ) reject(err);
+                    if (err) reject(err);
                     else resolve(found);
                 });
             });
@@ -3432,13 +3501,13 @@ Contemplate = {
         return null;
     }
 
-    ,parseTpl: function( tpl, options, cb ) {
+    ,parseTpl: function(tpl, options, cb) {
         var parsed, leftSep, rightSep, separators, _ctx, contx = null;
 
         // see what context this template may use
-        if ( options && options.substr )
+        if (options && options.substr)
         {
-            if ( HAS.call($__ctx,options) )
+            if (HAS.call($__ctx, options))
                 contx = $__ctx[options]; // preset context
             else
                 contx = $__global; // global context
@@ -3449,30 +3518,34 @@ Contemplate = {
             'separators': null
         }, options);
 
-        if ( options.context )
+        if (options.context)
         {
-            if ( HAS.call($__ctx,options.context) )
+            if (HAS.call($__ctx, options.context))
                 contx = $__ctx[options.context]; // preset context
-            else if ( !contx )
+            else if (!contx)
                 contx = $__global; // global context
             delete options.context;
         }
-        if ( !contx ) contx = $__global; // global context
+        if (!contx) contx = $__global; // global context
 
         leftSep = $__leftTplSep; rightSep = $__rightTplSep;
         separators = options && options.separators ? options.separators : null;
-        if ( separators ) { leftSep = separators[ 0 ];  rightSep = separators[ 1 ]; }
+        if (separators)
+        {
+            leftSep = separators[0];
+            rightSep = separators[1];
+        }
 
-        if ( 'function' === typeof cb )
+        if ('function' === typeof cb)
         {
             _ctx = $__context;
             $__context = contx;
-            reset_state( );
-            parse( tpl, leftSep, rightSep, true, function(err, parsed){
-                clear_state( );
+            reset_state();
+            parse(tpl, leftSep, rightSep, true, function(err, parsed) {
+                clear_state();
                 $__context = _ctx;
                 cb(err, parsed);
-            } );
+            });
 
             return null;
         }
@@ -3480,21 +3553,21 @@ Contemplate = {
         {
             _ctx = $__context;
             $__context = contx;
-            reset_state( );
-            parsed = parse( tpl, leftSep, rightSep, true );
-            clear_state( );
+            reset_state();
+            parsed = parse(tpl, leftSep, rightSep, true);
+            clear_state();
             $__context = _ctx;
 
             return parsed;
         }
     }
 
-    ,parseTplPromise: function( tpl, options ) {
-        if ( 'function' === typeof Promise )
+    ,parseTplPromise: function(tpl, options) {
+        if ('function' === typeof Promise)
         {
             return new Promise(function(resolve, reject) {
                 Contemplate.parseTpl(tpl, options, function(err, parsed) {
-                    if ( err ) reject(err);
+                    if (err) reject(err);
                     else resolve(parsed);
                 });
             });
@@ -3506,31 +3579,32 @@ Contemplate = {
     // Main Template functions
     //
 
-    ,tpl: function( tpl, data, options, cb ) {
+    ,tpl: function(tpl, data, options, cb) {
         cb = 'function' === typeof cb ? cb : null;
         var tmpl, contx, _ctx;
-        if ( tpl instanceof Contemplate.Template )
+        if (tpl instanceof Contemplate.Template)
         {
             tmpl = tpl;
-            if ( cb )
+            if (cb)
             {
                 // Provide some basic currying to the user
-                cb(null, data && "object"===typeof data ? tmpl.render( data ) : tmpl);
+                cb(null, data && ("object" === typeof data) ? tmpl.render(data) : tmpl);
                 return null;
             }
             else
             {
                 // Provide some basic currying to the user
-                return data && "object"===typeof data ? tmpl.render( data ) : tmpl;
+                return data && ("object" === typeof data) ? tmpl.render(data) : tmpl;
             }
         }
         else
         {
             // see what context this template may use
             contx = null;
-            if ( options && options.substr )
+            if (null == options) options = {};
+            if (options && options.substr)
             {
-                if ( HAS.call($__ctx,options) )
+                if (HAS.call($__ctx, options))
                     contx = $__ctx[options]; // preset context
                 else
                     contx = $__context; // current context
@@ -3545,52 +3619,52 @@ Contemplate = {
                 ,'standalone': false
             }, options);
 
-            if ( options.context )
+            if (options.context)
             {
-                if ( HAS.call($__ctx,options.context) )
+                if (HAS.call($__ctx, options.context))
                     contx = $__ctx[options.context]; // preset context
-                else if ( !contx )
+                else if (!contx)
                     contx = $__context; // current context
                 delete options.context;
             }
-            if ( !contx ) contx = $__context; // current context
+            if (!contx) contx = $__context; // current context
 
             $__escape = false !== options.escape;
 
-            if ( cb )
+            if (cb)
             {
-                var proceed = function( ){
+                var proceed = function() {
                     // asynchronous loading, parsing and writing
-                    if ( !!options.refresh || (!contx.cache[ tpl ] && !$__global.cache[ tpl ]) )
+                    if (!!options.refresh || (!contx.cache[tpl] && !$__global.cache[tpl]))
                     {
                         _ctx = $__context;
                         $__context = contx;
-                        get_cached_template( tpl, contx, options, function(err, ctpl){
-                            if ( err )
+                        get_cached_template(tpl, contx, options, function(err, ctpl) {
+                            $__context = _ctx;
+                            if (err)
                             {
                                 cb(err, null);
                                 return;
                             }
-                            contx.cache[ tpl ] = ctpl;
-                            $__context = _ctx;
-                            tmpl = contx.cache[ tpl ] || $__global.cache[ tpl ];
-                            tmpl.autonomus( options.standalone );
-                            cb(null, data && "object"===typeof data ? tmpl.render( data ) : tmpl);
-                        } );
+                            contx.cache[tpl] = ctpl;
+                            tmpl = contx.cache[tpl] || $__global.cache[tpl];
+                            tmpl.autonomus(options.standalone);
+                            cb(null, data && ("object"===typeof data) ? tmpl.render(data) : tmpl);
+                        });
                     }
                     else
                     {
-                        tmpl = contx.cache[ tpl ] || $__global.cache[ tpl ];
-                        tmpl.autonomus( options.standalone );
-                        cb(null, data && "object"===typeof data ? tmpl.render( data ) : tmpl);
+                        tmpl = contx.cache[tpl] || $__global.cache[tpl];
+                        tmpl.autonomus(options.standalone);
+                        cb(null, data && ("object"===typeof data) ? tmpl.render(data) : tmpl);
                     }
                 };
 
-                if ( null == options['parsed'] && !Contemplate.hasTpl(tpl, contx.id) )
+                if (null == options['parsed'] && !Contemplate.hasTpl(tpl, contx.id))
                 {
                     // async operation
-                    Contemplate.findTpl(tpl, contx.id, function(err, path){
-                        if ( !path )
+                    Contemplate.findTpl(tpl, contx.id, function(err, path) {
+                        if (!path)
                         {
                             cb(null, data && "object"===typeof data ? '' : null);
                             return;
@@ -3598,18 +3672,18 @@ Contemplate = {
                         var tpldef = {};
                         tpldef[tpl] = path;
                         Contemplate.add(tpldef, contx.id);
-                        proceed( );
+                        proceed();
                     });
                 }
                 else
                 {
-                    proceed( );
+                    proceed();
                 }
                 return null;
             }
             else
             {
-                if ( null == options['parsed'] && !Contemplate.hasTpl(tpl, contx.id) )
+                if (null == options['parsed'] && !Contemplate.hasTpl(tpl, contx.id))
                 {
                     // sync operation
                     var path = Contemplate.findTpl(tpl, contx.id);
@@ -3621,30 +3695,30 @@ Contemplate = {
 
                 // Figure out if we're getting a template, or if we need to
                 // load the template - and be sure to cache the result.
-                if ( !!options.refresh || (!contx.cache[ tpl ] && !$__global.cache[ tpl ]) )
+                if (!!options.refresh || (!contx.cache[tpl] && !$__global.cache[tpl]))
                 {
                     _ctx = $__context;
                     $__context = contx;
-                    contx.cache[ tpl ] = get_cached_template( tpl, contx, options );
+                    contx.cache[tpl] = get_cached_template(tpl, contx, options);
                     $__context = _ctx;
                 }
 
-                tmpl = contx.cache[ tpl ] || $__global.cache[ tpl ];
-                tmpl.autonomus( options.standalone );
+                tmpl = contx.cache[tpl] || $__global.cache[tpl];
+                tmpl.autonomus(options.standalone);
 
                 // Provide some basic currying to the user
-                return data && "object"===typeof data ? tmpl.render( data ) : tmpl;
+                return data && ("object"===typeof data) ? tmpl.render(data) : tmpl;
             }
         }
     }
 
 
-    ,tplPromise: function( tpl, data, options ) {
-        if ( 'function' === typeof Promise )
+    ,tplPromise: function(tpl, data, options) {
+        if ('function' === typeof Promise)
         {
             return new Promise(function(resolve, reject) {
                 Contemplate.tpl(tpl, data, options, function(err, tpl) {
-                    if ( err ) reject(err);
+                    if (err) reject(err);
                     else resolve(tpl);
                 });
             });
@@ -3652,164 +3726,96 @@ Contemplate = {
         return null;
     }
 
-    ,inline: function( tpl, reps, compiled ) {
+    ,inline: function(tpl, reps, compiled) {
         return (tpl instanceof Contemplate.InlineTemplate)
-            ? tpl.render( reps )
+            ? tpl.render(reps)
             : Contemplate.InlineTemplate(tpl, reps, compiled);
     }
 
-    ,is_array: function( v, strict ) {
-        var to_string = toString.call( v );
-        return strict ? '[object Array]' === to_string : ('[object Array]' === to_string) || ('[object Object]' === to_string);
+    ,concat: function() {
+        return join.call(arguments, '');
     }
 
-    ,in_array: function( v, a ) {
-        return -1 < a.indexOf( v );
-    }
-
-    ,json_encode: function( v ) {
-        return JSON.stringify( v );
-    }
-
-    ,json_decode: function( v ) {
-        return JSON.parse( v );
-    }
-
-    ,join: function( sep, args, skip_empty ) {
-        if ( null == args ) return '';
+    ,join: function(sep, args, skip_empty) {
+        if (null == args) return '';
         skip_empty = true === skip_empty;
-        if ( 'object' !== typeof args ) return skip_empty&&!String(args).length ? '' : String(args);
-        if ( null == sep ) sep = '';
+        if ('object' !== typeof args) return skip_empty&&!String(args).length ? '' : String(args);
+        if (null == sep) sep = '';
         var i, l = args.length, s,
             out = l > 0 ? ('object'===typeof args[0] ? Contemplate.join(sep, args[0], skip_empty) : (skip_empty&&(null==args[0]||!String(args[0]).length) ? '' : String(args[0]))) : '';
-        for (i=1; i<l; i++)
+        for (i=1; i<l; ++i)
         {
             s = 'object' === typeof args[i] ? Contemplate.join(sep, args[i], skip_empty) : (skip_empty&&(null==args[i]||!String(args[i]).length) ? '' : String(args[i]));
-            if ( !skip_empty || s.length > 0 ) out += sep + s;
+            if (!skip_empty || s.length > 0) out += sep + s;
         }
         return out;
     }
 
-    ,buildquery: function( data ) {
-        return http_build_query( data, '&' );
+    ,keys: function(o) {
+        return o ? array_keys(o) : [];
     }
 
-    ,parsequery: function( str ) {
-        return parse_str( str );
+    ,values: function(o) {
+        return o ? array_values(o) : [];
     }
 
-    ,queryvar: function( url, add_keys, remove_keys )  {
-        var keys, key, value, k, l, last, q, to_str;
-        if ( null!=remove_keys )
-        {
-            // https://davidwalsh.name/php-remove-variable
-            keys = [].concat(remove_keys);
-            l = keys.length;
-            for(k=0; k<l; k++)
-            {
-                url = url.replace(RE('(\\?|&)' + urlencode( keys[k] ).replace(re_9, '\\$1') + '(\\[[^\\[\\]]*\\])*(=[^&]+)?','g'), '$1');
-            }
-            url = url.replace(AMP_RE, '&').replace('?&', '?');
-            last = url.slice(-1);
-            if ( '?' == last || '&' == last )
-            {
-                url = url.slice(0,-1);
-            }
-        }
-        if ( !!add_keys )
-        {
-            keys = Keys(add_keys);
-            l = keys.length;
-            q = -1 === url.indexOf('?') ? '?' : '&';
-            for(k=0; k<l; k++)
-            {
-                key = keys[k]; value = add_keys[key];
-                key = urlencode( key );
-                to_str = toString.call(value);
-                if ( '[object Array]' === to_str || '[object Object]' === to_str )
-                {
-                    if ( '[object Array]' === to_str )
-                    {
-                        for(var v=0,vl=value.length; v<vl; v++)
-                        {
-                            url += q + key + '[]=' + urlencode( value[v] );
-                            q = '&';
-                        }
-                    }
-                    else
-                    {
-
-                        for(var kvalue=Keys(value),v=0,vl=kvalue.length; v<vl; v++)
-                        {
-                            url += q + key + '[' + urlencode( kvalue[v] ) + ']=' + urlencode( value[kvalue[v]] );
-                            q = '&';
-                        }
-                    }
-                }
-                else
-                {
-                    url += q + key + '=' + urlencode( value );
-                }
-                q = '&';
-            }
-        }
-        return url;
+    ,items: function(o) {
+        return o;
     }
 
-    ,striptags: function( s ) {
-        return s.replace(TAG_RE, '');
+    ,count: count
+
+    ,is_array: function(v, strict) {
+        var to_string = toString.call(v);
+        return strict ? '[object Array]' === to_string : ('[object Array]' === to_string) || ('[object Object]' === to_string);
     }
 
-    ,haskey: function( v/*, key1, key2, etc.. */ ) {
+    ,in_array: function(v, a) {
+        return -1 < a.indexOf(v);
+    }
+
+    ,is_list: is_array
+
+    ,haskey: function(v/*, key1, key2, etc.. */) {
         var args, i, tmp;
         if (!v || !Contemplate.is_array(v)) return false;
         args = arguments; tmp = v;
-        for (i=1; i<args.length; i++)
+        for (i=1; i<args.length; ++i)
         {
-            if ( null==tmp || !Contemplate.is_array(tmp) || !HAS.call(tmp,args[i]) ) return false;
-            tmp = tmp[ args[i] ];
+            if (null == tmp || !Contemplate.is_array(tmp) || !HAS.call(tmp,args[i])) return false;
+            tmp = tmp[args[i]];
         }
         return true;
     }
-    ,get: function( v, keys, default_value ) {
-        default_value = null != default_value ? default_value : null;
-        if ( !Contemplate.is_array(keys, true) ) keys = [keys];
-        var o = v, k = 0, l = keys.length, found = 1, key, keyGetter;
-        for(k=0; k<l; k++)
-        {
-            key = String(keys[k]);
-            if ( HAS.call(o, key) )
-            {
-                o = o[key];
-            }
-            else
-            {
-                keyGetter = 'get' + key.charAt(0).toUpperCase() + key.substring(1);
-                if ( /*HAS.call(o, keyGetter) &&*/ ("function" === typeof o[keyGetter]) )
-                {
-                    o = o[keyGetter]( );
-                }
-                else
-                {
-                    found = 0;
-                    break;
-                }
-            }
-        }
-        return found ? o : default_value;
-    }
-    ,empty: empty
-    //,iif: iif
 
-    ,e: function( s, entities ) {
+    ,time: php_time
+
+    ,date: function(format, timestamp) {
+        if (arguments.length < 2) timestamp = php_time();
+        return php_date(format, timestamp);
+    }
+
+    ,lowercase: function(s) {
+        return String(s).toLowerCase();
+    }
+
+    ,uppercase: function(s) {
+        return String(s).toUpperCase();
+    }
+
+    ,striptags: function(s) {
+        return s.replace(TAG_RE, '');
+    }
+
+    ,e: function(s, entities) {
         // http://jsperf.com/split-join-vs-regex-replace/10
         var i = 0, l = s.length, r = '', c, cd;
-        if ( entities )
+        if (entities)
         {
-            while ( i < l )
+            for (i=0; i<l; ++i)
             {
-                c = s.charAt( i++ ); cd = c.charCodeAt( 0 );
-                switch( cd )
+                c = s.charAt(i); cd = c.charCodeAt(0);
+                switch (cd)
                 {
                     case 34: r += "&quot;"; break;
                     case 38: r += "&amp;"; break;
@@ -3822,10 +3828,10 @@ Contemplate = {
         }
         else
         {
-            while ( i < l )
+            for (i=0; i<l; ++i)
             {
-                c = s.charAt( i++ ); cd = c.charCodeAt( 0 );
-                switch( cd )
+                c = s.charAt(i); cd = c.charCodeAt(0);
+                switch (cd)
                 {
                     case 34: case 38: case 39: case 60: case 62:
                         r += "&#"+cd+";"; break;
@@ -3836,165 +3842,132 @@ Contemplate = {
         }
         return r;
     }
-    ,url: urlencode
 
+    ,json_encode: function(v) {
+        return JSON.stringify(v);
+    }
+
+    ,json_decode: function(v) {
+        return JSON.parse(v);
+    }
+
+    ,urlencode: urlencode
+
+    ,urldecode: urldecode
+
+    ,buildquery: function(data) {
+        return http_build_query(data, '&');
+    }
+
+    ,parsequery: function(str) {
+        return parse_str(str);
+    }
+
+    ,queryvar: function(url, add_keys, remove_keys) {
+        var keys, key, value, k, l, last, q, to_str;
+        if (null != remove_keys)
+        {
+            // https://davidwalsh.name/php-remove-variable
+            keys = [].concat(remove_keys);
+            l = keys.length;
+            for (k=0; k<l; ++k)
+            {
+                url = url.replace(RE('(\\?|&)' + urlencode( keys[k] ).replace(re_9, '\\$1') + '(\\[[^\\[\\]]*\\])*(=[^&]+)?','g'), '$1');
+            }
+            url = url.replace(AMP_RE, '&').replace('?&', '?');
+            last = url.slice(-1);
+            if ('?' === last || '&' === last)
+            {
+                url = url.slice(0,-1);
+            }
+        }
+        if (!!add_keys)
+        {
+            keys = Keys(add_keys);
+            l = keys.length;
+            q = -1 === url.indexOf('?') ? '?' : '&';
+            for(k=0; k<l; ++k)
+            {
+                key = keys[k]; value = add_keys[key];
+                key = urlencode(key);
+                to_str = toString.call(value);
+                if ('[object Array]' === to_str || '[object Object]' === to_str)
+                {
+                    if ('[object Array]' === to_str)
+                    {
+                        for (var v=0,vl=value.length; v<vl; ++v)
+                        {
+                            url += q + key + '[]=' + urlencode(value[v]);
+                            q = '&';
+                        }
+                    }
+                    else
+                    {
+
+                        for (var kvalue=Keys(value),v=0,vl=kvalue.length; v<vl; ++v)
+                        {
+                            url += q + key + '[' + urlencode(kvalue[v]) + ']=' + urlencode(value[kvalue[v]]);
+                            q = '&';
+                        }
+                    }
+                }
+                else
+                {
+                    url += q + key + '=' + urlencode(value);
+                }
+                q = '&';
+            }
+        }
+        return url;
+    }
+
+    ,get: function(v, keys, default_value) {
+        default_value = null != default_value ? default_value : null;
+        if (!Contemplate.is_array(keys, true)) keys = [keys];
+        var o = v, k = 0, l = keys.length, found = 1, key, keyGetter;
+        for (k=0; k<l; ++k)
+        {
+            key = String(keys[k]);
+            if (HAS.call(o, key))
+            {
+                o = o[key];
+            }
+            else
+            {
+                keyGetter = 'get' + key.charAt(0).toUpperCase() + key.substring(1);
+                if (/*HAS.call(o, keyGetter) &&*/ ("function" === typeof o[keyGetter]))
+                {
+                    o = o[keyGetter]();
+                }
+                else
+                {
+                    found = 0;
+                    break;
+                }
+            }
+        }
+        return found ? o : default_value;
+    }
+
+    ,uuid: function(namespace) {
+        return [namespace||'UUID', ++$__uuid, php_time()].join('_');
+    }
+
+    ,merge: merge
+
+    ,local_variable: local_variable
+
+    ,is_local_variable: is_local_variable
+
+    // extra for js version
+    ,empty: empty
     ,trim: trim
     ,ltrim: ltrim
     ,rtrim: rtrim
-    ,ucfirst: function( s ) {
-        return s[0].toUpperCase( ) + s.substr(1);//.toLowerCase();
-    }
-    ,lcfirst: function( s ) {
-        return s[0].toLowerCase( ) + s.substr(1);//.toUpperCase();
-    }
-    ,camelcase: function( s, sep, capitalizeFirst ) {
-        sep = sep || "_";
-        if ( capitalizeFirst )
-            return s.split( sep ).map( Contemplate.ucfirst ).join( "" );
-        else
-            return Contemplate.lcfirst( s.split( sep ).map( Contemplate.ucfirst ).join( "" ) );
-    }
-    ,snakecase: function( s, sep ) {
-        sep = sep || "_";
-        return s.replace( /([A-Z])/g, sep + '$1' ).toLowerCase( );
-    }
-    ,addslashes: function( str ) {
-        // http://kevin.vanzonneveld.net
-        // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
-        // +   improved by: Ates Goral (http://magnetiq.com)
-        // +   improved by: marrtins
-        // +   improved by: Nate
-        // +   improved by: Onno Marsman
-        // +   input by: Denny Wardhana
-        // +   improved by: Brett Zamir (http://brett-zamir.me)
-        // +   improved by: Oskar Larsson Högfeldt (http://oskar-lh.name/)
-        // *     example 1: addslashes("kevin's birthday");
-        // *     returns 1: 'kevin\'s birthday'
-        return (str + '').replace(/[\\"']/g, '\\$&').replace(/\u0000/g, '\\0');
-    }
-    ,stripslashes: function( str ) {
-        // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
-        // +   improved by: Ates Goral (http://magnetiq.com)
-        // +      fixed by: Mick@el
-        // +   improved by: marrtins
-        // +   bugfixed by: Onno Marsman
-        // +   improved by: rezna
-        // +   input by: Rick Waldron
-        // +   reimplemented by: Brett Zamir (http://brett-zamir.me)
-        // +   input by: Brant Messenger (http://www.brantmessenger.com/)
-        // +   bugfixed by: Brett Zamir (http://brett-zamir.me)
-        // *     example 1: stripslashes('Kevin\'s code');
-        // *     returns 1: "Kevin's code"
-        // *     example 2: stripslashes('Kevin\\\'s code');
-        // *     returns 2: "Kevin\'s code"
-        return (str + '').replace(/\\(.?)/g, function (s, n1) {
-            switch (n1)
-            {
-                case '\\': return '\\';
-                case '0': return '\u0000';
-                case '': return '';
-                default: return n1;
-            }
-        });
-    }
-    ,concat: function( ) {
-        return join.call( arguments, '' );
-    }
     ,sprintf: sprintf
-    ,vsprintf: function( fmt, args ) {
+    ,vsprintf: function(fmt, args) {
         return sprintf.apply(null, [fmt].concat(args||[]));
     }
-
-    //
-    //  Localization functions
-    //
-
-    ,time: php_time
-    ,date: function( format, timestamp ) {
-        if ( arguments.length < 2  ) timestamp = php_time( );
-        return php_date( format, timestamp );
-    }
-    ,ldate: function( format, timestamp ) {
-        if ( arguments.length < 2  ) timestamp = php_time( );
-        return localized_date( format, timestamp );
-    }
-
-    ,locale: function( s, args ) {
-        var ls, locale = ('function' === typeof $__context.locale) || HAS.call($__context.locale,s)
-            ? $__context.locale
-            : (('function' === typeof $__global.locale) || HAS.call($__global.locale,s)
-            ? $__global.locale
-            : null);
-        if ( 'function' === typeof locale )
-        {
-            ls = locale(s, args);
-        }
-        else
-        {
-            ls = null === locale ? s : locale[s];
-            if ( args ) ls = sprintf.apply(null, [ls].concat(args));
-        }
-        return ls;
-    }
-    ,xlocale: function( s, args, l_ctx ) {
-        var ls, xlocale = ('function' === typeof $__context.xlocale) || (l_ctx && HAS.call($__context.xlocale,l_ctx) && HAS.call($__context.xlocale[l_ctx],s))
-            ? $__context.xlocale
-            : (('function' === typeof $__global.xlocale) || (l_ctx && HAS.call($__global.xlocale,l_ctx) && HAS.call($__global.xlocale[l_ctx],s))
-            ? $__global.xlocale
-            : null);
-        if ( 'function' === typeof xlocale )
-        {
-            ls = xlocale(s, args, l_ctx);
-        }
-        else
-        {
-            ls = null === xlocale ? s : xlocale[l_ctx][s];
-            if ( args ) ls = sprintf.apply(null, [ls].concat(args));
-        }
-        return ls;
-    }
-    ,nlocale: function( n, singular, plural, args ) {
-        var form = 'function' === typeof $__context.pluralForm
-            ? $__context.pluralForm
-            : ('function' === typeof $__global.pluralForm
-            ? $__global.pluralForm
-            : null),
-            isSingular = form && ('function' === typeof form) ? !!form(n) : (1 == n);
-        return this.locale(isSingular ? singular : plural, args);
-    }
-    ,nxlocale: function( n, singular, plural, args, l_ctx ) {
-        var form = 'function' === typeof $__context.pluralForm
-            ? $__context.pluralForm
-            : ('function' === typeof $__global.pluralForm
-            ? $__global.pluralForm
-            : null),
-            isSingular = form && ('function' === typeof form) ? !!form(n) : (1 == n);
-        return this.xlocale(isSingular ? singular : plural, args, l_ctx);
-    }
-
-    ,uuid: function( namespace ) {
-        return [namespace||'UUID', ++$__uuid, php_time()].join('_');
-    }
-    ,count: count
-    ,keys: function( o ) {
-        return o ? array_keys(o) : null;
-    }
-    ,values: function( o ) {
-        return o ? array_values(o) : null;
-    }
-    ,items: function( o ) {
-        return o ? o : null;
-    }
-    ,merge: merge
-    ,data: function( o ) {
-        if ( is_array(o) ) return o.slice();
-        var c = {}, key, newkey;
-        // shallow clone the data
-        for (key in o) if (HAS.call(o,key)) c[key] = o[key];
-        return c;
-    }
-    ,local_variable: local_variable
-    ,is_local_variable: is_local_variable
 };
 
 // Template Engine end here
@@ -4002,14 +3975,14 @@ Contemplate = {
 //
 
 var default_date_locale = {
-     meridian: { am:'am', pm:'pm', AM:'AM', PM:'PM' }
-    ,ordinal: { ord:{1:'st',2:'nd',3:'rd'}, nth:'th' }
-    ,timezone: [ 'UTC','EST','MDT' ]
-    ,timezone_short: [ 'UTC','EST','MDT' ]
-    ,day: [ 'Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday' ]
-    ,day_short: [ 'Sun','Mon','Tue','Wed','Thu','Fri','Sat' ]
-    ,month: [ 'January','February','March','April','May','June','July','August','September','October','November','December' ]
-    ,month_short: [ 'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec' ]
+     meridian: {am:'am', pm:'pm', AM:'AM', PM:'PM'}
+    ,ordinal: {ord:{1:'st',2:'nd',3:'rd'}, nth:'th'}
+    ,timezone: ['UTC','EST','MDT']
+    ,timezone_short: ['UTC','EST','MDT']
+    ,day: ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+    ,day_short: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+    ,month: ['January','February','March','April','May','June','July','August','September','October','November','December']
+    ,month_short: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
     },
     Keys = Obj.keys, join = Arr[PROTO].join, slice = Arr[PROTO].slice, floor = Math.floor, round = Math.round, abs = Math.abs,
     re_1 = /([\s\S]*?)(&(?:#\d+|#x[\da-f]+|[a-zA-Z][\da-z]*);|$)/g,
@@ -4020,7 +3993,7 @@ var default_date_locale = {
     ltrim_re = /^[ \s\u00A0]+/g,
     trim_re = /^[ \n\r\t\f\x0b\xa0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u2028\u2029\u3000]+|[ \n\r\t\f\x0b\xa0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u2028\u2029\u3000]+$/g,
 
-    fileurl_2_nsfile = function( file_uri ) {
+    fileurl_2_nsfile = function(file_uri) {
         // NetUtil.newURI(file_uri).QueryInterface(Ci.nsIFileURL).file
         // http://stackoverflow.com/q/24817347/3591273
         /*var ios = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService),
@@ -4031,34 +4004,34 @@ var default_date_locale = {
     },
 
     fexists = isXPCOM
-    ? function fexists( file ) {
+    ? function fexists(file) {
         // file is URI, i.e file://...
-        return fileurl_2_nsfile( file ).exists( );
+        return fileurl_2_nsfile(file).exists();
     }
     : (isNode
-    ? function fexists( file ) {
+    ? function fexists(file) {
         return fs.existsSync(file);
     }
-    : function fexists( file ) {
+    : function fexists(file) {
         return true;
     }),
     fexists_async = isXPCOM
-    ? function fexists_async( file, cb ) {
+    ? function fexists_async(file, cb) {
         // file is URI, i.e file://...
-        if ( cb ) cb(null, fexists(file));
+        if (cb) cb(null, fexists(file));
     }
     : (isNode
-    ? function fexists_async( file, cb ) {
+    ? function fexists_async(file, cb) {
         // exists is deprecated due to incompatible callback signature
         //fs.exists(file, cb);
         fs.stat(file, function(err, stat) {
-            if ( !cb ) return;
-            if ( !err )
+            if (!cb) return;
+            if (!err)
             {
                 // exists
                 cb(null, true);
             }
-            else if ( 'ENOENT' === err.code )
+            else if ('ENOENT' === err.code)
             {
                 // file does not exist
                 cb(null, false);
@@ -4069,120 +4042,120 @@ var default_date_locale = {
             }
         });
     }
-    : function fexists_async( file, cb ) {
-        if ( cb ) cb(null, true);
+    : function fexists_async(file, cb) {
+        if (cb) cb(null, true);
     }),
 
     fis_dir = isXPCOM
-    ? function fis_dir( file ) {
-        return fileurl_2_nsfile( file ).isDirectory();
+    ? function fis_dir(file) {
+        return fileurl_2_nsfile(file).isDirectory();
     }
     : (isNode
-    ? function fis_dir( file ) {
-        return fs.lstatSync( file ).isDirectory();
+    ? function fis_dir(file) {
+        return fs.lstatSync(file).isDirectory();
     }
-    : function fis_dir( file ) {
+    : function fis_dir(file) {
         return false;
     }),
     fis_dir_async = isXPCOM
-    ? function fis_dir_async( file, cb ) {
-        if ( cb ) cb(null, fileurl_2_nsfile( file ).isDirectory());
+    ? function fis_dir_async(file, cb) {
+        if (cb) cb(null, fileurl_2_nsfile(file).isDirectory());
     }
     : (isNode
-    ? function fis_dir_async( file, cb ) {
+    ? function fis_dir_async(file, cb) {
         fs.lstat(file, function(err, stats){
-            if ( cb ) cb(err, err ? null : stats.isDirectory());
+            if (cb) cb(err, err ? null : stats.isDirectory());
         });
     }
-    : function fis_dir_async( file, cb ) {
-        if ( cb ) cb(null, false);
+    : function fis_dir_async(file, cb) {
+        if (cb) cb(null, false);
     }),
 
     fmkdir = isXPCOM
-    ? function fmkdir( file, mode ) {
-        var nsfile = fileurl_2_nsfile( file );
+    ? function fmkdir(file, mode) {
+        var nsfile = fileurl_2_nsfile(file);
         return nsfile.create(nsfile.DIRECTORY_TYPE, mode);
     }
     : (isNode
-    ? function fmkdir( file, mode ) {
+    ? function fmkdir(file, mode) {
         return fs.mkdirSync(file, mode);
     }
-    : function fmkdir( file, mode ){
+    : function fmkdir(file, mode) {
         // do nothing
         return false;
     }),
 
     fmkdir_async = isXPCOM
-    ? function fmkdir_async( file, mode, cb ) {
+    ? function fmkdir_async(file, mode, cb) {
         var res = fmkdir(file, mode);
-        if ( cb ) cb(null, res);
+        if (cb) cb(null, res);
     }
     : (isNode
-    ? function fmkdir_async( file, mode, cb ) {
-        fs.mkdir(file, mode, function(err){
-            if ( cb ) cb(err, err ? false : true);
+    ? function fmkdir_async(file, mode, cb) {
+        fs.mkdir(file, mode, function(err) {
+            if (cb) cb(err, err ? false : true);
         });
     }
-    : function fmkdir_async( file, mode, cb ){
+    : function fmkdir_async(file, mode, cb) {
         // do nothing
-        if ( cb ) cb(null, false);
+        if (cb) cb(null, false);
     }),
 
     fstat = isXPCOM
-    ? function fstat( file ) {
+    ? function fstat(file) {
         // file is URI, i.e file://...
-        var mtime = fileurl_2_nsfile( file ).lastModifiedTime;
+        var mtime = fileurl_2_nsfile(file).lastModifiedTime;
         return {mtime: !!mtime ? new Date(mtime) : false};
     }
     : (isNode
-    ? function fstat( file ) {
+    ? function fstat(file) {
         return fs.statSync(file);
     }
-    : function fstat( file ) {
+    : function fstat(file) {
         // http://stackoverflow.com/a/5748207/3591273
-        var xhr = XHR( ), mtime, stats = {mtime: false};
+        var xhr = XHR(), mtime, stats = {mtime: false};
         xhr.open('HEAD', file, false);  // 'false' makes the request synchronous
         xhr.send(null);
-        if ( 200 === xhr.status )
+        if (200 === xhr.status)
         {
             mtime = new Date(xhr.getResponseHeader('Last-Modified'));
-            if ( xhr.toString() === 'Invalid Date' ) mtime = false;
+            if (xhr.toString() === 'Invalid Date') mtime = false;
             stats.mtime = mtime;
         }
         return stats;
     }),
     fstat_async = isXPCOM
-    ? function fstat_async( file, cb ) {
-        if ( cb ) cb(null,fstat(file));
+    ? function fstat_async(file, cb) {
+        if (cb) cb(null, fstat(file));
     }
     : (isNode
-    ? function fstat_async( file, cb ) {
+    ? function fstat_async(file, cb) {
         fs.stat(file, cb);
     }
-    : function fstat_async( file, cb ) {
+    : function fstat_async(file, cb) {
         // http://stackoverflow.com/a/5748207/3591273
-        var xhr = XHR( ), mtime, stats = {mtime: false};
+        var xhr = XHR(), mtime, stats = {mtime: false};
         xhr.open('HEAD', file, true);  // 'true' makes the request asynchronous
-        xhr.onload = function( ) {
-            if ( 200 === xhr.status )
+        xhr.onload = function() {
+            if (200 === xhr.status)
             {
                 mtime = new Date(xhr.getResponseHeader('Last-Modified'));
-                if ( mtime.toString() === 'Invalid Date' ) mtime = false;
+                if (mtime.toString() === 'Invalid Date') mtime = false;
                 stats.mtime = mtime;
             }
-            if ( cb ) cb(null, stats);
+            if (cb) cb(null, stats);
         };
         xhr.send(null);
     }),
 
     fread = isXPCOM
-    ? function fread( file, enc ) {
+    ? function fread(file, enc) {
         // file is URI, i.e file://...
         var data = '', stream, conv, len, str = {value:''}, read = 0;
         // https://developer.mozilla.org/en-US/Add-ons/Code_snippets/File_I_O
         stream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(Ci.nsIFileInputStream);
         conv = Cc["@mozilla.org/intl/converter-input-stream;1"].createInstance(Ci.nsIConverterInputStream);
-        stream.init(fileurl_2_nsfile( file ), -1, 0, 0);
+        stream.init(fileurl_2_nsfile(file), -1, 0, 0);
         conv.init(stream, enc||'UTF-8', 0, 0);
         do {
             // read as much as we can and put it in str.value
@@ -4193,55 +4166,55 @@ var default_date_locale = {
         return data;
     }
     : (isNode
-    ? function fread( file, enc ) {
+    ? function fread(file, enc) {
         return fs.readFileSync(file, {encoding:enc||'utf8'})/*.toString()*/;
     }
-    : function fread( file, enc ) {
-        var xhr = XHR( );
+    : function fread(file, enc) {
+        var xhr = XHR();
         // plain text with enc encoding format
         xhr.open('GET', file, false);  // 'false' makes the request synchronous
         // http://stackoverflow.com/questions/9855127/setting-xmlhttprequest-responsetype-forbidden-all-of-a-sudden
         xhr.setRequestHeader("Content-Type", "text/plain; charset="+(enc||'utf8')+"");
         xhr.overrideMimeType("text/plain; charset="+(enc||'utf8')+"");
-        xhr.send( null );
+        xhr.send(null);
         return 200 === xhr.status ? xhr.responseText : '';
     }),
     fread_async = isXPCOM
-    ? function fread_async( file, enc, cb ) {
+    ? function fread_async(file, enc, cb) {
         // file is URI, i.e file://...
         // https://developer.mozilla.org/en-US/Add-ons/Code_snippets/File_I_O
-        NetUtil.asyncFetch(fileurl_2_nsfile( file ), function( stream, status ) {
-            var err = !Components.isSuccessCode( status ),
+        NetUtil.asyncFetch(fileurl_2_nsfile(file), function(stream, status) {
+            var err = !Components.isSuccessCode(status),
                 data = err
                 ? ''
-                : NetUtil.readInputStreamToString( stream, stream.available(), {charset:enc||'UTF-8'} );
-            if ( cb ) cb(err, data);
+                : NetUtil.readInputStreamToString(stream, stream.available(), {charset:enc||'UTF-8'});
+            if (cb) cb(err, data);
         });
     }
     : (isNode
-    ? function fread_async( file, enc, cb ) {
+    ? function fread_async(file, enc, cb) {
         fs.readFile(file, {encoding:enc||'utf8'}, cb);
     }
-    : function fread_async( file, enc, cb ) {
-        var xhr = XHR( );
+    : function fread_async(file, enc, cb) {
+        var xhr = XHR();
         // plain text with enc encoding format
         xhr.open('GET', file, true);  // 'true' makes the request asynchronous
         xhr.responseType = "text";
         xhr.setRequestHeader("Content-Type", "text/plain; charset="+(enc||'utf8')+"");
         xhr.overrideMimeType("text/plain; charset="+(enc||'utf8')+"");
-        xhr.onload = function( ) {
+        xhr.onload = function() {
             var err = 200 !== xhr.status,
                 data = err ? '' : xhr.responseText;
-            if ( cb ) cb(err, data);
+            if (cb) cb(err, data);
         };
-        xhr.send( null );
+        xhr.send(null);
     }),
 
     // https://github.com/moxystudio/node-proper-lockfile
     // https://developer.mozilla.org/en-US/docs/Archive/Add-ons/Overlay_Extensions/Firefox_addons_developer_guide/Using_XPCOM%E2%80%94Implementing_advanced_processes
     // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions
     fwrite = isXPCOM
-    ? function fwrite( file, data, enc ) {
+    ? function fwrite(file, data, enc) {
         // file is URI, i.e file://...
         var stream = Cc["@mozilla.org/network/file-output-stream;1"].createInstance(Ci.nsIFileOutputStream),
             conv = Cc["@mozilla.org/intl/converter-output-stream;1"].createInstance(Ci.nsIConverterOutputStream);
@@ -4254,39 +4227,39 @@ var default_date_locale = {
         // https://bugzilla.mozilla.org/show_bug.cgi?id=572890
         stream.init(fileurl_2_nsfile( file ), 0x02|0x08|0x20, 0x1B6/*0666*/, 0);
         conv.init(stream, enc||"UTF-8", 0, 0);
-        conv.writeString( data );
-        conv.close( ); // this closes stream
+        conv.writeString(data);
+        conv.close(); // this closes stream
     }
     : (isNode
-    ? function fwrite( file, data, enc ) {
+    ? function fwrite(file, data, enc) {
         fs.writeFileSync(file, data, {encoding:enc||'utf8'})/*.toString()*/;
     }
-    : function fwrite( file, data, enc ) {
+    : function fwrite(file, data, enc) {
     }),
     fwrite_async = isXPCOM
-    ? function fwrite_async( file, data, enc, cb ) {
+    ? function fwrite_async(file, data, enc, cb) {
         // file is URI, i.e file://...
         // http://stackoverflow.com/questions/9777773/reading-writing-file-on-local-machine
         var istream, ostream, conv;
-        ostream = FileUtils.openSafeFileOutputStream( fileurl_2_nsfile( file ) );
+        ostream = FileUtils.openSafeFileOutputStream(fileurl_2_nsfile(file));
         conv = Cc["@mozilla.org/intl/scriptableunicodeconverter"].createInstance(Ci.nsIScriptableUnicodeConverter);
         conv.charset = enc||"UTF-8";
-        istream = conv.convertToInputStream( data );
-        NetUtil.asyncCopy(istream, ostream, function( status ) {
-            if ( cb  ) cb(Components.isSuccessCode(status));
+        istream = conv.convertToInputStream(data);
+        NetUtil.asyncCopy(istream, ostream, function(status) {
+            if (cb) cb(Components.isSuccessCode(status));
         });
     }
     : (isNode
-    ? function fwrite_async( file, data, enc, cb ) {
-        fs.writeFile(file, data, {encoding: enc||'utf8'}, function(err,res){
+    ? function fwrite_async(file, data, enc, cb) {
+        fs.writeFile(file, data, {encoding: enc||'utf8'}, function(err,res) {
             cb(err,res);
         });
     }
-    : function fwrite_async( file, data, enc, cb ) {
-        if ( cb ) cb(null);
+    : function fwrite_async(file, data, enc, cb) {
+        if (cb) cb(null);
     }),
     FUNC = isXPCOM
-    ? function FUNC( a, f ) {
+    ? function FUNC(a, f) {
         // create new sandbox instance
         // https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Language_Bindings/Components.utils.Sandbox
         /*system principal*/ /*null*/ /*null principal*/
@@ -4303,43 +4276,38 @@ var default_date_locale = {
         /*return */Cu.evalInSandbox(';function '+fn_uuid+'('+a+'){'+f+'};', sandbox);
         return sandbox[fn_uuid];
     }
-    : function FUNC( a, f ) {
-        return new Function( a, f );
+    : function FUNC(a, f) {
+        return new Function(a, f);
     }
 ;
 
 
 
 // utilities
-function RE( r, f )
+function RE(r, f)
 {
-    return new RegExp( r, f||'' );
+    return new RegExp(r, f||'');
 }
-function empty( o )
+function empty(o)
 {
     // exactly like php's empty function
-    if ( !o || !Boolean(o) || "0"===o ) return true;
+    if (!o || !Boolean(o) || "0" === o) return true;
     var to_string = toString.call(o);
-    if ( (o instanceof Array || o instanceof String || '[object Array]' === to_string || '[object String]' === to_string) && !o.length ) return true;
-    if ( (o instanceof Object || '[object Object]' === to_string) && !array_keys(o).length ) return true;
+    if ((o instanceof Array || o instanceof String || '[object Array]' === to_string || '[object String]' === to_string) && !o.length) return true;
+    if ((o instanceof Object || '[object Object]' === to_string) && !array_keys(o).length ) return true;
     return false;
 }
-/*function iif( cond_, then_, else_ )
-{
-    if ( arguments.length < 3 ) else_ = null;
-    return cond_ ? then_ : else_;
-}*/
 // php-like functions, mostly adapted and optimised from phpjs project, https://github.com/kvz/phpjs
 // http://jsperf.com/instanceof-array-vs-array-isarray/6
-function is_array( o )
+function is_array(o)
 {
     return o && (/*(o.constructor === Arr)*/(o instanceof Arr) || ('[object Array]' === toString.call(o)));
 }
-function is_object( o )
+function is_object(o)
 {
     return o && (/*(o.constructor === Obj)(o instanceof Obj) ||*/ ('[object Object]' === toString.call(o)));
 }
-function count( mixed_var )
+function count(mixed_var)
 {
     return null == mixed_var
     ? 0
@@ -4349,179 +4317,179 @@ function count( mixed_var )
     ? array_keys(mixed_var).length
     : 1));
 }
-function array_keys( o )
+function array_keys(o)
 {
-    if ( 'function' === typeof (Object.keys) ) return Object.keys(o);
+    if ('function' === typeof (Object.keys)) return Object.keys(o);
     var v, k, l;
-    if ( is_array(o) )
+    if (is_array(o))
     {
         v = new Array(l=o.length);
-        for(k=0; k<l; k++)
+        for(k=0; k<l; ++k)
             v[k] = String(k);
     }
     else
     {
         v = [];
-        for(k in o)
-            if ( HAS.call(o, k) )
+        for (k in o)
+            if (HAS.call(o, k))
                 v.push(k);
     }
     return v;
 }
-function array_values( o )
+function array_values(o)
 {
-    if ( is_array(o) ) return o;
-    if ( 'function' === typeof (Object.values) ) return Object.values(o);
+    if (is_array(o)) return o;
+    if ('function' === typeof (Object.values)) return Object.values(o);
     var v = [], k;
-    for(k in o)
-        if ( HAS.call(o, k) )
+    for (k in o)
+        if (HAS.call(o, k))
             v.push(o[k]);
     return v;
 }
-function is_numeric_array( o )
+function is_numeric_array(o)
 {
-    if ( is_array(o) ) return true;
-    if ( is_object(o) )
+    if (is_array(o)) return true;
+    if (is_object(o))
     {
         var k = array_keys(o), i, l = k.length;
-        for(i=0; i<l; i++)
-            if ( i !== +k[i] ) return false;
+        for (i=0; i<l; ++i)
+            if (i !== +k[i]) return false;
         return true;
     }
     return false;
 }
-function ltrim( str, charlist )
+function ltrim(str, charlist)
 {
     return (str+'').replace(
         !charlist ? ltrim_re : RE('^[' + (charlist+'').replace(re_9, '\\$1') + ']+', 'g'),
     '');
 }
-function rtrim( str, charlist )
+function rtrim(str, charlist)
 {
     return (str+'').replace(
         !charlist ? rtrim_re : RE('[' + (charlist+'').replace(re_9, '\\$1') + ']+$', 'g'),
     '');
 }
-function trim( str, charlist )
+function trim(str, charlist)
 {
     return (str+'').replace(
         !charlist ? trim_re : RE('^[' + (charlist=(charlist+'').replace(re_9, '\\$1')) + ']+|[' + charlist + ']+$', 'g'),
     '');
 }
-function basename( s )
+function basename(s)
 {
     var lastChar = s.charAt(s.length-1);
-    if ( '/' === lastChar || '\\' === lastChar )
+    if ('/' === lastChar || '\\' === lastChar)
     {
         s = s.slice(0, -1);
     }
     return s.split(DS_RE).pop();
 }
-function dirname( s )
+function dirname(s)
 {
     var lastChar = s.charAt(s.length-1);
-    if ( '/' === lastChar || '\\' === lastChar )
+    if ('/' === lastChar || '\\' === lastChar)
     {
         s = s.slice(0, -1);
     }
     return s.replace(BASENAME_RE, '');
 }
-function pad( s, len, ch )
+function pad(s, len, ch)
 {
-    var sp = s.toString( ), n = len-sp.length;
+    var sp = s.toString(), n = len-sp.length;
     return n > 0 ? new Array(n+1).join(ch||' ')+sp : sp;
 }
-function rawurlencode( str )
+function rawurlencode(str)
 {
     // Tilde should be allowed unescaped in future versions of PHP (as reflected below), but if you want to reflect current
     // PHP behavior, you would need to add ".replace(/~/g, '%7E');" to the following.
     return encodeURIComponent('' + str).replace(re_2, '%21').replace(re_3, '%27').replace(re_4, '%28').
     replace(re_5, '%29').replace(re_6, '%2A');
 }
-function urlencode( str )
+function urlencode(str)
 {
     // Tilde should be allowed unescaped in future versions of PHP (as reflected below), but if you want to reflect current
     // PHP behavior, you would need to add ".replace(/~/g, '%7E');" to the following.
     return encodeURIComponent('' + str).replace(re_2, '%21').replace(re_3, '%27').replace(re_4, '%28').
     replace(re_5, '%29').replace(re_6, '%2A').replace(re_7, '+');
 }
-function rawurldecode( str )
+function rawurldecode(str)
 {
-    return decodeURIComponent( ''+str );
+    return decodeURIComponent(''+str);
 }
-function urldecode( str )
+function urldecode(str)
 {
-    return rawurldecode( ('' + str).split('+').join('%20') );
+    return rawurldecode(('' + str).split('+').join('%20'));
 }
-function parse_str( str )
+function parse_str(str)
 {
     var strArr = str.replace(/^&+|&+$/g, '').split('&'),
         sal = strArr.length,
         i, j, ct, p, lastObj, obj, chr, tmp, key, value,
         postLeftBracketPos, keys, keysLen, lastkey,
-        array = { }, possibleLists = [ ], prevkey, prevobj
+        array = {}, possibleLists = [], prevkey, prevobj
     ;
 
-    for (i=0; i<sal; i++)
+    for (i=0; i<sal; ++i)
     {
-        tmp = strArr[ i ].split( '=' );
-        key = rawurldecode( trim(tmp[0]) );
-        value = (tmp.length < 2) ? '' : rawurldecode( trim(tmp[1]) );
+        tmp = strArr[i].split('=');
+        key = rawurldecode(trim(tmp[0]));
+        value = (tmp.length < 2) ? '' : rawurldecode(trim(tmp[1]));
 
         j = key.indexOf('\x00');
-        if ( j > -1 ) key = key.slice(0, j);
+        if (j > -1) key = key.slice(0, j);
 
-        if ( key && '[' !== key.charAt(0) )
+        if (key && '[' !== key.charAt(0))
         {
-            keys = [ ];
+            keys = [];
 
             postLeftBracketPos = 0;
-            for (j=0; j<key.length; j++)
+            for (j=0; j<key.length; ++j)
             {
-                if ( '[' === key.charAt(j)  && !postLeftBracketPos )
+                if ('[' === key.charAt(j)  && !postLeftBracketPos)
                 {
                     postLeftBracketPos = j + 1;
                 }
-                else if ( ']' === key.charAt(j) )
+                else if (']' === key.charAt(j))
                 {
-                    if ( postLeftBracketPos )
+                    if (postLeftBracketPos)
                     {
-                        if ( !keys.length )
+                        if (!keys.length)
                         {
-                            keys.push( key.slice(0, postLeftBracketPos - 1) );
+                            keys.push(key.slice(0, postLeftBracketPos - 1));
                         }
-                        keys.push( key.substr(postLeftBracketPos, j - postLeftBracketPos) );
+                        keys.push(key.substr(postLeftBracketPos, j - postLeftBracketPos));
                         postLeftBracketPos = 0;
-                        if ( '[' !== key.charAt(j + 1) ) break;
+                        if ('[' !== key.charAt(j + 1)) break;
                     }
                 }
             }
 
-            if ( !keys.length ) keys = [ key ];
+            if (!keys.length) keys = [key];
 
-            for (j=0; j<keys[0].length; j++)
+            for (j=0; j<keys[0].length; ++j)
             {
                 chr = keys[0].charAt(j);
-                if ( ' ' === chr || '.' === chr || '[' === chr )
+                if (' ' === chr || '.' === chr || '[' === chr)
                 {
                     keys[0] = keys[0].substr(0, j) + '_' + keys[0].substr(j + 1);
                 }
-                if ( '[' === chr ) break;
+                if ('[' === chr) break;
             }
 
             obj = array; key = null; lastObj = obj;
-            lastkey = keys.length ? trim(keys[ keys.length-1 ].replace(/^['"]|['"]$/g, '')) : null;
-            for (j=0, keysLen=keys.length; j<keysLen; j++)
+            lastkey = keys.length ? trim(keys[keys.length-1].replace(/^['"]|['"]$/g, '')) : null;
+            for (j=0, keysLen=keys.length; j<keysLen; ++j)
             {
                 prevkey = key;
                 key = keys[ j ].replace(/^['"]|['"]$/g, '');
                 prevobj = lastObj;
                 lastObj = obj;
 
-                if ( '' !== trim(key) || 0 === j )
+                if ('' !== trim(key) || 0 === j)
                 {
-                    if ( !HAS.call(obj,key) ) obj[key] = (j+1 === keysLen-1) && (''===lastkey) ? [ ] : { };
-                    obj = obj[ key ];
+                    if (!HAS.call(obj, key)) obj[key] = (j+1 === keysLen-1) && (''===lastkey) ? [] : {};
+                    obj = obj[key];
                 }
                 else
                 {
@@ -4541,26 +4509,26 @@ function parse_str( str )
                     key = true;
                 }
             }
-            if ( true === key )
+            if (true === key)
             {
                 lastObj.push(value);
             }
             else
             {
-                if ( key == +key )
-                    possibleLists.push({key:prevkey,obj:prevobj});
-                lastObj[ key ] = value;
+                if (key == +key)
+                    possibleLists.push({key:prevkey, obj:prevobj});
+                lastObj[key] = value;
             }
         }
     }
-    for(i=possibleLists.length-1; i>=0; i--)
+    for (i=possibleLists.length-1; i>=0; --i)
     {
         // safe to pass multiple times same obj, it is possible
         obj = possibleLists[i].key ? possibleLists[i].obj[possibleLists[i].key] : possibleLists[i].obj;
-        if ( is_numeric_array(obj) )
+        if (is_numeric_array(obj))
         {
             obj = array_values(obj);
-            if ( possibleLists[i].key )
+            if (possibleLists[i].key)
                 possibleLists[i].obj[possibleLists[i].key] = obj;
             else
                 array = obj;
@@ -4568,26 +4536,26 @@ function parse_str( str )
     }
     return array;
 }
-function http_build_query_helper( key, val, arg_separator, PHP_QUERY_RFC3986 )
+function http_build_query_helper(key, val, arg_separator, PHP_QUERY_RFC3986)
 {
     var k, tmp, encode = PHP_QUERY_RFC3986 ? rawurlencode : urlencode;
 
-    if ( true === val ) val = "1";
-    else if ( false === val ) val = "0";
+    if (true === val) val = "1";
+    else if (false === val) val = "0";
 
-    if ( null != val )
+    if (null != val)
     {
-        if ( "object" === typeof(val) )
+        if ("object" === typeof(val))
         {
-            tmp = [ ];
-            for ( k in val )
+            tmp = [];
+            for (k in val)
             {
-                if ( HAS.call(val,k) && null != val[k] )
+                if (HAS.call(val, k) && null != val[k])
                 {
-                    tmp.push( http_build_query_helper(key + "[" + k + "]", val[k], arg_separator, PHP_QUERY_RFC3986) );
+                    tmp.push(http_build_query_helper(key + "[" + k + "]", val[k], arg_separator, PHP_QUERY_RFC3986));
                 }
             }
-            return tmp.join( arg_separator );
+            return tmp.join(arg_separator);
         }
         else
         {
@@ -4599,85 +4567,85 @@ function http_build_query_helper( key, val, arg_separator, PHP_QUERY_RFC3986 )
         return '';
     }
 }
-function http_build_query( data, arg_separator, PHP_QUERY_RFC3986 )
+function http_build_query(data, arg_separator, PHP_QUERY_RFC3986)
 {
-    var value, key, query, tmp = [ ];
+    var value, key, query, tmp = [];
 
-    if ( arguments.length < 2 ) arg_separator = "&";
-    if ( arguments.length < 3 ) PHP_QUERY_RFC3986 = false;
+    if (arguments.length < 2) arg_separator = "&";
+    if (arguments.length < 3) PHP_QUERY_RFC3986 = false;
 
-    for ( key in data )
+    for (key in data)
     {
-        if ( !HAS.call(data,key) ) continue;
-        value = data[ key ];
+        if (!HAS.call(data, key)) continue;
+        value = data[key];
         query = http_build_query_helper(key, value, arg_separator, PHP_QUERY_RFC3986);
-        if ( '' != query ) tmp.push( query );
+        if ('' != query) tmp.push(query);
     }
 
-    return tmp.join( arg_separator );
+    return tmp.join(arg_separator);
 }
-function php_time( )
+function php_time()
 {
     return floor(new Date().getTime() / 1000);
 }
-function php_date( format, timestamp )
+function php_date(format, timestamp)
 {
     var formatted_datetime, f, i, l, jsdate,
         locale = default_date_locale
     ;
 
     // JS Date
-    if ( timestamp instanceof Date ) jsdate = new Date( timestamp );
+    if (timestamp instanceof Date) jsdate = new Date(timestamp);
     // UNIX timestamp (auto-convert to int)
-    else if ( "number" === typeof timestamp ) jsdate = new Date(timestamp * 1000);
+    else if ("number" === typeof timestamp) jsdate = new Date(timestamp * 1000);
     // undefined
-    else/*if ( null === timestamp  || undef === timestamp )*/ jsdate = new Date( );
+    else/*if ( null === timestamp  || undef === timestamp )*/ jsdate = new Date();
 
-    var D = { }, tzo = jsdate.getTimezoneOffset( ), atzo = abs(tzo), m = jsdate.getMonth( ), jmod10;
+    var D = {}, tzo = jsdate.getTimezoneOffset(), atzo = abs(tzo), m = jsdate.getMonth(), jmod10;
     // 24-Hours; 0..23
-    D.G = jsdate.getHours( );
+    D.G = jsdate.getHours();
     // Day of month; 1..31
-    D.j = jsdate.getDate( ); jmod10 = D.j%10;
+    D.j = jsdate.getDate(); jmod10 = D.j%10;
     // Month; 1...12
     D.n = m + 1;
     // Full year; e.g. 1980...2010
-    D.Y = jsdate.getFullYear( );
+    D.Y = jsdate.getFullYear();
     // Day of week; 0[Sun]..6[Sat]
-    D.w = jsdate.getDay( );
+    D.w = jsdate.getDay();
     // ISO-8601 day of week; 1[Mon]..7[Sun]
     D.N = D.w || 7;
     // Day of month w/leading 0; 01..31
     D.d = pad(D.j, 2, '0');
     // Shorthand day name; Mon...Sun
-    D.D = locale.day_short[ D.w ];
+    D.D = locale.day_short[D.w];
     // Full day name; Monday...Sunday
-    D.l = locale.day[ D.w ];
+    D.l = locale.day[D.w];
     // Ordinal suffix for day of month; st, nd, rd, th
-    D.S = locale.ordinal.ord[ D.j ] ? locale.ordinal.ord[ D.j ] : (locale.ordinal.ord[ jmod10 ] ? locale.ordinal.ord[ jmod10 ] : locale.ordinal.nth);
+    D.S = locale.ordinal.ord[D.j] ? locale.ordinal.ord[D.j] : (locale.ordinal.ord[jmod10] ? locale.ordinal.ord[jmod10] : locale.ordinal.nth);
     // Day of year; 0..365
     D.z = round((new Date(D.Y, m, D.j) - new Date(D.Y, 0, 1)) / 864e5);
     // ISO-8601 week number
     D.W = pad(1 + round((new Date(D.Y, m, D.j - D.N + 3) - new Date(D.Y, 0, 4)) / 864e5 / 7), 2, '0');
     // Full month name; January...December
-    D.F = locale.month[ m ];
+    D.F = locale.month[m];
     // Month w/leading 0; 01...12
     D.m = pad(D.n, 2, '0');
     // Shorthand month name; Jan...Dec
-    D.M = locale.month_short[ m ];
+    D.M = locale.month_short[m];
     // Days in month; 28...31
-    D.t = (new Date(D.Y, m+1, 0)).getDate( );
+    D.t = (new Date(D.Y, m+1, 0)).getDate();
     // Is leap year?; 0 or 1
     D.L = D.Y % 4 === 0 & D.Y % 100 !== 0 | D.Y % 400 === 0;
     // ISO-8601 year
     D.o = D.Y + (11 === m && D.W < 9 ? 1 : (0 === m && D.W > 9 ? -1 : 0));
     // Last two digits of year; 00...99
-    D.y = D.Y.toString( ).slice(-2);
+    D.y = D.Y.toString().slice(-2);
     // am or pm
     D.a = D.G > 11 ? locale.meridian.pm : locale.meridian.am;
     // AM or PM
     D.A = D.G > 11 ? locale.meridian.PM : locale.meridian.AM;
     // Swatch Internet time; 000..999
-    D.B = pad(floor((jsdate.getUTCHours( ) * 36e2 + jsdate.getUTCMinutes( ) * 60 + jsdate.getUTCSeconds( ) + 36e2) / 86.4) % 1e3, 3, '0');
+    D.B = pad(floor((jsdate.getUTCHours() * 36e2 + jsdate.getUTCMinutes() * 60 + jsdate.getUTCSeconds() + 36e2) / 86.4) % 1e3, 3, '0');
     // 12-Hours; 1..12
     D.g = (D.G % 12) || 12;
     // 12-Hours w/leading 0; 01..12
@@ -4685,11 +4653,11 @@ function php_date( format, timestamp )
     // 24-Hours w/leading 0; 00..23
     D.H = pad(D.G, 2, '0');
     // Minutes w/leading 0; 00..59
-    D.i = pad(jsdate.getMinutes( ), 2, '0');
+    D.i = pad(jsdate.getMinutes(), 2, '0');
     // Seconds w/leading 0; 00..59
-    D.s = pad(jsdate.getSeconds( ), 2, '0');
+    D.s = pad(jsdate.getSeconds(), 2, '0');
     // Microseconds; 000000-999000
-    D.u = pad(jsdate.getMilliseconds( ) * 1000, 6, '0');
+    D.u = pad(jsdate.getMilliseconds() * 1000, 6, '0');
     // Timezone identifier; e.g. Atlantic/Azores, ...
     // The following works, but requires inclusion of the very large
     // timezone_abbreviations_list() function.
@@ -4714,62 +4682,32 @@ function php_date( format, timestamp )
     D.r = D.D+', '+D.d+' '+D.M+' '+D.Y+' '+D.H+':'+D.i+':'+D.s+' '+D.O;
 
     formatted_datetime = '';
-    for (i=0,l=format.length; i<l; i++)
+    for (i=0,l=format.length; i<l; ++i)
     {
-        f = format.charAt( i );
-        formatted_datetime += HAS.call(D,f) ? D[ f ] : f;
+        f = format.charAt(i);
+        formatted_datetime += HAS.call(D, f) ? D[f] : f;
     }
     return formatted_datetime;
 }
-function localized_date( format, timestamp )
+function pad_(s, n, c, right)
 {
-    var F = ['d','D','j','l','N','S','w','z','W','F','m','M','t','L','o','Y','y','a','A','B','g','G','h','H','i','s','u','e','I','O','P','T','Z','U'],
-        D = { }, DATE = php_date( F.join( "\n" ), timestamp ).split( "\n" ), i, l, f,
-        localised_datetime, locale = Contemplate.locale
-    ;
-
-    for (i=0,l=F.length; i<l; i++) D[ F[i] ] = DATE[ i ];
-
-    // localise specific formats
-    D.D = locale( D.D );
-    D.l = locale( D.l );
-    D.S = locale( D.S );
-    D.F = locale( D.F );
-    D.M = locale( D.M );
-    D.a = locale( D.a );
-    D.A = locale( D.A );
-
-    // full date/time formats, constructed from localised parts
-    D.c = D.Y+'-'+D.m+'-'+D.d+'\\'+D.T+D.H+':'+D.i+':'+D.s+D.P;
-    D.r = D.D+', '+D.d+' '+D.M+' '+D.Y+' '+D.H+':'+D.i+':'+D.s+' '+D.O;
-
-    localised_datetime = '';
-    for (i=0,l=format.length; i<l; i++)
-    {
-        f = format.charAt( i );
-        localised_datetime += HAS.call(D,f) ? D[ f ] : f;
-    }
-    return localised_datetime
-}
-function pad_( s, n, c, right )
-{
-    if ( null == c ) c = ' ';
+    if (null == c) c = ' ';
     var str = String(s), l = str.length, p = l < n ? new Array(n-l+1).join(c) : '';
     return !!right ? str+p : p+str;
 }
-function justify( value, prefix, leftJustify, minWidth, zeroPad, customPadChar )
+function justify(value, prefix, leftJustify, minWidth, zeroPad, customPadChar)
 {
     var sv = String(value), diff = minWidth - sv.length;
-    if ( diff > 0 )
+    if (diff > 0)
     {
-        if ( leftJustify || !zeroPad )
+        if (leftJustify || !zeroPad)
             sv = pad_(sv, minWidth, customPadChar, leftJustify);
         else
             sv = sv.slice(0, prefix.length) + pad_('', diff, '0', true) + sv.slice(prefix.length);
     }
     return sv;
 }
-function formatBaseX( value, base, prefix, leftJustify, minWidth, precision, zeroPad )
+function formatBaseX(value, base, prefix, leftJustify, minWidth, precision, zeroPad)
 {
     // Note: casts negative numbers to positive ones
     var number = value >>> 0;
@@ -4781,12 +4719,12 @@ function formatBaseX( value, base, prefix, leftJustify, minWidth, precision, zer
     value = prefix + pad_(number.toString(base), precision||0, '0', false);
     return justify(value, prefix, leftJustify, minWidth, zeroPad);
 }
-function formatString( value, leftJustify, minWidth, precision, zeroPad, customPadChar )
+function formatString(value, leftJustify, minWidth, precision, zeroPad, customPadChar)
 {
-    if ( null != precision ) value = value.slice(0, precision);
+    if (null != precision) value = value.slice(0, precision);
     return justify(value, '', leftJustify, minWidth, zeroPad, customPadChar);
 }
-function sprintf( )
+function sprintf()
 {
     /*
      * More info at: http://phpjs.org
@@ -4814,16 +4752,16 @@ function sprintf( )
     // *     example 4: sprintf("%d", 123456789012345);
     // *     returns 4: '123456789012345'
     var i = 1, fmt = arguments[0], a = arguments;
-    var do_format = function do_format( substring, valueIndex, flags, minWidth, _, precision, type ) {
+    var do_format = function do_format(substring, valueIndex, flags, minWidth, _, precision, type) {
         var number, prefix, method, textTransform, value;
-        if ( '%%' == substring ) return '%';
+        if ('%%' == substring) return '%';
 
         // parse flags
         var leftJustify = false, positivePrefix = '', zeroPad = false, prefixBaseX = false,
             j, customPadChar = ' ', flagsl = flags.length;
-        for (j=0; flags && j < flagsl; j++)
+        for (j=0; flags && j < flagsl; ++j)
         {
-            switch( flags.charAt(j) )
+            switch (flags.charAt(j))
             {
                 case ' ':
                     positivePrefix = ' ';
@@ -4848,32 +4786,32 @@ function sprintf( )
 
         // parameters may be null, undefined, empty-string or real valued
         // we want to ignore null, undefined and empty-string values
-        if ( !minWidth ) minWidth = 0;
-        else if ( '*' == minWidth ) minWidth = +a[i++];
-        else if ( '*' == minWidth.charAt(0) ) minWidth = +a[minWidth.slice(1, -1)];
+        if (!minWidth) minWidth = 0;
+        else if ('*' == minWidth) minWidth = +a[i++];
+        else if ('*' == minWidth.charAt(0)) minWidth = +a[minWidth.slice(1, -1)];
         else minWidth = +minWidth;
 
         // Note: undocumented perl feature:
-        if ( 0 > minWidth )
+        if (0 > minWidth)
         {
             minWidth = -minWidth;
             leftJustify = true;
         }
 
-        if ( !isFinite(minWidth) )
+        if (!isFinite(minWidth))
         {
             throw new Error('sprintf: (minimum-)width must be finite');
         }
 
-        if ( !precision ) precision = 'fFeE'.indexOf(type) > -1 ? 6 : (type == 'd') ? 0 : undefined;
-        else if ( '*' == precision ) precision = +a[i++];
-        else if ( '*' == precision.charAt(0) ) precision = +a[precision.slice(1, -1)];
+        if (!precision) precision = 'fFeE'.indexOf(type) > -1 ? 6 : (type == 'd') ? 0 : undefined;
+        else if ('*' == precision) precision = +a[i++];
+        else if ('*' == precision.charAt(0)) precision = +a[precision.slice(1, -1)];
         else precision = +precision;
 
         // grab value using valueIndex if required?
         value = valueIndex ? a[valueIndex.slice(0, -1)] : a[i++];
 
-        switch( type )
+        switch (type)
         {
             case 's':
                 return formatString(String(value), leftJustify, minWidth, precision, zeroPad, customPadChar);
@@ -4912,13 +4850,13 @@ function sprintf( )
                 return substring;
         }
     };
-    return fmt.replace( sprintf.format_re, do_format );
+    return fmt.replace(sprintf.format_re, do_format);
 }
 sprintf.format_re = /%%|%(\d+\$)?([-+\'#0 ]*)(\*\d+\$|\*|\d+)?(\.(\*\d+\$|\*|\d+))?([scboxXuideEfFgG])/g;
 
 
 // init the engine on load
-Contemplate.init( );
+Contemplate.init();
 
 // export it
 return Contemplate;

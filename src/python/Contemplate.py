@@ -3,7 +3,7 @@
 #  Contemplate
 #  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
 #
-#  @version 1.4.0
+#  @version 1.5.0
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -13,28 +13,6 @@
 
 # needed imports
 import os, sys, re, time, datetime, calendar, math, codecs, json
-
-# http://docs.python.org/2/library/collections.html#collections.OrderedDict
-# http://code.activestate.com/recipes/576693/
-#try:
-#    import collections.OrderedDict
-#    ODict = collections.OrderedDict
-#except ImportError:
-#    ODict = dict
-
-ODict = dict
-
-#try:
-#    # Python 3.x
-#    import html
-#    __htmlent__ = html
-#    __ENT_COMPAT__ = False
-
-
-
-#except ImportError:
-#   # Python 2.x
-#   import cgi
 
 try:
     # Python 3.x
@@ -50,12 +28,6 @@ try:
     def urldecode(s):
         return urllib.parse.unquote_plus(s)
 
-    # http://www.php2python.com/wiki/function.stripslashes/
-    # http://tech.7starsea.com/post/203
-    # static
-    def stripslashes(s):
-        return codecs.decode(s, 'unicode_escape')
-
 except ImportError:
     # Python 2.x
     import urllib
@@ -70,50 +42,11 @@ except ImportError:
     def urldecode(s):
         return urllib.unquote_plus(s)
 
-    # http://www.php2python.com/wiki/function.stripslashes/
-    # static
-    def stripslashes(s):
-        return s.decode('string_escape')
-
 
 try:
     from importlib import reload
 except ImportError:
     pass
-
-def array_keys(o):
-    if isinstance(o, (list,tuple)): return list(map(str, range(0,len(o))))
-    if isinstance(o, dict): return list(o.keys())
-    return []
-
-def array_values(o):
-    if isinstance(o, list): return o
-    if isinstance(o, tuple): return list(o)
-    if isinstance(o, dict):
-        if is_numeric_array(o):
-            # get values in list-order by ascending index
-            v = []
-            l = len(o)
-            i = 0
-            while i < l:
-                v.append(o[str(i)])
-                i += 1
-            return v
-        else:
-            return list(o.values())
-    return []
-
-def is_numeric_array( o ):
-    if isinstance(o,(list,tuple)): return True
-    if isinstance(o,dict):
-        k = array_keys(o)
-        i = 0
-        l = len(k)
-        while i < l:
-            if str(i) not in k: return False
-            i += 1
-        return True
-    return False
 
 # (protected) global properties
 class _G:
@@ -126,7 +59,6 @@ class _G:
     tplEnd = ''
     preserveLinesDefault = "' + \"\\n\" + '"
     preserveLines = ''
-    compatibility = False
     EOL = "\n"
     TEOL = "\n" #os.linesep
     pad = "    "
@@ -163,13 +95,16 @@ class _G:
     NL = re.compile(r'\n')
 
     DS_RE = re.compile(r'[/\\]')
-    TAG_RE = re.compile(r'<[^<>]+>',re.S|re.M|re.I)
+    TAG_RE = re.compile(r'</?[a-zA-Z0-9:_\-]+[^<>]*>',re.S|re.M)
     AMP_RE = re.compile(r'&+')
     UNDERL = re.compile(r'[\W]+')
     ALPHA = re.compile(r'^[a-zA-Z_]')
     NUM = re.compile(r'^[0-9]')
     ALPHANUM = re.compile(r'^[a-zA-Z0-9_]')
     SPACE = re.compile(r'^\s')
+    ALL_SPACE = re.compile(r'^\s+$')
+
+    INDENT = re.compile(r'^(postdent|predent)\((-?\d+)\):')
 
     T_OR = re.compile(r'(.)(\|\|)(.)')
     T_AND = re.compile(r'(.)(&&)(.)')
@@ -196,17 +131,6 @@ class _G:
      'elif'         : 'elseif'
     ,'fi'           : 'endif'
     }
-    funcs = [
-    's', 'n', 'f', 'q', 'qq',
-    'echo', 'time', 'count',
-    'lowercase', 'uppercase', 'ucfirst', 'lcfirst', 'sprintf',
-    'date', 'ldate', 'locale', 'xlocale',
-    'inline', 'tpl', 'uuid', 'haskey',
-    'concat', 'ltrim', 'rtrim', 'trim', 'addslashes', 'stripslashes',
-    'is_array', 'in_array', 'json_encode', 'json_decode',
-    'camelcase', 'snakecase', 'e', 'url', 'nlocale', 'nxlocale', 'join', 'queryvar', 'striptags', 'vsprintf',
-    'buildquery', 'parsequery', 'keys', 'values'
-    ]
     aliases = {
      'l'        : 'locale'
     ,'xl'       : 'xlocale'
@@ -221,51 +145,89 @@ class _G:
 
 T_REGEXP = type(_G.NEWLINE)
 
+#
+#  Auxilliary methods
+# (mostly methods to simulate php-like functionality needed by the engine)
+#
+def array_keys(o):
+    if isinstance(o, (list,tuple)): return list(map(str, range(0, len(o))))
+    if isinstance(o, dict): return list(o.keys())
+    return []
+
+def array_values(o):
+    if isinstance(o, list): return o
+    if isinstance(o, tuple): return list(o)
+    if isinstance(o, dict):
+        if is_numeric_array(o):
+            # get values in list-order by ascending index
+            v = []
+            l = len(o)
+            i = 0
+            while i < l:
+                v.append(o[str(i)])
+                i += 1
+            return v
+        else:
+            return list(o.values())
+    return []
+
+def is_numeric_array(o):
+    if isinstance(o, (list,tuple)): return True
+    if isinstance(o, dict):
+        k = array_keys(o)
+        i = 0
+        l = len(k)
+        while i < l:
+            if str(i) not in k: return False
+            i += 1
+        return True
+    return False
+
 default_date_locale = {
- 'meridian': { 'am':'am', 'pm':'pm', 'AM':'AM', 'PM':'PM' }
-,'ordinal': { 'ord':{1:'st',2:'nd',3:'rd'}, 'nth':'th' }
-,'timezone': [ 'UTC','EST','MDT' ]
-,'timezone_short': [ 'UTC','EST','MDT' ]
-,'day': [ 'Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday' ]
-,'day_short': [ 'Sun','Mon','Tue','Wed','Thu','Fri','Sat' ]
-,'month': [ 'January','February','March','April','May','June','July','August','September','October','November','December' ]
-,'month_short': [ 'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec' ]
+ 'meridian': {'am':'am', 'pm':'pm', 'AM':'AM', 'PM':'PM'}
+,'ordinal': {'ord':{1:'st',2:'nd',3:'rd'}, 'nth':'th'}
+,'timezone': ['UTC','EST','MDT']
+,'timezone_short': ['UTC','EST','MDT']
+,'day': ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+,'day_short': ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+,'month': ['January','February','March','April','May','June','July','August','September','October','November','December']
+,'month_short': ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 }
 
-def open_file( file, op, encoding ):
+def open_file(file, op, encoding):
     return open(file, op, -1, encoding)
 
-def read_file( file, encoding ):
-    buffer=''
+def read_file(file, encoding):
+    buffer = ''
     with open_file(file, 'r', encoding) as f:
-        buffer = f.read( )
+        buffer = f.read()
     return buffer
 
 # https://stackoverflow.com/questions/186202/what-is-the-best-way-to-open-a-file-for-exclusive-access-in-python
 # https://github.com/drandreaskrueger/lockbydir
-def write_file( file, text, encoding ):
+def write_file(file, text, encoding):
     with open_file(file, 'w', encoding) as f:
         f.write(text)
 
-def parse_str( s ):
+def parse_str(s):
     # http://www.php2python.com/wiki/function.parse-str/
     global _G
 
     strArr = s.strip('&').split('&')
-    array = { }
-    possibleLists = [ ]
+    array = {}
+    possibleLists = []
 
     for tmp in strArr:
-        tmp = tmp.split( '=' )
-        key = rawurldecode( tmp[0].strip() )
+        tmp = tmp.split('=')
+        key = rawurldecode(tmp[0].strip())
         if len(tmp) < 2: value = ''
-        else: value = rawurldecode( tmp[1].strip() )
+        else: value = rawurldecode(tmp[1].strip())
 
         j = key.find('\x00')
         if j > -1: key = key[0:j]
 
         if key and '[' != key[0]:
-            keys = [ ]
+            keys = []
 
             postLeftBracketPos = 0
             lk = len(key)
@@ -276,12 +238,12 @@ def parse_str( s ):
                 elif ']' == key[j]:
                     if postLeftBracketPos:
                         if 0 == len(keys):
-                            keys.append( key[0:postLeftBracketPos - 1] )
-                        keys.append( key[postLeftBracketPos:j] )
+                            keys.append(key[0:postLeftBracketPos - 1])
+                        keys.append(key[postLeftBracketPos:j])
                         postLeftBracketPos = 0
                         if j < lk-1 and '[' != key[j + 1]: break
 
-            if 0 == len(keys): keys = [ key ]
+            if 0 == len(keys): keys = [key]
 
             for j in range(len(key[0])):
                 chr = keys[0][j]
@@ -292,16 +254,16 @@ def parse_str( s ):
             obj = array
             key = None
             lastObj = obj
-            lastkey = keys[ len(keys)-1 ].strip( "'\"" ).strip( ) if len(keys) else None
+            lastkey = keys[len(keys)-1].strip("'\"").strip() if len(keys) else None
             for j in range(len(keys)):
                 prevkey = key
-                key = keys[ j ].strip( "'\"" )
+                key = keys[j].strip("'\"")
                 prevobj = lastObj
                 lastObj = obj
 
                 if '' != key.strip() or 0 == j:
-                    if key not in obj: obj[ key ] = [ ] if (j+1 == len(keys)-1) and (''==lastkey) else { }
-                    obj = obj[ key ]
+                    if key not in obj: obj[key] = [] if (j+1 == len(keys)-1) and (''==lastkey) else {}
+                    obj = obj[key]
                 else:
                     # To insert new dimension
                     #ct = -1
@@ -332,7 +294,7 @@ def parse_str( s ):
         i -= 1
     return array
 
-def http_build_query_helper( key, val, arg_separator, PHP_QUERY_RFC3986 ):
+def http_build_query_helper(key, val, arg_separator, PHP_QUERY_RFC3986):
     encode = rawurlencode if PHP_QUERY_RFC3986 else urlencode
 
     if True == val: val = "1"
@@ -343,45 +305,45 @@ def http_build_query_helper( key, val, arg_separator, PHP_QUERY_RFC3986 ):
         key = str(key)
 
         data = None
-        if isinstance(val, dict): data = val.items( )
-        elif isinstance(val, (list, tuple)): data = enumerate( val )
+        if isinstance(val, dict): data = val.items()
+        elif isinstance(val, (list, tuple)): data = enumerate(val)
 
         if data:
-            tmp = [ ]
+            tmp = []
             for k,v in data:
                 if v is not None:
-                    tmp.append( http_build_query_helper(key + "[" + str(k) + "]", v, arg_separator, PHP_QUERY_RFC3986) )
-            return arg_separator.join( tmp )
+                    tmp.append(http_build_query_helper(key + "[" + str(k) + "]", v, arg_separator, PHP_QUERY_RFC3986))
+            return arg_separator.join(tmp)
 
         else:
-            return encode( key ) + "=" + encode( str(val) )
+            return encode(key) + "=" + encode(str(val))
 
     else:
         return ''
 
-def http_build_query( data, arg_separator='&', PHP_QUERY_RFC3986=False ):
-    tmp = [ ]
-    for key,value in data.items( ):
+def http_build_query(data, arg_separator = '&', PHP_QUERY_RFC3986 = False):
+    tmp = []
+    for key,value in data.items():
         query = http_build_query_helper(key, value, arg_separator, PHP_QUERY_RFC3986)
-        if '' != query: tmp.append( query )
+        if '' != query: tmp.append(query)
 
-    return arg_separator.join( tmp )
+    return arg_separator.join(tmp)
 
-def php_time( ):
+def php_time():
     return int(time.time())
 
-def php_date( format, timestamp=None ):
+def php_date(format, timestamp = None):
     global default_date_locale
     locale = default_date_locale
     # http://php.net/manual/en/datetime.formats.date.php
     # http://strftime.org/
     # https://docs.python.org/2/library/time.html
     # adapted from http://brandonwamboldt.ca/python-php-date-class-335/
-    if timestamp is None: timestamp = php_time( )
+    if timestamp is None: timestamp = php_time()
     utime = timestamp
     dtime  = datetime.datetime.fromtimestamp(timestamp)
 
-    D = { }
+    D = {}
     w = dtime.weekday()
     W = dtime.isocalendar()[1]
     d = dtime.day
@@ -402,46 +364,46 @@ def php_date( format, timestamp=None ):
     elif beats < 0: beats += 1000
 
     # Day --
-    D['d'] = str( d ).zfill(2)
-    D['D'] = locale['day_short'][ 0 if 6 == w else w+1 ]
-    D['j'] = str( d )
-    D['l'] = locale['day'][ 0 if 6 == w else w+1 ]
-    D['N'] = str( w+1 if 6 > w else 7 )
-    D['S'] = locale['ordinal']['ord'][ d ] if d in locale['ordinal']['ord'] else (locale['ordinal']['ord'][ dmod10 ] if dmod10 in locale['ordinal']['ord'] else locale['ordinal']['nth'])
-    D['w'] = str( 1 if 6 == w else w+2 )
-    D['z'] = str( dtime.timetuple().tm_yday )
+    D['d'] = str(d).zfill(2)
+    D['D'] = locale['day_short'][0 if 6 == w else w+1]
+    D['j'] = str(d)
+    D['l'] = locale['day'][0 if 6 == w else w+1]
+    D['N'] = str(w+1 if 6 > w else 7)
+    D['S'] = locale['ordinal']['ord'][d] if d in locale['ordinal']['ord'] else (locale['ordinal']['ord'][dmod10] if dmod10 in locale['ordinal']['ord'] else locale['ordinal']['nth'])
+    D['w'] = str(1 if 6 == w else w+2)
+    D['z'] = str(dtime.timetuple().tm_yday)
 
     # Week --
-    D['W'] = str( W )
+    D['W'] = str(W)
 
     # Month --
-    D['F'] = locale['month'][ n-1 ]
-    D['m'] = str( n ).zfill(2)
-    D['M'] = locale['month_short'][ n-1 ]
-    D['n'] = str( n )
-    D['t'] = str( calendar.monthrange(Y, n)[1] )
+    D['F'] = locale['month'][n-1]
+    D['m'] = str(n).zfill(2)
+    D['M'] = locale['month_short'][n-1]
+    D['n'] = str(n)
+    D['t'] = str(calendar.monthrange(Y, n)[1])
 
     # Year --
-    D['L'] = str( int(calendar.isleap(Y)) )
+    D['L'] = str(int(calendar.isleap(Y)))
     D['o'] = str(Y + (1 if n == 12 and W < 9 else (-1 if n == 1 and W > 9 else 0)))
-    D['Y'] = str( Y )
-    D['y'] = str( Y )[2:]
+    D['Y'] = str(Y)
+    D['y'] = str(Y)[2:]
 
     # Time --
     D['a'] = locale['meridian'][meridian.lower()] if meridian.lower() in locale['meridian'] else meridian.lower()
     D['A'] = locale['meridian'][meridian] if meridian in locale['meridian'] else meridian
-    D['B'] = str( int(beats) ).zfill(3)
-    D['g'] = str( g )
-    D['G'] = str( G )
-    D['h'] = str( g ).zfill(2)
-    D['H'] = str( G ).zfill(2)
-    D['i'] = str( dtime.minute ).zfill(2)
-    D['s'] = str( dtime.second ).zfill(2)
-    D['u'] = str( dtime.microsecond ).zfill(6)
+    D['B'] = str(int(beats)).zfill(3)
+    D['g'] = str(g)
+    D['G'] = str(G)
+    D['h'] = str(g).zfill(2)
+    D['H'] = str(G).zfill(2)
+    D['i'] = str(dtime.minute).zfill(2)
+    D['s'] = str(dtime.second).zfill(2)
+    D['u'] = str(dtime.microsecond).zfill(6)
 
     # Timezone --
     D['e'] = '' # TODO, missing
-    D['I'] = str( dtime.dst() )
+    D['I'] = str(dtime.dst())
     D['O'] = ('-' if tzo > 0 else '+')+str(int(atzo / 60) * 100 + atzo % 60).zfill(4)
     D['P'] = D['O'][:3]+':'+D['O'][3:]
     D['T'] = 'UTC'
@@ -450,49 +412,21 @@ def php_date( format, timestamp=None ):
     # Full Date/Time --
     D['c'] = D['Y']+'-'+D['m']+'-'+D['d']+'\\'+D['T']+D['H']+':'+D['i']+':'+D['s']+D['P']
     D['r'] = D['D']+', '+D['d']+' '+D['M']+' '+D['Y']+' '+D['H']+':'+D['i']+':'+D['s']+' '+D['O']
-    D['U'] = str( utime )
+    D['U'] = str(utime)
 
     formatted_datetime = ''
     for f in format: formatted_datetime += D[f] if f in D else f
     return formatted_datetime
 
-def localized_date( format, timestamp ):
-    global _G
-    F = ['d','D','j','l','N','S','w','z','W','F','m','M','t','L','o','Y','y','a','A','B','g','G','h','H','i','s','u','e','I','O','P','T','Z','U']
-    D = {}
-    DATE = php_date( "\n".join( F ), timestamp ).split( "\n" )
-    i = 0
-    for f in F:
-        D[ f ] = DATE[ i ]
-        i += 1
-
-    # localise specific formats
-    D['D'] = Contemplate.locale( D['D'] )
-    D['l'] = Contemplate.locale( D['l'] )
-    D['S'] = Contemplate.locale( D['S'] )
-    D['F'] = Contemplate.locale( D['F'] )
-    D['M'] = Contemplate.locale( D['M'] )
-    D['a'] = Contemplate.locale( D['a'] )
-    D['A'] = Contemplate.locale( D['A'] )
-
-    # full date/time formats, constructed from localised parts
-    D['c'] = D['Y']+'-'+D['m']+'-'+D['d']+'\\'+D['T']+D['H']+':'+D['i']+':'+D['s']+D['P']
-    D['r'] = D['D']+', '+D['d']+' '+D['M']+' '+D['Y']+' '+D['H']+':'+D['i']+':'+D['s']+' '+D['O']
-
-    # return localized date
-    localised_datetime = ''
-    for f in format: localised_datetime += D[f] if f in D else f
-    return localised_datetime
-
 
 sprintf_format_re = re.compile(r'%%|%(\d+\$)?([-+\'#0 ]*)(\*\d+\$|\*|\d+)?(\.(\*\d+\$|\*|\d+))?([scboxXuideEfFgG])', re.S)
-def sprintf_( fmt, args ):
+def sprintf_(fmt, args):
     global sprintf_format_re
 
     class nonlocal_:
         index = 0
 
-    def do_format( m ):
+    def do_format(m):
         match = m.group(0)
         if '%%' == match: return match
 
@@ -529,21 +463,17 @@ def sprintf_( fmt, args ):
 
     return fmt % arguments
 
-def sprintf( format, *args ):
+def sprintf(format, *args):
     #if len(args) and isinstance(args[0],(list,tuple)): args = args[0]
     #return format % tuple(args)
     return sprintf_(format, args)
 
-def vsprintf( format, args ):
+def vsprintf(format, args):
     #return format % tuple(args)
     return sprintf_(format, args)
 
-#
-#  Auxilliary methods
-# (mostly methods to simulate php-like functionality needed by the engine)
-#
 # static
-def import_tpl( filename, classname, cacheDir, doReload=False ):
+def import_tpl(filename, classname, cacheDir, doReload = False):
     # http://www.php2python.com/wiki/function.import_tpl/
     # http://docs.python.org/dev/3.0/whatsnew/3.0.html
     # http://stackoverflow.com/questions/4821104/python-dynamic-instantiation-from-string-name-of-a-class-in-dynamically-imported
@@ -599,7 +529,7 @@ def import_tpl( filename, classname, cacheDir, doReload=False ):
     if found:
         if doReload: reload(mod) # Might be out of date
         # a trick in-order to pass the Contemplate super-class in a cross-module way
-        getTplClass = getattr( mod, '__getTplClass__' )
+        getTplClass = getattr(mod, '__getTplClass__')
 
     # restore current dir
     os.chdir(currentcwd)
@@ -611,7 +541,7 @@ def import_tpl( filename, classname, cacheDir, doReload=False ):
     return getTplClass(Contemplate) if getTplClass else None
 
 # static
-def create_function( funcName, args, sourceCode, additional_symbols=dict() ):
+def create_function(funcName, args, sourceCode, additional_symbols = dict()):
     # http://code.activestate.com/recipes/550804-create-a-restricted-python-function-from-a-string/
 
     # The list of symbols that are included by default in the generated
@@ -705,9 +635,7 @@ def create_function( funcName, args, sourceCode, additional_symbols=dict() ):
     # return the compiled function object
     return fct
 
-
-
-def reset_state( ):
+def reset_state():
     global _G
     _G.loops = 0
     _G.ifs = 0
@@ -730,7 +658,7 @@ def reset_state( ):
     #_G.funcId = 0
 
 
-def clear_state( ):
+def clear_state():
     global _G
     _G.loops = 0
     _G.ifs = 0
@@ -753,13 +681,12 @@ def clear_state( ):
     #_G.funcId = 0
 
 
-def push_state( ):
+def push_state():
     global _G
     return [_G.loops, _G.ifs, _G.loopifs, _G.level,
     _G.allblocks, _G.allblockscnt, _G.openblocks,  _G.extends, _G.locals, _G.variables, _G.currentblock, _G.uses]
 
-
-def pop_state( state ):
+def pop_state(state):
     global _G
     _G.loops = state[0]
     _G.ifs = state[1]
@@ -778,29 +705,77 @@ def pop_state( state ):
 
     _G.uses = state[11]
 
-def align( s, level=None ):
+def remove_initial_space(s):
+    l = len(s)
+    if l:
+        initial_space = ''
+        for c in s:
+            if ' ' == c or "\t" == c: initial_space += c
+            else: break
+
+        sl = len(initial_space)
+        if sl:
+            s = s[sl:]
+            pos = s.find("\n", 0);
+            while -1 < pos:
+                if initial_space == s[pos+1:pos+1+sl]:
+                    s = s[0:pos+1] + s[pos+1+sl:]
+                pos = s.find("\n", pos + 1)
+    return s
+
+def remove_blank_lines(s):
+    global _G
+    lines = s.split("\n")
+    n = len(lines)
+    start = 0
+    end = n-1
+    for i in range(n):
+        l = lines[i]
+        if len(l) and not _G.ALL_SPACE.match(l):
+            start = i
+            break
+
+    for i in range(n-1, start-1, -1):
+        l = lines[i]
+        if len(l) and not _G.ALL_SPACE.match(l):
+            end = i
+            break
+
+    return "\n".join(lines[start:end+1])
+
+def align(s, level = None):
     global _G
     if level is None: level = _G.level
+    s = remove_initial_space(s)
     l = len(s)
     if l and (0 < level):
         alignment = _G.pad * level
         aligned = alignment
+        is_line_start = True
         for c in s:
-            #if "\r" == c: continue
-            #elif "\n" == c: aligned += _G.TEOL + alignment
-            if "\n" == c: aligned += "\n" + alignment
-            else: aligned += c
+            if "\n" == c:
+                aligned += "\n" + alignment
+                is_line_start = True
+            elif is_line_start:
+                # consistently replace tabs with our tabbed spaces
+                if _G.SPACE.match(c):
+                    aligned += _G.pad if "\t" == c else c
+                else:
+                    aligned += c
+                    is_line_start = False
+            else:
+                aligned += c
     else:
         aligned = s
     return aligned
 
 
-def get_separators( text, separators=None ):
+def get_separators(text, separators = None):
     global _G
     if separators:
-        seps = separators.strip( ).split( " " )
-        _G.leftTplSep = seps[ 0 ].strip( )
-        _G.rightTplSep = seps[ 1 ].strip( )
+        seps = separators.strip().split(" ")
+        _G.leftTplSep = seps[0].strip()
+        _G.rightTplSep = seps[1].strip()
     else:
         # tpl separators are defined on 1st (non-empty) line of tpl content
         l = len(text)
@@ -808,18 +783,18 @@ def get_separators( text, separators=None ):
         pos = 0
         line = ""
         while i < l and -1 < pos and not len(line):
-            pos = text.find( "\n", i )
+            pos = text.find("\n", i)
             line = text[i:pos+1].strip() if -1 < pos else ""
             i = pos+1
         if len(line):
-            seps = line.split( " " )
-            _G.leftTplSep = seps[ 0 ].strip( )
-            _G.rightTplSep = seps[ 1 ].strip( )
+            seps = line.split(" ")
+            _G.leftTplSep = seps[0].strip()
+            _G.rightTplSep = seps[1].strip()
             text = text[pos+1:]
     return text
 
 
-def split_arguments( args, delim=',' ):
+def split_arguments(args, delim = ','):
     args = args.strip()
     l = len(args)
     if not l: return ['']
@@ -850,7 +825,7 @@ def split_arguments( args, delim=',' ):
     if i < l: a.append(args[i:].strip())
     return a
 
-def local_variable( variable=None, block=None ):
+def local_variable(variable = None, block = None):
     global _G
     if variable is None:
         _G.id += 1
@@ -861,7 +836,7 @@ def local_variable( variable=None, block=None ):
         return variable
 
 
-def is_local_variable( variable, block=None ):
+def is_local_variable(variable, block = None):
     if block is None: block = _G.currentblock
     return variable.startswith('_loc_') or ((_G.variables[block][variable] in _G.locals[block]) and (1 == _G.locals[block][_G.variables[block][variable]]))
 
@@ -869,7 +844,7 @@ def is_local_variable( variable, block=None ):
 # Control structures
 #
 
-def t_include( id ):
+def t_include(id):
     global _G
     contx = _G.context
     id = id.strip()
@@ -879,19 +854,19 @@ def t_include( id ):
 
     # cache it
     if id not in contx.partials: #and (id not in _G.glob.partials):
-        tpl = get_template_contents( id, contx )
-        tpl = get_separators( tpl )
-        state = push_state( )
-        reset_state( )
-        contx.partials[id] = ["" + parse( tpl, _G.leftTplSep, _G.rightTplSep, False ) + "'" + _G.TEOL, _G.uses[:] if _G.uses else []]
-        pop_state( state )
+        tpl = get_template_contents(id, contx)
+        tpl = get_separators(tpl)
+        state = push_state()
+        reset_state()
+        contx.partials[id] = ["" + parse(tpl, _G.leftTplSep, _G.rightTplSep, False) + "'" + _G.TEOL, _G.uses[:] if _G.uses else []]
+        pop_state(state)
     # add usedTpls used inside include tpl to current usedTpls
     for usedTpl in contx.partials[id][1]:
         if usedTpl not in _G.uses:
             _G.uses.append(usedTpl)
-    return align( contx.partials[id][0] ) # if id in contx.partials else _G.glob.partials[id][0]
+    return align(contx.partials[id][0]) # if id in contx.partials else _G.glob.partials[id][0]
 
-def t_block( block ):
+def t_block(block):
     global _G
     block = block.split(',')
     echoed = not(("False"==block[1].strip()) if len(block)>1 else False)
@@ -900,21 +875,21 @@ def t_block( block ):
     ch = block[0]
     if ('"' == ch or "'" == ch) and (ch == block[-1]): block = block[1:-1] # quoted block
 
-    _G.allblocks.append( [block, -1, -1, 0, _G.openblocks[ 0 ][ 1 ], echoed] )
-    if block in _G.allblockscnt: _G.allblockscnt[ block ] += 1
-    else: _G.allblockscnt[ block ] = 1
-    _G.blockptr = len( _G.allblocks )
+    _G.allblocks.append([block, -1, -1, 0, _G.openblocks[0][1], echoed])
+    if block in _G.allblockscnt: _G.allblockscnt[block] += 1
+    else: _G.allblockscnt[block] = 1
+    _G.blockptr = len(_G.allblocks)
     _G.openblocks[:0] = [[block, _G.blockptr-1]]
     _G.startblock = block
     _G.endblock = None
     return "' +  #BLOCK_" + block + "#"
 
-def t_endblock( args='' ):
+def t_endblock(args = ''):
     global _G
     if  1 < len(_G.openblocks):
-        block = _G.openblocks.pop( 0 )
-        _G.endblock = block[ 0 ]
-        _G.blockptr = block[ 1 ]+1
+        block = _G.openblocks.pop(0)
+        _G.endblock = block[0]
+        _G.blockptr = block[1]+1
         _G.startblock = None
         return "#/BLOCK_" + block[0] + "#"
     return ''
@@ -924,18 +899,18 @@ def t_endblock( args='' ):
 # auxilliary parsing methods
 #
 
-def merge( m, *args ):
+def merge(m, *args):
     numargs = len(args)
     if numargs < 1: return m
 
     merged = m
     for arg in args:
         # http://www.php2python.com/wiki/function.array-merge/
-        merged = ODict(merged)
+        merged = dict(merged)
         merged.update(arg)
     return merged
 
-def parse_constructs( match ):
+def parse_constructs(match):
     global _G
     re_controls = _G.re_controls
 
@@ -964,7 +939,7 @@ def parse_constructs( match ):
 
     if ctrl in _G.directive_aliases: ctrl = _G.directive_aliases[ctrl]
     try:
-        m = _G.directives.index( ctrl )
+        m = _G.directives.index(ctrl)
     except:
         m = -1
     if m > -1:
@@ -973,8 +948,8 @@ def parse_constructs( match ):
             args = split_arguments(args, ',')
             varname = args.pop(0).strip()
             expr = ','.join(args).strip()
-            if 20 == m and not is_local_variable(varname): local_variable( varname ) # make it a local variable
-            out = "'" + _G.TEOL + align( varname + ' = ('+ expr +')' ) + _G.TEOL
+            if 20 == m and not is_local_variable(varname): local_variable(varname) # make it a local variable
+            out = "'" + _G.TEOL + align(varname + ' = ('+ expr +')') + _G.TEOL
         elif 21==m: # get
             args = re.sub(re_controls, parse_constructs, args)
             out = prefix + 'Contemplate.get(' + args + ')'
@@ -983,7 +958,7 @@ def parse_constructs( match ):
             varname = args
             if varname:
                 varname = str(varname).strip()
-                out = "'" + _G.TEOL + align( 'if ("'+varname+'__RAW__" in data): del ' + varname ) + _G.TEOL
+                out = "'" + _G.TEOL + align('if ("'+varname+'__RAW__" in data): del ' + varname) + _G.TEOL
             else:
                 out = "'" + _G.TEOL
         elif 2==m: # isset
@@ -1037,15 +1012,15 @@ def parse_constructs( match ):
                 o = for_expr[0].strip()
                 kv = for_expr[1].split('=>')
 
-            _o = local_variable( )
+            _o = local_variable()
             isAssoc = (len(kv) >= 2)
 
             if isAssoc:
                 k = kv[0].strip()
                 v = kv[1].strip()
-                _oI = local_variable( )
-                local_variable( k )
-                local_variable( v )
+                _oI = local_variable()
+                local_variable(k)
+                local_variable(v)
 
                 # a = [51,27,13,56]   dict(enumerate(a))
                 out = "'" + align(_G.TEOL.join([
@@ -1060,8 +1035,8 @@ def parse_constructs( match ):
 
             else:
                 v = kv[0].strip()
-                _oV = local_variable( )
-                local_variable( v )
+                _oV = local_variable()
+                local_variable(v)
 
                 out = "'" + align(_G.TEOL.join([
                                 ""
@@ -1125,7 +1100,7 @@ def parse_constructs( match ):
             varname = args
             out = prefix + ('(("_loc_' + varname + '__RAW__" not in locals()) or ('+varname+' is None) or Contemplate.empty('+varname+'))' if is_local_variable(varname) else '(("' + varname + '__RAW__" not in data) or ('+varname+' is None) or Contemplate.empty('+varname+'))')
         elif 18==m or 19==m: #'continue','break'
-            out = "'" + _G.TEOL + align( 'continue' if 18==m else 'break' ) + _G.TEOL
+            out = "'" + _G.TEOL + align('continue' if 18==m else 'break') + _G.TEOL
 
         return out + re.sub(re_controls, parse_constructs, rest)
 
@@ -1136,79 +1111,61 @@ def parse_constructs( match ):
         return prefix + out + re.sub(re_controls, parse_constructs, rest)
 
     if ctrl in _G.aliases: ctrl = _G.aliases[ctrl]
-    try:
-        m = _G.funcs.index( ctrl )
-    except:
-        m = -1
-    if m > -1:
-        args = re.sub(re_controls, parse_constructs, args)
-        # aliases and builtin functions
-        if 0 ==m or 5 == m:
-            out = 'str(' + args + ')'
-        elif 1==m:
-            out = 'int(' + args + ')'
-        elif 2==m:
-            out = 'float(' + args + ')'
-        elif 3==m:
-            out = '"\'"+str(' + args + ')+"\'"'
-        elif 4==m:
-            out = '\'"\'+str(' + args + ')+\'"\''
-        elif 6==m:
-            out = 'Contemplate.time()'
-        elif 7==m:
-            out = 'Contemplate.count(' + args + ')'
-        elif 8==m:
-            out = 'str(' + args + ').lower()'
-        elif 9==m:
-            out = 'str(' + args + ').upper()'
-        elif 10==m:
-            out = 'Contemplate.ucfirst(' + args + ')'
-        elif 11==m:
-            out = 'Contemplate.lcfirst(' + args + ')'
-        elif 12==m:
-            out = 'Contemplate.sprintf(' + args + ')'
-        elif 21==m:
-            out = 'str('+')+str('.join(split_arguments(args,','))+')'
-        elif 27==m:
-            args = split_arguments(args,',')
-            if len(args) > 1:
-                out = "(isinstance("+args[0]+",list) if ("+args[1]+") else isinstance("+args[0]+",(list,dict)))"
-            else:
-                out = "isinstance("+args[0]+",(list,dict))"
-        elif 28==m:
-            args = split_arguments(args,',')
-            out = "(("+args[0]+") in ("+args[1]+"))"
+    args = re.sub(re_controls, parse_constructs, args)
+    # aliases and builtin functions
+    if 's'==ctrl:
+        out = 'str(' + args + ')'
+    elif 'n'==ctrl:
+        out = 'int(' + args + ')'
+    elif 'f'==ctrl:
+        out = 'float(' + args + ')'
+    elif 'q'==ctrl:
+        out = '"\'"+str(' + args + ')+"\'"'
+    elif 'qq'==ctrl:
+        out = '\'"\'+str(' + args + ')+\'"\''
+    elif 'concat'==ctrl:
+        out = 'str('+')+str('.join(split_arguments(args, ','))+')'
+    elif 'is_array'==ctrl:
+        args = split_arguments(args, ',')
+        if len(args) > 1:
+            out = "(isinstance("+args[0]+",list) if ("+args[1]+") else isinstance("+args[0]+",(list,tuple,dict)))"
         else:
-            if 18==m:
-                args2 = split_arguments(args,',')
-                usedTpl = args2[0]
-                if usedTpl.startswith('#STR_') and usedTpl in _G.strings:
-                    # only literal string support here
-                    usedTpl = _G.strings[usedTpl][1:-1] # without quotes
-                    if usedTpl not in _G.uses:
-                        _G.uses.append(usedTpl)
+            out = "isinstance("+args[0]+",(list,tuple,dict))"
+    elif 'in_array'==ctrl:
+        args = split_arguments(args, ',')
+        out = "(("+args[0]+") in ("+args[1]+"))"
+    else:
+        if 'tpl'==ctrl:
+            args2 = split_arguments(args, ',')
+            usedTpl = args2[0]
+            if usedTpl.startswith('#STR_') and usedTpl in _G.strings:
+                # only literal string support here
+                usedTpl = _G.strings[usedTpl][1:-1] # without quotes
+                if usedTpl not in _G.uses:
+                    _G.uses.append(usedTpl)
+        if hasattr(Contemplate, ctrl) and callable(getattr(Contemplate, ctrl)):
             out = 'Contemplate.' + ctrl + '(' + args + ')'
-        return prefix + out + re.sub(re_controls, parse_constructs, rest)
+        else:
+            out = ctrl + ('('+args+')' if startParen else '')
 
-    #return match.group(0)
-    return prefix + ctrl + ('('+re.sub(re_controls, parse_constructs, args)+')' if startParen else '') + re.sub(re_controls, parse_constructs, rest)
+    return prefix + out + re.sub(re_controls, parse_constructs, rest)
 
 
-def parse_blocks( s ):
+def parse_blocks(s):
     global _G
     blocks = []
     bl = len(_G.allblocks)
     EOL = _G.TEOL
     while bl:
         bl -= 1
-        delims = _G.allblocks[ bl ]
+        delims = _G.allblocks[bl]
 
-        block = delims[ 0 ]
-        pos1 = delims[ 1 ]
-        pos2 = delims[ 2 ]
-        off = delims[ 3 ]
-        containerblock = delims[ 4 ]
-        echoed = delims[ 5 ]
+        block = delims[0]
+        pos1 = delims[1]
+        pos2 = delims[2]
+        off = delims[3]
+        containerblock = delims[4]
+        echoed = delims[5]
         tag = "#BLOCK_" + block + "#"
         rep = "__i__.block('" + block + "', data)" if echoed else "''"
         tl = len(tag)
@@ -1217,29 +1174,29 @@ def parse_blocks( s ):
         if -1 < containerblock:
             # adjust the ending position of the container block (if nested)
             # to compensate for the replacements in this (nested) block
-            _G.allblocks[ containerblock ][ 3 ] += rl - (pos2-pos1+1)
+            _G.allblocks[containerblock][3] += rl - (pos2-pos1+1)
 
         # adjust the ending position of this block (if nested)
         # to compensate for the replacements of any (nested) block(s)
         pos2 += off
 
-        if 1 == _G.allblockscnt[ block ]:
+        if 1 == _G.allblockscnt[block]:
 
             # 1st occurance, block definition
-            blocks.append([ block, _G.TT_BLOCK.render({
+            blocks.append([block, _G.TT_BLOCK.render({
              'BLOCKCODE'     : s[pos1+tl:pos2-tl-1] + "'"
             })])
 
         s = s[0:pos1] + rep + s[pos2+1:]
-        if 1 <= _G.allblockscnt[ block ]: _G.allblockscnt[ block ] -= 1
+        if 1 <= _G.allblockscnt[block]: _G.allblockscnt[block] -= 1
 
     #_G.allblocks = None
     #_G.allblockscnt = None
     #_G.openblocks = None
-    return [ s, blocks ]
+    return [s, blocks]
 
 
-def parse_variable( s, i, l ):
+def parse_variable(s, i, l):
     global _G
     if _G.ALPHA.match(s[i]):
         strings = {}
@@ -1409,20 +1366,20 @@ def parse_variable( s, i, l ):
                 space += 1
                 i += 1
 
-        variables.append( [id, variable_raw, variable_main, variable_rest, _len, hasStrings, strings] )
+        variables.append([id, variable_raw, variable_main, variable_rest, _len, hasStrings, strings])
         return variables
     return None
 
 str_re = re.compile(r'#STR_\d+#', re.M|re.S)
-def parse( tpl, leftTplSep, rightTplSep, withblocks=True ):
+def parse(tpl, leftTplSep, rightTplSep, withblocks = True):
     global _G
     global str_re
 
     re_controls = _G.re_controls
     ALPHA = _G.ALPHA
     ALPHANUM = _G.ALPHANUM
-    compatibility_mode = _G.compatibility
-    non_compatibility_mode = not compatibility_mode
+    compatibility_mode = False
+    non_compatibility_mode = True
 
     t1 = leftTplSep
     l1 = len(t1)
@@ -1430,25 +1387,60 @@ def parse( tpl, leftTplSep, rightTplSep, withblocks=True ):
     l2 = len(t2)
     parsed = ''
     while tpl and len(tpl):
-        p1 = tpl.find( t1 )
+        p1 = tpl.find(t1)
         if -1 == p1:
             s = tpl
-            if _G.escape: s = s.replace( "\\", "\\\\" )  # escape escapes
-            s = s.replace( "'", "\\'" )  # escape single quotes accurately (used by parse function)
-            s = s.replace( "\n", _G.preserveLines ) # preserve lines
+            if _G.escape: s = s.replace("\\", "\\\\")  # escape escapes
+            s = s.replace("'", "\\'")  # escape single quotes accurately (used by parse function)
+            s = s.replace("\n", _G.preserveLines) # preserve lines
             #s = re.sub(_G.NL, _G.preserveLines, s) # preserve lines
             parsed += s
             break
 
-        p2 = tpl.find( t2, p1+l1 )
+        p2 = tpl.find(t2, p1+l1)
         if -1 == p2: p2 = len(tpl)
 
-        s = tpl[0:p1]
-        if _G.escape: s = s.replace( "\\", "\\\\" )  # escape escapes
-        s = s.replace( "'", "\\'" )  # escape single quotes accurately (used by parse function)
-        s = s.replace( "\n", _G.preserveLines ) # preserve lines
-        #s = re.sub(_G.NL, _G.preserveLines, s) # preserve lines
-        parsed += s
+        if p1 > 0:
+            s = tpl[0:p1]
+            if _G.escape: s = s.replace("\\", "\\\\")  # escape escapes
+            s = s.replace("'", "\\'")  # escape single quotes accurately (used by parse function)
+            s = s.replace("\n", _G.preserveLines) # preserve lines
+            #s = re.sub(_G.NL, _G.preserveLines, s) # preserve lines
+            parsed += s
+
+        # php literal code block
+        isphp = 'php:' == tpl[p1+l1:p1+l1+4]
+        # js literal code block
+        isjs = 'js:' == tpl[p1+l1:p1+l1+3]
+        # py literal code block
+        ispy = 'py:' == tpl[p1+l1:p1+l1+3]
+        if isphp or isjs or ispy:
+            # include if in same language else ignore
+            if ispy:
+                if '=' == tpl[p1+l1+3:p1+l1+4]:
+                    parsed += "'" + align("\n# py code start") + align("\n__p__ += str(" + tpl[p1+l1+4:p2].strip() + ")") + align("\n# py code end\n__p__ += '")
+                else:
+                    indent = 0
+                    l3 = 0
+                    indenttype = 'none'
+                    m = _G.INDENT.match(tpl[p1+l1+3:])
+                    if m:
+                        indenttype = m.group(1)
+                        indent = int(m.group(2))
+                        l3 = len(m.group(0))
+                    code = remove_blank_lines(tpl[p1+l1+3+l3:p2])
+                    if 'predent' == indenttype:
+                        _G.level = max(0, _G.level + indent)
+                    parsed += "' " + align("\n# py code start")
+                    if len(code.strip()):
+                        parsed += "\n" + align(code)
+                    if 'postdent' == indenttype:
+                        _G.level = max(0, _G.level + indent)
+                    parsed += align("\n# py code end\n__p__ += '")
+
+
+            tpl = tpl[p2+l2:]
+            continue
 
         # template TAG
         s = tpl[p1+l1:p2]
@@ -1456,7 +1448,7 @@ def parse( tpl, leftTplSep, rightTplSep, withblocks=True ):
 
         # parse each template tag section accurately
         # refined parsing
-        count = len( s )
+        count = len(s)
         index = 0
         ch = ''
         out = ''
@@ -1478,14 +1470,14 @@ def parse( tpl, leftTplSep, rightTplSep, withblocks=True ):
                 tok = parse_variable(s, index, count)
                 if tok:
                     for tokv in tok:
-                        id = tokv[ 0 ]
-                        _G.variables[_G.currentblock][ id ] = tokv[ 1 ]
-                        if tokv[ 6 ]: strings.update(tokv[ 6 ])
+                        id = tokv[0]
+                        _G.variables[_G.currentblock][id] = tokv[1]
+                        if tokv[6]: strings.update(tokv[6])
                     out += id
-                    index += tokv[ 4 ]
+                    index += tokv[4]
                     variables = variables + tok
                     hasVariables = True
-                    hasStrings = hasStrings or tokv[ 6 ]
+                    hasStrings = hasStrings or tokv[6]
                 else:
                     out += '$'
 
@@ -1503,7 +1495,7 @@ def parse( tpl, leftTplSep, rightTplSep, withblocks=True ):
                     ch = s[si]
                     si += 1
                     str_ += ch
-                    if ( q == ch and not escaped ):  break
+                    if q == ch and not escaped:  break
                     escaped = (not escaped and '\\' == ch)
                 tok = str_
                 _G.id += 1
@@ -1605,11 +1597,11 @@ def parse( tpl, leftTplSep, rightTplSep, withblocks=True ):
             for v in reversed(variables):
                 id = v[0]
                 varname = v[1]
-                tag = tag.replace( id+'__RAW__', varname )
+                tag = tag.replace(id+'__RAW__', varname)
                 if varname in _G.locals[_G.currentblock]: # local (loop) variable
-                    tag = tag.replace( id, '_loc_'+varname+v[3] )
+                    tag = tag.replace(id, '_loc_'+varname+v[3])
                 else: # default (data) variable
-                    tag = tag.replace( id, v[2]+v[3] )
+                    tag = tag.replace(id, v[2]+v[3])
 
         if hasStrings:
             # replace strings (accurately)
@@ -1620,24 +1612,24 @@ def parse( tpl, leftTplSep, rightTplSep, withblocks=True ):
                     # and replace blocks (accurately)
                     if notFoundBlock:
                         if _G.startblock:
-                            blockTag = v[1].find( _G.startblock )
+                            blockTag = v[1].find(_G.startblock)
                             if -1 != blockTag:
-                                _G.allblocks[ _G.blockptr-1 ][ 1 ] = blockTag + len(parsed) + len(tag)
+                                _G.allblocks[_G.blockptr-1][1] = blockTag + len(parsed) + len(tag)
                                 notFoundBlock = False
                         else: #if _G.endblock:
-                            blockTag = v[1].find( _G.endblock )
+                            blockTag = v[1].find(_G.endblock)
                             if -1 != blockTag:
-                                _G.allblocks[ _G.blockptr-1 ][ 2 ] = blockTag + len(parsed) + len(tag) + len(_G.endblock)
+                                _G.allblocks[_G.blockptr-1][2] = blockTag + len(parsed) + len(tag) + len(_G.endblock)
                                 notFoundBlock = False
                     tag += v[1]
                 else:
-                    tag += strings[ v[1] ]
+                    tag += strings[v[1]]
         elif hasBlock:
             # replace blocks (accurately)
             if _G.startblock:
-                _G.allblocks[ _G.blockptr-1 ][ 1 ] = len(parsed) + tag.find( _G.startblock )
+                _G.allblocks[_G.blockptr-1][1] = len(parsed) + tag.find(_G.startblock)
             else: #if _G.endblock:
-                _G.allblocks[ _G.blockptr-1 ][ 2 ] = len(parsed) + tag.find( _G.endblock ) + len(_G.endblock)
+                _G.allblocks[_G.blockptr-1][2] = len(parsed) + tag.find(_G.endblock) + len(_G.endblock)
 
 
         # replace tpl separators
@@ -1649,15 +1641,15 @@ def parse( tpl, leftTplSep, rightTplSep, withblocks=True ):
                 # update blocks (accurately)
                 blockTag = len(_G.tplStart)-1
                 if _G.startblock:
-                    _G.allblocks[ _G.blockptr-1 ][ 1 ] += blockTag
+                    _G.allblocks[_G.blockptr-1][1] += blockTag
                 else: #if _G.endblock:
-                    _G.allblocks[ _G.blockptr-1 ][ 2 ] += blockTag
+                    _G.allblocks[_G.blockptr-1][2] += blockTag
 
         parsed += tag
 
     return (parse_blocks(parsed) if len(_G.allblocks)>0 else [parsed, []]) if False != withblocks else parsed
 
-def get_cached_template_name( id, ctx, cacheDir ):
+def get_cached_template_name(id, ctx, cacheDir):
     global _G
     if -1 != id.find('/') or -1 != id.find('\\'):
         filename = os.path.basename(id)
@@ -1666,9 +1658,9 @@ def get_cached_template_name( id, ctx, cacheDir ):
     else:
         filename = id
         path = ''
-    return os.path.join( cacheDir, path + re.sub(_G.UNDERL, '_', filename) + '_tpl__' + re.sub(_G.UNDERL, '_', ctx) + '.py')
+    return os.path.join(cacheDir, path + re.sub(_G.UNDERL, '_', filename) + '_tpl__' + re.sub(_G.UNDERL, '_', ctx) + '.py')
 
-def get_cached_template_class( id, ctx ):
+def get_cached_template_class(id, ctx):
     global _G
     if -1 != id.find('/') or -1 != id.find('\\'):
         filename = os.path.basename(id)
@@ -1676,7 +1668,7 @@ def get_cached_template_class( id, ctx ):
         filename = id
     return 'Contemplate_' + re.sub(_G.UNDERL, '_', filename) + '__' + re.sub(_G.UNDERL, '_', ctx)
 
-def get_template_contents( id, contx ):
+def get_template_contents(id, contx):
     global _G
 
     if not Contemplate.hasTpl(id, contx.id):
@@ -1691,17 +1683,17 @@ def get_template_contents( id, contx ):
     else: return ''
 
     if template[1]: return template[0] # inline tpl
-    elif os.path.exists(template[0]): return read_file( template[0], contx.encoding )
+    elif os.path.exists(template[0]): return read_file(template[0], contx.encoding)
     return ''
 
-def create_template_render_function( id, contx, seps=None ):
+def create_template_render_function(id, contx, seps = None):
     global _G
 
-    tpl = get_template_contents( id, contx )
-    tpl = get_separators( tpl, seps )
-    reset_state( )
-    blocks = parse( tpl, _G.leftTplSep, _G.rightTplSep )
-    clear_state( )
+    tpl = get_template_contents(id, contx)
+    tpl = get_separators(tpl, seps)
+    reset_state()
+    blocks = parse(tpl, _G.leftTplSep, _G.rightTplSep)
+    clear_state()
 
     renderf = blocks[0]
     blocks = blocks[1]
@@ -1724,14 +1716,14 @@ def create_template_render_function( id, contx, seps=None ):
 
     return [fn, blockfns]
 
-def create_cached_template( id, contx, filename, classname, seps=None ):
+def create_cached_template(id, contx, filename, classname, seps = None):
     global _G
 
-    tpl = get_template_contents( id, contx )
-    tpl = get_separators( tpl, seps )
-    reset_state( )
-    blocks = parse( tpl, _G.leftTplSep, _G.rightTplSep )
-    clear_state( )
+    tpl = get_template_contents(id, contx)
+    tpl = get_separators(tpl, seps)
+    reset_state()
+    blocks = parse(tpl, _G.leftTplSep, _G.rightTplSep)
+    clear_state()
 
     renderf = blocks[0]
     blocks = blocks[1]
@@ -1763,9 +1755,9 @@ def create_cached_template( id, contx, filename, classname, seps=None ):
     ,'BLOCKS'               : align(sblocks, 2)
     ,'RENDERCODE'           : align(renderCode, 4)
     })
-    return write_file( filename, classCode, contx.encoding )
+    return write_file(filename, classCode, contx.encoding)
 
-def get_cached_template( id, contx, options=dict() ):
+def get_cached_template(id, contx, options = dict()):
     global _G
     # inline templates saved only in-memory
     if id in contx.templates: template = contx.templates[id]
@@ -1780,24 +1772,24 @@ def get_cached_template( id, contx, options=dict() ):
         # inline templates saved only in-memory
         if template[1]:
             # dynamic in-memory caching during page-request
-            tpl = Contemplate.Template( )
-            tpl.setId( id ).ctx( contx )
+            tpl = Contemplate.Template()
+            tpl.setId(id).ctx(contx)
             if parsed:
                 _G.funcId += 1
-                tpl.setRenderFunction( create_function('_contemplateFn' + str(_G.funcId), 'data,self_,__i__', align(parsed, 1), {'Contemplate': Contemplate}) )
+                tpl.setRenderFunction(create_function('_contemplateFn' + str(_G.funcId), 'data,self_,__i__', align(parsed, 1), {'Contemplate': Contemplate}))
             else:
-                fns = create_template_render_function( id, contx, options['separators'] )
-                tpl.setRenderFunction( fns[0] ).setBlocks( fns[1] ).usesTpl( _G.uses )
+                fns = create_template_render_function(id, contx, options['separators'])
+                tpl.setRenderFunction(fns[0]).setBlocks(fns[1]).usesTpl(_G.uses)
             sprTpl = _G.extends
-            if sprTpl: tpl.extend( Contemplate.tpl(sprTpl, None, options) )
+            if sprTpl: tpl.extend(Contemplate.tpl(sprTpl, None, options))
             return tpl
 
         CM = contx.cacheMode
 
         if True != options['autoUpdate'] and CM == Contemplate.CACHE_TO_DISK_NOUPDATE:
 
-            cachedTplFile = get_cached_template_name( id, contx.id, contx.cacheDir )
-            cachedTplClass = get_cached_template_class( id, contx.id )
+            cachedTplFile = get_cached_template_name(id, contx.id, contx.cacheDir)
+            cachedTplClass = get_cached_template_class(id, contx.id)
             exists = os.path.isfile(cachedTplFile)
             if not exists:
                 # if not exist, create it
@@ -1808,20 +1800,20 @@ def get_cached_template( id, contx, options=dict() ):
                     fname = id
                     fpath = ''
                 if len(fpath): create_path(fpath, contx.cacheDir)
-                create_cached_template( id, contx, cachedTplFile, cachedTplClass, options['separators'] )
-            if os.path.isfile( cachedTplFile ):
-                tpl = import_tpl( cachedTplFile, cachedTplClass, contx.cacheDir )( )
-                tpl.setId( id ).ctx( contx )
+                create_cached_template(id, contx, cachedTplFile, cachedTplClass, options['separators'])
+            if os.path.isfile(cachedTplFile):
+                tpl = import_tpl(cachedTplFile, cachedTplClass, contx.cacheDir)()
+                tpl.setId(id).ctx(contx)
                 return tpl
             return None
 
 
         elif True == options['autoUpdate'] or CM == Contemplate.CACHE_TO_DISK_AUTOUPDATE:
 
-            cachedTplFile = get_cached_template_name( id, contx.id, contx.cacheDir )
-            cachedTplClass = get_cached_template_class( id, contx.id )
+            cachedTplFile = get_cached_template_name(id, contx.id, contx.cacheDir)
+            cachedTplClass = get_cached_template_class(id, contx.id)
             exists = os.path.isfile(cachedTplFile)
-            if not exists or (os.path.getmtime( cachedTplFile ) <= os.path.getmtime( template[0] )):
+            if not exists or (os.path.getmtime( cachedTplFile ) <= os.path.getmtime(template[0])):
                 # if tpl not exist or is out-of-sync (re-)create it
                 if not exists:
                     if -1 != id.find('/') or -1 != id.find('\\'):
@@ -1831,31 +1823,31 @@ def get_cached_template( id, contx, options=dict() ):
                         fname = id
                         fpath = ''
                     if len(fpath): create_path(fpath, contx.cacheDir)
-                create_cached_template( id, contx, cachedTplFile, cachedTplClass, options['separators'] )
-            if os.path.isfile( cachedTplFile ):
-                tpl = import_tpl( cachedTplFile, cachedTplClass, contx.cacheDir )( )
-                tpl.setId( id ).ctx( contx )
+                create_cached_template(id, contx, cachedTplFile, cachedTplClass, options['separators'])
+            if os.path.isfile(cachedTplFile):
+                tpl = import_tpl(cachedTplFile, cachedTplClass, contx.cacheDir)()
+                tpl.setId(id).ctx(contx)
                 return tpl
             return None
 
         else:
 
             # dynamic in-memory caching during page-request
-            fns = create_template_render_function( id, contx, options['separators'] )
-            tpl = Contemplate.Template( id )
-            tpl.ctx( contx ).setRenderFunction( fns[0] ).setBlocks( fns[1] ).usesTpl( _G.uses )
+            fns = create_template_render_function(id, contx, options['separators'])
+            tpl = Contemplate.Template(id)
+            tpl.ctx(contx).setRenderFunction(fns[0]).setBlocks(fns[1]).usesTpl(_G.uses)
             sprTpl = _G.extends
-            if sprTpl: tpl.extend( Contemplate.tpl(sprTpl, None, options) )
+            if sprTpl: tpl.extend(Contemplate.tpl(sprTpl, None, options))
             return tpl
 
     return None
 
 
-def split_and_filter(r, s, regex=True):
+def split_and_filter(r, s, regex = True):
     return list(filter(lambda x: 0<len(x), map(lambda x: x.strip(), re.split(r, s) if regex else s.split(r))))
 
 
-def create_path(path, root='', mode=0o755):
+def create_path(path, root = '', mode = 0o755):
     global _G
     path = path.strip()
     if not len(path): return
@@ -1869,17 +1861,17 @@ def create_path(path, root='', mode=0o755):
 
 class InlineTemplate:
 
-    def multisplit( tpl, reps=dict(), as_array=False ):
+    def multisplit(tpl, reps = dict(), as_array = False):
         #as_array = isinstance(reps, (list,tuple))
-        a = [ [1, tpl] ]
+        a = [[1, tpl]]
         items = enumerate(reps) if as_array else reps.items()
         for r,s in items:
-            c = [ ]
+            c = []
             sr = s if as_array else r
-            s = [ 0, s ]
+            s = [0, s]
             for ai in a:
                 if 1 == ai[0]:
-                    b = ai[1].split( sr )
+                    b = ai[1].split(sr)
                     bl = len(b)
                     c.append([1, b[0]])
                     if bl > 1:
@@ -1892,7 +1884,7 @@ class InlineTemplate:
             a = c
         return a
 
-    def multisplit_re( tpl, rex ):
+    def multisplit_re(tpl, rex):
         a = [ ]
         i = 0
         m = rex.search(tpl, i)
@@ -1915,13 +1907,13 @@ class InlineTemplate:
         a.append([1, tpl[i:]])
         return a
 
-    def compile( tpl ):
+    def compile(tpl):
         global _G
         l = len(tpl)
         out = 'return ('
         for s in tpl:
 
-            notIsSub = s[ 0 ]
+            notIsSub = s[0]
             s = s[ 1 ]
             if notIsSub: out += "'" + re.sub(_G.NEWLINE, "' + \"\\\\n\" + '", re.sub(_G.SQUOTE, "\\'", s)) + "'"
             else: out += " + str(args['" + s + "']) + "
@@ -1929,9 +1921,9 @@ class InlineTemplate:
         out += ')'
         _G.funcId += 1
         funcName = '_contemplateInlineFn' + str(_G.funcId)
-        return create_function(funcName, 'args', '    ' + out,{})
+        return create_function(funcName, 'args', '    ' + out, {})
 
-    def __init__( self, tpl='', replacements=None, compiled=False ):
+    def __init__(self, tpl = '', replacements = None, compiled = False):
         if not replacements: replacements = {}
         self.id = None
         self._renderer = None
@@ -1939,10 +1931,10 @@ class InlineTemplate:
         self._args = [tpl, replacements, compiled]
         self.tpl = None
 
-    def __del__( self ):
+    def __del__(self):
         self.dispose()
 
-    def dispose( self ):
+    def dispose(self):
         self.id = None
         self.tpl = None
         self._renderer = None
@@ -1950,7 +1942,7 @@ class InlineTemplate:
         self._args = None
         return self
 
-    def render( self, args=None ):
+    def render(self, args = None):
         if not args: args = []
 
         if not self._parsed: # lazy init, only if needed, as and when needed
@@ -1958,19 +1950,19 @@ class InlineTemplate:
             replacements = self._args[1]
             compiled = self._args[2]
             self.tpl = InlineTemplate.multisplit_re(tpl, replacements) if isinstance(replacements, T_REGEXP) else InlineTemplate.multisplit(tpl, replacements)
-            if compiled is True: self._renderer = InlineTemplate.compile( self.tpl )
+            if compiled is True: self._renderer = InlineTemplate.compile(self.tpl)
             self._args = None
             self._parsed = True
 
-        if self._renderer is not None: return self._renderer( args )
+        if self._renderer is not None: return self._renderer(args)
 
         tpl = self.tpl
         out = ''
         for s in tpl:
 
-            notIsSub = s[ 0 ]
-            s = s[ 1 ]
-            out += str(s) if notIsSub else str(args[ s ])
+            notIsSub = s[0]
+            s = s[1]
+            out += str(s) if notIsSub else str(args[s])
 
         return out
 
@@ -1978,7 +1970,7 @@ class InlineTemplate:
 
 class Template:
 
-    def __init__( self, id=None ):
+    def __init__(self, id = None):
         self._renderer = None
         self._blocks = None
         self._extends = None
@@ -1988,10 +1980,10 @@ class Template:
         self.id = None
         if id is not None: self.id = id
 
-    def __del__( self ):
+    def __del__(self):
         self.dispose()
 
-    def dispose( self ):
+    def dispose(self):
         self._renderer = None
         self._blocks = None
         self._extends = None
@@ -2001,47 +1993,47 @@ class Template:
         self.id = None
         return self
 
-    def setId( self, id=None ):
+    def setId(self, id = None):
         if id is not None: self.id = id
         return self
 
-    def ctx( self, ctx ):
+    def ctx(self, ctx):
         self._ctx = ctx
         return self
 
-    def autonomus( self, enable=True ):
+    def autonomus(self, enable = True):
         self._autonomus = bool(enable)
         return self
 
-    def extend( self, tpl ):
-        self._extends = Contemplate.tpl( tpl ) if tpl and isinstance(tpl, str) else (tpl if isinstance(tpl, Template) else None)
+    def extend(self, tpl):
+        self._extends = Contemplate.tpl(tpl) if tpl and isinstance(tpl, str) else (tpl if isinstance(tpl, Template) else None)
         return self
 
-    def usesTpl( self, usesTpls ):
+    def usesTpl(self, usesTpls):
         self._usesTpl = [usesTpls] if isinstance(usesTpls,str) else usesTpls
         return self
 
-    def setBlocks( self, blocks ):
+    def setBlocks(self, blocks):
         if not self._blocks: self._blocks = {}
         self._blocks = Contemplate.merge(self._blocks, blocks)
         return self
 
-    def setRenderFunction( self, renderFunc=None ):
+    def setRenderFunction(self, renderFunc = None):
         self._renderer = renderFunc if renderFunc else None
         return self
 
-    def sprblock( self, block, data ):
+    def sprblock(self, block, data):
         #if not __i__: __i__ = self
         if self._extends:
             return self._extends.block(block, data, self._extends)
         return ''
 
-    def block( self, block, data, __i__=None ):
+    def block(self, block, data, __i__ = None):
         __ctx = False
         r = ''
         if not __i__:
             __i__ = self
-            if not self._autonomus: __ctx = Contemplate._set_ctx( self._ctx )
+            if not self._autonomus: __ctx = Contemplate._set_ctx(self._ctx)
 
         if (self._blocks) and (block in self._blocks):
             blockfunc = self._blocks[block]
@@ -2049,55 +2041,51 @@ class Template:
         elif self._extends:
             r = self._extends.block(block, data, __i__)
 
-        if __ctx: Contemplate._set_ctx( __ctx )
+        if __ctx: Contemplate._set_ctx(__ctx)
         return r
 
-    def render( self, data, __i__=None ):
+    def render(self, data, __i__ = None):
         __ctx = False
         __p__ = ''
         if not __i__:
             __i__ = self
-            if not self._autonomus: __ctx = Contemplate._set_ctx( self._ctx )
+            if not self._autonomus: __ctx = Contemplate._set_ctx(self._ctx)
 
         if self._extends:
             __p__ = self._extends.render(data, __i__)
         elif self._renderer is not None:
             # dynamic function
-            renderer = self._renderer
-            __p__ = renderer(data, self, __i__)
+            __p__ = self._renderer(data, self, __i__)
 
-        if __ctx: Contemplate._set_ctx( __ctx )
+        if __ctx: Contemplate._set_ctx(__ctx)
         return __p__
 
     # aliases
-    def renderBlock( self, block, data, __i__=None ):
-        return self.block( self, block, data, __i__ )
+    def renderBlock(self, block, data, __i__ = None):
+        return self.block(self, block, data, __i__)
 
-    def renderSuperBlock( self, block, data ):
-        return self.sprblock( self, block, data )
+    def renderSuperBlock(self, block, data):
+        return self.sprblock(self, block, data)
 
 class Ctx:
 
-    def __init__( self, id ):
+    def __init__(self, id):
         self.id               = id
         self.cacheDir         = './'
         self.cacheMode        = 0
-        self.cache            = { }
-        self.templateDirs     = [ ]
+        self.cache            = {}
+        self.templateDirs     = []
         self.templateFinder   = None
-        self.templates        = { }
-        self.partials         = { }
-        self.locale           = { }
-        self.xlocale          = { }
-        self.pluralForm       = None
-        self.plugins          = { }
+        self.templates        = {}
+        self.partials         = {}
+        self.plugins          = {}
         self.prefix           = ''
         self.encoding         = 'utf-8'
 
-    def __del__( self ):
+    def __del__(self):
         self.dispose()
 
-    def dispose( self ):
+    def dispose(self):
         self.id = None
         self.cacheDir = None
         self.cacheMode = None
@@ -2105,14 +2093,11 @@ class Ctx:
         self.templateFinder = None
         self.templates = None
         self.partials = None
-        self.locale = None
-        self.xlocale = None
-        self.pluralForm = None
         self.plugins = None
         self.prefix = None
         self.encoding = None
         if self.cache:
-            for tpl in self.cache: self.cache[tpl].dispose( )
+            for tpl in self.cache: self.cache[tpl].dispose()
         self.cache = None
 
 #
@@ -2125,7 +2110,7 @@ class Contemplate:
     """
 
     # constants (not real constants in Python)
-    VERSION = "1.4.0"
+    VERSION = "1.5.0"
 
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
@@ -2138,7 +2123,7 @@ class Contemplate:
     #
     #
 
-    def init( ):
+    def init():
         global _G
 
         if _G.isInited: return
@@ -2167,7 +2152,7 @@ class Contemplate:
             ,"        # constructor"
             ,"        def __init__(self, id=None):"
             ,"            self_ = self"
-            ,"            super(#CLASSNAME#, self_).__init__( id )"
+            ,"            super(#CLASSNAME#, self).__init__(id)"
             ,"            # extend tpl assign code starts here"
             ,"#EXTENDCODE#"
             ,"            # extend tpl assign code ends here"
@@ -2181,13 +2166,13 @@ class Contemplate:
             ,"            r = ''"
             ,"            if not __i__:"
             ,"                __i__ = self_"
-            ,"                if not self._autonomus: __ctx = Contemplate._set_ctx( self._ctx )"
+            ,"                if not self._autonomus: __ctx = Contemplate._set_ctx(self._ctx)"
             ,"            method = '_blockfn_' + block"
             ,"            if (hasattr(self_, method) and callable(getattr(self_, method))):"
             ,"                r = getattr(self_, method)(data, self_, __i__)"
             ,"            elif self_._extends:"
             ,"                r = self_._extends.block(block, data, __i__)"
-            ,"            if __ctx:  Contemplate._set_ctx( __ctx )"
+            ,"            if __ctx:  Contemplate._set_ctx(__ctx)"
             ,"            return r"
             ,"        # render method"
             ,"        def render(self, data, __i__=None):"
@@ -2196,7 +2181,7 @@ class Contemplate:
             ,"            __p__ = ''"
             ,"            if not __i__:"
             ,"                __i__ = self_"
-            ,"                if not self._autonomus: __ctx = Contemplate._set_ctx( self._ctx )"
+            ,"                if not self._autonomus: __ctx = Contemplate._set_ctx(self._ctx)"
             ,"            if self_._extends:"
             ,"                __p__ = self_._extends.render(data, __i__)"
             ,""
@@ -2205,7 +2190,7 @@ class Contemplate:
             ,"#RENDERCODE#"
             ,"                # tpl main render code ends here"
             ,""
-            ,"            if __ctx:  Contemplate._set_ctx( __ctx )"
+            ,"            if __ctx:  Contemplate._set_ctx(__ctx)"
             ,"            return __p__"
             ,"    return #CLASSNAME#"
             ,"# allow to 'import *'  from this file as a module"
@@ -2260,11 +2245,11 @@ class Contemplate:
              "#RCODE#"              : "RCODE"
         }, False)
 
-        clear_state( )
+        clear_state()
         _G.isInited = True
 
 
-    def _set_ctx( ctx ):
+    def _set_ctx(ctx):
         global _G
         contx = _G.context
         #if isinstance(ctx, Ctx): _G.context = ctx
@@ -2277,165 +2262,128 @@ class Contemplate:
     # Main API methods
     #
 
-    def createCtx( ctx ):
+    def createCtx(ctx):
         global _G
-        if ctx and ('global' != ctx) and (ctx not in _G.ctx): _G.ctx[ctx] = Ctx( ctx )
+        if ctx and ('global' != ctx) and (ctx not in _G.ctx): _G.ctx[ctx] = Ctx(ctx)
 
-    def disposeCtx( ctx ):
+    def disposeCtx(ctx):
         global _G
         if ctx and ('global' != ctx) and (ctx in _G.ctx):
-            _G.ctx[ctx].dispose( )
+            _G.ctx[ctx].dispose()
             del _G.ctx[ctx]
 
-    def setCompatibilityMode( enable=True ):
-        global _G
-        _G.compatibility = bool(enable)
-
-    def setTemplateSeparators( seps=None ):
+    def setTemplateSeparators(seps = None):
         global _G
         if seps:
             if 'left' in seps: _G.leftTplSep = str(seps['left'])
             if 'right' in seps: _G.rightTplSep = str(seps['right'])
 
-    def setPreserveLines( enable=True ):
+    def setPreserveLines(enable = True):
         global _G
         _G.preserveLines = _G.preserveLinesDefault if enable else ''
 
-    def hasPlugin( name, ctx='global' ):
+    def hasPlugin(name, ctx = 'global'):
         global _G
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         return name and ((name in contx.plugins) or (name in _G.glob.plugins))
 
-    def addPlugin( name, pluginCode, ctx='global' ):
+    def addPlugin(name, pluginCode, ctx = 'global'):
         global _G
         if name and pluginCode:
             contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
             contx.plugins[ str(name) ] = pluginCode
 
-    def plg_( plg, *args ):
+    def plg_(plg, *args):
         global _G
-        if plg in _G.context.plugins and callable(_G.context.plugins[ plg ]):
-            return _G.context.plugins[ plg ]( *args )
+        if plg in _G.context.plugins and callable(_G.context.plugins[plg]):
+            return _G.context.plugins[plg](*args)
         elif plg in _G.glob.plugins and callable(_G.glob.plugins[ plg ]):
-            return _G.glob.plugins[ plg ]( *args )
+            return _G.glob.plugins[plg](*args)
         return ''
 
-    def setPrefixCode( preCode=None, ctx='global' ):
+    def setPrefixCode(preCode = None, ctx = 'global'):
         global _G
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         if preCode: contx.prefix = str(preCode)
 
-    def setEncoding( encoding, ctx='global' ):
+    def setEncoding(encoding, ctx = 'global'):
         global _G
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         contx.encoding = encoding
 
-    def setLocales( locales, ctx='global' ):
-        global _G
-        if locales and (callable(locales) or isinstance(locales, dict)):
-            contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
-            contx.locale = locales if callable(locales) else Contemplate.merge(contx.locale, locales)
-
-    def setXLocales( xlocales, ctx='global' ):
-        global _G
-        if xlocales and (callable(xlocales) or isinstance(xlocales, dict)):
-            contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
-            contx.xlocale = xlocales if callable(xlocales) else Contemplate.merge(contx.xlocale, xlocales)
-
-    def setPluralForm( form, ctx='global' ):
-        global _G
-        if form and callable(form):
-            contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
-            contx.pluralForm = form
-
-    def clearLocales( ctx='global' ):
-        global _G
-        contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
-        contx.locale = {}
-
-    def clearXLocales( ctx='global' ):
-        global _G
-        contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
-        contx.xlocale = {}
-
-    def clearPluralForm( ctx='global' ):
-        global _G
-        contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
-        contx.pluralForm = None
-
-    def setCacheDir( dir, ctx='global' ):
+    def setCacheDir(dir, ctx = 'global'):
         global _G
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         _self = Contemplate
         _dir = contx.cacheDir = os.path.abspath(dir)
 
         initPyFile = os.path.join(_dir, '__init__.py')
-        if not os.path.exists( initPyFile ):
+        if not os.path.exists(initPyFile):
             _initPy_ = """\
 # added by Contemplate.py Engine
 # dummy Python __init__.py file
 # used with Contemplate 'import'
 # to import_tpl cached templates as modules, for optimization
 """
-            write_file( initPyFile, _initPy_, contx.encoding )
+            write_file(initPyFile, _initPy_, contx.encoding)
 
         #if _dir not in os.sys.path:
         #    # allow to use 'import' in order to import_tpl cached templates
         #    os.sys.path.append(_dir)
 
 
-    def setCacheMode( mode, ctx='global' ):
+    def setCacheMode(mode, ctx = 'global'):
         global _G
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         contx.cacheMode = mode
 
-    def setTemplateDirs( dirs, ctx='global' ):
+    def setTemplateDirs(dirs, ctx = 'global'):
         global _G
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         contx.templateDirs = [dirs] if isinstance(dirs,str) else dirs
 
-    def getTemplateDirs( ctx='global' ):
+    def getTemplateDirs(ctx = 'global'):
         global _G
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         return contx.templateDirs
 
-    def setTemplateFinder( finder, ctx='global' ):
+    def setTemplateFinder(finder, ctx = 'global'):
         global _G
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         contx.templateFinder = finder if callable(finder) else None
 
-    def clearCache( all=False, ctx='global' ):
+    def clearCache(all = False, ctx = 'global'):
         global _G
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         contx.cache = {}
         if all: contx.partials = {}
 
-    def hasTpl( tpl, ctx='global' ):
+    def hasTpl(tpl, ctx = 'global'):
         global _G
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
         return tpl and ((tpl in contx.templates) or (tpl in _G.glob.templates))
 
-    def add( tpls, ctx='global' ):
+    def add(tpls, ctx = 'global'):
         global _G
         if tpls and isinstance(tpls, dict):
             contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
             for tplID in tpls:
-                if isinstance(tpls[ tplID ], (list, tuple)):
+                if isinstance(tpls[tplID], (list, tuple)):
                     # unified way to add tpls both as reference and inline
                     # inline tpl, passed as array
-                    if len( tpls[ tplID ][ 0 ] ):
-                        contx.templates[ tplID ] = [tpls[ tplID ][ 0 ], True]
+                    if len(tpls[tplID][0]):
+                        contx.templates[tplID] = [tpls[tplID][0], True]
                 else:
-                    contx.templates[ tplID ] = [tpls[ tplID ], False]
+                    contx.templates[tplID] = [tpls[tplID], False]
 
 
-    def getTemplateContents( id, ctx='global' ):
+    def getTemplateContents(id, ctx = 'global'):
         global _G
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
-        return get_template_contents( id, contx )
+        return get_template_contents(id, contx)
 
 
-    def findTpl( tpl, ctx='global' ):
+    def findTpl(tpl, ctx = 'global'):
         global _G
         contx = _G.ctx[ctx] if ctx and (ctx in _G.ctx) else _G.context
 
@@ -2462,7 +2410,7 @@ class Contemplate:
                 return None
         return None
 
-    def parseTpl( tpl, options=dict() ):
+    def parseTpl(tpl, options = dict()):
         global _G
         # see what context this template may use
         contx = None
@@ -2491,14 +2439,14 @@ class Contemplate:
 
         separators = options['separators'] if options and ('separators' in options) else None
         if separators:
-            leftSep = separators[ 0 ]
-            rightSep = separators[ 1 ]
+            leftSep = separators[0]
+            rightSep = separators[1]
 
         _ctx = _G.context
         _G.context = contx
-        reset_state( )
-        parsed = parse( tpl, leftSep, rightSep )
-        clear_state( )
+        reset_state()
+        parsed = parse(tpl, leftSep, rightSep)
+        clear_state()
         _G.context = _ctx
 
         return parsed
@@ -2507,11 +2455,12 @@ class Contemplate:
     # Main Template functions
     #
 
-    def tpl( tpl, data=None, options=None ):
+    def tpl(tpl, data = None, options = None):
         global _G
         if isinstance(tpl, Contemplate.Template):
             tmpl = tpl
         else:
+            if options is None: options = {}
             # see what context this template may use
             contx = None
             if isinstance(options, str):
@@ -2553,51 +2502,129 @@ class Contemplate:
 
                 _ctx = _G.context
                 _G.context = contx
-                contx.cache[ tpl ] = get_cached_template( tpl, contx, options )
+                contx.cache[tpl] = get_cached_template(tpl, contx, options)
                 _G.context = _ctx
 
-            tmpl = contx.cache[ tpl ] if tpl in contx.cache else _G.glob.cache[ tpl ]
-            tmpl.autonomus( options['standalone'] )
+            tmpl = contx.cache[tpl] if tpl in contx.cache else _G.glob.cache[tpl]
+            tmpl.autonomus(options['standalone'])
 
         # Provide some basic currying to the user
-        return str(tmpl.render( data )) if isinstance(data, dict) else tmpl
+        return str(tmpl.render(data)) if isinstance(data, dict) else tmpl
 
-    def inline( tpl, reps=None, compiled=False ):
+    def inline(tpl, reps = None, compiled = False):
         if isinstance(tpl, Contemplate.InlineTemplate): return str(tpl.render( reps ))
-        return Contemplate.InlineTemplate( tpl, reps, compiled )
+        return Contemplate.InlineTemplate(tpl, reps, compiled)
 
-    def is_array( v, strict=False ):
-        return isinstance(v,list) if strict else isinstance(v,(list,dict))
+    def concat(*args):
+        return ''.join(map(str, args))
 
-    def in_array( v, a ):
-        return (v in a)
-
-    def json_encode( v ):
-        return json.dumps( v )
-
-    def json_decode( v ):
-        return json.loads( v )
-
-    def join( sep, args, skip_empty=False ):
+    def join(sep, args, skip_empty = False):
         if args is None: return ''
         skip_empty = skip_empty is True
-        if not isinstance(args,(list,tuple)): return '' if skip_empty and not len(str(args)) else str(args)
+        if not isinstance(args, (list,tuple)): return '' if skip_empty and not len(str(args)) else str(args)
         if sep is None: sep = ''
         if not isinstance(sep,str): sep = str(sep)
         l = len(args)
-        out = (Contemplate.join(sep, args[0], skip_empty) if isinstance(args[0],(list,tuple)) else ('' if skip_empty and (args[0] is None or not len(str(args[0]))) else str(args[0]))) if l > 0 else ''
-        for i in range(1,l):
-            s = Contemplate.join(sep, args[i], skip_empty) if isinstance(args[i],(list,tuple)) else ('' if skip_empty and (args[i] is None or not len(str(args[i]))) else str(args[i]))
+        out = (Contemplate.join(sep, args[0], skip_empty) if isinstance(args[0], (list,tuple)) else ('' if skip_empty and (args[0] is None or not len(str(args[0]))) else str(args[0]))) if l > 0 else ''
+        for i in range(1, l):
+            s = Contemplate.join(sep, args[i], skip_empty) if isinstance(args[i], (list,tuple)) else ('' if skip_empty and (args[i] is None or not len(str(args[i]))) else str(args[i]))
             if (not skip_empty) or len(s) > 0: out += sep + s
         return out
 
-    def buildquery( data ):
-        return http_build_query( data, '&' )
+    def keys(o):
+        return array_keys(o) if isinstance(o, (list,tuple,dict)) else []
 
-    def parsequery( s ):
-        return parse_str( s )
+    def values(o):
+        return array_values(o) if isinstance(o, (list,tuple,dict)) else []
 
-    def queryvar( url, add_keys, remove_keys=None ):
+    def items(o):
+        return enumerate(o) if isinstance(o, (list,tuple)) else (o.items() if isinstance(o, dict) else [])
+
+    def count(a):
+        # http://www.php2python.com/wiki/function.count/
+        return 0 if a is None else len(a)
+
+    def is_array(v, strict = False):
+        return isinstance(v, list) if strict else isinstance(v, (tuple,list,dict))
+
+    def in_array(v, a):
+        return (v in a)
+
+    def is_list(v):
+        return isinstance(v, list)
+
+    def haskey(v, *args):
+        if not v or not isinstance(v, (list,tuple,dict)): return False
+        tmp = v
+        for i in range(len(args)):
+            if isinstance(tmp, (list,tuple)):
+                k = int(args[i])
+                if k < 0 or k >= len(tmp): return False
+                tmp = tmp[k]
+            elif isinstance(tmp, dict):
+                k = str(args[i])
+                if k not in tmp: return False
+                tmp = tmp[k]
+            else:
+                return False
+        return True
+
+    def time():
+        return php_time()
+
+    def date(format, timestamp = None):
+        if timestamp is None: timestamp = php_time()
+        return php_date(format, timestamp)
+
+    def lowercase(s):
+        return str(s).lower()
+
+    def uppercase(s):
+        return str(s).upper()
+
+    def striptags(s):
+        global _G
+        return re.sub(_G.TAG_RE, '', s)
+
+    def e(s, entities = True):
+        f = ''
+        if entities:
+            for c in s:
+                if '&' == c:    f += '&amp;'
+                elif '<' == c:  f += '&lt;'
+                elif '>' == c:  f += '&gt;'
+                elif '"' == c:  f += '&quot;'
+                elif '\'' == c: f += '&apos;'
+                else:           f += c
+        else:
+            for c in s:
+                if '&' == c:    f += '&#38;'
+                elif '<' == c:  f += '&#60;'
+                elif '>' == c:  f += '&#62;'
+                elif '"' == c:  f += '&#34;'
+                elif '\'' == c: f += '&#39;'
+                else:           f += c
+        return f
+
+    def json_encode(v):
+        return json.dumps(v)
+
+    def json_decode(v):
+        return json.loads(v)
+
+    def urlencode(s):
+        return urlencode(s)
+
+    def urldecode(s):
+        return urldecode(s)
+
+    def buildquery(data):
+        return http_build_query(data, '&')
+
+    def parsequery(s):
+        return parse_str(s)
+
+    def queryvar(url, add_keys, remove_keys = None):
         global _G
 
         if remove_keys is not None and not isinstance(remove_keys, list):
@@ -2607,7 +2634,7 @@ class Contemplate:
             # https://davidwalsh.name/php-remove-variable
             keys = remove_keys
             for key in keys:
-                url = re.sub(r'(\?|&)' + re.escape( urlencode( str(key) ) ) + r'(\[[^\[\]]*\])*(=[^&]+)?', '\\1', url)
+                url = re.sub(r'(\?|&)' + re.escape(urlencode(str(key))) + r'(\[[^\[\]]*\])*(=[^&]+)?', '\\1', url)
 
             url = re.sub(_G.AMP_RE, '&', url).replace('?&', '?')
             last = url[-1]
@@ -2619,43 +2646,23 @@ class Contemplate:
             q = '?' if -1 == url.find('?') else '&'
             for key in keys:
                 value = keys[key]
-                key = urlencode( str(key) )
+                key = urlencode(str(key))
                 if isinstance(value, (list,tuple,dict)):
                     if isinstance(value, (list,tuple)):
                         for v in value:
-                            url += q + key + '[]=' + urlencode( str(v) )
+                            url += q + key + '[]=' + urlencode(str(v))
                             q = '&'
                     else:
                         for k in value:
-                            url += q + key + '[' + urlencode( k ) + ']=' + urlencode( str(value[k]) )
+                            url += q + key + '[' + urlencode(k) + ']=' + urlencode(str(value[k]))
                             q = '&'
                 else:
-                    url += q + key + '=' + urlencode( str(value) )
+                    url += q + key + '=' + urlencode(str(value))
                 q = '&'
 
         return url
 
-    def striptags( s ):
-        global _G
-        return re.sub(_G.TAG_RE, '', s)
-
-    def haskey( v, *args ):
-        if not v or not isinstance(v, (list,dict)): return False
-        tmp = v
-        for i in range(len(args)):
-            if isinstance(tmp,(list,tuple)):
-                k = int(args[i])
-                if k < 0 or k >= len(tmp): return False
-                tmp = tmp[k]
-            elif isinstance(tmp,dict):
-                k = str(args[i])
-                if k not in tmp: return False
-                tmp = tmp[k]
-            else:
-                return False
-        return True
-
-    def get( v, keys, default_value=None ):
+    def get(v, keys, default_value = None):
         if not Contemplate.is_array(keys, True): keys = [keys]
         o = v
         found = 1
@@ -2681,184 +2688,48 @@ class Contemplate:
                 else:
                     keyGetter = 'get' + key[0].upper() + key[1:]
                     if hasattr(o, keyGetter) and callable(getattr(o, keyGetter)):
-                        o = getattr(o, keyGetter)( )
+                        o = getattr(o, keyGetter)()
                     else:
                         found = 0
                         break
-        
+
         return o if found else default_value
-    
-    def empty( v ):
-        # exactly like php's function
-        #return bool(v) or (isinstance(v, (tuple,list,str,dict)) and 0 == len(v))
-        return (isinstance(v, str) and "0" == v) or not bool(v)
 
-    #def iif( cond_, then_, else_=None ):
-    #    return then_ if cond_ else else_
-
-    def e( s, entities=True ):
-        f = ''
-        if entities:
-            for c in s:
-                if '&' == c:    f += '&amp;'
-                elif '<' == c:  f += '&lt;'
-                elif '>' == c:  f += '&gt;'
-                elif '"' == c:  f += '&quot;'
-                elif '\'' == c: f += '&apos;'
-                else:           f += c
-        else:
-            for c in s:
-                if '&' == c:    f += '&#38;'
-                elif '<' == c:  f += '&#60;'
-                elif '>' == c:  f += '&#62;'
-                elif '"' == c:  f += '&#34;'
-                elif '\'' == c: f += '&#39;'
-                else:           f += c
-        return f
-
-    def url( s ):
-        return urlencode(s)
-
-    def trim( s, charlist=None ):
-        return s.strip(charlist) if charlist else s.strip()
-
-    def ltrim( s, charlist=None ):
-        return s.lstrip(charlist) if charlist else s.lstrip()
-
-    def rtrim( s, charlist=None ):
-        return s.rstrip(charlist) if charlist else s.rstrip()
-
-    def ucfirst( s ):
-        return s[0].upper() + s[1:]#.lower()
-
-    def lcfirst( s ):
-        return s[0].lower() + s[1:]#.upper()
-
-    def camelcase( s, sep="_", capitalizeFirst=False ):
-        _self = Contemplate
-        sep = str(sep)
-        if capitalizeFirst:
-            return "".join( map( _self.ucfirst, str(s).split( sep ) ) )
-        else:
-            return _self.lcfirst( "".join( map( _self.ucfirst, str(s).split( sep ) ) ) )
-
-    def snakecase( s, sep="_" ):
-        sep = str(sep)
-        return re.sub( r'([A-Z])', lambda m: sep + m.group(1), str(s) ).lower()
-
-    def addslashes( s ):
-        # http://www.php2python.com/wiki/function.addslashes/
-        l = ["\\", '"', "'", "\0"]
-        s = str(s)
-        f = ''
-        for c in s: f += '\\'+c if c in l else c
-        return f
-
-    def stripslashes( s ):
-        # http://www.php2python.com/wiki/function.stripslashes/
-        return stripslashes(s)
-
-    def concat( *args ):
-        return ''.join(args)
-
-    sprintf = sprintf
-    vsprintf = vsprintf
-
-    #
-    #  Localization functions
-    #
-
-    def time( ):
-        return php_time( )
-
-    def date( format, timestamp=None ):
-        if timestamp is None: timestamp = php_time( )
-        return php_date( format, timestamp )
-
-    def ldate( format, timestamp=None ):
-        if timestamp is None: timestamp = php_time( )
-        return localized_date( format, timestamp )
-
-    def locale( s, args=None ):
-        global _G
-        locale = _G.context.locale if callable(_G.context.locale) or (s in _G.context.locale) else (_G.glob.locale if callable(_G.glob.locale) or (s in _G.glob.locale) else None)
-        if locale and callable(locale):
-            #args = [s]+args
-            ls = locale(s, args)
-        else:
-            ls = s if locale is None else locale[s]
-            if args: ls = vsprintf(ls, args)
-        return ls
-
-    def xlocale( s, args=None, l_ctx=None ):
-        global _G
-        xlocale = _G.context.xlocale if callable(_G.context.xlocale) or (l_ctx and (l_ctx in _G.context.xlocale) and (s in _G.context.xlocale[l_ctx])) else (_G.glob.xlocale if callable(_G.glob.xlocale) or (l_ctx and (l_ctx in _G.glob.xlocale) and (s in _G.glob.xlocale[l_ctx])) else None)
-        if xlocale and callable(xlocale):
-            #args = [s, l_ctx]+args
-            ls = xlocale(s, args, l_ctx)
-        else:
-            ls = s if xlocale is None else xlocale[l_ctx][s]
-            if args: ls = vsprintf(ls, args)
-        return ls
-
-    def nlocale( n, singular, plural, args=None ):
-        global _G
-        form = _G.context.pluralForm if callable(_G.context.pluralForm) else (_G.glob.pluralForm if callable(_G.glob.pluralForm) else None)
-        isSingular = form(n) if form and callable(form) else (1 == n)
-        return Contemplate.locale(singular if isSingular else plural, args)
-
-    def nxlocale( n, singular, plural, args=None, l_ctx=None ):
-        global _G
-        form = _G.context.pluralForm if callable(_G.context.pluralForm) else (_G.glob.pluralForm if callable(_G.glob.pluralForm) else None)
-        isSingular = form(n) if form and callable(form) else (1 == n)
-        return Contemplate.xlocale(singular if isSingular else plural, args, l_ctx)
-
-    def uuid( namespace='UUID' ):
+    def uuid(namespace = 'UUID'):
         global _G
         _G.uuid += 1
-        return '_'.join( [ str(namespace), str(_G.uuid), str(php_time()) ] )
+        return '_'.join([str(namespace), str(_G.uuid), str(php_time())])
 
-    def count( a ):
-        # http://www.php2python.com/wiki/function.count/
-        return 0 if a is None else len(a)
-
-    def keys( o ):
-        return array_keys(o) if o else None
-
-    def values( o ):
-        return array_values(o) if o else None
-
-    def items( o ):
-        if o: return enumerate(o) if isinstance(o,(list, tuple)) else o.items()
-        return None
-
-    def merge( m, *args ):
+    def merge(m, *args):
         numargs = len(args)
         if numargs < 1: return m
 
         merged = m
         for arg in args:
             # http://www.php2python.com/wiki/function.array-merge/
-            merged = ODict(merged)
+            merged = dict(merged)
             merged.update(arg)
         return merged
 
-    def data( data ):
-        if isinstance(data, list):
-            # clone the data
-            return data[:]
-        else:
-            # clone the dict
-            cdata = ODict()
-            for key in data.keys(): cdata[key] = data[key]
-            return cdata
-
     local_variable = local_variable
+
     is_local_variable = is_local_variable
 
+    # extra for py version
+    def empty(v):
+        # exactly like php's function
+        return (isinstance(v, str) and "0" == v) or not bool(v)
+    def trim(s, charlist = None):
+        return s.strip(charlist) if charlist else s.strip()
+    def ltrim(s, charlist = None):
+        return s.lstrip(charlist) if charlist else s.lstrip()
+    def rtrim(s, charlist = None):
+        return s.rstrip(charlist) if charlist else s.rstrip()
+    sprintf = sprintf
+    vsprintf = vsprintf
 
 # init the engine on load
-Contemplate.init( )
+Contemplate.init()
 
 # if used with 'import *'
 __all__ = ['Contemplate']

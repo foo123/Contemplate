@@ -1,6 +1,6 @@
 ### Contemplate Manual
 
-**version 1.4.0; platforms: PHP, Python, Node.js, Browser, XPCOM Javascript**
+**version 1.5.0; platforms: PHP, Python, JavaScript (Node.js, Browser, XPCOM)**
 
 
 ### Contents
@@ -20,7 +20,7 @@
 #### Template Separators
 
 **IMPORTANT** As of version `0.6+`, template separators for `Contemplate` templates are defined **inside** the template itself
-in the first non-empty line, separated by a space (see examples and tests). Optionally (for a single template) they can also be passed as **part of parse options** when calling the `Contemplate.tpl( tplID [, data, {separators: seps}] )` method
+in the first non-empty line, separated by a space (see examples and tests). Optionally (for a single template) they can also be passed as **part of parse options** when calling the `Contemplate.tpl(tplID [, data, {separators: seps}])` method
 
 
 
@@ -35,7 +35,7 @@ example:
 ```php
 
 // single variable
-$x, $v, $foo, $bar 
+$x, $v, $foo, $bar
 // etc..
 
 // numeric/associative array access notation, equivalent notations
@@ -94,14 +94,14 @@ example:
 ```javascript
 
 // eg. a literal object having various string values, numeric values and arrays:
-{ 
-    "stringVar"     : "stringValue", 
-    "numericVar"    : 123, 
-    "variableVar"    : $foo123, 
+{
+    "stringVar"     : "stringValue",
+    "numericVar"    : 123,
+    "variableVar"    : $foo123,
     "arrayVar"      : [
-        0, 1, "astring", 3, 
-        { "prop": 1 } 
-    ] 
+        0, 1, "astring", 3,
+        { "prop": 1 }
+    ]
 } // etc
 
 ```
@@ -115,7 +115,7 @@ This means that the super-template (id) is hardcoded inside the cached template 
 Right now there are 2 ways to have dynamic template extension according to a condition based on input data.
 
 
-**1st** is to assign the super-template **id** (i.e as used in `extends(id)` ) to another template. 
+**1st** is to assign the super-template **id** (i.e as used in `extends(id)` ) to another template.
 In this way the template id used in *extends directive* will refer to a different template.
 This will change the referenced super-template for all other templates that extend the same super-template as well.
 
@@ -124,21 +124,21 @@ This will change the referenced super-template for all other templates that exte
 
 ```javascript
 // fetch/parse the template
-tpl = Contemplate.tpl( tplID );
+tpl = Contemplate.tpl(tplID);
 
 // tpl may already have a super-template assigned, but one can change this
-if ( 'json' == data.view )  tpl.extend( newSuperTemplateID );
+if ('json' == data.view)  tpl.extend(newSuperTemplateID);
 
-tpl.render( data );
+tpl.render(data);
 
 ```
 
 #### Dynamic Contexts
 
-The engine can use **multiple dynanic contexts** to have contextual settings, like `templates`, `locales`, `caching`, `plugins` so that different modules of an application can **use the engine independantly**.
+The engine can use **multiple dynanic contexts** to have contextual settings, like `templates`, `caching`, `plugins` so that different modules of an application can **use the engine independantly**.
 
-A dynamic context is created with `Contemplate.createCtx( 'my-context' );`
-A dynamic context is disposed with `Contemplate.disposeCtx( 'my-context' );`
+A dynamic context is created with `Contemplate.createCtx('my-context');`
+A dynamic context is disposed with `Contemplate.disposeCtx('my-context');`
 
 If a context already exists, it is not re-created in `createCtx` method. If a context does not already exist, `disposeCtx` method does nothing.
 
@@ -151,89 +151,131 @@ TEMPLATE operations take place in the `current` context (which defaults to `glob
 
 #### Template Directives
 
-**IMPORTANT** As of version `1.0.0+`, template `directives`, `functions` and `plugins` **no longer use** the `%` prefix i.e `%for`, `%if`, .. but `for`, `if`, .. If compatibility to older format is needed use `Contemplate.setCompatibilityMode( true )`
+**IMPORTANT** As of version `1.0.0+`, template `directives`, `functions` and `plugins` **no longer use** the `%` prefix i.e `%for`, `%if`, .. but `for`, `if`, ..
 
 
-* `set( $var, expression_or_value )`  SET / UPDATE a tpl variable `$var` to given value or expression
-* `local_set( $var, expression_or_value )`  SET / UPDATE a **local** tpl variable `$var` to given value or expression
-* `get( $var, keys [, default_value=null] )`  GET arbirtary (nested) variable property (given in `keys` array) based on arbitrary expressions, else return `default_value` if not found
-* `unset( $var )`  UNSET / DELETE tpl variable `$var`
-* `isset( $var )`  CHECK whether a tpl variable `$var` is set
-* `iif( cond, then_value, else_value )`   inline (ternary) `IF` construct
-* `empty( val )`   php-like `empty` construct
-* `if( expression_or_value )`  IF construct
-* `elseif( expression_or_value )` / `elif( expression_or_value )`  ELSEIF construct
+* `set($var, expression_or_value)`  SET / UPDATE a tpl variable `$var` to given value or expression
+* `local_set($var, expression_or_value)`  SET / UPDATE a **local** tpl variable `$var` to given value or expression
+* `get($var, keys [, default_value=null])`  GET arbirtary (nested) variable property (given in `keys` array) based on arbitrary expressions, else return `default_value` if not found
+* `unset($var)`  UNSET / DELETE tpl variable `$var`
+* `isset($var)`  CHECK whether a tpl variable `$var` is set
+* `iif(cond, then_value, else_value)`   inline (ternary) `IF` construct
+* `empty(val)`   php-like `empty` construct
+* `if(expression_or_value)`  IF construct
+* `elseif(expression_or_value)` / `elif(expression_or_value)`  ELSEIF construct
 * `else`  ELSE construct
 * `endif` / `fi` ENDIF construct, end the IF construct
-* `for( expression_or_obj as $key=>$val )`  associative FOR loop (`php`-style)
-* `for( expression_or_obj as $val )`  non-associative FOR loop (`php`-style)
-* `for( $key,$val in expression_or_obj )`  associative FOR loop (`python`-style)
-* `for( $val in expression_or_obj )`  non-associative FOR loop (`python`-style)
+* `for(expression_or_obj as $key => $val)`  associative FOR loop (`php`-style)
+* `for(expression_or_obj as $val)`  non-associative FOR loop (`php`-style)
+* `for($key, $val in expression_or_obj)`  associative FOR loop (`python`-style)
+* `for($val in expression_or_obj)`  non-associative FOR loop (`python`-style)
 * `elsefor`   ELSEFOR, alternative code block when loop is empty
 * `endfor`  ENDFOR , end the FOR loop construct
 * `continue`  CONTINUE , continue the FOR loop construct
 * `break`  BREAK , break from the FOR loop construct
-* `extends( base_tpl_id_string )`  Current template extends the template referenced by `base_tpl_id_string` , this means that `base_tpl` layout will be used and any blocks will be overriden as defined
-* `block( block_id_string, echoed=true )`  Define / Override `block` of code identified by `block_id`
+* `extends(base_tpl_id_string)`  Current template extends the template referenced by `base_tpl_id_string` , this means that `base_tpl` layout will be used and any blocks will be overriden as defined
+* `block(block_id_string, echoed=true)`  Define / Override `block` of code identified by `block_id`
 * `endblock`  End of `block` definition / override
-* `super( block_id_string )`  Reference a super `block` directly if needed in OO manner (mostly useful inside `block` definitions overriden by current template)
-* `getblock( block_id_string )`  Get `block` output directly via function call (can be useful when `block` content is needed as a parameter)
-* `include( tpl_id_string )`  INCLUDE (inline) the template referenced by `tpl_id`
+* `super(block_id_string)`  Reference a super `block` directly if needed in OO manner (mostly useful inside `block` definitions overriden by current template)
+* `getblock(block_id_string)`  Get `block` output directly via function call (can be useful when `block` content is needed as a parameter)
+* `include(tpl_id_string)`  INCLUDE (inline) the template referenced by `tpl_id`
 
+As of version **1.5.0**, literal **PHP** or **JS** or **PY** code can be included in template.
+Assuming template separators as `<%`, `%>` one can include programming code directly in the template, which will include it only if the language is the language of the engine (ie php will include only php code, js only js code ad py ony py code, rest will simply be ignored).
 
+Example:
+
+```text
+<% for ($v in $list) %>
+<% $v %> <%php:= "php" %><%js:= "js" %><%py:= "py" %>
+<% endfor %>
+```
+
+The above will output in PHP (assuming `list = ['a', 'b', 'c']`):
+```text
+a php b php c php
+```
+The above will output in JS (assuming `list = ['a', 'b', 'c']`):
+```text
+a js b js c js
+```
+The above will output in PY (assuming `list = ['a', 'b', 'c']`):
+```text
+a py b py c py
+```
+
+One can include block code as well (leaving out the `=` mark)
+```text
+<%php:postdent(1):
+foreach ($data['list'] as $v)
+{
+%>
+<%js:postdent(1):
+for (var i=0; i<data['list'].length; ++i)
+{
+    var v = data['list'][i];
+%>
+<%py:postdent(1):
+for v in data['list']:
+%>
+
+<%php:= $v . " php" %><%js:= v + " js" %><%py:= v + " py" %>
+
+<%php:predent(-1):
+}
+%>
+<%js:predent(-1):
+}
+%>
+<%py:predent(-1):
+
+%>
+```
+
+The above will output exactly the same as previous example in each engine (assuming `list = ['a', 'b', 'c']`).
+
+`:predent()/:postdent()` option specifies the indentation of the block of code (before/after) in the compiled output. It is optional for PHP/JS (only for visual purposes) but mandatory for Python since Python depends on valid indentation.
 
 #### Template Functions and Plugins
 
 **IMPORTANT** As of version `1.0.0+`, template `directives`, `functions` and `plugins` **no longer use** the `%` prefix i.e `%for`, `%if`, .. but `for`, `if`, .. If compatibility to older format is needed use `Contemplate.setCompatibilityMode( true )`
 
 
-* `n( val )`   convert `val` to integer
-* `s( val )`   convert `val` to string
-* `f( val )`   convert `val` to float
-* `q( val )`   wrap `val` in single-quotes
-* `qq( val )` / `dq( val )`  wrap `val` in double-quotes
-* `is_array( val [, strict=false] )`  (`php`-like) function test whether `val` is `array` (`strict`) or `object`
-* `in_array( val, array )`  (`php`-like) function test whether `val` is contained in `array`
-* `keys( obj )`  (`php`-like) for `array_keys`
-* `values( obj )`  (`php`-like) for `array_values`
-* `json_encode( val )`  (`php`-like) function to json-encode `val`
-* `json_decode( val )`  (`php`-like) function to json-decode `val`
-* `addslashes( str )`  addslashes (`php`-like) function
-* `stripslashes( str )`  stripslashes (`php`-like) function
-* `sprintf( format, val1, val2, .. )`   return a formatted string using `val1`, `val2`, etc.. as arguments
-* `vsprintf( format, values )`   return a formatted string using `values` array as arguments
-* `concat( val1, val2, val3, .. )` / `cc( val1, val2, val3, .. )`  string concatenate the values
-* `join( sep, [val2, val3, ..], skip_empty=false )` / `j( sep, [val2, val3, ..], skip_empty=false )` (flatly) string-concatenate with `sep` separator the passed array (of arrays)
-* `ltrim( val [, delim] )`   left trim `val` of delim (default to spaces)
-* `rtrim( val [, delim] )`   right trim `val` of delim (default to spaces)
-* `trim( val [, delim] )`   left/right trim `val` of delim (default to spaces)
-* `lowercase( val )`   convert `val` to `lowercase`
-* `uppercase( val )`   convert `val` to `UPPERCASE`
-* `lcfirst( val )`   convert first letter to `lOWERCASE` (`php`-like function)
-* `ucfirst( val )`   convert first letter to `Uppercase` (`php`-like function)
-* `camelcase( val [,sep="_" , capitalizeFirst=false] )`   convert `val` to `camelCase`, based on `sep` separator
-* `snakecase( val [,sep="_"] )`   convert `val` to `snake_case`, based on `sep` separator
-* `count( array_or_object )`  return number of items in `array_or_object` argument
+* `n(val)`   convert `val` to integer
+* `s(val)`   convert `val` to string
+* `f(val)`   convert `val` to float
+* `q(val)`   wrap `val` in single-quotes
+* `qq(val)` / `dq(val)`  wrap `val` in double-quotes
+* `concat(val1, val2, val3, ..)` / `cc(val1, val2, val3, ..)` concatenate the values as strings
+* `join(sep, [val2, val3, ..], skip_empty=false)` / `j(sep, [val2, val3, ..], skip_empty=false)` (flatly) string-concatenate with `sep` separator the passed array (of arrays)
+* `is_array(val [, strict=false])`  (`php`-like) function test whether `val` is `array` (`strict`) or `object`
+* `in_array(val, array)`  (`php`-like) function test whether `val` is contained in `array`
+* `keys(obj)`  (`php`-like) for `array_keys`
+* `values(obj)`  (`php`-like) for `array_values`
+* `count(array_or_object)`  return number of items in `array_or_object` argument
 * `haskey( array_or_object, key1 [,key2, ..] )`  check whether `array_or_object` argument has the given (nested) keys
-* `uuid( namespace )`  generate a `uuid` (universal unique identifier), with optional given namespace
 * `time()` / `now()`   return current timestamp in seconds (`php`-like function)
-* `date( format [, timestamp=now] )`  return timestamp formatted according to format
-* `ldate( format [, timestamp=now] )`  return localised timestamp formatted according to format, localised strings are user-defined
-* `locale( val )` / `l( val )`  return localised string for `val`, if exists (localised strings are user-defined)
-* `xlocale( val, ling_ctx )` / `xl( val, ling_ctx )`  return localised string for `val`, for linguistic context `ling_ctx` if exists (localised strings are user-defined)
-* `nlocale( n, singular, plural )` / `nl( n, singular, plural )`  return localised string for `singular` or `plural`, if exists (localised strings are user-defined) based on numeric parameter `n`
-* `nxlocale( n, singular, plural, ling_ctx )` / `nxl( n, singular, plural, ling_ctx )`  return localised string for `singular` or `plural`, for linguistic context `ling_ctx`, if exists (localised strings are user-defined) based on numeric parameter `n`
-* `inline( tpl, [reps|data] )`  create or render an `inline` template referenced in 'tpl'
-* `tpl( tpl_id_string, {"var1" : val1, "var2" : val2, ..} )` / `template( tpl_id_string, {"var1" : val1, "var2" : val2, ..} )`  CALL a subtemplate referenced by 'tpl_id', passing the necessary data
-* `e( val )`   custom fast html escape
-* `url( val )`  url-encode val (`urlencode`)
-* `buildquery( data )`  `php`-like function `http_build_query` to make a query string from structured data
-* `parsequery( str )`  `php`-like function `parse_str` to parse a query string to structured data
-* `queryvar( url, add_keys, remove_keys=null )`  add/remove `url query` keys, given in `add_keys` and `remove_keys` respectively, from given `url`
-* `striptags( string )`  strip `html tags` from string
-* `pluginName( [val1, val2, ..] )`  call a custom (user-defined) `plugin` as a template function (see examples)
-
-
+* `date(format [, timestamp=now])`  return timestamp formatted according to format
+* `striptags(string)`  strip `html tags` from string
+* `e(val)`   custom fast html escape
+* `json_encode(val)`  (`php`-like) function to json-encode `val`
+* `json_decode(val)`  (`php`-like) function to json-decode `val`
+* `urlencode(str)`  urlencode (`php`-like) function
+* `urldecode(str)`  urldecode (`php`-like) function
+* `buildquery(data)`  `php`-like function `http_build_query` to make a query string from structured data
+* `parsequery(str)`  `php`-like function `parse_str` to parse a query string to structured data
+* `queryvar(url, add_keys, remove_keys=null)`  add/remove `url query` keys, given in `add_keys` and `remove_keys` respectively, from given `url`
+* `lowercase(val)`   convert `val` to `lowercase`
+* `uppercase(val)`   convert `val` to `UPPERCASE`
+* `ltrim(val [, delim])`   left trim `val` of delim (default to spaces)
+* `rtrim(val [, delim])`   right trim `val` of delim (default to spaces)
+* `trim(val [, delim])`   left/right trim `val` of delim (default to spaces)
+* `sprintf(format, val1, val2, ..)`   return a formatted string using `val1`, `val2`, etc.. as arguments
+* `vsprintf(format, values)`   return a formatted string using `values` array as arguments
+* `uuid(namespace)`  generate a `uuid` (universal unique identifier), with optional given namespace
+* `inline(tpl, [reps|data])`  create or render an `inline` template referenced in 'tpl'
+* `tpl(tpl_id_string, {"var1" : val1, "var2" : val2, ..})` / `template(tpl_id_string, {"var1" : val1, "var2" : val2, ..})`  CALL a subtemplate referenced by 'tpl_id', passing the necessary data
+* `pluginName([val1, val2, ..])`  call a custom (user-defined) `plugin` as a template function (see examples)
 
 
 #### Differences between `include` and `template`
@@ -244,11 +286,11 @@ On the contrary `tpl` directive will call and parse a subtemplate on its own (so
 
 When the templates are already cached, the relative performance of these directives is similar. `include` tends to be slightly faster since it generates only a single template, while `template` will generate all needed templates. However if a subtemplate has been changed and is embedded in another template using `include` , the calling template will __NOT__ be refreshed. While if `template` is used, the calling template __WILL__ be refreshed (since the subtemplate is called as a subroutine and not copied literally inside the calling template)
 
-The syntax for `include` is this:  `include( subtemplateId )`
+The syntax for `include` is this:  `include(subtemplateId)`
 
-The syntax for `tpl` / `template` is this: `tpl( subtemplateId, {"var1":$value1, "var2":$value2, ..} )` 
+The syntax for `tpl` / `template` is this: `tpl(subtemplateId, {"var1":$value1, "var2":$value2, ..})`
 
-where the `{"var1":$value1, "var2":$value2, ..}` are the data to be passed to the called template 
+where the `{"var1":$value1, "var2":$value2, ..}` are the data to be passed to the called template
 this is exactly how the `Contemplate.tpl(id, data)` method is called.
 
 
@@ -257,14 +299,11 @@ this is exactly how the `Contemplate.tpl(id, data)` method is called.
 **(javascript)**
 ```javascript
 
-// set compatibility mode to older template directives format with `%` prefix
-Cntemplate.setCompatibilityMode( true );
-
 // create a custom dynamic context for modular use
-Contemplate.createCtx( 'my-context' );
+Contemplate.createCtx('my-context');
 
 // dispose a custom dynamic context (created earlier)
-Contemplate.disposeCtx( 'my-context' );
+Contemplate.disposeCtx('my-context');
 
 // Add templates
 Contemplate.add({
@@ -285,38 +324,18 @@ Contemplate.setTemplateDirs(templateDirs [, ctx="global"]);
 // get the array of possible paths where contemplate may find templates per context (if set, else empty array)
 Contemplate.getTemplateDirs([ctx="global"]);
 
-// add localisation
-Contemplate.setLocales({
-    "locale": "γλωσσική περιοχή"
-} [, ctx="global"]);
-
-// you can also set a custom translator function with signature: function(string, array_args=null)
-// `array_args` are optional and are formatting arguments in the style of `sprintf` 
-// if string to be translated can be formatted via `sprintf` with the arguments given (done automaticaly)
-Contemplate.setLocales(func [, ctx="global"]);
-
-Contemplate.clearLocales([ctx="global"]);
-
-// set custom plural form (ie singular/plural selection) based on numeric value given for current locale
-// default is singular => (1 == n)
-Contemplate.setPluralForm(function(n){
-    return 0==n || 1==n;
-} [, ctx="global"]);
-
-Contemplate.clearPluralForm([ctx="global"]);
-
 // add plugins
-Contemplate.addPlugin('print', function(v){
+Contemplate.addPlugin('print', function(v) {
     return '<pre>' + JSON.stringify(v, null, 4) + '</pre>';
 } [, ctx="global"]);
 
 // set cache directory for Node, make sure it exists
-Contemplate.setCacheDir( fs.realpathSync(path.join(__dirname, '/_tplcache')) [, ctx="global"] );
+Contemplate.setCacheDir(path.join(__dirname, '/_tplcache') [, ctx="global"]);
 
 
 // set caching mode for Node
 // Contemplate.CACHE_TO_DISK_AUTOUPDATE, Contemplate.CACHE_TO_DISK_NOUPDATE, Contemplate.CACHE_TO_DISK_NONE
-Contemplate.setCacheMode( Contemplate.CACHE_TO_DISK_AUTOUPDATE [, ctx="global"] );
+Contemplate.setCacheMode(Contemplate.CACHE_TO_DISK_AUTOUPDATE [, ctx="global"]);
 
 
 // get a template by id, load it and cache it if needed
@@ -325,7 +344,7 @@ var tpl = Contemplate.tpl('tpl_id' [, null, options={}]);
 // render template
 tpl.render(data);
 
-// render a template by id, load it and cache it if needed (sync operation all engines)
+// render a template by id, using data, load it and cache it if needed (sync operation all engines)
 Contemplate.tpl('tpl_id', data [, options]);
 
 // Javascript-only: get or render a template by id async (promise-based), load it and cache it if needed

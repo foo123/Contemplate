@@ -1,0 +1,361 @@
+<% %>
+<!-- extends/inherits the base template -->
+<% extends("base") %>
+
+
+<% block("Block12") %>Demo template nested Block12<% endblock %>
+
+<% block("Block2") %>
+
+    <strong>Block2 is overriden by the demo template</strong>
+
+    <br /><br />
+
+    <strong>Can reference the super Block2 directly if needed in OO manner</strong>
+    <br /><br />
+
+    <!-- call the super block here in OO manner, if any -->
+    <% super("Block2") %>
+
+    <br /><br />
+
+    <strong>Contemplate Constructs</strong><hr /><br />
+
+    <strong>FOR Loop Break and Continue</strong><br />
+    <pre>
+    &lt;% for(["a", "b", "c"] as $value) %&gt;
+        &lt;% if("b" == $value ) %&gt;Break from loop&lt;% break %&gt;&lt;% fi %&gt;
+        &lt;% $value %&gt;
+    &lt;% endfor %&gt;
+    </pre><br />
+    <pre>
+    &lt;% for(["a", "b", "c"] as $value) %&gt;
+        &lt;% if("b" == $value ) %&gt;Continue loop&lt;% continue %&gt;&lt;% fi %&gt;
+        &lt;% $value %&gt;
+    &lt;% endfor %&gt;
+    </pre><br />
+    <% for(["a", "b", "c"] as $value) %>
+        <% if("b" == $value ) %>Break from loop<% break %><% fi %>
+        <% $value %>
+    <% endfor %>
+    <br />
+    <% for(["a", "b", "c"] as $value) %>
+        <% if("b" == $value ) %>Continue loop<% continue %><% fi %>
+        <% $value %>
+    <% endfor %>
+
+    <br /><br />
+
+    <strong>FOR Loop Associative (php-style, literal array data)</strong><br />
+    <pre>
+    &lt;% for(["a", "b", "c"] as $index=>$value) %&gt;
+        [&lt;% $index %&gt;] = &lt;strong&gt;&lt;% $value %&gt;&lt;/strong&gt;&lt;br /&gt;
+    &lt;% endfor %&gt;
+    </pre><br />
+    <% for(["a", "b", "c"] as $index=>$value) %>
+        [<% $index %>] = <strong><% $value %></strong><br />
+    <% endfor %>
+
+    <br /><br />
+
+    <strong>FOR Loop Non-Associative (php-style, literal array data)</strong><br />
+    <pre>
+    &lt;% for(["a", "b", "c"] as $value2) %&gt;
+        &lt;strong&gt;&lt;% $value2 %&gt;&lt;/strong&gt;&lt;br /&gt;
+    &lt;% endfor %&gt;
+    </pre><br />
+    <% for(["a", "b", "c"] as $value2) %>
+        <strong><% $value2 %></strong><br />
+    <% endfor %>
+
+    <br /><br />
+
+    <strong>FOR Loop Associative (php-style, literal object data)</strong><br />
+    <pre>
+    &lt;% for({"k1":"a", "k2":"b", "k3":"c"} as $index3=>$value3) %&gt;
+        [&lt;% $index3 %&gt;] = &lt;strong&gt;&lt;% $value3 %&gt;&lt;/strong&gt;&lt;br /&gt;
+    &lt;% endfor %&gt;
+    </pre><br />
+    <% for({"k1":"a", "k2":"b", "k3":"c"} as $index3=>$value3) %>
+        [<% $index3 %>] = <strong><% $value3 %></strong><br />
+    <% endfor %>
+
+    <br /><br />
+
+    <strong>FOR Loop Non-Associative (php-style, literal object data)</strong><br />
+    <pre>
+    &lt;% for({"k1":"a", "k2":"b", "k3":"c"} as $value4) %&gt;
+        &lt;strong&gt;&lt;% $value4 %&gt;&lt;/strong&gt;&lt;br /&gt;
+    &lt;% endfor %&gt;
+    </pre><br />
+    <% for({"k1":"a", "k2":"b", "k3":"c"} as $value4) %>
+        <strong><% $value4 %></strong><br />
+    <% endfor %>
+
+    <br /><br />
+
+    <strong>FOR Loop Associative (python-style, literal array data)</strong><br />
+    <pre>
+    &lt;% for($index4,$value4 in ["a", "b", "c"]) %&gt;
+        [&lt;% $index4 %&gt;] = &lt;strong&gt;&lt;% $value4 %&gt;&lt;/strong&gt;&lt;br /&gt;
+    &lt;% endfor %&gt;
+    </pre><br />
+    <% for($index4,$value4 in ["a", "b", "c"]) %>
+        [<% $index4 %>] = <strong><% $value4 %></strong><br />
+    <% endfor %>
+
+    <br /><br />
+
+    <strong>FOR Loop Non-Associative (python-style, literal array data)</strong><br />
+    <pre>
+    &lt;% for($value5 in ["a", "b", "c"]) %&gt;
+        &lt;strong&gt;&lt;% $value5 %&gt;&lt;/strong&gt;&lt;br /&gt;
+    &lt;% endfor %&gt;
+    </pre><br />
+    <% for($value5 in ["a", "b", "c"]) %>
+        <strong><% $value5 %></strong><br />
+    <% endfor %>
+
+    <br /><br />
+
+    <strong>FOR Loop Associative (python-style, literal object data)</strong><br />
+    <pre>
+    &lt;% for($index6,$value7 in {"k1":"a", "k2":"b", "k3":"c"}) %&gt;
+        [&lt;% $index6 %&gt;] = &lt;strong&gt;&lt;% $value7 %&gt;&lt;/strong&gt;&lt;br /&gt;
+    &lt;% endfor %&gt;
+    </pre><br />
+    <% for($index6,$value7 in {"k1":"a", "k2":"b", "k3":"c"}) %>
+        [<% $index6 %>] = <strong><% $value7 %></strong><br />
+    <% endfor %>
+
+    <br /><br />
+
+    <strong>FOR Loop Non-Associative (python-style, literal object data)</strong><br />
+    <pre>
+    &lt;% for($value8 in {"k1":"a", "k2":"b", "k3":"c"}) %&gt;
+        &lt;strong&gt;&lt;% $value8 %&gt;&lt;/strong&gt;&lt;br /&gt;
+    &lt;% endfor %&gt;
+    </pre><br />
+    <% for($value8 in {"k1":"a", "k2":"b", "k3":"c"}) %>
+        <strong><% $value8 %></strong><br />
+    <% endfor %>
+
+    <br /><br />
+
+    <strong>IF - ELSEIF - ELSE - ENDIF</strong><br />
+    <pre>
+    &lt;% if( 1+1 != 2 ) %&gt;
+        1+1 != 2
+    &lt;% elif( 1+1 == 1) %&gt;
+        1+1 = 1
+    &lt;% else %&gt;
+        1+1 = 2
+    &lt;% fi %&gt;
+    </pre><br />
+    <% if( 1+1 != 2 ) %>
+        1+1 != 2
+    <% elif( 1+1 == 1) %>
+        1+1 = 1
+    <% else %>
+        1+1 = 2
+    <% fi %>
+
+    <br /><br />
+
+    <strong>Inline (ternary) IF</strong><br />
+    <pre>
+    &lt;% iif( 1+1 == 2, "1+1 = 2", "1+1 = 1" ) %&gt;
+    </pre><br />
+    <% iif( 1+1 == 2, "1+1 = 2", "1+1 = 1" ) %>
+
+    <pre>
+    &lt;% iif( 1+1 == 1, "1+1 = 1", "1+1 = 2" ) %&gt;
+    </pre><br />
+    <% iif( 1+1 == 1, "1+1 = 1", "1+1 = 2" ) %>
+
+    <br /><br />
+
+    <strong>Inline (ternary) IF (2)</strong><br />
+    <pre>
+    &lt;% iif( !empty($undefined_variable), $undefined_variable, "test with undefined variable passed" ) %&gt;
+    </pre><br />
+    <% iif( !empty($undefined_variable), $undefined_variable, "test with undefined variable passed" ) %>
+
+    <br /><br />
+
+    <strong>SET a new tpl variable</strong><br />
+    <pre>
+    &lt;% set($foo, "123") %&gt;
+    </pre><br />
+    <% set($foo, "123") %>
+
+    <br /><br />
+
+    <strong>SET a new (local) tpl variable</strong><br />
+    <pre>
+    &lt;% local_set($foo_loc, 456) %&gt;
+    &lt;% set($foo_loc, $foo_loc+1) %&gt;
+    </pre><br />
+    <% local_set($foo_loc, 456) %>
+    <% set($foo_loc, $foo_loc+1) %>
+
+    <br /><br />
+
+    <strong>CHECK ISSET for a tpl variable</strong><br />
+    <pre>
+    &lt;% if( isset($foo) ) %&gt;
+        $foo is SET
+    &lt;% else %&gt;
+        $foo is NOT SET
+    &lt;% fi %&gt;
+    </pre><br />
+    <% if( isset($foo) ) %>
+        $foo = <% $foo %>, is SET
+    <% else %>
+        $foo is NOT SET
+    <% fi %>
+
+    <br /><br />
+
+    <strong>CHECK ISSET for a (local) tpl variable</strong><br />
+    <pre>
+    &lt;% if( isset($foo_loc) ) %&gt;
+        $foo_loc is SET
+    &lt;% else %&gt;
+        $foo_loc is NOT SET
+    &lt;% fi %&gt;
+    </pre><br />
+    <% if( isset($foo_loc) ) %>
+        $foo_loc = <% $foo_loc %>, is SET
+    <% else %>
+        $foo_loc is NOT SET
+    <% fi %>
+
+    <br /><br />
+
+    <strong>CHECK EMPTY for a tpl variable</strong><br />
+    <pre>
+    &lt;% if( empty($foo) ) %&gt;
+        $foo is EMPTY
+    &lt;% else %&gt;
+        $foo is NOT EMPTY
+    &lt;% fi %&gt;
+    </pre><br />
+    <% if( empty($foo) ) %>
+        $foo is EMPTY
+    <% else %>
+        $foo = <% $foo %>, is NOT EMPTY
+    <% fi %>
+
+    <br /><br />
+
+    <strong>CHECK EMPTY for a (local) tpl variable</strong><br />
+    <pre>
+    &lt;% if( empty($foo_loc) ) %&gt;
+        $foo_loc is EMPTY
+    &lt;% else %&gt;
+        $foo_loc is NOT EMPTY
+    &lt;% fi %&gt;
+    </pre><br />
+    <% if( empty($foo_loc) ) %>
+        $foo_loc is EMPTY
+    <% else %>
+        $foo_loc = <% $foo_loc %>, is NOT EMPTY
+    <% fi %>
+
+    <br /><br />
+
+    <!-- include a (sub-)template file -->
+    <strong>INCLUDE a (sub-)template file</strong><br />
+    <pre>
+    &lt;% include("date") %&gt;
+    </pre><br />
+    <% include("date") %>
+
+    <br /><br />
+
+    <strong>CALL another (sub-)template</strong><br />
+    <pre>
+    &lt;% for($users as $i=>$usergroup) %&gt;
+        &lt;!-- call a (sub-)template --&gt;
+        &lt;% tpl("sub", {"i" : $i, "users" : $users}) %&gt;
+    &lt;% endfor %&gt;
+    </pre><br />
+    <% for($users as $i=>$usergroup) %>
+        <!-- call a (sub-)template -->
+        <% tpl("sub", {"i" : $i, "users" : $users}) %>
+    <% endfor %>
+
+<% endblock %>
+
+<% block("Block3") %>
+
+    <strong>Block3 is overriden by the demo template</strong>
+
+    <br /><br />
+
+    <strong>Contemplate Functions/Plugins</strong><hr /><br />
+
+    <strong>Functions</strong><br />
+    <ul>
+    <li>uuid(&quot;namespace&quot;) = <% uuid("namespace") %></li>
+    <li>cc(123,&quot;456&quot;,&quot;789&quot;) = concat(&quot;123&quot;,&quot;456&quot;,&quot;789&quot;) = <% cc(123,"456","789") %> = <% concat("123","456","789") %></li>
+    <li>j(&quot;,&quot;,[1,2,3,[4,5,6,[7,8,9]]]) = join(&quot;,&quot;,[1,2,3,[4,5,6,[7,8,9]]]) = <% j(",",[1,2,3,[4,5,6,[7,8,9]]]) %> = <% join(",",[1,2,3,[4,5,6,[7,8,9]]]) %></li>
+    <li>j(&quot;,&quot;,[1,null,3,[4,5,6,[7,null,9]]], true) = join(&quot;,&quot;,[1,null,3,[4,5,6,[7,null,9]]], true) = <% j(",",[1,null,3,[4,5,6,[7,null,9]]], true) %> = <% join(",",[1,null,3,[4,5,6,[7,null,9]]], true) %></li>
+    <li>is_array([1,2,3]) = <% is_array([1,2,3]) %></li>
+    <li>is_array([1,2,3],true) = <% is_array([1,2,3],true) %></li>
+    <li>is_array({"1":1,"2":2,"3":3}) = <% is_array({"1":1,"2":2,"3":3}) %></li>
+    <li>is_array({"1":1,"2":2,"3":3},true) = <% is_array({"1":1,"2":2,"3":3},true) %></li>
+    <li>in_array(2,[1,2,3]) = <% in_array(2,[1,2,3]) %></li>
+    <li>in_array(4,[1,2,3]) = <% in_array(4,[1,2,3]) %></li>
+    <li>keys([1,2,3]) = <% plg_print(keys([1,2,3])) %></li>
+    <li>keys({"1":1,"2":2,"3":3}) = <% plg_print(keys({"1":1,"2":2,"3":3})) %></li>
+    <li>values([1,2,3]) = <% plg_print(values([1,2,3])) %></li>
+    <li>values({"1":1,"2":2,"3":3}) = <% plg_print(values({"1":1,"2":2,"3":3})) %></li>
+    <li>json_encode({"array":[1,2,3]}) = <% plg_print(json_encode({"array":[1,2,3]})) %></li>
+    <li>json_decode('{"array":[1,2,3]}') = <% plg_print(json_decode('{"array":[1,2,3]}')) %></li>
+    <li>q(123) = <% q(123) %></li>
+    <li>dq(123) = <% dq(123) %></li>
+    <li>trim(&quot;__FOO__&quot;, &quot;_&quot;) = <% trim("__FOO__", "_") %></li>
+    <li>trim(&quot;  FOO  &quot;) = <% trim("  FOO  ") %></li>
+    <li>lowercase(&quot;FOO&quot;) = <% lowercase("FOO") %></li>
+    <li>lowercase(&quot;fOo&quot;) = <% lowercase("fOo") %></li>
+    <li>uppercase(&quot;foo&quot;) = <% uppercase("foo") %></li>
+    <li>uppercase(&quot;FoO&quot;) = <% uppercase("FoO") %></li>
+    <li>sprintf(&quot;%02d : %02d : %02d&quot;, 2, 0, 12) = <% sprintf("%02d : %02d : %02d", 2, 0, 12) %></li>
+    <li>e(&#39;&lt;ok k=&quot;v&quot;&gt;&#39;) = <% e("<ok k=\"v\">") %></li>
+    <li>buildquery({"foo":["bar","baz"]}) = <% buildquery({"foo":["bar","baz"]}) %></li>
+    <li>parsequery("foo[0]=bar&foo[1]=baz") = <% plg_print(parsequery("foo[0]=bar&foo[1]=baz")) %></li>
+    <li>queryvar("https://example.com?key1=1&key2[]=21&key2[]=22",null,["key2"]) = <% queryvar("https://example.com?key1=1&key2[]=21&key2[]=22",null,["key2"]) %></li>
+    <li>queryvar("https://example.com?key1=1&key2[]=21&key2[]=22",{"key3":3,"key4":[41,42]}) = <% queryvar("https://example.com?key1=1&key2[]=21&key2[]=22",{"key3":3,"key4":[41,42]}) %></li>
+    <li>queryvar("https://example.com?key1=1&key2[]=21&key2[]=22",{"key3":3,"key4":[41,42]},["key2"]) = <% queryvar("https://example.com?key1=1&key2[]=21&key2[]=22",{"key3":3,"key4":[41,42]},["key2"]) %></li>
+    <li>striptags("&lt;p&gt;text in &lt;b&gt;tags&lt;/b&gt;&lt;/p&gt;") = <% striptags("<p>text in <b>tags</b></p>") %></li>
+    </ul>
+
+    <br /><br />
+
+    <strong>Test plugin with variable $foo</strong><br />
+    <% plg_test($foo) %>
+
+    <br /><br />
+
+    <strong>Test inlined plugin</strong><br />
+    <% inlinedBracket( "inlined" ) %>
+    <br /><br />
+
+    <!-- use contemplate literal data with template function, in this case a print test plugin -->
+    <strong>use literal data with template function, in this case a print plugin</strong><br />
+    <% plg_print({
+        "stringVar"     : "stringValue",
+        "numericVar"    : 123,
+        "arrayVar"      : [
+            0, 1, "astring", 3,
+            { "prop": 1 }
+        ]
+    }) %>
+
+    <br /><br />
+
+<% endblock %>
+
+<% block("Block2") %><% endblock %>

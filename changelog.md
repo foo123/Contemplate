@@ -1,5 +1,12 @@
 ### ChangeLog
 
+__1.5.0__
+* support including literal php/js/py code (properly indented), see examples and manual
+* stop compatibility mode support
+* drop localization support (user should include her own solution as plugins)
+* major refactor, some utility methods renamed (eg url -> urlencode) or removed (eg data, ucfirst/lcfirst, camelcase/snakecase, addslashes/stripslashes)
+* update tests
+
 __1.4.0__
 * support `php`-like object accesss notation (arrow notation `->`) to support not only strictly arrays as template data but arbitrary objects as well. Support arbitrary chained prop/method access (works same for all js/php/python engines)
 * add `get` template directive to access arbitrary (nested) variable properties based on arbitrary expressions (arbitrary expressions not supported by literal object access notation above, see manual) and also access dynamic properties that use `getter` methods
@@ -134,7 +141,7 @@ __0.8.1__
 * minor changes
 
 __0.8__
-* new template function `%echo` (similar to php function that echoes strings to the output) 
+* new template function `%echo` (similar to php function that echoes strings to the output)
 * `%tpl` (alias of `%template`, `%template` to be deprecated?)
 * `%tpl`, `%template`, `%include`, `%extends`, `%block` constructs/functions accept literal strings as (1st) argument (see examples)
 * minor edits

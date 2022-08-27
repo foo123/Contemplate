@@ -71,37 +71,21 @@ var contemplate_grammar = {
                                 "set", "unset", "isset", "empty", "iif", "continue", "break", "local_set", "get"
                                 ]}
     ,"function"                 : {"autocomplete":true,"tokens":[
-                                "n","s","f","q","qq","dq","addslashes","stripslashes","sprintf",
-                                "concat","cc","ltrim","rtrim","trim","lowercase","uppercase",
-                                "lcfirst","ucfirst","camelcase","snakecase","count","haskey",
-                                "uuid","time","now","date","ldate","locale","l","nlocale","nl","xlocale","xl","nxlocale","nxl",
-                                "inline","tpl","e","url","is_array","in_array","json_encode","json_decode","j","join",
-                                "vsprintf","keys","values","buildquery","parsequery","queryvar"
+                                's', 'n', 'f', 'q', 'qq', 'dq',
+                                'cc', 'concat', 'j','join',
+                                'time', 'now', 'date',
+                                'keys', 'values', 'count',
+                                'is_array', 'in_array', 'haskey',
+                                'lowercase', 'uppercase',
+                                'ltrim', 'rtrim', 'trim',
+                                'sprintf', 'vsprintf',
+                                'json_encode', 'json_decode',
+                                'e', 'striptags',
+                                'urlencode', 'urldecode',
+                                'queryvar', 'buildquery', 'parsequery',
+                                'uuid', 'inline', 'tpl', 'template'
                                 ]}
     ,"plugin"                   : "RE::/[a-zA-Z_][a-zA-Z0-9_]*/"
 
 }
 };
-
-var contemplate_grammar_compat = {
-// Lexical model
-"Lex"                           : {
-
-     "keyword"                  : {"autocomplete":true,"tokens":[
-                                "%extends", "%block", "%endblock", "%super", "%getblock", "%include",
-                                "%if", "%elseif", "%elif", "%else", "%endif", "%fi", 
-                                "%for", "%elsefor", "%endfor", "as", "in",
-                                "%set", "%unset", "%isset", "%empty", "%iif", "%continue", "%break", "%local_set", "%get"
-                                ]}
-    ,"function"                 : {"autocomplete":true,"tokens":[
-                                "%n","%s","%f","%q","%qq","%dq","%addslashes","%stripslashes","%sprintf",
-                                "%concat","%cc","%ltrim","%rtrim","%trim","%lowercase","%uppercase",
-                                "%lcfirst","%ucfirst","%camelcase","%snakecase","%count","%haskey",
-                                "%uuid","%time","%now","%date","%ldate","%locale","%l","%nlocale","%nl","%xlocale","%xl","%nxlocale","%nxl",
-                                "%inline","%tpl","%e","%url","%is_array","%in_array","%json_encode","%json_decode","%j","%join","%vsprintf","%keys","%values","%buildquery","%parsequery","%queryvar"
-                                ]}
-    ,"plugin"                   : "RE::/%[a-zA-Z_][a-zA-Z0-9_]*/"
-
-}
-};
-

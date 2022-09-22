@@ -6,7 +6,7 @@ def __getTplClass__(Contemplate):
     class Contemplate_sub__global(Contemplate.Template):
         'Contemplate cached template sub'
         # constructor
-        def __init__(self, id=None):
+        def __init__(self, id = None):
             self_ = self
             super(Contemplate_sub__global, self).__init__(id)
             # extend tpl assign code starts here
@@ -17,13 +17,13 @@ def __getTplClass__(Contemplate):
 
         # tpl-defined blocks render code ends here
         # render a tpl block method
-        def block(self, block, data, __i__=None):
+        def block(self, block, data, __i__ = None):
             self_ = self
             __ctx = False
             r = ''
             if not __i__:
                 __i__ = self_
-                if not self._autonomus: __ctx = Contemplate._set_ctx(self._ctx)
+                if not self_._autonomus: __ctx = Contemplate._set_ctx(self_._ctx)
             method = '_blockfn_' + block
             if (hasattr(self_, method) and callable(getattr(self_, method))):
                 r = getattr(self_, method)(data, self_, __i__)
@@ -32,13 +32,13 @@ def __getTplClass__(Contemplate):
             if __ctx:  Contemplate._set_ctx(__ctx)
             return r
         # render method
-        def render(self, data, __i__=None):
+        def render(self, data, __i__ = None):
             self_ = self
             __ctx = False
             __p__ = ''
             if not __i__:
                 __i__ = self_
-                if not self._autonomus: __ctx = Contemplate._set_ctx(self._ctx)
+                if not self._autonomus: __ctx = Contemplate._set_ctx(self_._ctx)
             if self_._extends:
                 __p__ = self_._extends.render(data, __i__)
 

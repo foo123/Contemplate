@@ -52,7 +52,26 @@ public function render(&$data, $__i__ = null)
     {
         /* tpl main render code starts here */
         
-        $__p__ .= '' . "\n" . '' . ($data['v']->prop) . '' . "\n" . '' . "\n" . '' . ($data['v']->func(Contemplate::urlencode($data['v']->prop))) . '' . "\n" . '' . "\n" . '' . ($data['a'][0]) . '' . "\n" . '' . "\n" . '' . ($data['a'][1]['prop']) . '' . "\n" . '' . "\n" . '' . ($data['v']->method(Contemplate::urlencode($data['v']->prop))->func("foo")) . '' . "\n" . '' . "\n" . '' . (Contemplate::urlencode($data['v']->method("foo")->func("bar"))) . '' . "\n" . '' . "\n" . '' . (Contemplate::urlencode($data['v']->method("foo")->prop)) . '' . "\n" . '' . "\n" . '' . (Contemplate::urlencode($data['v']->method("foo")->prop2->prop)) . '' . "\n" . '' . "\n" . '' . (Contemplate::get($data['a'], array(0+1, "prop"))) . '' . "\n" . '' . "\n" . '' . (Contemplate::get($data['a'], array(intval("0")+1,"prop"))) . '' . "\n" . '' . "\n" . '' . (Contemplate::get($data['v'], "propGetter")) . '' . "\n" . '';
+        $__p__ .= '';
+        
+        $__p__ .= '' . "\n" . '';
+        $t = (array("v"=>0));
+        
+        $__p__ .= '' . "\n" . '' . "\n" . '' . ($data['v']->prop) . '' . "\n" . '' . "\n" . '' . ($data['v']->func(Contemplate::urlencode($data['v']->prop))) . '' . "\n" . '' . "\n" . '' . ($data['a'][0]) . '' . "\n" . '' . "\n" . '' . ($data['a'][1]['prop']) . '' . "\n" . '' . "\n" . '' . ($data['v']->method(Contemplate::urlencode($data['v']->prop))->func("foo")) . '' . "\n" . '' . "\n" . '' . (Contemplate::urlencode($data['v']->method("foo")->func("bar"))) . '' . "\n" . '' . "\n" . '' . (Contemplate::urlencode($data['v']->method("foo")->prop)) . '' . "\n" . '' . "\n" . '' . (Contemplate::urlencode($data['v']->method("foo")->prop2->prop)) . '' . "\n" . '' . "\n" . '' . (Contemplate::get($data['a'], array(0+1, "prop"))) . '' . "\n" . '' . "\n" . '' . (Contemplate::get($data['a'], array(intval("0")+1,"prop"))) . '' . "\n" . '' . "\n" . '' . (Contemplate::get($data['v'], "propGetter")) . '' . "\n" . '' . "\n" . '' . ($data['a'][0+1]["prop"]) . '' . "\n" . '' . "\n" . '' . ($data['a'][intval("0")+1]["prop"]) . '' . "\n" . '' . "\n" . '' . ($data['a'][$t['v']+1]["prop"]) . '' . "\n" . '' . "\n" . '' . ($data['a'][intval($t['v'])+1]["prop"]) . '' . "\n" . '' . "\n" . '';
+        $t = (array(array(1,2,3)));
+        
+        $__p__ .= '' . "\n" . '';
+        $_loc_41 = $t[0];
+        if (!empty($_loc_41))
+        {
+            foreach ($_loc_41 as $_loc_i => $_loc_v)
+            {
+                
+                $__p__ .= '' . "\n" . '    ' . ($_loc_i) . ',' . ($_loc_v) . '' . "\n" . '';
+            }
+        }
+        
+        $__p__ .= '';
         
         /* tpl main render code ends here */
     }

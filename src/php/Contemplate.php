@@ -1,9 +1,9 @@
 <?php
 /**
 *  Contemplate
-*  Light-weight Template Engine for PHP, Python, Node and client-side JavaScript
+*  Light-weight Object-Oriented Template Engine for PHP, Python, JavaScript
 *
-*  @version: 1.5.0
+*  @version: 1.6.0
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -26,6 +26,13 @@ else
     function Contemplate_create_dynamic_function_($args, $code)
     {
         return create_function($args, $code);
+    }
+}
+class ContemplateException extends Exception
+{
+    public function __construct($message, $code = 0, $previous = null)
+    {
+        parent::__construct($message, $code, $previous);
     }
 }
 class ContemplateInlineTemplate
@@ -357,7 +364,7 @@ class ContemplateCtx
 
 class Contemplate
 {
-    const VERSION = "1.5.0";
+    const VERSION = "1.6.0";
 
     const CACHE_TO_DISK_NONE = 0;
     const CACHE_TO_DISK_AUTOUPDATE = 2;
@@ -414,12 +421,15 @@ class Contemplate
 
     protected static $re_controls = '/(\\t|\\s?)\\s*((#ID_(continue|endblock|elsefor|endfor|endif|break|else|fi)#(\\s*\\(\\s*\\))?)|(#ID_([^#]+)#\\s*(\\()))(.*)$/';
 
+    protected static $__reserved_var_names = array(
+    '$this', '$self', '$data', '$__p__', '$__i__', '$__ctx'
+    );
     protected static $__directives = array(
     'set', 'unset', 'isset',
     'if', 'elseif', 'else', 'endif',
     'for', 'elsefor', 'endfor',
     'extends', 'block', 'endblock',
-    'include', 'super', 'getblock', 'iif', 'empty', 'continue', 'break', 'local_set', 'get'
+    'include', 'super', 'getblock', 'iif', 'empty', 'continue', 'break', 'local_set', 'get', 'local'
     );
     protected static $__directive_aliases = array(
      'elif'      => 'elseif'
@@ -463,7 +473,7 @@ class Contemplate
 
         // pre-compute the needed regular expressions
         self::$__preserveLines = self::$__preserveLinesDefault;
-        self::$__tplStart = "'; " . self::$__TEOL;
+        self::$__tplStart = "';" . self::$__TEOL;
         self::$__tplEnd = self::$__TEOL . "\$__p__ .= '";
 
         // make compilation templates
@@ -1188,7 +1198,7 @@ class Contemplate
         return $merged;
     }
 
-    public static function local_variable($variable = null, $block = null)
+    protected static function local_variable($variable = null, $block = null, $literal = false)
     {
         if (null === $variable)
         {
@@ -1197,15 +1207,17 @@ class Contemplate
         else
         {
             if (null === $block) $block = self::$__currentblock;
-            self::$__locals[$block][self::$__variables[$block][$variable]] = 1;
+            if (!isset(self::$__locals[$block][self::$__variables[$block][$variable]]))
+                self::$__locals[$block][self::$__variables[$block][$variable]] = $literal ? 2 : 1;
             return $variable;
         }
     }
 
-    public static function is_local_variable($variable, $block = null)
+    protected static function is_local_variable($variable, $block = null)
     {
         if (null === $block) $block = self::$__currentblock;
-        return '$_loc_' === substr($variable, 0, 6) || !empty(self::$__locals[$block][self::$__variables[$block][$variable]]);
+        //if ('$_loc_' === substr($variable, 0, 6)) return 1;
+        return isset(self::$__locals[$block][self::$__variables[$block][$variable]]) ? self::$__locals[$block][self::$__variables[$block][$variable]] : 0;
     }
 
     //
@@ -1227,7 +1239,7 @@ class Contemplate
             $tpl = self::get_separators($tpl);
             $state = self::push_state();
             self::reset_state();
-            $contx->partials[$id]=array(" " . self::parse($tpl, self::$__leftTplSep, self::$__rightTplSep, false) . "';" . self::$__TEOL, isset(self::$__uses) ? self::$__uses : array());
+            $contx->partials[$id] = array(" " . self::parse($tpl, self::$__leftTplSep, self::$__rightTplSep, false) . "';" . self::$__TEOL, isset(self::$__uses) ? self::$__uses : array());
             self::pop_state($state);
         }
         // add usedTpls used inside include tpl to current usedTpls
@@ -1314,6 +1326,17 @@ class Contemplate
         {
             switch ($m)
             {
+                case 22 /*'local'*/:
+                    $varname = trim($args);
+                    $tplvarname = '$'.self::$__variables[self::$__currentblock][$varname];
+                    if (in_array($tplvarname, self::$__reserved_var_names))
+                    {
+                        // should be different from '$this', '$data', .. as these are used internally
+                        throw new ContemplateException('Contemplate Parse: Use of reserved name as local variable name "'.$tplvarname.'"');
+                    }
+                    self::local_variable($varname, null, true); // make it a literal local variable
+                    $out = "';" . self::$__TEOL;
+                    break;
                 case 0 /*'set'*/:
                 case 20 /*'local_set'*/:
                     $args = preg_replace_callback($re_controls, $parse_constructs, $args);
@@ -1412,8 +1435,16 @@ class Contemplate
 
                     if ($isAssoc)
                     {
-                        $k = trim($kv[0]); $v = trim($kv[1]);
-                        self::local_variable($k); self::local_variable($v);
+                        $k = trim($kv[0]);
+                        $v = trim($kv[1]);
+                        if (!self::is_local_variable($k))
+                        {
+                            self::local_variable($k);
+                        }
+                        if (!self::is_local_variable($v))
+                        {
+                            self::local_variable($v);
+                        }
 
                         $out = "';" . self::align(implode(self::$__TEOL, array(
                                         ""
@@ -1429,7 +1460,10 @@ class Contemplate
                     else
                     {
                         $v = trim($kv[0]);
-                        self::local_variable($v);
+                        if (!self::is_local_variable($v))
+                        {
+                            self::local_variable($v);
+                        }
 
                         $out = "';" . self::align(implode(self::$__TEOL, array(
                                         ""
@@ -1541,7 +1575,7 @@ class Contemplate
             case 'f': $out = 'floatval(' . $args . ')'; break;
             case 'q': $out = '"\'".(' . $args . ')."\'"'; break;
             case 'qq': $out = '\'"\'.(' . $args . ').\'"\''; break;
-            case 'concat': $out = '('.implode(').(',self::split_arguments($args, ',')).')'; break;
+            case 'concat': $out = '(string)('.implode(').(string)(',self::split_arguments($args, ',')).')'; break;
             case 'is_array':
                 $args = self::split_arguments($args, ',');
                 if (isset($args[1]))
@@ -1690,6 +1724,7 @@ class Contemplate
             ++self::$__idcnt;
             $id = "#VAR_" . self::$__idcnt . "#";
             $len = strlen($variable_raw);
+            self::$__variables[self::$__currentblock][$id] = $variable_raw;
 
             // extra space
             $space = 0;
@@ -1698,8 +1733,6 @@ class Contemplate
                 ++$space;
                 ++$i;
             }
-
-            $bracketcnt = 0;
 
             // optional properties
             while ($i < $l && ('.' === $s[$i] || '[' === $s[$i] || '->' === substr($s, $i, 2)))
@@ -1764,111 +1797,125 @@ class Contemplate
                 // bracketed property
                 elseif ('[' === $delim)
                 {
-                    ++$bracketcnt;
-
-                    $ch = $s[$i];
-
-                    // literal string property
-                    if ('"' === $ch || "'" === $ch)
+                    $bracket = '';
+                    while ($i < $l)
                     {
-                        //$property = self::parse_string( $s, $ch, $i+1, $l );
-                        $str_ = $q = $ch;
-                        $si = $i+1;
-                        $escaped = false;
-                        while ($si < $l)
+                        $ch = $s[$i];
+
+                        // spaces
+                        if (preg_match(self::$SPACE, $ch, $m))
                         {
-                            $ch = $s[$si++];
-                            $str_ .= $ch;
-                            if ($q == $ch && !$escaped)  break;
-                            $escaped = (!$escaped && '\\' == $ch);
+                            ++$space;
+                            ++$i;
                         }
-                        $property = $str_;
-                        ++self::$__idcnt;
-                        $strid = "#STR_" .self::$__idcnt . "#";
-                        $strings[$strid] = $property;
-                        $variable_rest .= $delim . $strid;
-                        $lp = strlen($property);
-                        $i += $lp;
-                        $len += $space + 1 + $lp;
-                        $space = 0;
-                        $hasStrings = true;
-                    }
-
-                    // numeric array property
-                    elseif (preg_match(self::$NUM, $ch, $m))
-                    {
-                        $property = $s[$i++];
-                        while ($i < $l && preg_match(self::$NUM, $s[$i], $m))
+                        // literal string property
+                        elseif ('"' === $ch || "'" === $ch)
                         {
-                            $property .= $s[$i++];
-                        }
-                        $variable_rest .= $delim . $property;
-                        $lp = strlen($property);
-                        $len += $space + 1 + $lp;
-                        $space = 0;
-                    }
-
-                    // sub-variable property
-                    elseif ('$' === $ch)
-                    {
-                        $sub = substr($s, $i+1);
-                        $subvariables = self::parse_variable($sub, 0, strlen($sub));
-                        if ($subvariables)
-                        {
-                            // transform into tpl variable property
-                            $property = end($subvariables);
-                            $variable_rest .= $delim . $property[0];
-                            $lp = $property[4];
-                            $i += $lp + 1;
-                            $len += $space + 2 + $lp;
+                            //$property = self::parse_string( $s, $ch, $i+1, $l );
+                            $str_ = $q = $ch;
+                            $si = $i+1;
+                            $escaped = false;
+                            while ($si < $l)
+                            {
+                                $ch = $s[$si++];
+                                $str_ .= $ch;
+                                if ($q == $ch && !$escaped)  break;
+                                $escaped = (!$escaped && '\\' == $ch);
+                            }
+                            $property = $str_;
+                            ++self::$__idcnt;
+                            $strid = "#STR_" .self::$__idcnt . "#";
+                            $strings[$strid] = $property;
+                            $lp = strlen($property);
+                            $i += $lp;
+                            $len += $space + $lp;
                             $space = 0;
-                            $variables = array_merge($variables, $subvariables);
-                            $hasStrings = $hasStrings || $property[5];
+                            $hasStrings = true;
+                            $bracket .= $strid;
                         }
-                    }
-
-                    // close bracket
-                    elseif (']' === $ch)
-                    {
-                        if ($bracketcnt > 0)
+                        // numeric array property
+                        elseif (preg_match(self::$NUM, $ch, $m))
                         {
-                            --$bracketcnt;
-                            $variable_rest .= $delim . $s[$i++];
+                            $property = $s[$i++];
+                            while ($i < $l && preg_match(self::$NUM, $s[$i], $m))
+                            {
+                                $property .= $s[$i++];
+                            }
+                            $lp = strlen($property);
+                            $len += $space + $lp;
+                            $space = 0;
+                            $bracket .= $property;
+                        }
+                        // sub-variable as property
+                        elseif ('$' === $ch)
+                        {
+                            $sub = substr($s, $i+1);
+                            $subvariables = self::parse_variable($sub, 0, strlen($sub));
+                            if ($subvariables)
+                            {
+                                // transform into tpl variable property
+                                $property = end($subvariables);
+                                $lp = $property[4];
+                                $i += $lp + 1;
+                                $len += $space + 1 + $lp;
+                                $space = 0;
+                                $variables = array_merge($variables, $subvariables);
+                                $hasStrings = $hasStrings || $property[5];
+                                $bracket .= $property[0];
+                            }
+                            else
+                            {
+                                $bracket .= $ch;
+                                $len += $space + 1;
+                                $space = 0;
+                                ++$i;
+                            }
+                        }
+                        // identifiers
+                        elseif (preg_match(self::$ALPHA, $ch, $m))
+                        {
+                            $len += $space + 1;
+                            ++$i;
+                            if ($space > 0)
+                            {
+                                $bracket .= " ";
+                                $space = 0;
+                            }
+                            $is_prop_access = (2 < $i && '-' === $s[$i-3] && '>' === $s[$i-2]);
+                            $tok = $ch;
+                            while ($i < $l)
+                            {
+
+                                $ch = $s[$i];
+                                if (preg_match(self::$ALPHANUM, $ch, $m))
+                                {
+                                    ++$i;
+                                    ++$len;
+                                    $tok .= $ch;
+                                }
+                                else break;
+                            }
+                            if (!$is_prop_access && 'as' !== $tok && 'in' !== $tok && 'null' !== $tok && 'false' !== $tok && 'true' !== $tok)
+                            {
+                                $tok = '#ID_'.$tok.'#';
+                            }
+                            $bracket .= $tok;
+                        }
+                        // close bracket
+                        elseif (']' === $ch)
+                        {
+                            $variable_rest .= $delim . preg_replace_callback(self::$re_controls, array(__CLASS__, 'parse_constructs'), $bracket) . $ch;
                             $len += $space + 2;
                             $space = 0;
-                        }
-                        else
-                        {
+                            ++$i;
                             break;
                         }
-                    }
-
-                    else
-                    {
-                        break;
-                    }
-
-
-                    // extra space
-                    while ($i < $l && preg_match(self::$SPACE, $s[$i], $m))
-                    {
-                        ++$space;
-                        ++$i;
-                    }
-
-                    // close bracket
-                    if (']' === $s[$i])
-                    {
-                        if ($bracketcnt > 0)
-                        {
-                            --$bracketcnt;
-                            $variable_rest .= $s[$i++];
-                            $len += $space + 1;
-                            $space = 0;
-                        }
+                        // rest
                         else
                         {
-                            break;
+                            $bracket .= $ch;
+                            ++$len;
+                            ++$i;
                         }
                     }
                 }
@@ -2006,7 +2053,7 @@ class Contemplate
                         foreach ($tok as $tokv)
                         {
                             $id = $tokv[0];
-                            self::$__variables[self::$__currentblock][$id] = $tokv[1];
+                            //self::$__variables[self::$__currentblock][$id] = $tokv[1];
                             if ($tokv[5]) $strings = array_merge($strings, $tokv[6]);
                         }
                         $out .= $id;
@@ -2168,7 +2215,7 @@ class Contemplate
                     $id = $variables[$v][0]; $varname = $variables[$v][1];
                     $tag = str_replace($id.'__RAW__', $varname, $tag);
                     if (isset(self::$__locals[self::$__currentblock][$varname])) /* local (loop) variable */
-                        $tag = str_replace($id, '$_loc_' . $varname . $variables[$v][3], $tag);
+                        $tag = str_replace($id, (2 == self::$__locals[self::$__currentblock][$varname] ? '$' : '$_loc_') . $varname . $variables[$v][3], $tag);
                     else /* default (data) variable */
                         $tag = str_replace($id, $variables[$v][2] . $variables[$v][3], $tag);
                 }

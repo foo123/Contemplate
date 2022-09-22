@@ -35,8 +35,10 @@ Contemplate_sub__global.prototype.render = function(data, __i__) {
     /* tpl main render code starts here */
     
     __p__ += '<div>' + "\n" + '    <br />' + "\n" + '    <strong>Number of Items:' + (Contemplate.count(data.users[data.i])) + '</strong>' + "\n" + '    <br />' + "\n" + '    ';
+    var _loc_j;
+    var _loc_user;
     var _loc_7 = data.users[data.i], _loc_8 = _loc_7 ? Object.keys(_loc_7) : null,
-        _loc_9, _loc_j, _loc_user, _loc_10 = _loc_7 ? _loc_8.length : 0;
+        _loc_9, _loc_10 = _loc_7 ? _loc_8.length : 0;
     if (_loc_10)
     {
         for (_loc_9=0; _loc_9<_loc_10; ++_loc_9)

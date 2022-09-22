@@ -1,8 +1,8 @@
 /**
 *  Contemplate
-*  Light-weight Template Engine for PHP, Python, Node, client-side and XPCOM/SDK JavaScript
+*  Light-weight Object-Oriented Template Engine for PHP, Python, JavaScript
 *
-*  @version: 1.5.0
+*  @version: 1.6.0
 *  https://github.com/foo123/Contemplate
 *
 *  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -30,7 +30,7 @@ else if (!(name in root)) /* Browser/WebWorker/.. */
 //////////////////////////////////////////////////////////////////////////////////////
 
 // private vars
-var __version__ = "1.5.0", Contemplate,
+var __version__ = "1.6.0", Contemplate,
 
     PROTO = 'prototype', Obj = Object, Arr = Array,
     HAS = Obj[PROTO].hasOwnProperty, toString = Obj[PROTO].toString,
@@ -60,7 +60,7 @@ var __version__ = "1.5.0", Contemplate,
     ;
     },
 
-    $__isInited = false, $__async = false,
+    $__isInited = false,
 
     $__leftTplSep = "<%", $__rightTplSep = "%>", $__tplStart = "", $__tplEnd = "",
     // https://nodejs.org/api/os.html#os_os_eol
@@ -83,12 +83,15 @@ var __version__ = "1.5.0", Contemplate,
     INDENT = /^(postdent|predent)\((-?\d+)\):/,
     re_controls = /(\t|\s?)\s*((#ID_(continue|endblock|elsefor|endfor|endif|break|else|fi)#(\s*\(\s*\))?)|(#ID_([^#]+)#\s*(\()))(.*)$/g,
 
+    $__reserved_var_names = [
+    'Contemplate', 'self', 'this', 'data', '__p__', '__i__', '__ctx'
+    ],
     $__directives = [
     'set', 'unset', 'isset',
     'if', 'elseif', 'else', 'endif',
     'for', 'elsefor', 'endfor',
     'extends', 'block', 'endblock',
-    'include', 'super', 'getblock', 'iif', 'empty', 'continue', 'break', 'local_set', 'get'
+    'include', 'super', 'getblock', 'iif', 'empty', 'continue', 'break', 'local_set', 'get', 'local'
     ],
     $__directive_aliases = {
      'elif'     : 'elseif'
@@ -323,7 +326,7 @@ function split_arguments(args, delim)
     return a;
 }
 
-function local_variable(variable, block)
+function local_variable(variable, block, literal)
 {
     if (null == variable)
     {
@@ -332,7 +335,8 @@ function local_variable(variable, block)
     else
     {
         if (null == block) block = $__currentblock;
-        $__locals[block][$__variables[block][variable]] = 1;
+        if (!HAS.call($__locals[block], $__variables[block][variable]))
+            $__locals[block][$__variables[block][variable]] = literal ? 2 : 1;
         return variable;
     }
 }
@@ -340,7 +344,8 @@ function local_variable(variable, block)
 function is_local_variable(variable, block)
 {
     if (null == block) block = $__currentblock;
-    return '_loc_' === variable.slice(0, 5) || !!$__locals[block][$__variables[block][variable]];
+    //if ('_loc_' === variable.slice(0, 5)) return 1;
+    return HAS.call($__locals[block], $__variables[block][variable]) ? $__locals[block][$__variables[block][variable]] : 0;
 }
 
 //
@@ -510,8 +515,8 @@ function parse_constructs(match, cb)
         ctrl = match4 || match7 || '',
         rest = match9 || '',
         startParen = match8 || false,
-        args = '',  out = '', paren = 0, l, i, ch, m,
-        varname, expr, args2, usedTpl,
+        args = '',  out = '', paren = 0, l, i, ch, m, err,
+        varname, tplvarname, expr, args2, usedTpl,
         parse_constructs_sync = function(m0,m1,m2,m3,m4,m5,m6,m7,m8,m9) {
             return parse_constructs([m0,m1,m2,m3,m4,m5,m6,m7,m8,m9]);
         };
@@ -537,6 +542,26 @@ function parse_constructs(match, cb)
     {
         switch (m)
         {
+            case 22 /*'local'*/:
+                varname = trim(args);
+                tplvarname = $__variables[$__currentblock][varname];
+                if (-1 !== $__reserved_var_names.indexOf(tplvarname))
+                {
+                    // should be different from 'this', 'data', .. as these are used internally
+                    err = new Contemplate.Exception('Contemplate Parse: Use of reserved name as local variable name "'+tplvarname+'"');
+                    if (cb)
+                    {
+                        cb(err, null);
+                        return;
+                    }
+                    else
+                    {
+                        throw err;
+                    }
+                }
+                local_variable(varname, null, true); // make it a literal local variable
+                out = "';" + $__TEOL + align('var ' + varname + ';') + $__TEOL;
+                break;
             case 0 /*'set'*/:
             case 20 /*'local_set'*/:
                 args = args.replace(re_controls, parse_constructs_sync);
@@ -546,7 +571,7 @@ function parse_constructs(match, cb)
                 if (20 === m && !is_local_variable(varname))
                 {
                     local_variable(varname); // make it a local variable
-                    varname = 'var '+varname;
+                    varname = 'var ' + varname;
                 }
                 out = "';" + $__TEOL + align(varname + ' = ('+ expr +');') + $__TEOL;
                 break;
@@ -644,15 +669,25 @@ function parse_constructs(match, cb)
                 {
                     var k = trim(kv[0]),
                         v = trim(kv[1]),
-                        _oK = '_loc_' + (++$__idcnt),
-                        _k = '_loc_' + (++$__idcnt),
-                        _l = '_loc_' + (++$__idcnt)
+                        _oK = local_variable(),
+                        _k = local_variable(),
+                        _l = local_variable()
                     ;
-                    local_variable(k); local_variable(v);
-                    out = "';" + align([
+                    out = "';";
+                    if (!is_local_variable(k))
+                    {
+                        local_variable(k);
+                        out += $__TEOL + align('var ' + k + ';');
+                    }
+                    if (!is_local_variable(v))
+                    {
+                        local_variable(v);
+                        out += $__TEOL + align('var ' + v + ';');
+                    }
+                    out += align([
                                     ""
                                     ,"var "+_o+" = "+o+", "+_oK+" = "+_o+" ? Object.keys("+_o+") : null,"
-                                    ,"    "+_k+", "+k+", "+v+", "+_l+" = "+_o+" ? "+_oK+".length : 0;"
+                                    ,"    "+_k+", "+_l+" = "+_o+" ? "+_oK+".length : 0;"
                                     ,"if ("+_l+")"
                                     ,"{"
                                     ,"    for ("+_k+"=0; "+_k+"<"+_l+"; ++"+_k+")"
@@ -667,18 +702,23 @@ function parse_constructs(match, cb)
                 else
                 {
                     var v = trim(kv[0]),
-                        _oV = '_loc_' + (++$__idcnt),
-                        _arr = '_loc_' + (++$__idcnt),
-                        _k = '_loc_' + (++$__idcnt),
-                        _kk = '_loc_' + (++$__idcnt),
-                        _l = '_loc_' + (++$__idcnt)
+                        _oV = local_variable(),
+                        _arr = local_variable(),
+                        _k = local_variable(),
+                        _kk = local_variable(),
+                        _l = local_variable()
                     ;
-                    local_variable(v);
-                    out = "';" + align([
+                    out = "';";
+                    if (!is_local_variable(v))
+                    {
+                        local_variable(v);
+                        out += $__TEOL + align('var ' + v + ';');
+                    }
+                    out += align([
                                     ""
                                     ,"var "+_o+" = "+o+", "+_arr+" = !!"+_o+".forEach,"
                                     ,"    "+_oV+" = "+_o+" ? ("+_arr+" ? "+_o+" : Object.keys("+_o+")) : null,"
-                                    ,"    "+_k+", "+_kk+", "+v+", "+_l+" = "+_oV+" ? "+_oV+".length : 0;"
+                                    ,"    "+_k+", "+_kk+", "+_l+" = "+_oV+" ? "+_oV+".length : 0;"
                                     ,"if ("+_l+")"
                                     ,"{"
                                     ,"    for ("+_k+"=0; "+_k+"<"+_l+"; ++"+_k+")"
@@ -804,7 +844,7 @@ function parse_constructs(match, cb)
             if (13 === m)/*'include'*/
             {
                 // include may be async now
-                t_include(args, function(err,out) {
+                t_include(args, function(err, out) {
                     if (err)
                     {
                         cb(err, null);
@@ -818,7 +858,7 @@ function parse_constructs(match, cb)
                         }
                         cb(null, out + rest2);
                     });
-                } );
+                });
             }
             else
             {
@@ -974,8 +1014,8 @@ function parse_variable(s, i, l)
     {
         var strings = {}, variables = [], subvariables,
             id, variable, property, variable_raw, variable_main, variable_rest,
-            len, lp, bracketcnt, delim, ch,
-            str_, q, escaped, si,
+            len, lp, bracket, delim, ch,
+            str_, q, escaped, si, is_prop_access, tok,
             strid, sub, space = 0, hasStrings = false
         ;
 
@@ -995,6 +1035,7 @@ function parse_variable(s, i, l)
         ++$__idcnt;
         id = "#VAR_"+$__idcnt+"#";
         len = variable_raw.length;
+        $__variables[$__currentblock][id] = variable_raw;
 
         // extra space
         space = 0;
@@ -1003,8 +1044,6 @@ function parse_variable(s, i, l)
             ++space;
             ++i;
         }
-
-        bracketcnt = 0;
 
         // optional properties
         while (i < l && ('.' === s.charAt(i) || '[' === s.charAt(i) || '->' === s.substring(i, i+2)))
@@ -1071,109 +1110,117 @@ function parse_variable(s, i, l)
             // bracketed property
             else if ('[' === delim)
             {
-                ++bracketcnt;
-
-                ch = s.charAt(i);
-
-                // literal string property
-                /*'"' === ch || "'" === ch*/
-                if ('"' === ch || "'" === ch)
+                bracket = '';
+                while (i < l)
                 {
-                    //property = parse_string(s, ch, i+1, l);
-                    str_ = q = ch; escaped = false; si = i+1;
-                    while (si < l)
+                    ch = s.charAt(i);
+
+                    // spaces
+                    if (SPACE.test(ch))
                     {
-                        str_ += (ch=s.charAt(si++));
-                        if (q === ch && !escaped)  break;
-                        escaped = (!escaped && '\\' === ch);
+                        ++space;
+                        ++i;
                     }
-                    property = str_;
-                    ++$__idcnt;
-                    strid = "#STR_"+$__idcnt+"#";
-                    strings[strid] = property;
-                    variable_rest += delim + strid;
-                    lp = property.length;
-                    i += lp;
-                    len += space + 1 + lp;
-                    space = 0;
-                    hasStrings = true;
-                }
-
-                // numeric array property
-                else if (NUM.test(ch))
-                {
-                    property = s.charAt(i++);
-                    while (i < l && NUM.test(s.charAt(i)))
+                    // literal string property
+                    else if ('"' === ch || "'" === ch)
                     {
-                        property += s.charAt(i++);
-                    }
-                    variable_rest += delim + property;
-                    lp = property.length;
-                    len += space + 1 + lp;
-                    space = 0;
-                }
-
-                // sub-variable property
-                else if ('$' === ch)
-                {
-                    sub = s.slice(i+1);
-                    subvariables = parse_variable(sub, 0, sub.length);
-                    if (subvariables)
-                    {
-                        // transform into tpl variable property
-                        property = subvariables[subvariables.length-1];
-                        variable_rest += delim + property[0];
-                        lp = property[4];
-                        i += lp + 1;
-                        len += space + 2 + lp;
+                        //property = parse_string(s, ch, i+1, l);
+                        str_ = q = ch; escaped = false; si = i+1;
+                        while (si < l)
+                        {
+                            str_ += (ch=s.charAt(si++));
+                            if (q === ch && !escaped)  break;
+                            escaped = (!escaped && '\\' === ch);
+                        }
+                        property = str_;
+                        ++$__idcnt;
+                        strid = "#STR_"+$__idcnt+"#";
+                        strings[strid] = property;
+                        lp = property.length;
+                        i += lp;
+                        len += space + lp;
                         space = 0;
-                        variables = variables.concat(subvariables);
-                        hasStrings = hasStrings || property[5];
+                        hasStrings = true;
+                        bracket += strid;
                     }
-                }
-
-                // close bracket
-                else if (']' === ch)
-                {
-                    if (bracketcnt > 0)
+                    // numeric array property
+                    else if (NUM.test(ch))
                     {
-                        --bracketcnt;
-                        variable_rest += delim + s.charAt(i++);
+                        property = s.charAt(i++);
+                        while (i < l && NUM.test(s.charAt(i)))
+                        {
+                            property += s.charAt(i++);
+                        }
+                        lp = property.length;
+                        len += space + lp;
+                        space = 0;
+                        bracket += property;
+                    }
+                    // sub-variable as property
+                    else if ('$' === ch)
+                    {
+                        sub = s.slice(i+1);
+                        subvariables = parse_variable(sub, 0, sub.length);
+                        if (subvariables)
+                        {
+                            // transform into tpl variable property
+                            property = subvariables[subvariables.length-1];
+                            lp = property[4];
+                            i += lp + 1;
+                            len += space + 1 + lp;
+                            space = 0;
+                            variables = variables.concat(subvariables);
+                            hasStrings = hasStrings || property[5];
+                            bracket += property[0];
+                        }
+                        else
+                        {
+                            bracket += ch;
+                            ++len;
+                            ++i;
+                        }
+                    }
+                    // identifiers
+                    else if (ALPHA.test(ch))
+                    {
+                        len += space + 1;
+                        ++i;
+                        if (space > 0)
+                        {
+                            bracket += " ";
+                            space = 0;
+                        }
+                        is_prop_access = (2 < i && '-' === s.charAt(i-3) && '>' === s.charAt(i-2));
+                        tok = ch;
+                        while (i < l && ALPHANUM.test(ch=s.charAt(i)))
+                        {
+                            ++i;
+                            ++len;
+                            tok += ch;
+                        }
+                        if (!is_prop_access && 'as' !== tok && 'in' !== tok && 'null' !== tok && 'false' !== tok && 'true' !== tok)
+                        {
+                            tok = '#ID_'+tok+'#';
+                        }
+                        bracket += tok;
+                    }
+                    // close bracket
+                    else if (']' === ch)
+                    {
+                        variable_rest += delim + bracket.replace(re_controls, function(m0,m1,m2,m3,m4,m5,m6,m7,m8,m9) {
+                            return parse_constructs([m0,m1,m2,m3,m4,m5,m6,m7,m8,m9]);
+                        }) + ch;
                         len += space + 2;
                         space = 0;
-                    }
-                    else
-                    {
+                        ++i;
                         break;
                     }
-                }
-
-                else
-                {
-                    break;
-                }
-
-
-                // extra space
-                while (i < l && SPACE.test(s.charAt(i)))
-                {
-                    ++space;
-                    ++i;
-                }
-
-                // close bracket
-                if (']' === s.charAt(i))
-                {
-                    if (bracketcnt > 0)
-                    {
-                        --bracketcnt;
-                        variable_rest += s.charAt(i++);
-                        len += space + 1;
-                        space = 0;
-                    }
+                    // rest
                     else
                     {
-                        break;
+                        bracket += ch;
+                        ++len;
+                        ++i;
                     }
                 }
             }
@@ -1328,7 +1375,7 @@ function parse_async(tpl, leftTplSep, rightTplSep, withblocks, cb)
                         {
                             tokv = tok[v];
                             id = tokv[0];
-                            $__variables[$__currentblock][id] = tokv[1];
+                            //$__variables[$__currentblock][id] = tokv[1];
                             if (tokv[5]) strings = merge(strings, tokv[6]);
                         }
                         out += id;
@@ -1380,7 +1427,7 @@ function parse_async(tpl, leftTplSep, rightTplSep, withblocks, cb)
                         space = 0;
                     }
                     q = ch;
-                    if ( non_compatibility_mode || index >= countl || !ALPHA.test(ch=s.charAt(index)) )
+                    if (non_compatibility_mode || index >= countl || !ALPHA.test(ch=s.charAt(index)))
                     {
                         out += q;
                         continue;
@@ -1470,7 +1517,7 @@ function parse_async(tpl, leftTplSep, rightTplSep, withblocks, cb)
                     .split(id+'__RAW__').join(varname)
                     .split(id).join((
                         HAS.call($__locals[$__currentblock], varname)
-                        ? ('_loc_' + varname) /* local (loop) variable */
+                        ? ((2 === $__locals[$__currentblock][varname] ? '' : '_loc_') + varname) /* local (loop) variable */
                         : (variables[v][2]) /* default (data) variable */
                         ) + variables[v][3])
                 ;
@@ -1697,7 +1744,7 @@ function parse(tpl, leftTplSep, rightTplSep, withblocks, cb)
                         {
                             tokv = tok[v];
                             id = tokv[0];
-                            $__variables[$__currentblock][id] = tokv[1];
+                            //$__variables[$__currentblock][id] = tokv[1];
                             if (tokv[5]) strings = merge(strings, tokv[6]);
                         }
                         out += id;
@@ -1841,7 +1888,7 @@ function parse(tpl, leftTplSep, rightTplSep, withblocks, cb)
                     .split(id+'__RAW__').join(varname)
                     .split(id).join((
                         HAS.call($__locals[$__currentblock], varname)
-                        ? ('_loc_' + varname) /* local (loop) variable */
+                        ? ((2 === $__locals[$__currentblock][varname] ? '' : '_loc_') + varname) /* local (loop) variable */
                         : (variables[v][2]) /* default (data) variable */
                         ) + variables[v][3])
                 ;
@@ -2760,6 +2807,13 @@ function create_path(path, root, mode, cb)
     }
 }
 
+function ContemplateException(msg)
+{
+    this.name = 'ContemplateException';
+    this.message = msg;
+}
+ContemplateException[PROTO] = Object.create(Error[PROTO]);
+
 // can use inline templates for plugins etc.. to enable non-linear plugin compile-time replacement
 function InlineTemplate(tpl, replacements, compiled)
 {
@@ -3070,6 +3124,7 @@ Contemplate = {
     ,CACHE_TO_DISK_AUTOUPDATE: 2
     ,CACHE_TO_DISK_NOUPDATE: 4
 
+    ,Exception: ContemplateException
     ,Template: Template
     ,InlineTemplate: InlineTemplate
     ,Ctx: Ctx
@@ -3955,9 +4010,8 @@ Contemplate = {
 
     ,merge: merge
 
-    ,local_variable: local_variable
-
-    ,is_local_variable: is_local_variable
+    //,local_variable: local_variable
+    //,is_local_variable: is_local_variable
 
     // extra for js version
     ,empty: empty
@@ -4278,7 +4332,21 @@ var default_date_locale = {
     }
     : function FUNC(a, f) {
         return new Function(a, f);
+    }/*,
+    ASYNC_SUPPORTED = isXPCOM ? false : (function() {
+        var test = null;
+        try {
+            test = (new Function('', 'return async function(){};'))();
+        } catch (e) {
+            return false;
+        }
+        return is_callable(test) && is_asyncf(test);
+    })(),
+    ASYNC_FUNC = ASYNC_SUPPORTED
+    ? function ASYNC_FUNC(a, f) {
+        return FUNC('', 'return async function('+a+'){'+f+'};')();
     }
+    : FUNC*/
 ;
 
 
@@ -4302,6 +4370,10 @@ function is_callable(o)
 {
     return 'function' === typeof o;
 }
+/*function is_asyncf(o)
+{
+    return /*('function' === typeof o) &&* ('AsyncFunction' === o.constructor.name);
+}*/
 // http://jsperf.com/instanceof-array-vs-array-isarray/6
 function is_array(o)
 {

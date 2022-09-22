@@ -1,8 +1,8 @@
 ##
 #  Contemplate
-#  Light-weight Templating Engine for PHP, Python, Node and client-side JavaScript
+#  Light-weight Object-Oriented Template Engine for PHP, Python, JavaScript
 #
-#  @version 1.5.0
+#  @version 1.6.0
 #  https://github.com/foo123/Contemplate
 #
 #  @inspired by : Simple JavaScript Templating, John Resig - http://ejohn.org/ - MIT Licensed
@@ -119,12 +119,15 @@ class _G:
 
     re_controls = re.compile(r'(\t|\s?)\s*((#ID_(continue|endblock|elsefor|endfor|endif|break|else|fi)#(\s*\(\s*\))?)|(#ID_([^#]+)#\s*(\()))(.*)$')
 
+    reserved_var_names = [
+    'Contemplate', 'self', 'self_', 'data', '__p__', '__i__', '__ctx'
+    ]
     directives = [
     'set', 'unset', 'isset',
     'if', 'elseif', 'else', 'endif',
     'for', 'elsefor', 'endfor',
     'extends', 'block', 'endblock',
-    'include', 'super', 'getblock', 'iif', 'empty', 'continue', 'break', 'local_set', 'get'
+    'include', 'super', 'getblock', 'iif', 'empty', 'continue', 'break', 'local_set', 'get', 'local'
     ]
     directive_aliases = {
      'elif'         : 'elseif'
@@ -193,20 +196,25 @@ default_date_locale = {
 ,'month_short': ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 }
 
+def wait_ms(ms):
+    time.sleep(ms / 1000)
+
 def open_file(file, op, encoding):
     return open(file, op, -1, encoding)
 
 def read_file(file, encoding):
     buffer = ''
-    with open_file(file, 'r', encoding) as f:
-        buffer = f.read()
+    f = open_file(file, 'r', encoding)
+    buffer = f.read()
+    f.close()
     return buffer
 
 # https://stackoverflow.com/questions/186202/what-is-the-best-way-to-open-a-file-for-exclusive-access-in-python
 # https://github.com/drandreaskrueger/lockbydir
 def write_file(file, text, encoding):
-    with open_file(file, 'w', encoding) as f:
-        f.write(text)
+    f = open_file(file, 'w', encoding)
+    f.write(text)
+    f.close()
 
 def parse_str(s):
     # http://www.php2python.com/wiki/function.parse-str/
@@ -503,8 +511,8 @@ def import_tpl(filename, classname, cacheDir, doReload = False):
     directory = os.path.dirname(filename)
     os.sys.path.append(cacheDir)
     os.sys.path.append(directory)
-    currentcwd = os.getcwd()
-    os.chdir(directory)   # change working directory so we know import will work
+    #currentcwd = os.getcwd()
+    #os.chdir(directory)   # change working directory so we know import will work
 
     if os.path.exists(filename):
 
@@ -523,7 +531,7 @@ def import_tpl(filename, classname, cacheDir, doReload = False):
             except ModuleNotFoundError:
                 found = False
 
-            if 1 == tries and not found: time.sleep(1) # delay 1 sec
+            if not found: wait_ms(100) # delay 100 ms
 
     if found:
         if doReload: reload(mod) # Might be out of date
@@ -531,7 +539,7 @@ def import_tpl(filename, classname, cacheDir, doReload = False):
         getTplClass = getattr(mod, '__getTplClass__')
 
     # restore current dir
-    os.chdir(currentcwd)
+    #os.chdir(currentcwd)
     # remove the dynamic import path from sys
     del os.sys.path[-1]
     del os.sys.path[-1]
@@ -824,20 +832,22 @@ def split_arguments(args, delim = ','):
     if i < l: a.append(args[i:].strip())
     return a
 
-def local_variable(variable = None, block = None):
+def local_variable(variable = None, block = None, literal = False):
     global _G
     if variable is None:
         _G.id += 1
         return '_loc_' + str(_G.id)
     else:
         if block is None: block = _G.currentblock
-        _G.locals[block][_G.variables[block][variable]] = 1
+        if not (_G.variables[block][variable] in _G.locals[block]):
+            _G.locals[block][_G.variables[block][variable]] = 2 if literal else 1
         return variable
 
 
 def is_local_variable(variable, block = None):
     if block is None: block = _G.currentblock
-    return variable.startswith('_loc_') or ((_G.variables[block][variable] in _G.locals[block]) and (1 == _G.locals[block][_G.variables[block][variable]]))
+    #if variable.startswith('_loc_'): return 1
+    return _G.locals[block][_G.variables[block][variable]] if _G.variables[block][variable] in _G.locals[block] else 0
 
 #
 # Control structures
@@ -942,7 +952,15 @@ def parse_constructs(match):
     except:
         m = -1
     if m > -1:
-        if 0==m or 20==m: # set, local_set
+        if 22==m: # local
+            varname = args.strip()
+            tplvarname = _G.variables[_G.currentblock][varname]
+            if tplvarname in _G.reserved_var_names:
+                # should be different from 'self', 'data', .. as these are used internally
+                raise Contemplate.Exception('Contemplate Parse: Use of reserved name as local variable name "'+tplvarname+'"')
+            local_variable(varname, None, True) # make it a literal local variable variable
+            out = "'" + _G.TEOL
+        elif 0==m or 20==m: # set, local_set
             args = re.sub(re_controls, parse_constructs, args)
             args = split_arguments(args, ',')
             varname = args.pop(0).strip()
@@ -963,7 +981,8 @@ def parse_constructs(match):
         elif 2==m: # isset
             args = re.sub(re_controls, parse_constructs, args)
             varname = args
-            out = '(("_loc_' + varname + '__RAW__" in locals()) and (' + varname + ' is not None))' if is_local_variable(varname) else '(("' + varname + '__RAW__" in data) and (' + varname + ' is not None))'
+            is_local_var = is_local_variable(varname)
+            out = '(("'+('' if 2 == is_local_var else '_loc_') + varname + '__RAW__" in locals()) and (' + varname + ' is not None))' if is_local_var else '(("' + varname + '__RAW__" in data) and (' + varname + ' is not None))'
         elif 3==m: # if
             args = re.sub(re_controls, parse_constructs, args)
             out = "'" + align(_G.TEOL.join([
@@ -1018,8 +1037,10 @@ def parse_constructs(match):
                 k = kv[0].strip()
                 v = kv[1].strip()
                 _oI = local_variable()
-                local_variable(k)
-                local_variable(v)
+                if not is_local_variable(k):
+                    local_variable(k)
+                if not is_local_variable(v):
+                    local_variable(v)
 
                 # a = [51,27,13,56]   dict(enumerate(a))
                 out = "'" + align(_G.TEOL.join([
@@ -1035,7 +1056,8 @@ def parse_constructs(match):
             else:
                 v = kv[0].strip()
                 _oV = local_variable()
-                local_variable(v)
+                if not is_local_variable(v):
+                    local_variable(v)
 
                 out = "'" + align(_G.TEOL.join([
                                 ""
@@ -1097,7 +1119,8 @@ def parse_constructs(match):
         elif 17==m: #empty
             args = re.sub(re_controls, parse_constructs, args)
             varname = args
-            out = prefix + ('(("_loc_' + varname + '__RAW__" not in locals()) or ('+varname+' is None) or Contemplate.empty('+varname+'))' if is_local_variable(varname) else '(("' + varname + '__RAW__" not in data) or ('+varname+' is None) or Contemplate.empty('+varname+'))')
+            is_local_var = is_local_variable(varname)
+            out = prefix + ('(("' + ('' if 2 == is_local_var else '_loc_') + varname + '__RAW__" not in locals()) or ('+varname+' is None) or Contemplate.empty('+varname+'))' if is_local_var else '(("' + varname + '__RAW__" not in data) or ('+varname+' is None) or Contemplate.empty('+varname+'))')
         elif 18==m or 19==m: #'continue','break'
             out = "'" + _G.TEOL + align('continue' if 18==m else 'break') + _G.TEOL
 
@@ -1217,14 +1240,13 @@ def parse_variable(s, i, l):
         _G.id += 1
         id = "#VAR_"+str(_G.id)+"#"
         _len = len(variable_raw)
+        _G.variables[_G.currentblock][id] = variable_raw
 
         # extra space
         space = 0
         while i < l and _G.SPACE.match(s[i]):
             space += 1
             i += 1
-
-        bracketcnt = 0
 
         # optional properties
         while i < l and ('.' == s[i] or '[' == s[i] or '->' == s[i:i+2]):
@@ -1276,89 +1298,107 @@ def parse_variable(s, i, l):
 
             # bracketed property
             elif '[' == delim:
-                bracketcnt += 1
-                ch = s[i]
-                # literal string property
-                if '"' == ch or "'" == ch:
-                    #property = parse_string( s, ch, i+1, l )
-                    q = ch
-                    str_ = q
-                    escaped = False
-                    si = i+1
-                    while si < l:
-                        ch = s[si]
-                        si += 1
-                        str_ += ch
-                        if ( q == ch and not escaped ):  break
-                        escaped = (not escaped and '\\' == ch)
-                    property = str_
-                    _G.id += 1
-                    strid = "#STR_"+str(_G.id)+"#"
-                    strings[strid] = property
-                    variable_rest += delim + strid
-                    lp = len(property)
-                    i += lp
-                    _len += space + 1 + lp
-                    space = 0
-                    hasStrings = True
+                bracket = ''
+                while i < l:
+                    ch = s[i]
 
-                # numeric array property
-                elif _G.NUM.match(ch):
-                    property = s[i]
-                    i += 1
-                    while i < l and _G.NUM.match(s[i]):
-                        property += s[i]
+                    # spaces
+                    if _G.SPACE.match(ch):
+                        space += 1
                         i += 1
 
-                    variable_rest += delim + property
-                    lp = len(property)
-                    _len += space + 1 + lp
-                    space = 0
-
-                # sub-variable property
-                elif '$' == ch:
-                    sub = s[i+1:]
-                    subvariables = parse_variable(sub, 0, len(sub))
-                    if subvariables:
-                        # transform into tpl variable property
-                        property = subvariables[-1]
-                        variable_rest += delim + property[0]
-                        lp = property[4]
-                        i += lp + 1
-                        _len += space + 2 + lp
+                    # literal string property
+                    elif '"' == ch or "'" == ch:
+                        #property = parse_string( s, ch, i+1, l )
+                        q = ch
+                        str_ = q
+                        escaped = False
+                        si = i+1
+                        while si < l:
+                            ch = s[si]
+                            si += 1
+                            str_ += ch
+                            if ( q == ch and not escaped ):  break
+                            escaped = (not escaped and '\\' == ch)
+                        property = str_
+                        _G.id += 1
+                        strid = "#STR_"+str(_G.id)+"#"
+                        strings[strid] = property
+                        lp = len(property)
+                        i += lp
+                        _len += space + lp
                         space = 0
-                        variables = variables + subvariables
-                        hasStrings = hasStrings or property[5]
+                        hasStrings = True
+                        bracket += strid
 
-                # close bracket
-                elif ']' == ch:
-                    if bracketcnt > 0:
-                        bracketcnt -= 1
-                        variable_rest += delim + s[i]
+                    # numeric array property
+                    elif _G.NUM.match(ch):
+                        property = s[i]
                         i += 1
+                        while i < l and _G.NUM.match(s[i]):
+                            property += s[i]
+                            i += 1
+
+                        lp = len(property)
+                        _len += space + lp
+                        space = 0
+                        bracket += property
+
+                    # sub-variable as property
+                    elif '$' == ch:
+                        sub = s[i+1:]
+                        subvariables = parse_variable(sub, 0, len(sub))
+                        if subvariables:
+                            # transform into tpl variable property
+                            property = subvariables[-1]
+                            lp = property[4]
+                            i += lp + 1
+                            _len += space + 1 + lp
+                            space = 0
+                            variables = variables + subvariables
+                            hasStrings = hasStrings or property[5]
+                            bracket += property[0]
+                        else:
+                            bracket += ch
+                            _len += 1
+                            i += 1
+
+                    # identifiers
+                    elif _G.ALPHA.match(ch):
+                        _len += space + 1
+                        i += 1
+                        if space > 0:
+                            bracket += " "
+                            space = 0
+                        is_prop_access = (2<i and '-'==s[i-3] and '>'==s[i-2])
+                        tok = ch
+                        while i < l:
+                            ch = s[i]
+                            if _G.ALPHANUM.match(ch):
+                                i += 1
+                                _len += 1
+                                tok += ch
+                            else: break
+                        if 'null' == tok: tok = 'None'
+                        elif 'false' == tok: tok = 'False'
+                        elif 'true' == tok: tok = 'True'
+                        elif 'as' != tok and 'in' != tok and not is_prop_access: tok = '#ID_'+tok+'#'
+                        bracket += tok
+
+                    # close bracket
+                    elif ']' == ch:
+                        variable_rest += delim + re.sub(_G.re_controls, parse_constructs, bracket) + ch
                         _len += space + 2
                         space = 0
-                    else:
-                        break
-
-                else:
-                    break
-
-                # extra space
-                while i < l and _G.SPACE.match(s[i]):
-                    space += 1
-                    i += 1
-
-                # close bracket
-                if ']' == s[i]:
-                    if bracketcnt > 0:
-                        bracketcnt -= 1
-                        variable_rest += s[i]
                         i += 1
-                        _len += space + 1
-                        space = 0
-                    else:
                         break
+
+                    # rest
+                    else:
+                        bracket += ch
+                        _len += 1
+                        i += 1
+
 
             # extra space
             while i < l and _G.SPACE.match(s[i]):
@@ -1470,7 +1510,7 @@ def parse(tpl, leftTplSep, rightTplSep, withblocks = True):
                 if tok:
                     for tokv in tok:
                         id = tokv[0]
-                        _G.variables[_G.currentblock][id] = tokv[1]
+                        #_G.variables[_G.currentblock][id] = tokv[1]
                         if tokv[6]: strings.update(tokv[6])
                     out += id
                     index += tokv[4]
@@ -1598,7 +1638,7 @@ def parse(tpl, leftTplSep, rightTplSep, withblocks = True):
                 varname = v[1]
                 tag = tag.replace(id+'__RAW__', varname)
                 if varname in _G.locals[_G.currentblock]: # local (loop) variable
-                    tag = tag.replace(id, '_loc_'+varname+v[3])
+                    tag = tag.replace(id, ('' if 2 == _G.locals[_G.currentblock][varname] else '_loc_')+varname+v[3])
                 else: # default (data) variable
                     tag = tag.replace(id, v[2]+v[3])
 
@@ -1857,6 +1897,8 @@ def create_path(path, root = '', mode = 0o755):
         if not os.path.exists(current):
             os.mkdir(current, mode)
 
+class ContemplateException(Exception):
+    pass
 
 class InlineTemplate:
 
@@ -2109,12 +2151,13 @@ class Contemplate:
     """
 
     # constants (not real constants in Python)
-    VERSION = "1.5.0"
+    VERSION = "1.6.0"
 
     CACHE_TO_DISK_NONE = 0
     CACHE_TO_DISK_AUTOUPDATE = 2
     CACHE_TO_DISK_NOUPDATE = 4
 
+    Exception = ContemplateException
     InlineTemplate = InlineTemplate
     Template = Template
     Ctx = Ctx
@@ -2136,7 +2179,7 @@ class Contemplate:
 
         # pre-compute the needed regular expressions
         _G.preserveLines = _G.preserveLinesDefault
-        _G.tplStart = "' " + _G.TEOL
+        _G.tplStart = "'" + _G.TEOL
         _G.tplEnd = _G.TEOL + "__p__ += '"
 
         # make compilation templates
@@ -2149,7 +2192,7 @@ class Contemplate:
             ,"    class #CLASSNAME#(Contemplate.Template):"
             ,"        'Contemplate cached template #TPLID#'"
             ,"        # constructor"
-            ,"        def __init__(self, id=None):"
+            ,"        def __init__(self, id = None):"
             ,"            self_ = self"
             ,"            super(#CLASSNAME#, self).__init__(id)"
             ,"            # extend tpl assign code starts here"
@@ -2159,13 +2202,13 @@ class Contemplate:
             ,"#BLOCKS#"
             ,"        # tpl-defined blocks render code ends here"
             ,"        # render a tpl block method"
-            ,"        def block(self, block, data, __i__=None):"
+            ,"        def block(self, block, data, __i__ = None):"
             ,"            self_ = self"
             ,"            __ctx = False"
             ,"            r = ''"
             ,"            if not __i__:"
             ,"                __i__ = self_"
-            ,"                if not self._autonomus: __ctx = Contemplate._set_ctx(self._ctx)"
+            ,"                if not self_._autonomus: __ctx = Contemplate._set_ctx(self_._ctx)"
             ,"            method = '_blockfn_' + block"
             ,"            if (hasattr(self_, method) and callable(getattr(self_, method))):"
             ,"                r = getattr(self_, method)(data, self_, __i__)"
@@ -2174,13 +2217,13 @@ class Contemplate:
             ,"            if __ctx:  Contemplate._set_ctx(__ctx)"
             ,"            return r"
             ,"        # render method"
-            ,"        def render(self, data, __i__=None):"
+            ,"        def render(self, data, __i__ = None):"
             ,"            self_ = self"
             ,"            __ctx = False"
             ,"            __p__ = ''"
             ,"            if not __i__:"
             ,"                __i__ = self_"
-            ,"                if not self._autonomus: __ctx = Contemplate._set_ctx(self._ctx)"
+            ,"                if not self._autonomus: __ctx = Contemplate._set_ctx(self_._ctx)"
             ,"            if self_._extends:"
             ,"                __p__ = self_._extends.render(data, __i__)"
             ,""
@@ -2710,9 +2753,8 @@ class Contemplate:
             merged.update(arg)
         return merged
 
-    local_variable = local_variable
-
-    is_local_variable = is_local_variable
+    #local_variable = local_variable
+    #is_local_variable = is_local_variable
 
     # extra for py version
     def empty(v):

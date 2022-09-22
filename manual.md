@@ -1,6 +1,6 @@
 ### Contemplate Manual
 
-**version 1.5.0; platforms: PHP, Python, JavaScript (Node.js, Browser, XPCOM)**
+**version 1.6.0; platforms: PHP, Python, JavaScript (Node.js, Browser, XPCOM)**
 
 
 ### Contents
@@ -65,14 +65,18 @@ $obj->prop->method(..args)
 $obj->method1(..args)->method2(..args)
 $obj->method(..args)->prop
 
+// arbitrary expressions in brackets
+//=======================
+$var[1+n($index)][cc("foo","bar")]
 
-// any valid combination of the above
-// etc..
+
+// any valid combination of the above..
 
 
-// to access variable (nested) properties based on arbitrary expressions use built-in `get` directive e.g:
-get($var, [1+n($index), url("foo")])
-// will try to access $var[ 1+n($index) ][ url("foo") ]
+// alternatively to access variable (nested) properties based on arbitrary expressions use built-in `get` directive e.g:
+get($var, [1+n($index), urlencode("foo")])
+// equivalent to:
+$var[1+n($index)][ urlencode("foo") ]
 
 // also `get` directive can access properties which have associated dynamic getter methods,
 // i.e access computed property `computed` which is dynamicaly computed by an associated `getComputed` method
@@ -153,8 +157,8 @@ TEMPLATE operations take place in the `current` context (which defaults to `glob
 
 **IMPORTANT** As of version `1.0.0+`, template `directives`, `functions` and `plugins` **no longer use** the `%` prefix i.e `%for`, `%if`, .. but `for`, `if`, ..
 
-
-* `set($var, expression_or_value)`  SET / UPDATE a tpl variable `$var` to given value or expression
+* `local($var)` DEFINE a local variable with literal name "var". Some variable names are reserved and an error will be thrown
+* `set($var, expression_or_value)`  SET / UPDATE a tpl or local variable `$var` to given value or expression
 * `local_set($var, expression_or_value)`  SET / UPDATE a **local** tpl variable `$var` to given value or expression
 * `get($var, keys [, default_value=null])`  GET arbirtary (nested) variable property (given in `keys` array) based on arbitrary expressions, else return `default_value` if not found
 * `unset($var)`  UNSET / DELETE tpl variable `$var`
@@ -180,7 +184,7 @@ TEMPLATE operations take place in the `current` context (which defaults to `glob
 * `getblock(block_id_string)`  Get `block` output directly via function call (can be useful when `block` content is needed as a parameter)
 * `include(tpl_id_string)`  INCLUDE (inline) the template referenced by `tpl_id`
 
-As of version **1.5.0**, literal **PHP** or **JS** or **PY** code can be included in template.
+As of version **1.5.0+**, literal **PHP** or **JS** or **PY** code can be included in template.
 Assuming template separators as `<%`, `%>` one can include programming code directly in the template, which will include it only if the language is the language of the engine (ie php will include only php code, js only js code ad py ony py code, rest will simply be ignored).
 
 Example:
@@ -238,7 +242,7 @@ The above will output exactly the same as previous example in each engine (assum
 
 #### Template Functions and Plugins
 
-**IMPORTANT** As of version `1.0.0+`, template `directives`, `functions` and `plugins` **no longer use** the `%` prefix i.e `%for`, `%if`, .. but `for`, `if`, .. If compatibility to older format is needed use `Contemplate.setCompatibilityMode( true )`
+**IMPORTANT** As of version `1.0.0+`, template `directives`, `functions` and `plugins` **no longer use** the `%` prefix i.e `%for`, `%if`, .. but `for`, `if`, ..
 
 
 * `n(val)`   convert `val` to integer
@@ -353,7 +357,9 @@ Contemplate.tplPromise('tpl_id', data [, options])
     // do something with tpl
 })
 .catch(function(err){
-    throw err;
+    setImeout(function() {
+        throw err;
+    }, 0);
 });
 
 ```

@@ -53,10 +53,25 @@ public function render(&$data, $__i__ = null)
         /* tpl main render code starts here */
         
         $__p__ .= '' . "\n" . '';
-        $_loc_3 = $data['list'];
-        if (!empty($_loc_3))
+        
+        $__p__ .= '' . "\n" . '';
+        $tplvar = ("set in template");
+        
+        $__p__ .= '' . "\n" . '';
+        /* php code start */
+        $__p__ .= (string)($tplvar . ", accessed in php");
+        /* php code end */
+        $__p__ .= '' . "\n" . '' . "\n" . '' . "\n" . '' . "\n" . '';
+        /* php code start */
+        $tplvar = "set in php"; 
+        /* php code end */
+        $__p__ .= '' . "\n" . '' . "\n" . '' . "\n" . '' . (($tplvar).(", accessed in template")) . '' . "\n" . '' . "\n" . '' . "\n" . '';
+        
+        $__p__ .= '' . "\n" . '';
+        $_loc_9 = $data['list'];
+        if (!empty($_loc_9))
         {
-            foreach ($_loc_3 as $_loc_v)
+            foreach ($_loc_9 as $v)
             {
                 
                 $__p__ .= '' . "\n" . '';        
@@ -64,9 +79,9 @@ public function render(&$data, $__i__ = null)
                 $foo = "php";
                 $bar = "code";        
                 /* php code end */
-                $__p__ .= '' . "\n" . '' . ($_loc_v) . '' . "\n" . '';        
+                $__p__ .= '' . "\n" . '' . (("template: ").($v)) . '' . "\n" . '';        
                 /* php code start */        
-                $__p__ .= (string)("php");        
+                $__p__ .= (string)("php: " . (string)$v);        
                 /* php code end */
                 $__p__ .= '' . "\n" . '';
             }
@@ -77,15 +92,11 @@ public function render(&$data, $__i__ = null)
         foreach ($data['list'] as $v)
         {    
             /* php code end */
-            $__p__ .= '';    
-            /* php code start */    
-            $__p__ .= (string)($v);    
-            /* php code end */
-            $__p__ .= '' . "\n" . '';
+            $__p__ .= '' . ($v) . '' . "\n" . '';
         /* php code start */
         }
         /* php code end */
-        $__p__ .= '' . "\n" . '' . "\n" . '';
+        $__p__ .= '' . "\n" . '';
         
         /* tpl main render code ends here */
     }

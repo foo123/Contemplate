@@ -35,15 +35,32 @@ Contemplate_test__global.prototype.render = function(data, __i__) {
     /* tpl main render code starts here */
     
     __p__ += '' + "\n" + '';
-    var _loc_3 = data.list, _loc_5 = !!_loc_3.forEach,
-        _loc_4 = _loc_3 ? (_loc_5 ? _loc_3 : Object.keys(_loc_3)) : null,
-        _loc_6, _loc_7, _loc_v, _loc_8 = _loc_4 ? _loc_4.length : 0;
-    if (_loc_8)
+    var tplvar;
+    
+    __p__ += '' + "\n" + '';
+    tplvar = ("set in template");
+    
+    __p__ += '' + "\n" + '' + "\n" + '';
+    /* js code start */
+    __p__ += String(tplvar + ", accessed in js");
+    /* js code end */
+    __p__ += '' + "\n" + '' + "\n" + '' + "\n" + '' + "\n" + '';
+    /* js code start */
+    tplvar = "set in js"; 
+    /* js code end */
+    __p__ += '' + "\n" + '' + "\n" + '' + (String(tplvar)+String(", accessed in template")) + '' + "\n" + '' + "\n" + '' + "\n" + '';
+    var v;
+    
+    __p__ += '' + "\n" + '';
+    var _loc_9 = data.list, _loc_11 = !!_loc_9.forEach,
+        _loc_10 = _loc_9 ? (_loc_11 ? _loc_9 : Object.keys(_loc_9)) : null,
+        _loc_12, _loc_13, _loc_14 = _loc_10 ? _loc_10.length : 0;
+    if (_loc_14)
     {
-        for (_loc_6=0; _loc_6<_loc_8; ++_loc_6)
+        for (_loc_12=0; _loc_12<_loc_14; ++_loc_12)
         {
-            _loc_7 = _loc_4[_loc_6];
-            _loc_v = _loc_5 ? _loc_7 : _loc_3[_loc_7];
+            _loc_13 = _loc_10[_loc_12];
+            v = _loc_11 ? _loc_13 : _loc_9[_loc_13];
             
             
             __p__ += '' + "\n" + '';        
@@ -51,9 +68,9 @@ Contemplate_test__global.prototype.render = function(data, __i__) {
             var foo = "js";
             var bar = "code";        
             /* js code end */
-            __p__ += '' + "\n" + '' + (_loc_v) + '' + "\n" + '';        
+            __p__ += '' + "\n" + '' + (String("template: ")+String(v)) + '' + "\n" + '';        
             /* js code start */        
-            __p__ += String("js");        
+            __p__ += String("js: " + String(v));        
             /* js code end */
             __p__ += '' + "\n" + '';
         }
@@ -63,17 +80,13 @@ Contemplate_test__global.prototype.render = function(data, __i__) {
     /* js code start */
     for (var i=0; i<data['list'].length; ++i)
     {
-        var v = data['list'][i];    
+        v = data['list'][i];    
         /* js code end */
-        __p__ += '';    
-        /* js code start */    
-        __p__ += String(v);    
-        /* js code end */
-        __p__ += '' + "\n" + '';
+        __p__ += '' + (v) + '' + "\n" + '';
     /* js code start */
     }
     /* js code end */
-    __p__ += '' + "\n" + '' + "\n" + '';
+    __p__ += '' + "\n" + '';
     
     /* tpl main render code ends here */
     __ctx&&Contemplate._set_ctx(__ctx);

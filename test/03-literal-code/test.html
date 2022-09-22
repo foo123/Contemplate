@@ -1,5 +1,18 @@
 <% %>
 
+<% local($tplvar) %>
+<% set($tplvar, "set in template") %>
+<%php:= $tplvar . ", accessed in php" %>
+<%js:= tplvar + ", accessed in js" %>
+<%py:= tplvar + ", accessed in py" %>
+
+<%php: $tplvar = "set in php"; %>
+<%js: tplvar = "set in js"; %>
+<%py: tplvar = "set in py" %>
+<% cc($tplvar, ", accessed in template") %>
+
+
+<% local($v) %>
 <% for ($v in $list) %>
 <%php:
 	$foo = "php";
@@ -11,8 +24,8 @@
     foo = "py"
     bar = "code"
 %>
-<% $v %>
-<%php:= "php" %><%js:= "js" %><%py:= "py" %>
+<% cc("template: ", $v) %>
+<%php:= "php: " . (string)$v %><%js:= "js: " + String(v) %><%py:= "py: " + str(v) %>
 <% endfor %>
 
 <%php:postdent(1):
@@ -21,11 +34,11 @@ foreach ($data['list'] as $v)
 %><%js:postdent(1):
 for (var i=0; i<data['list'].length; ++i)
 {
-	var v = data['list'][i];
+	v = data['list'][i];
 %><%py:postdent(1):
 for v in data['list']:
 	#tabbed comment
-%><%php:= $v %><%js:= v %><%py:= v %>
+%><% $v %>
 <%php:predent(-1):
 }
 %><%js:predent(-1):
@@ -33,4 +46,3 @@ for v in data['list']:
 %><%py:predent(-1):
 
 %>
-

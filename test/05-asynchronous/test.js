@@ -38,7 +38,9 @@ Contemplate.tplPromise('demo.tpl.html', null, 'global')
 .then(function(tpl) {
     console.log(tpl.render({'foo':'bar','bar':'foo'}));
 })
-.catch(function(err){
-    throw err;
+.catch(function(err) {
+    setTimeout(function() {
+        throw err;
+    }, 0);
 });
 

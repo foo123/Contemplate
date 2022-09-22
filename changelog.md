@@ -1,5 +1,10 @@
 ### ChangeLog
 
+__1.6.0__
+* define local variables that are literally accessible to literal code and vice-versa
+* variable parsing became better, can use any valid expression in variable bracket
+* update tests
+
 __1.5.0__
 * support including literal php/js/py code (properly indented), see examples and manual
 * stop compatibility mode support

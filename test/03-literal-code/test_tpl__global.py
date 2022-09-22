@@ -46,19 +46,34 @@ def __getTplClass__(Contemplate):
                 # tpl main render code starts here
                 
                 __p__ += '' + "\n" + ''
-                _loc_3 = data['list']
-                _loc_4 = (_loc_3 if isinstance(_loc_3,(list,tuple)) else _loc_3.values()) if _loc_3 else None
-                if (_loc_4):
-                    for _loc_v in _loc_4:
+                 
+                __p__ += '' + "\n" + ''
+                tplvar = ("set in template")
+                 
+                __p__ += '' + "\n" + '' + "\n" + '' + "\n" + ''
+                # py code start
+                __p__ += str(tplvar + ", accessed in py")
+                # py code end
+                __p__ += '' + "\n" + '' + "\n" + '' + "\n" + '' + "\n" + '' 
+                # py code start
+                tplvar = "set in py" 
+                # py code end
+                __p__ += '' + "\n" + '' + str(str(tplvar)+str(", accessed in template")) + '' + "\n" + '' + "\n" + '' + "\n" + ''
+                 
+                __p__ += '' + "\n" + ''
+                _loc_9 = data['list']
+                _loc_10 = (_loc_9 if isinstance(_loc_9,(list,tuple)) else _loc_9.values()) if _loc_9 else None
+                if (_loc_10):
+                    for v in _loc_10:
                          
                         __p__ += '' + "\n" + ''         
                         # py code start
                         foo = "py"
                         bar = "code"        
                         # py code end
-                        __p__ += '' + "\n" + '' + str(_loc_v) + '' + "\n" + ''        
+                        __p__ += '' + "\n" + '' + str(str("template: ")+str(v)) + '' + "\n" + ''        
                         # py code start        
-                        __p__ += str("py")        
+                        __p__ += str("py: " + str(v))        
                         # py code end
                         __p__ += '' + "\n" + ''
                  
@@ -67,14 +82,10 @@ def __getTplClass__(Contemplate):
                 for v in data['list']:
                     #tabbed comment    
                     # py code end
-                    __p__ += ''    
-                    # py code start    
-                    __p__ += str(v)    
-                    # py code end
-                    __p__ += '' + "\n" + '' 
+                    __p__ += '' + str(v) + '' + "\n" + '' 
                 # py code start
                 # py code end
-                __p__ += '' + "\n" + '' + "\n" + ''
+                __p__ += '' + "\n" + ''
                 
                 # tpl main render code ends here
 

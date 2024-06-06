@@ -9,6 +9,8 @@
 *
 *  Test
 *
+* IMPORTANT: Only for local testing purposes. This file should not be publicly accessible as it can enable outsiders to access local files.
+* See https://github.com/foo123/Contemplate/issues/7
 **/
 
 //  run as: node test.js

@@ -142,6 +142,11 @@ http.createServer(function(request, response) {
     }
 
     // handle css/js/other file requests
+    if (path.normalize(decodeURI(uri)) !== decodeURI(uri)) {
+        response.statusCode = 403;
+        response.end();
+        return;
+    }
     filename = path.join(process.cwd(), uri);
     fs.stat(filename, function(err, stat) {
         if(err || !stat) {

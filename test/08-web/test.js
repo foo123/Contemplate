@@ -142,7 +142,7 @@ http.createServer(function(request, response) {
     }
 
     // handle css/js/other file requests
-    if (path.normalize(decodeURI(uri)) !== decodeURI(uri)) {
+    if (/*path.normalize(decodeURI(uri)) !== decodeURI(uri)*/decodeURIComponent(uri).indexOf('..') !== -1) {
         response.statusCode = 403;
         response.end();
         return;
